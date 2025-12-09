@@ -5,5 +5,6 @@ export const env = {
   token: process.env.DISCORD_TOKEN,
   appId: process.env.DISCORD_APP_ID,
   guildId: process.env.DISCORD_GUILD_ID,
-  summaryMode: process.env.SUMMARY_MODE || "local"
+  summaryMode: process.env.SUMMARY_MODE || "local",
+  openAIKey: process.env.OPENAI_API_KEY || null
 };

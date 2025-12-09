@@ -81,26 +81,51 @@ OmegaBot is online
 ## Project Structure
 
 ```
-src/
-  bot.js
-  registerCommands.js
-  config/
-    env.js
-  commands/
-    general/
-      ping.js
-    summary/
-      summary.js
-  services/
-    discord/
-      commandLoader.js
-      interactionHandler.js
-    summary/
-      summarizer.js
-      localSummary.js
-      llmSummary.js
+.
+├── .github
+│   ├── ISSUE_TEMPLATE
+│   │   ├── bug.yml
+│   │   ├── config.yml
+│   │   ├── documentation.yml
+│   │   ├── enhancement_refactor.yml
+│   │   ├── feature_request.yml
+│   │   └── question_discussion.yml
+│   ├── pull_request_template.md
+│   └── workflows
+│       └── FollowTheFlow.yml
+├── .gitignore
+├── .husky
+│   ├── pre-commit
+│   └── pre-push
+├── assets
+│   ├── banner.png
+│   └── omegabot.png
+├── CONTRIBUTORS.md
+├── LICENSE
+├── package-lock.json
+├── package.json
+├── README.md
+├── scripts
+│   └── precheck.sh
+└── src
+    ├── bot.js
+    ├── commands
+    │   ├── general
+    │   │   └── ping.js
+    │   └── summary
+    │       └── summary.js
+    ├── config
+    │   └── env.js
+    ├── registerCommands.js
+    └── services
+        ├── discord
+        │   ├── commandLoader.js
+        │   └── interactionHandler.js
+        └── summary
+            ├── llmSummary.js
+            ├── localSummary.js
+            └── summarizer.js
 ```
-
 ---
 
 ## Extending OmegaBot
