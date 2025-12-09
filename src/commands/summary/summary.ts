@@ -1,5 +1,9 @@
-import { SlashCommandBuilder, AttachmentBuilder } from "discord.js";
-import { summarize } from "@services/summary/summarizer.js";
+import {
+  SlashCommandBuilder,
+  AttachmentBuilder,
+  type ChatInputCommandInteraction
+} from "discord.js";
+import { summarize } from "../../services/summary/summarizer.js";
 
 export const data = new SlashCommandBuilder()
   .setName("summary")
@@ -12,18 +16,26 @@ export const data = new SlashCommandBuilder()
       .setMaxValue(100)
   );
 
-export async function execute(interaction) {
-  const count = interaction.options.getInteger("count") || 50;
+export async function execute(
+  interaction: ChatInputCommandInteraction
+): Promise<void> {
+  const count = interaction.options.getInteger("count") ?? 50;
 
   await interaction.deferReply();
 
-  const messages = await interaction.channel.messages.fetch({ limit: count });
+  const messages = await interaction.channel?.messages.fetch({ limit: count });
+  if (!messages) {
+    await interaction.editReply("Could not fetch messages for this channel.");
+    return;
+  }
+
   const userMessages = messages
     .filter(m => !m.author.bot && m.content)
     .sort((a, b) => a.createdTimestamp - b.createdTimestamp);
 
   if (userMessages.size === 0) {
-    return interaction.editReply("No usable messages found to summarize.");
+    await interaction.editReply("No usable messages found to summarize.");
+    return;
   }
 
   const text = userMessages
@@ -32,16 +44,16 @@ export async function execute(interaction) {
 
   const output = await summarize(text);
 
-  // File fallback for outputs over 2000 chars
   if (output.length > 2000) {
     const file = new AttachmentBuilder(Buffer.from(output), {
       name: "summary.txt"
     });
-    return interaction.editReply({
+    await interaction.editReply({
       content: "Summary was too long. Uploaded as file.",
       files: [file]
     });
+    return;
   }
 
-  return interaction.editReply(output);
+  await interaction.editReply(output);
 }

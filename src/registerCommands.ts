@@ -4,7 +4,7 @@ import path from "path";
 import { env } from "./config/env.js";
 
 async function loadCommandData() {
-  const commands = [];
+  const commands: any[] = [];
   const basePath = path.join(process.cwd(), "src/commands");
   const groups = fs.readdirSync(basePath);
 
@@ -34,4 +34,7 @@ async function register() {
   console.log("Commands registered");
 }
 
-register();
+register().catch(err => {
+  console.error("Failed to register commands:", err);
+  process.exit(1);
+});
