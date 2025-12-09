@@ -2,19 +2,19 @@
   "name": "OmegaBot",
   "version": "1.0.0",
   "type": "module",
-  "imports": {
-    "@config/": "./src/config/",
-    "@services/": "./src/services/",
-    "@commands/": "./src/commands/",
-    "@/": "./src/"
-  },
   "scripts": {
-    "dev": "node --watch src/bot.js",
-    "register": "node src/registerCommands.js"
+    "build": "tsc",
+    "dev": "npm run build && node dist/bot.js",
+    "register": "npm run build && node dist/registerCommands.js"
   },
   "dependencies": {
     "discord.js": "^14.14.1",
     "dotenv": "^16.4.5",
     "openai": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
   }
 }

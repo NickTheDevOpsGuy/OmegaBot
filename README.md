@@ -107,24 +107,25 @@ OmegaBot is online
 ├── README.md
 ├── scripts
 │   └── precheck.sh
-└── src
-    ├── bot.js
-    ├── commands
-    │   ├── general
-    │   │   └── ping.js
-    │   └── summary
-    │       └── summary.js
-    ├── config
-    │   └── env.js
-    ├── registerCommands.js
-    └── services
-        ├── discord
-        │   ├── commandLoader.js
-        │   └── interactionHandler.js
-        └── summary
-            ├── llmSummary.js
-            ├── localSummary.js
-            └── summarizer.js
+├── src
+│   ├── bot.ts
+│   ├── commands
+│   │   ├── general
+│   │   │   └── ping.ts
+│   │   └── summary
+│   │       └── summary.ts
+│   ├── config
+│   │   └── env.ts
+│   ├── registerCommands.ts
+│   └── services
+│       ├── discord
+│       │   ├── commandLoader.ts
+│       │   └── interactionHandler.ts
+│       └── summary
+│           ├── llmSummary.ts
+│           ├── localSummary.ts
+│           └── summarizer.ts
+└── tsconfig.json
 ```
 ---
 

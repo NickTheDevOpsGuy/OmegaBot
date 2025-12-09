@@ -1,14 +1,13 @@
 import OpenAI from "openai";
-import { env } from "@config/env.js";
+import { env } from "../../config/env.js";
 
-let client = null;
+let client: OpenAI | null = null;
 
-// Initialize client only if API key exists
 if (env.openAIKey) {
   client = new OpenAI({ apiKey: env.openAIKey });
 }
 
-export async function llmSummary(text) {
+export async function llmSummary(text: string): Promise<string> {
   if (!client) {
     return "LLM mode requested but no API key is configured.";
   }
@@ -26,5 +25,9 @@ ${text}
     messages: [{ role: "user", content: prompt }]
   });
 
-  return response.choices[0].message.content.trim();
+  const content =
+    response.choices?.[0]?.message?.content ??
+    "LLM returned no content.";
+
+  return content.trim();
 }
