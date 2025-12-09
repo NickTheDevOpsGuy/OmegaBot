@@ -16,7 +16,8 @@ export type CommandClient = Client & {
 };
 
 export async function loadCommands(client: CommandClient): Promise<void> {
-  const basePath = path.join(process.cwd(), "src/commands");
+  // We run compiled JS from dist/, so load commands from dist/commands
+  const basePath = path.join(process.cwd(), "dist/commands");
   const groups = fs.readdirSync(basePath);
 
   for (const group of groups) {

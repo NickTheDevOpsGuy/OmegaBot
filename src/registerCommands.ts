@@ -5,7 +5,8 @@ import { env } from "./config/env.js";
 
 async function loadCommandData() {
   const commands: any[] = [];
-  const basePath = path.join(process.cwd(), "src/commands");
+  // Read built JS commands from dist
+  const basePath = path.join(process.cwd(), "dist/commands");
   const groups = fs.readdirSync(basePath);
 
   for (const group of groups) {
