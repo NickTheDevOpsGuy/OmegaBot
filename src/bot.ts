@@ -15,7 +15,7 @@ client.on("interactionCreate", async interaction => {
   await handleInteraction(interaction, client);
 });
 
-client.once("ready", () => {
+client.once("clientReady", () => {
   console.log("OmegaBot is online");
 });
 
