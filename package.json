@@ -1,7 +1,13 @@
 {
-  "name": "omega-bot",
+  "name": "OmegaBot",
   "version": "1.0.0",
   "type": "module",
+  "imports": {
+    "@config/": "./src/config/",
+    "@services/": "./src/services/",
+    "@commands/": "./src/commands/",
+    "@/": "./src/"
+  },
   "scripts": {
     "dev": "node --watch src/bot.js",
     "register": "node src/registerCommands.js"
@@ -9,6 +15,6 @@
   "dependencies": {
     "discord.js": "^14.14.1",
     "dotenv": "^16.4.5",
-    "husky": "^9.1.7"
+    "openai": "^4.0.0"
   }
 }
