@@ -1,7 +1,13 @@
-![Last Commit](https://img.shields.io/github/last-commit/NickTheDevOpsGuy/OmegaBot)
-![License](https://img.shields.io/github/license/yourusername/OmegaBot)
-![Node Version](https://img.shields.io/badge/node-18+-blue)
-![JavaScript](https://img.shields.io/badge/made%20with-JavaScript-yellow)
+<p align="center">
+  <img src="assets/banner.png" alt="OmegaBot Banner" width="900">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/github/last-commit/NickTheDevOpsGuy/OmegaBot">
+  <img src="https://img.shields.io/github/license/NickTheDevOpsGuy/OmegaBot">
+  <img src="https://img.shields.io/badge/node-18+-blue">
+  <img src="https://img.shields.io/badge/made%20with-JavaScript-yellow">
+</p>
 
 # OmegaBot
 
@@ -35,7 +41,7 @@ Planned features:
 Clone the repo:
 
 ```bash
-git clone https://github.com/yourusername/OmegaBot.git
+git clone https://github.com/NickTheDevOpsGuy/OmegaBot.git
 cd OmegaBot
 ```
 
@@ -95,13 +101,33 @@ src/
       llmSummary.js
 ```
 
+---
+
 ## Extending OmegaBot
 
 OmegaBot is designed for small, focused modules. To add new features:
 
 1. Create a new command file under `src/commands/<category>/`
 2. Add any logic needed inside `src/services/<feature>/`
-3. Re run `npm run register` to publish new slash commands
+3. Run `npm run register` to publish new slash commands
+
+---
+
+## Contributors
+
+Thanks to everyone who has helped build or improve OmegaBot.
+
+<a href="https://contrib.rocks/image?repo=NickTheDevOpsGuy/OmegaBot">
+  <img src="https://contrib.rocks/image?repo=NickTheDevOpsGuy/OmegaBot" alt="Contributors">
+</a>
+
+Generated using https://contrib.rocks
+
+To learn how to contribute, read the [CONTRIBUTOR.md](CONTRIBUTOR.md) file.
+
+If you would like to contribute, please open an issue or submit a pull request.
+
+---
 
 ## License
 
