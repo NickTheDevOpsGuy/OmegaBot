@@ -7,7 +7,7 @@ import { env } from "./config/env.js";
  * Load all compiled command JSON definitions from dist/commands and prepare them for registration with Discord.
  */
 async function loadCommandData() {
-  const commands: any[] = [];
+  const commands: Record<string, any>[] = [];
   // Read built JS commands from dist
   const basePath = path.join(process.cwd(), "dist/commands");
   const groups = fs.readdirSync(basePath);
