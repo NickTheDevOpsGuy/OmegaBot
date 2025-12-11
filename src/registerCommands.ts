@@ -4,7 +4,7 @@ import path from "path";
 import { env } from "./config/env.js";
 
 /*
- * Read all compiled command definitions and prepare them for registration with the Discord API.
+ * Load all compiled command JSON definitions from dist/commands and prepare them for registration with Discord.
  */
 async function loadCommandData() {
   const commands: any[] = [];
@@ -33,7 +33,7 @@ async function register() {
   const commands = await loadCommandData();
 
   /*
-   * Overwrite the guild’s existing slash commands with the updated command list.
+   * Replace the guild’s previously registered slash commands with the current build output.
    */
   await rest.put(Routes.applicationGuildCommands(env.appId, env.guildId), {
     body: commands,
