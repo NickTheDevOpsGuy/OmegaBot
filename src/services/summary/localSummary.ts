@@ -50,7 +50,7 @@ export function localSummary(text: string): string {
     .join(", ");
 
   /*
-   * Break the messag
+   * Produce the final formatted summary string returned to the user.
    */
   return (
     "Summary of recent messages:\n" +
