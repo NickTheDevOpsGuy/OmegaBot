@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   lint-typecheck:
-    name:
+    name: 🤖 OmegaBot
     runs-on: ubuntu-latest
 
     defaults:
