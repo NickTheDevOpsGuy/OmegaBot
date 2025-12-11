@@ -88,6 +88,7 @@ OmegaBot is online
 
 ```
 .
+├── .env.example
 ├── .github
 │   ├── ISSUE_TEMPLATE
 │   │   ├── bug.yml
@@ -113,6 +114,8 @@ OmegaBot is online
 ├── package.json
 ├── README.md
 ├── scripts
+│   └── precheck.sh
+├── scripts copy
 │   └── precheck.sh
 ├── src
 │   ├── bot.ts
