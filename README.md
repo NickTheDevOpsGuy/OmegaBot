@@ -16,6 +16,7 @@ OmegaBot is a modular Discord bot designed to support development projects with 
 ## Features
 
 Current features:
+
 - Slash command system
 - Ping command for testing
 - Summary command with local summary mode
@@ -23,6 +24,7 @@ Current features:
 - Simple and readable project structure
 
 Planned features:
+
 - FAQ storage and quick lookup
 - GitHub issues and pull request lookups
 - Pull request announcements
@@ -32,6 +34,7 @@ Planned features:
 ## Getting Started
 
 ### Requirements
+
 - Node 18 or newer
 - A Discord bot token
 - A development server where you have Manage Server permissions
@@ -80,8 +83,12 @@ OmegaBot is online
 
 ## Project Structure
 
+<details>
+<summary>📁 Click to expand file structure</summary>
+
 ```
 .
+├── .env.example
 ├── .github
 │   ├── ISSUE_TEMPLATE
 │   │   ├── bug.yml
@@ -92,7 +99,7 @@ OmegaBot is online
 │   │   └── question_discussion.yml
 │   ├── pull_request_template.md
 │   └── workflows
-│       └── FollowTheFlow.yml
+│       └── OmegaBot.yml
 ├── .gitignore
 ├── .husky
 │   ├── pre-commit
@@ -101,17 +108,22 @@ OmegaBot is online
 │   ├── banner.png
 │   └── omegabot.png
 ├── CONTRIBUTORS.md
+├── eslint.config.ts
 ├── LICENSE
 ├── package-lock.json
 ├── package.json
 ├── README.md
 ├── scripts
 │   └── precheck.sh
+├── scripts copy
+│   └── precheck.sh
 ├── src
 │   ├── bot.ts
 │   ├── commands
 │   │   ├── general
 │   │   │   └── ping.ts
+│   │   ├── history
+│   │   │   └── history.ts
 │   │   └── summary
 │   │       └── summary.ts
 │   ├── config
@@ -127,6 +139,9 @@ OmegaBot is online
 │           └── summarizer.ts
 └── tsconfig.json
 ```
+
+</details>
+
 ---
 
 ## Extending OmegaBot
