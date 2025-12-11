@@ -1,5 +1,5 @@
 # .github/workflows/OmegaBot.yml
-name: 🤖 OmegaBot
+name: 🔍 Lint · Typecheck · Format
 
 on:
   pull_request:
