@@ -4,7 +4,11 @@ import { handleInteraction } from "./services/discord/interactionHandler.js";
 import { env } from "./config/env.js";
 
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds]
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent
+  ]
 }) as CommandClient;
 
 client.commands = new Map();
