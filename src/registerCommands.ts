@@ -33,7 +33,7 @@ async function register() {
   const commands = await loadCommandData();
 
   /*
-   * Replace the guild’s previously registered slash commands with the current build output.
+   * Replace all existing guild slash commands with the freshly built definitions.
    */
   await rest.put(Routes.applicationGuildCommands(env.appId, env.guildId), {
     body: commands,
