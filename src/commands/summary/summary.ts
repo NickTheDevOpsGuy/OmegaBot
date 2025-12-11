@@ -30,7 +30,9 @@ export async function execute(
 ): Promise<void> {
   const count = interaction.options.getInteger("count") ?? 50;
 
-  await interaction.deferReply();
+  try {
+    // FIXED: Use flags instead of ephemeral: true
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   const messages = await interaction.channel?.messages.fetch({ limit: count });
   /**
