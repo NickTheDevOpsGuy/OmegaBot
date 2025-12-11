@@ -3,6 +3,9 @@ import fs from "fs";
 import path from "path";
 import { env } from "./config/env.js";
 
+/*
+ * Read all compiled command definitions and prepare them for registration with the Discord API.
+ */
 async function loadCommandData() {
   const commands: any[] = [];
   // Read built JS commands from dist
@@ -22,20 +25,27 @@ async function loadCommandData() {
   }
   return commands;
 }
-
+/*
+ * Register all slash commands with Discord for the configured application and guild.
+ */
 async function register() {
   const rest = new REST({ version: "10" }).setToken(env.token);
   const commands = await loadCommandData();
 
-  await rest.put(
-    Routes.applicationGuildCommands(env.appId, env.guildId),
-    { body: commands }
-  );
+  /*
+   * Overwrite the guild’s existing slash commands with the updated command list.
+   */
+  await rest.put(Routes.applicationGuildCommands(env.appId, env.guildId), {
+    body: commands,
+  });
 
   console.log("Commands registered");
 }
 
-register().catch(err => {
+/*
+ * Report failures clearly and exit with a non-zero status.
+ */
+register().catch((err) => {
   console.error("Failed to register commands:", err);
   process.exit(1);
 });

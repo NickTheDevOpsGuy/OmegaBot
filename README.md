@@ -16,6 +16,7 @@ OmegaBot is a modular Discord bot designed to support development projects with 
 ## Features
 
 Current features:
+
 - Slash command system
 - Ping command for testing
 - Summary command with local summary mode
@@ -23,6 +24,7 @@ Current features:
 - Simple and readable project structure
 
 Planned features:
+
 - FAQ storage and quick lookup
 - GitHub issues and pull request lookups
 - Pull request announcements
@@ -32,6 +34,7 @@ Planned features:
 ## Getting Started
 
 ### Requirements
+
 - Node 18 or newer
 - A Discord bot token
 - A development server where you have Manage Server permissions
@@ -127,6 +130,7 @@ OmegaBot is online
 │           └── summarizer.ts
 └── tsconfig.json
 ```
+
 ---
 
 ## Extending OmegaBot

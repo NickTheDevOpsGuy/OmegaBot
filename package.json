@@ -5,7 +5,9 @@
   "scripts": {
     "build": "tsc",
     "dev": "npm run build && node dist/bot.js",
-    "register": "npm run build && node dist/registerCommands.js"
+    "register": "npm run build && node dist/registerCommands.js",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check"
   },
   "dependencies": {
     "discord.js": "^14.14.1",
