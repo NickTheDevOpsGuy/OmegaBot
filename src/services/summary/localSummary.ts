@@ -1,22 +1,30 @@
 /*
- * Select the top 5 most frequent meaningful words to highlight in the summary.
+ * Produce a simple heuristic summary of recent messages by counting:
+ * - total messages
+ * - unique participants
+ * - frequent words
+ * - the longest (most detailed) message
  */
 export function localSummary(text: string): string {
   const lines = text.split("\n");
+  const total = lines.length;
 
   const users = new Set<string>();
   let longest = "";
   const keywords: Record<string, number> = {};
 
   /*
-   * Iterate through each message and extract metadata for the summary.
+   * Iterate through each line and extract metadata for the summary.
+   * Expected format per line: "username: message text"
    */
   for (const line of lines) {
     /*
-     * Separate the username and message content (format: “user: message”).
+     * Separate the username and message content.
      */
     const [user, msg] = line.split(": ");
-    if (user) users.add(user);
+    if (user) {
+      users.add(user);
+    }
 
     /*
      * Track the longest message so we can surface it as the detailed example.
@@ -32,14 +40,17 @@ export function localSummary(text: string): string {
       msg.split(/\s+/).forEach((word) => {
         const w = word.toLowerCase();
         if (!w) return;
-        if (!keywords[w]) keywords[w] = 0;
+        if (!keywords[w]) {
+          keywords[w] = 0;
+        }
         keywords[w]++;
       });
     }
   }
 
   /*
-   * Break the message into lowercase words and count how often each appears.
+   * Select the top 5 most frequent meaningful words to highlight in the summary.
+   * We ignore very short tokens (length <= 3) to skip things like "the", "and".
    */
   const topWords = Object.entries(keywords)
     .filter(([k]) => k.length > 3)
@@ -52,7 +63,10 @@ export function localSummary(text: string): string {
    * Produce the final formatted summary string returned to the user.
    */
   return (
-    "Recent conversation (oldest to newest):\n\n" +
-    numbered
+    "Summary of recent messages:\n" +
+    `Messages: ${total}\n` +
+    `Participants: ${users.size}\n` +
+    `Top words: ${topWords || "none"}\n\n` +
+    `Most detailed message:\n${longest}`
   );
 }
