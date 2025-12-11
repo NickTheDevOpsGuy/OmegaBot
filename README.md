@@ -98,7 +98,7 @@ OmegaBot is online
 │   │   └── question_discussion.yml
 │   ├── pull_request_template.md
 │   └── workflows
-│       └── FollowTheFlow.yml
+│       └── OmegaBot.yml
 ├── .gitignore
 ├── .husky
 │   ├── pre-commit
@@ -107,6 +107,7 @@ OmegaBot is online
 │   ├── banner.png
 │   └── omegabot.png
 ├── CONTRIBUTORS.md
+├── eslint.config.ts
 ├── LICENSE
 ├── package-lock.json
 ├── package.json

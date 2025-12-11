@@ -7,7 +7,9 @@
     "dev": "npm run build && node dist/bot.js",
     "register": "npm run build && node dist/registerCommands.js",
     "format": "prettier . --write",
-    "format:check": "prettier . --check"
+    "format:check": "prettier . --check",
+    "lint": "eslint . --ext .ts --max-warnings=0",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "discord.js": "^14.14.1",
@@ -16,7 +18,10 @@
   },
   "devDependencies": {
     "@types/node": "^24.10.2",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "eslint": "^9.12.0",
+    "@eslint/js": "^9.12.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.3.3"
   }
 }
