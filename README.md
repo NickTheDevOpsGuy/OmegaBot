@@ -83,6 +83,9 @@ OmegaBot is online
 
 ## Project Structure
 
+<details>
+<summary>📁 Click to expand file structure</summary>
+
 ```
 .
 ├── .github
@@ -115,6 +118,8 @@ OmegaBot is online
 │   ├── commands
 │   │   ├── general
 │   │   │   └── ping.ts
+│   │   ├── history
+│   │   │   └── history.ts
 │   │   └── summary
 │   │       └── summary.ts
 │   ├── config
@@ -130,6 +135,8 @@ OmegaBot is online
 │           └── summarizer.ts
 └── tsconfig.json
 ```
+
+</details>
 
 ---
 
