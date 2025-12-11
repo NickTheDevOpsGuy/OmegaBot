@@ -3,7 +3,6 @@
  */
 export function localSummary(text: string): string {
   const lines = text.split("\n");
-  const total = lines.length;
 
   const users = new Set<string>();
   let longest = "";
@@ -53,10 +52,7 @@ export function localSummary(text: string): string {
    * Produce the final formatted summary string returned to the user.
    */
   return (
-    "Summary of recent messages:\n" +
-    `Messages: ${total}\n` +
-    `Participants: ${users.size}\n` +
-    `Top words: ${topWords || "none"}\n\n` +
-    `Most detailed message:\n${longest}`
+    "Recent conversation (oldest to newest):\n\n" +
+    numbered
   );
 }
