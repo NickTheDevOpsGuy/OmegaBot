@@ -71,5 +71,5 @@ export async function execute(
     return;
   }
 
- await interaction.editReply(text);
+  await interaction.editReply(text);
 }
