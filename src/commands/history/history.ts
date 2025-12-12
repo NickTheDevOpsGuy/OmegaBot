@@ -54,7 +54,18 @@ export async function execute(
    * Build a readable transcript.
    */
   const text = userMessages
-    .map((m) => `${m.author.username}: ${m.content}`)
+    .map((m) => {
+      const dt = new Date(m.createdTimestamp).toLocaleString([], {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      });
+
+      return `[${dt}] ${m.author.username}: ${m.content}`;
+    })
     .join("\n");
 
   /**
