@@ -115,14 +115,13 @@ OmegaBot is online
 ├── README.md
 ├── scripts
 │   └── precheck.sh
-├── scripts copy
-│   └── precheck.sh
 ├── src
 │   ├── bot.ts
 │   ├── commands
 │   │   ├── general
 │   │   │   └── ping.ts
 │   │   ├── history
+│   │   │   ├── buildTranscript.ts
 │   │   │   └── history.ts
 │   │   └── summary
 │   │       └── summary.ts
@@ -133,10 +132,12 @@ OmegaBot is online
 │       ├── discord
 │       │   ├── commandLoader.ts
 │       │   └── interactionHandler.ts
-│       └── summary
-│           ├── llmSummary.ts
-│           ├── localSummary.ts
-│           └── summarizer.ts
+│       ├── summary
+│       │   ├── llmSummary.ts
+│       │   ├── localSummary.ts
+│       │   └── summarizer.ts
+│       └── time
+│           └── formatTimestamp.ts
 └── tsconfig.json
 ```
 
