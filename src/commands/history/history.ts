@@ -34,7 +34,7 @@ export type TranscriptResult = {
  */
 export function buildTranscript(
   messages: TranscriptMessage[],
-  options: TranscriptOptions
+  options: TranscriptOptions,
 ): TranscriptResult {
   const {
     includeTimestamp,
