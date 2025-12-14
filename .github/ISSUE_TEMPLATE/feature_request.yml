@@ -1,6 +1,7 @@
 name: Feature Request
 description: Suggest a new capability or improvement.
 labels: [feature]
+
 body:
   - type: textarea
     id: description
@@ -10,20 +11,36 @@ body:
       placeholder: A clear, concise summary of the idea.
     validations:
       required: true
+
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance Criteria
+      description: What must be true for this feature to be considered complete?
+      placeholder: |
+        - [ ] Condition 1
+        - [ ] Condition 2
+        - [ ] Condition 3
+    validations:
+      required: true
+
   - type: textarea
     id: proposal
     attributes:
       label: Proposed Solution
       placeholder: How would this work? Any rough UI/UX or API?
+
   - type: textarea
     id: screenshots
     attributes:
       label: Screenshots / Mockups (optional)
+
   - type: textarea
     id: context
     attributes:
       label: Additional Context
       placeholder: Related issues/PRs, links, tradeoffs.
+
   - type: checkboxes
     id: checklist
     attributes:
