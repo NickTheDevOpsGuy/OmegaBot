@@ -9,7 +9,11 @@
  * @param {string} timeZone - IANA timezone (ex: "UTC", "America/New_York")
  * @returns {string}
  */
-export function formatTimestamp(ts: number, locale = "en-GB", timeZone = "UTC") {
+export function formatTimestamp(
+  ts: number,
+  locale = "en-GB",
+  timeZone = "UTC",
+) {
   return new Date(ts).toLocaleString(locale, {
     timeZone,
     year: "numeric",
