@@ -115,8 +115,6 @@ OmegaBot is online
 ├── README.md
 ├── scripts
 │   └── precheck.sh
-├── scripts copy
-│   └── precheck.sh
 ├── src
 │   ├── bot.ts
 │   ├── commands
@@ -133,10 +131,14 @@ OmegaBot is online
 │       ├── discord
 │       │   ├── commandLoader.ts
 │       │   └── interactionHandler.ts
-│       └── summary
-│           ├── llmSummary.ts
-│           ├── localSummary.ts
-│           └── summarizer.ts
+│       ├── summary
+│       │   ├── llmSummary.ts
+│       │   ├── localSummary.ts
+│       │   └── summarizer.ts
+│       ├── time
+│       │   └── formatTimestamp.ts
+│       └── transcript
+│           └── buildTranscript.ts
 └── tsconfig.json
 ```
 

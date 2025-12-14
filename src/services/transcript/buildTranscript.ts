@@ -1,4 +1,4 @@
-import { formatTimestamp } from "../../services/time/formatTimestamp.js";
+import { formatTimestamp } from "../time/formatTimestamp.js";
 
 /**
  * Minimal shape required from a Discord message
