@@ -121,7 +121,6 @@ OmegaBot is online
 │   │   ├── general
 │   │   │   └── ping.ts
 │   │   ├── history
-│   │   │   ├── buildTranscript.ts
 │   │   │   └── history.ts
 │   │   └── summary
 │   │       └── summary.ts
@@ -136,8 +135,10 @@ OmegaBot is online
 │       │   ├── llmSummary.ts
 │       │   ├── localSummary.ts
 │       │   └── summarizer.ts
-│       └── time
-│           └── formatTimestamp.ts
+│       ├── time
+│       │   └── formatTimestamp.ts
+│       └── transcript
+│           └── buildTranscript.ts
 └── tsconfig.json
 ```
 
