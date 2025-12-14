@@ -10,6 +10,17 @@ body:
     validations:
       required: true
   - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance Criteria
+      description: What must be true for this feature to be considered complete?
+      placeholder: |
+        - [ ] Condition 1
+        - [ ] Condition 2
+        - [ ] Condition 3
+    validations:
+      required: true
+  - type: textarea
     id: scope
     attributes:
       label: Scope / Affected Area
