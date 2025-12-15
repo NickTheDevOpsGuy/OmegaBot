@@ -9,6 +9,7 @@
     "format": "prettier . --write",
     "format:check": "prettier . --check",
     "lint": "eslint . --ext .ts --max-warnings=0",
+    "prepare": "husky",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
