@@ -124,6 +124,10 @@ OmegaBot is online
 │   ├── banner.png
 │   └── omegabot.png
 ├── CONTRIBUTORS.md
+├── docs
+│   ├── commands.md
+│   ├── dev-notes.md
+│   └── transcripts.md
 ├── eslint.config.ts
 ├── LICENSE
 ├── package-lock.json
@@ -134,6 +138,7 @@ OmegaBot is online
 ├── src
 │   ├── bot.ts
 │   ├── commands
+│   │   ├── .DS_Store
 │   │   ├── general
 │   │   │   └── ping.ts
 │   │   ├── history
