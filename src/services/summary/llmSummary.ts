@@ -44,8 +44,7 @@ ${text}
   /**
    * Extract the model output, defaulting to a fallback message if no content is returned.
    */
-  const content =
-    response.choices?.[0]?.message?.content ?? "LLM returned no content.";
+  const content = response.choices?.[0]?.message?.content ?? "LLM returned no content.";
 
   /**
    * Return the cleaned summary text.

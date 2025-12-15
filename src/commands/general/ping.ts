@@ -1,7 +1,4 @@
-import {
-  SlashCommandBuilder,
-  type ChatInputCommandInteraction,
-} from "discord.js";
+import { SlashCommandBuilder, type ChatInputCommandInteraction } from "discord.js";
 
 /**
  * Defines the /ping command.
@@ -11,9 +8,7 @@ export const data = new SlashCommandBuilder()
   .setName("ping")
   .setDescription("Ping test with latency");
 
-export async function execute(
-  interaction: ChatInputCommandInteraction,
-): Promise<void> {
+export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   /**
    * First reply (with fetchReply: true) returns the actual message object.
    * We use this to calculate round-trip latency between interaction and reply.
