@@ -1,15 +1,18 @@
 /**
- * Format a Unix timestamp into a readable date/time string.
+ * Format a Unix timestamp (ms) into a readable date/time string.
  *
- * - Uses 24-hour (military) time
- * - Allows caller to control locale and timezone
+ * - Uses 24-hour time (hour12: false)
+ * - Caller controls locale + timezone
  *
- * @param {number} ts - Unix timestamp (milliseconds)
- * @param {string} locale - Locale string (ex: "en-GB", "en-US")
- * @param {string} timeZone - IANA timezone (ex: "UTC", "America/New_York")
- * @returns {string}
+ * @param ts - Timestamp in milliseconds
+ * @param timeZone - IANA timezone (ex: "America/New_York")
+ * @param locale - Locale string (ex: "en-GB", "en-US")
  */
-export function formatTimestamp(ts: number, locale = "en-GB", timeZone = "UTC") {
+export function formatTimestamp(
+  ts: number,
+  timeZone: string,
+  locale: string
+): string {
   return new Date(ts).toLocaleString(locale, {
     timeZone,
     year: "numeric",
@@ -17,6 +20,6 @@ export function formatTimestamp(ts: number, locale = "en-GB", timeZone = "UTC") 
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
-    hour12: false,
+    hour12: false
   });
 }

@@ -8,15 +8,19 @@ export const data = new SlashCommandBuilder()
   .setName("ping")
   .setDescription("Ping test with latency");
 
-export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
+export async function execute(
+  interaction: ChatInputCommandInteraction,
+): Promise<void> {
   /**
-   * First reply (with fetchReply: true) returns the actual message object.
-   * We use this to calculate round-trip latency between interaction and reply.
+   * Send the initial reply.
+   * We avoid deprecated fetchReply option and instead fetch the reply after.
    */
-  const sent = await interaction.reply({
-    content: "Pinging...",
-    fetchReply: true,
-  });
+  await interaction.reply("Pinging...");
+
+  /**
+   * Fetch the bot's reply message so we can compute latency.
+   */
+  const sent = await interaction.fetchReply();
 
   /**
    * Measure latency:
@@ -33,7 +37,6 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
   /**
    * Edit the original message to show actual latency numbers.
-   * This keeps the interaction tidy instead of sending another message.
    */
   await interaction.editReply(
     `Pong. Round trip latency is ${latency}ms. WebSocket heartbeat is ${wsPing}ms.`,

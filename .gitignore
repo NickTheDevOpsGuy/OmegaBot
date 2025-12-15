@@ -33,3 +33,6 @@ Thumbs.db
 
 # Optional: ignore zip files
 *.zip
+
+# Runtime data
+data/timezones.json
