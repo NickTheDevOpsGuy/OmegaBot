@@ -10,6 +10,7 @@
     "format:check": "prettier . --check",
     "lint": "eslint . --ext .ts --max-warnings=0",
     "prepare": "husky",
+    "precheck": "bash ./scripts/precheck.sh",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
