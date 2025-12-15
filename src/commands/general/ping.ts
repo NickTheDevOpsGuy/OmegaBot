@@ -8,9 +8,7 @@ export const data = new SlashCommandBuilder()
   .setName("ping")
   .setDescription("Ping test with latency");
 
-export async function execute(
-  interaction: ChatInputCommandInteraction,
-): Promise<void> {
+export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   /**
    * Send the initial reply.
    * We avoid deprecated fetchReply option and instead fetch the reply after.

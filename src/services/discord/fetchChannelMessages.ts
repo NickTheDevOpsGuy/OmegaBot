@@ -16,11 +16,7 @@ export async function fetchChannelMessages(
   channel: TextBasedChannel,
   options: FetchMessagesOptions = {},
 ): Promise<Message[]> {
-  const {
-    count = 50,
-    before,
-    after,
-  } = options;
+  const { count = 50, before, after } = options;
 
   const fetchOptions: {
     limit: number;

@@ -8,11 +8,7 @@
  * @param timeZone - IANA timezone (ex: "America/New_York")
  * @param locale - Locale string (ex: "en-GB", "en-US")
  */
-export function formatTimestamp(
-  ts: number,
-  timeZone: string,
-  locale: string
-): string {
+export function formatTimestamp(ts: number, timeZone: string, locale: string): string {
   return new Date(ts).toLocaleString(locale, {
     timeZone,
     year: "numeric",
@@ -20,6 +16,6 @@ export function formatTimestamp(
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
-    hour12: false
+    hour12: false,
   });
 }
