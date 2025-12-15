@@ -15,7 +15,7 @@ logs/
 *.log
 
 # Editor artifacts
-*.DS_Store
+.DS_Store
 .vscode/
 .idea/
 
