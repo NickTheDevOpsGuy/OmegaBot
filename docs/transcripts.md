@@ -28,6 +28,7 @@ Format:
 ```
 
 Rules:
+
 - Oldest → newest
 - Bot messages excluded
 - Empty messages ignored
@@ -62,9 +63,11 @@ buildTranscript(
 
 ```ts
 {
-  createdTimestamp: number
-  content: string
-  author: { username: string }
+  createdTimestamp: number;
+  content: string;
+  author: {
+    username: string;
+  }
 }
 ```
 
@@ -87,14 +90,15 @@ buildTranscript(
 
 ```ts
 {
-  text: string
-  lineCount: number
-  truncated: boolean
-  tooLong: boolean
+  text: string;
+  lineCount: number;
+  truncated: boolean;
+  tooLong: boolean;
 }
 ```
 
 This allows calling commands to decide:
+
 - DM vs file attachment
 - Pagination vs truncation
 - User feedback messaging
@@ -115,12 +119,13 @@ Commands do **not** silently fail when limits are exceeded.
 
 ## Commands Using Transcripts
 
-| Command | Purpose |
-|---|---|
-| `/history` | Raw message playback via DM |
+| Command    | Purpose                       |
+| ---------- | ----------------------------- |
+| `/history` | Raw message playback via DM   |
 | `/summary` | Transcript → summary pipeline |
 
 Future commands (planned):
+
 - `/playback`
 - `/export`
 - `/timeline`
@@ -142,6 +147,6 @@ Planned improvements that this design supports:
 
 > Fetch logic belongs in commands  
 > Formatting belongs in services  
-> Decisions belong at the edge  
+> Decisions belong at the edge
 
 This separation keeps features easy to extend without refactoring.

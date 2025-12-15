@@ -13,6 +13,7 @@ Every slash command must do **one** of the following within 3 seconds:
 - `deferReply()`
 
 Failing to do this causes:
+
 - Interaction timeout
 - Silent failures
 - “This interaction failed” messages
@@ -28,13 +29,17 @@ Failing to do this causes:
 ## Ephemeral vs DM
 
 ### Ephemeral
+
 Use when:
+
 - Acknowledging success/failure
 - Showing short status messages
 - Avoiding channel noise
 
 ### DM
+
 Use when:
+
 - Output is long
 - Content is private
 - Transcript or summary is generated
@@ -56,6 +61,7 @@ fetch
 ```
 
 Important notes:
+
 - Discord returns a `Collection`, not an array
 - Sorting must be explicit
 - Missing permissions can fail silently
@@ -79,6 +85,7 @@ Without **Read Message History**, fetch can return empty results.
 ## Gateway Intents
 
 Ensure these are enabled:
+
 - `Guilds`
 - `GuildMessages`
 - `MessageContent` (if needed)
@@ -107,10 +114,12 @@ Always provide `.env.example`.
 ## Command Registration
 
 During development:
+
 - Prefer **guild commands**
 - Faster propagation (seconds)
 
 Production:
+
 - Global commands
 - Can take up to 1 hour to update
 
@@ -119,6 +128,7 @@ Production:
 ## Logging Strategy (Recommended)
 
 At minimum:
+
 - Log errors server-side
 - Never expose stack traces to users
 - Prefix logs by feature
@@ -144,6 +154,6 @@ Examples:
 
 Small helpers  
 Clear boundaries  
-No magic  
+No magic
 
 If logic feels duplicated, it probably belongs in `services/`.

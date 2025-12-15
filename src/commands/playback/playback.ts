@@ -10,7 +10,10 @@ import {
 } from "discord.js";
 import { fetchChannelMessages } from "../../services/discord/fetchChannelMessages.js";
 import { buildTranscript } from "../../services/transcript/buildTranscript.js";
-import { HISTORY_DEFAULTS, DISCORD_SAFE_TEXT_LIMIT } from "../../services/transcript/defaults.js";
+import {
+  HISTORY_DEFAULTS,
+  DISCORD_SAFE_TEXT_LIMIT,
+} from "../../services/transcript/defaults.js";
 
 function chunkText(text: string, maxChars: number): string[] {
   if (text.length <= maxChars) return [text];
@@ -70,7 +73,11 @@ export async function execute(
     return;
   }
 
-  const msgs = await fetchChannelMessages(interaction.channel, { count, before, after });
+  const msgs = await fetchChannelMessages(interaction.channel, {
+    count,
+    before,
+    after,
+  });
 
   if (msgs.length === 0) {
     await interaction.editReply("No usable messages found for playback.");
@@ -127,7 +134,8 @@ export async function execute(
       }
 
       if (btn.customId === "pb_prev") index = Math.max(0, index - 1);
-      if (btn.customId === "pb_next") index = Math.min(pages.length - 1, index + 1);
+      if (btn.customId === "pb_next")
+        index = Math.min(pages.length - 1, index + 1);
 
       await btn.update({
         content: `Page ${index + 1}/${pages.length}\n\n${pages[index]}`,
