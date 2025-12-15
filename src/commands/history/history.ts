@@ -1,90 +1,105 @@
-import { formatTimestamp } from "../../services/time/formatTimestamp.js";
+// src/commands/history/history.ts
+
+import {
+  SlashCommandBuilder,
+  AttachmentBuilder,
+  MessageFlags,
+  type ChatInputCommandInteraction,
+} from "discord.js";
+import {
+  buildTranscript,
+  type TranscriptMessage,
+} from "../../services/transcript/buildTranscript.js";
+import { HISTORY_DEFAULTS } from "../../services/transcript/defaults.js";
+import { getUserTimezone } from "../../services/timezone/timezoneStore.js";
 
 /**
- * Minimal shape required from a Discord message
- * so this helper stays framework-agnostic.
+ * /history command
+ * Returns the last N raw user messages as a DM to the requester.
  */
-export type TranscriptMessage = {
-  createdTimestamp: number;
-  content: string;
-  author: {
-    username: string;
-  };
-};
+export const data = new SlashCommandBuilder()
+  .setName("history")
+  .setDescription("DMs you the most recent messages in this channel")
+  .addIntegerOption((opt) =>
+    opt
+      .setName("count")
+      .setDescription("How many messages to fetch")
+      .setMinValue(5)
+      .setMaxValue(50),
+  );
 
-export type TranscriptOptions = {
-  includeTimestamp: boolean;
-  includeAuthor: boolean;
-  maxLines?: number;
-  maxChars?: number;
-  timeZone?: string;
-  locale?: string;
-};
+export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
+  const count = interaction.options.getInteger("count") ?? 50;
 
-export type TranscriptResult = {
-  text: string;
-  lineCount: number;
-  truncated: boolean;
-  tooLong: boolean;
-};
+  // Ephemeral ack so only the caller sees status.
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-/**
- * Builds a readable transcript from a list of messages.
- * Responsible ONLY for formatting + truncation rules.
- */
-export function buildTranscript(
-  messages: TranscriptMessage[],
-  options: TranscriptOptions,
-): TranscriptResult {
-  const {
-    includeTimestamp,
-    includeAuthor,
-    maxLines,
-    maxChars,
-    timeZone = "UTC",
-    locale = "en-GB",
-  } = options;
-
-  const lines: string[] = [];
-  let truncated = false;
-  let tooLong = false;
-
-  for (const message of messages) {
-    if (!message?.content) continue;
-
-    const parts: string[] = [];
-
-    if (includeTimestamp) {
-      const ts = formatTimestamp(message.createdTimestamp, timeZone, locale);
-      parts.push(`[${ts}]`);
-    }
-
-    if (includeAuthor) {
-      parts.push(`${message.author.username}:`);
-    }
-
-    parts.push(message.content.trim());
-
-    const line = parts.join(" ");
-    lines.push(line);
-
-    // Enforce maxLines
-    if (maxLines && lines.length >= maxLines) {
-      truncated = true;
-      break;
-    }
-
-    // Enforce maxChars
-    if (maxChars && lines.join("\n").length >= maxChars) {
-      tooLong = true;
-      break;
-    }
+  // Guard: must be text-based to fetch messages.
+  if (!interaction.channel || !interaction.channel.isTextBased()) {
+    await interaction.editReply("This channel does not support message history.");
+    return;
   }
 
-  return {
-    text: lines.join("\n"),
-    lineCount: lines.length,
-    truncated,
-    tooLong,
-  };
+  // Fetch recent messages
+  const messages = await interaction.channel.messages.fetch({ limit: count });
+
+  // Filter non-bot + non-empty content, then sort oldest -> newest
+  const userMessages = messages
+    .filter((m) => !m.author.bot && m.content)
+    .sort((a, b) => a.createdTimestamp - b.createdTimestamp);
+
+  if (userMessages.size === 0) {
+    await interaction.editReply("No history found.");
+    return;
+  }
+
+  // Convert Discord Collection -> array in the minimal shape buildTranscript needs
+  const transcriptMessages: TranscriptMessage[] = userMessages.map((m) => ({
+    createdTimestamp: m.createdTimestamp,
+    content: m.content,
+    author: { username: m.author.username },
+  }));
+
+  // Optional per-user timezone override (fallback to defaults)
+  const userTz = getUserTimezone(interaction.user.id);
+
+  const result = buildTranscript(transcriptMessages, {
+    ...HISTORY_DEFAULTS,
+    timeZone: userTz ?? HISTORY_DEFAULTS.timeZone,
+  });
+
+  const text = result.text;
+
+  // If too large for a normal DM, send as a file
+  if (result.tooLong || text.length > 2000) {
+    const file = new AttachmentBuilder(Buffer.from(text, "utf8"), {
+      name: "history.txt",
+    });
+
+    try {
+      await interaction.user.send({
+        content: "Here is your recent chat history:",
+        files: [file],
+      });
+      await interaction.editReply("History sent to your DMs.");
+    } catch (err) {
+      console.error("[history] DM file send failed", err);
+      await interaction.editReply(
+        "I generated the history, but your DMs appear to be closed.",
+      );
+    }
+
+    return;
+  }
+
+  // Normal-length transcript -> DM as text
+  try {
+    await interaction.user.send(text);
+    await interaction.editReply("History sent to your DMs.");
+  } catch (err) {
+    console.error("[history] DM text send failed", err);
+    await interaction.editReply(
+      "I generated the history, but could not DM you. Your DMs may be closed.",
+    );
+  }
 }
