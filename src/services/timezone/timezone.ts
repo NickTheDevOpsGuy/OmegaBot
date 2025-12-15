@@ -1,13 +1,13 @@
 import {
   SlashCommandBuilder,
   MessageFlags,
-  type ChatInputCommandInteraction
+  type ChatInputCommandInteraction,
 } from "discord.js";
 import {
   assertValidTimeZone,
   clearUserTimezone,
   getUserTimezone,
-  setUserTimezone
+  setUserTimezone,
 } from "../../services/timezone/timezoneStore.js";
 
 /**
@@ -27,23 +27,15 @@ export const data = new SlashCommandBuilder()
         opt
           .setName("tz")
           .setDescription('IANA timezone like "America/New_York"')
-          .setRequired(true)
-      )
+          .setRequired(true),
+      ),
   )
   .addSubcommand((sub) =>
-    sub
-      .setName("clear")
-      .setDescription("Clear your saved timezone")
+    sub.setName("clear").setDescription("Clear your saved timezone"),
   )
-  .addSubcommand((sub) =>
-    sub
-      .setName("show")
-      .setDescription("Show your saved timezone")
-  );
+  .addSubcommand((sub) => sub.setName("show").setDescription("Show your saved timezone"));
 
-export async function execute(
-  interaction: ChatInputCommandInteraction
-): Promise<void> {
+export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   const sub = interaction.options.getSubcommand();
@@ -52,7 +44,7 @@ export async function execute(
   if (sub === "show") {
     const current = getUserTimezone(userId);
     await interaction.editReply(
-      current ? `Your timezone is set to: ${current}` : "You have no timezone set."
+      current ? `Your timezone is set to: ${current}` : "You have no timezone set.",
     );
     return;
   }
@@ -70,7 +62,7 @@ export async function execute(
     assertValidTimeZone(tz);
   } catch {
     await interaction.editReply(
-      `That timezone is not valid. Use an IANA value like "America/New_York" or "Europe/London".`
+      `That timezone is not valid. Use an IANA value like "America/New_York" or "Europe/London".`,
     );
     return;
   }

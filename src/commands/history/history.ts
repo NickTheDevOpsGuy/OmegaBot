@@ -28,9 +28,7 @@ export const data = new SlashCommandBuilder()
       .setMaxValue(50),
   );
 
-export async function execute(
-  interaction: ChatInputCommandInteraction,
-): Promise<void> {
+export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const count = interaction.options.getInteger("count") ?? 50;
 
   // Ephemeral ack so only the caller sees status.
