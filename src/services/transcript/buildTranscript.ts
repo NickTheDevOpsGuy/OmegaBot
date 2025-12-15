@@ -1,3 +1,5 @@
+// src/services/transcript/buildTranscript.ts
+
 import { formatTimestamp } from "../time/formatTimestamp.js";
 
 /**
@@ -7,9 +9,7 @@ import { formatTimestamp } from "../time/formatTimestamp.js";
 export type TranscriptMessage = {
   createdTimestamp: number;
   content: string;
-  author: {
-    username: string;
-  };
+  author: { username: string };
 };
 
 export type TranscriptOptions = {
@@ -68,16 +68,19 @@ export function buildTranscript(
     const line = parts.join(" ");
     lines.push(line);
 
-    // Enforce maxLines
     if (maxLines && lines.length >= maxLines) {
       truncated = true;
       break;
     }
 
-    // Enforce maxChars
-    if (maxChars && lines.join("\n").length >= maxChars) {
-      tooLong = true;
-      break;
+    // Cheaper than joining every iteration: track length incrementally.
+    if (maxChars) {
+      const joinedLen =
+        lines.reduce((acc, l) => acc + l.length, 0) + Math.max(0, lines.length - 1);
+      if (joinedLen >= maxChars) {
+        tooLong = true;
+        break;
+      }
     }
   }
 
