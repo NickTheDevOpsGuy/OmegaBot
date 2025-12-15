@@ -29,6 +29,7 @@ Notes:
 ## Permissions
 
 Required bot permissions:
+
 - View Channels
 - Read Message History
 - Send Messages
@@ -36,6 +37,7 @@ Required bot permissions:
 - Use Slash Commands
 
 Important:
+
 - Missing **Read Message History** causes fetches to return empty collections
 
 ---
@@ -44,8 +46,8 @@ Important:
 
 Never commit `.env`.
 
-
 Required:
+
 - `DISCORD_TOKEN`
 - `DISCORD_APP_ID`
 - `DISCORD_GUILD_ID`

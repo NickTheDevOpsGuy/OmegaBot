@@ -20,6 +20,7 @@ Default format:
 [YYYY-MM-DD HH:mm] username: message
 
 Rules:
+
 - 24-hour time
 - Locale: en-GB
 - Timezone: UTC (for now)
@@ -73,6 +74,7 @@ Summary defaults:
 ## File Fallback Strategy
 
 If transcript exceeds safe Discord limits:
+
 - Generate `.txt` file
 - Send via DM
 - Confirm delivery via ephemeral reply
