@@ -13,6 +13,8 @@
 
 OmegaBot is a modular Discord bot designed to support development projects with quick summaries, FAQs, GitHub lookups, and automated notifications. The structure is clean and fully service based which makes it easy to extend.
 
+---
+
 ## Features
 
 Current features:
@@ -30,6 +32,16 @@ Planned features:
 - Pull request announcements
 - Better summary analysis
 - Optional LLM powered summaries
+
+---
+
+## Documentation
+
+- 📘 [Command Reference](docs/commands.md)
+- 🧠 [Transcript & Summary Design](docs/transcripts.md)
+- 🛠️ [Development Notes](docs/dev-notes.md)
+
+---
 
 ## Getting Started
 
@@ -81,6 +93,8 @@ You should see:
 OmegaBot is online
 ```
 
+---
+
 ## Project Structure
 
 <details>
@@ -104,6 +118,8 @@ OmegaBot is online
 ├── .husky
 │   ├── pre-commit
 │   └── pre-push
+├── .prettierignore
+├── .prettierrc.yml
 ├── assets
 │   ├── banner.png
 │   └── omegabot.png

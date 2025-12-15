@@ -33,9 +33,7 @@ export const data = new SlashCommandBuilder()
  * 6. Try to DM the summary to the user (text or file).
  * 7. Handle and report errors gracefully.
  */
-export async function execute(
-  interaction: ChatInputCommandInteraction,
-): Promise<void> {
+export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   // Use the requested count or default to 50 messages.
   const count = interaction.options.getInteger("count") ?? 50;
 
@@ -51,9 +49,7 @@ export async function execute(
      * Some interaction contexts (like certain system channels) cannot be summarized.
      */
     if (!interaction.channel || !interaction.channel.isTextBased()) {
-      await interaction.editReply(
-        "This channel does not support summarizing messages.",
-      );
+      await interaction.editReply("This channel does not support summarizing messages.");
       return;
     }
 
@@ -83,9 +79,7 @@ export async function execute(
     /**
      * Build a simple “username: content” transcript that the summarizer can consume.
      */
-    const text = userMessages
-      .map((m) => `${m.author.username}: ${m.content}`)
-      .join("\n");
+    const text = userMessages.map((m) => `${m.author.username}: ${m.content}`).join("\n");
 
     // Generate the summary using either local or LLM mode, depending on configuration.
     const output = await summarize(text);
@@ -146,9 +140,7 @@ export async function execute(
 
     try {
       if (interaction.replied || interaction.deferred) {
-        await interaction.editReply(
-          "Something went wrong while generating the summary.",
-        );
+        await interaction.editReply("Something went wrong while generating the summary.");
       } else {
         await interaction.reply({
           content: "Something went wrong while generating the summary.",
@@ -157,10 +149,7 @@ export async function execute(
       }
     } catch (replyErr) {
       // Final fallback if even the error reply fails.
-      console.error(
-        "[summary] Failed to send fallback error message",
-        replyErr,
-      );
+      console.error("[summary] Failed to send fallback error message", replyErr);
     }
   }
 }
