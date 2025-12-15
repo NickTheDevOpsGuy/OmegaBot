@@ -25,12 +25,15 @@ export const data = new SlashCommandBuilder()
 export async function execute(
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
-  const count = interaction.options.getInteger("count") ?? SUMMARY_DEFAULTS.maxLines ?? 50;
+  const count =
+    interaction.options.getInteger("count") ?? SUMMARY_DEFAULTS.maxLines ?? 50;
 
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   if (!interaction.channel || !interaction.channel.isTextBased()) {
-    await interaction.editReply("This channel does not support summarizing messages.");
+    await interaction.editReply(
+      "This channel does not support summarizing messages.",
+    );
     return;
   }
 
@@ -65,7 +68,9 @@ export async function execute(
       await interaction.editReply("Summary sent to your DMs.");
     } catch (err) {
       console.error("[summary] DM file send failed", err);
-      await interaction.editReply("I generated the summary, but your DMs appear to be closed.");
+      await interaction.editReply(
+        "I generated the summary, but your DMs appear to be closed.",
+      );
     }
     return;
   }
@@ -75,6 +80,8 @@ export async function execute(
     await interaction.editReply("Summary sent to your DMs.");
   } catch (err) {
     console.error("[summary] DM text send failed", err);
-    await interaction.editReply("I generated the summary, but could not DM you. Your DMs may be closed.");
+    await interaction.editReply(
+      "I generated the summary, but could not DM you. Your DMs may be closed.",
+    );
   }
 }

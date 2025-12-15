@@ -24,12 +24,15 @@ export const data = new SlashCommandBuilder()
 export async function execute(
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
-  const count = interaction.options.getInteger("count") ?? HISTORY_DEFAULTS.maxLines ?? 50;
+  const count =
+    interaction.options.getInteger("count") ?? HISTORY_DEFAULTS.maxLines ?? 50;
 
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   if (!interaction.channel || !interaction.channel.isTextBased()) {
-    await interaction.editReply("This channel does not support message history.");
+    await interaction.editReply(
+      "This channel does not support message history.",
+    );
     return;
   }
 
@@ -57,7 +60,9 @@ export async function execute(
       await interaction.editReply("History sent to your DMs.");
     } catch (err) {
       console.error("[history] DM file send failed", err);
-      await interaction.editReply("I generated the history, but your DMs appear to be closed.");
+      await interaction.editReply(
+        "I generated the history, but your DMs appear to be closed.",
+      );
     }
     return;
   }
@@ -67,6 +72,8 @@ export async function execute(
     await interaction.editReply("History sent to your DMs.");
   } catch (err) {
     console.error("[history] DM text send failed", err);
-    await interaction.editReply("I generated the history, but could not DM you. Your DMs may be closed.");
+    await interaction.editReply(
+      "I generated the history, but could not DM you. Your DMs may be closed.",
+    );
   }
 }
