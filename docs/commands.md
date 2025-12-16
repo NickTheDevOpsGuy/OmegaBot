@@ -1,59 +1,93 @@
-# Commands Overview
+# OmegaBot Commands
 
-This document describes all current and planned slash commands in OmegaBot.
-
----
-
-## /ping
-
-Health check command.
-
-Purpose:
-
-- Confirms the bot is online
-- Useful for verifying permissions and connectivity
+This document lists all available slash commands supported by OmegaBot.
 
 ---
 
-## /history
+## General Commands
 
-Chat playback command.
+### /ping
 
-Behavior:
+Checks whether the bot is online and reports latency.
 
-- Fetches the last N user messages from the current channel
-- Filters out bot messages
-- Sorts messages oldest → newest
-- Sends transcript via DM
-- Falls back to a file attachment if over Discord limits
+**Usage**
 
-Options:
-
-- `count` (number): How many messages to fetch
+```
+/ping
+```
 
 ---
 
-## /summary
+## History & Summary Commands
 
-Conversation summarization command.
+### /history
 
-Behavior:
+Fetches recent messages from the current channel and sends them to you via DM.
 
-- Fetches recent messages
-- Builds a transcript using the shared transcript builder
-- Runs local or LLM summarization (depending on configuration)
-- Sends result via DM
+**Options**
 
-Options:
-
-- `count` (number): How many messages to summarize
+- `count` (optional): Number of messages to fetch (default: 50)
 
 ---
 
-## Planned / Future Commands
+### /summary
 
-- `/faq` — Lookup stored FAQs
-- `/github issue` — Fetch GitHub issue details
-- `/github pr` — Fetch pull request details
-- `/announce pr` — Announce merged PRs
-- `/playback` — Paginated chat playback
+Generates a summary of recent channel activity and sends it via DM.
+
+**Notes**
+
+- Uses local summarization by default
+- LLM-based summarization may be enabled via configuration
+
+---
+
+## GitHub Commands
+
+These commands use the GitHub REST API with authenticated requests.
+
+### /gh issue
+
+Fetch a single GitHub issue by number.
+
+**Usage**
+
+```
+/gh issue owner:<org|user> repo:<repo> number:<issue_number>
+```
+
+---
+
+### /gh issues
+
+List open issues for a repository.
+
+**Usage**
+
+```
+/gh issues owner:<org|user> repo:<repo> limit:<n> labels:<comma,separated>
+```
+
+**Notes**
+
+- Defaults to open issues
+- Pull requests are filtered out by default
+
+---
+
+### /pr
+
+Fetch a GitHub pull request by number.
+
+**Usage**
+
+```
+/pr owner:<org|user> repo:<repo> number:<pr_number>
+```
+
+---
+
+## Notes
+
+- GitHub commands require a valid GitHub Personal Access Token
+- Results are returned as ephemeral responses by default
+- Errors are handled gracefully and reported to the user

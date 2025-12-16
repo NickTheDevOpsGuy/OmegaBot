@@ -126,6 +126,8 @@ OmegaBot is online
 │   ├── banner.png
 │   └── omegabot.png
 ├── CONTRIBUTORS.md
+├── data
+│   └── timezones.json
 ├── docs
 │   ├── commands.md
 │   ├── dev-notes.md
@@ -142,6 +144,9 @@ OmegaBot is online
 │   ├── commands
 │   │   ├── general
 │   │   │   └── ping.ts
+│   │   ├── github
+│   │   │   ├── gh.ts
+│   │   │   └── pr.ts
 │   │   ├── history
 │   │   │   └── history.ts
 │   │   ├── playback
@@ -156,6 +161,10 @@ OmegaBot is online
 │       │   ├── commandLoader.ts
 │       │   ├── fetchChannelMessages.ts
 │       │   └── interactionHandler.ts
+│       ├── github
+│       │   ├── githubApi.ts
+│       │   ├── githubClient.ts
+│       │   └── types.ts
 │       ├── summary
 │       │   ├── llmSummary.ts
 │       │   ├── localSummary.ts
