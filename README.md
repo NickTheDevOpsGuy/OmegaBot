@@ -17,21 +17,23 @@ OmegaBot is a modular Discord bot designed to support development projects with 
 
 ## Features
 
-Current features:
+Current features
 
-- Slash command system
-- Ping command for testing
-- Summary command with local summary mode
-- Automatic command loading
-- Simple and readable project structure
+- Modular slash-command system (auto-loaded from dist/commands)
+- /ping command for testing
+- /summary command with local summarizer and optional LLM mode (via SUMMARY_MODE)
+- /history command that DMs recent channel history (with file fallback for long output)
+- Shared transcript builder + consistent transcript defaults
+- Command registration script for fast guild iteration
 
-Planned features:
+Planned features
 
 - FAQ storage and quick lookup
 - GitHub issues and pull request lookups
 - Pull request announcements
-- Better summary analysis
-- Optional LLM powered summaries
+- Pagination for large history/playback (buttons or follow-ups)
+- Per-user timezone support (store IANA timezone and apply to transcripts)
+- Improved summary output (highlights, action items, structured sections)
 
 ---
 
@@ -118,12 +120,18 @@ OmegaBot is online
 ├── .husky
 │   ├── pre-commit
 │   └── pre-push
+├── .prettierignore
+├── .prettierrc.yml
 ├── assets
 │   ├── banner.png
 │   └── omegabot.png
 ├── CONTRIBUTORS.md
+├── data
+│   └── timezones.json
 ├── docs
-│   └── commands.md
+│   ├── commands.md
+│   ├── dev-notes.md
+│   └── transcripts.md
 ├── eslint.config.ts
 ├── LICENSE
 ├── package-lock.json
@@ -140,6 +148,8 @@ OmegaBot is online
 │   │   │   └── history.ts
 │   │   ├── pagination
 │   │   │   └── pagination.ts
+│   │   ├── playback
+│   │   │   └── playback.ts
 │   │   └── summary
 │   │       └── summary.ts
 │   ├── config
@@ -148,6 +158,7 @@ OmegaBot is online
 │   └── services
 │       ├── discord
 │       │   ├── commandLoader.ts
+│       │   ├── fetchChannelMessages.ts
 │       │   └── interactionHandler.ts
 │       ├── summary
 │       │   ├── llmSummary.ts

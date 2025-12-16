@@ -76,8 +76,7 @@ export function buildTranscript(
     // Cheaper than joining every iteration: track length incrementally.
     if (maxChars) {
       const joinedLen =
-        lines.reduce((acc, l) => acc + l.length, 0) +
-        Math.max(0, lines.length - 1);
+        lines.reduce((acc, l) => acc + l.length, 0) + Math.max(0, lines.length - 1);
       if (joinedLen >= maxChars) {
         tooLong = true;
         break;

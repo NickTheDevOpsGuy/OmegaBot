@@ -21,18 +21,14 @@ export const data = new SlashCommandBuilder()
       .setMaxValue(50),
   );
 
-export async function execute(
-  interaction: ChatInputCommandInteraction,
-): Promise<void> {
+export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const count =
     interaction.options.getInteger("count") ?? HISTORY_DEFAULTS.maxLines ?? 50;
 
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   if (!interaction.channel || !interaction.channel.isTextBased()) {
-    await interaction.editReply(
-      "This channel does not support message history.",
-    );
+    await interaction.editReply("This channel does not support message history.");
     return;
   }
 

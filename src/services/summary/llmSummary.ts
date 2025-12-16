@@ -40,8 +40,7 @@ export async function llmSummary(text: string): Promise<string> {
     messages: [{ role: "user", content: prompt }],
   });
 
-  const content =
-    response.choices?.[0]?.message?.content ?? "LLM returned no content.";
+  const content = response.choices?.[0]?.message?.content ?? "LLM returned no content.";
 
   return content.trim();
 }
