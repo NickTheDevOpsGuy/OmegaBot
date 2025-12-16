@@ -1,14 +1,14 @@
 /**
- * Formats a timestamp using a specific locale and timezone.
+ * Format a Unix timestamp (ms) into a readable date/time string.
  *
- * - locale controls formatting style (en-GB, en-US, etc)
- * - timeZone must be an IANA timezone (UTC, America/New_York, Europe/London)
+ * - Uses 24-hour time (hour12: false)
+ * - Caller controls locale + timezone
+ *
+ * @param ts - Timestamp in milliseconds
+ * @param timeZone - IANA timezone (ex: "America/New_York")
+ * @param locale - Locale string (ex: "en-GB", "en-US")
  */
-export function formatTimestamp(
-  ts: number,
-  timeZone: string = "UTC",
-  locale: string = "en-GB",
-): string {
+export function formatTimestamp(ts: number, timeZone: string, locale: string): string {
   return new Date(ts).toLocaleString(locale, {
     timeZone,
     year: "numeric",

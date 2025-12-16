@@ -3,13 +3,15 @@
 import type { TranscriptOptions } from "./buildTranscript.js";
 
 /**
- * Central place for transcript defaults so commands stay consistent.
- * Commands can override these if they intentionally differ.
+ * Discord hard limit is 2000 characters.
+ * Leave headroom so we never accidentally overflow.
  */
-
-// Discord hard limit is 2000 chars. Leave headroom for labels and safety.
 export const DISCORD_SAFE_TEXT_LIMIT = 1900;
 
+/**
+ * Defaults for /history
+ * History is meant to be readable playback.
+ */
 export const HISTORY_DEFAULTS: TranscriptOptions = {
   includeTimestamp: true,
   includeAuthor: true,
@@ -19,9 +21,11 @@ export const HISTORY_DEFAULTS: TranscriptOptions = {
   locale: "en-GB",
 };
 
+/**
+ * Defaults for /summary
+ * Summary prefers signal over noise.
+ */
 export const SUMMARY_DEFAULTS: TranscriptOptions = {
-  // Summary transcript should be stable for summarizers:
-  // author helps a lot, timestamps usually add noise.
   includeTimestamp: false,
   includeAuthor: true,
   maxLines: 50,

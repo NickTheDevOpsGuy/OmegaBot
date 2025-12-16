@@ -144,6 +144,9 @@ OmegaBot is online
 │   ├── commands
 │   │   ├── general
 │   │   │   └── ping.ts
+│   │   ├── github
+│   │   │   ├── gh.ts
+│   │   │   └── pr.ts
 │   │   ├── history
 │   │   │   └── history.ts
 │   │   ├── pagination
@@ -160,12 +163,20 @@ OmegaBot is online
 │       │   ├── commandLoader.ts
 │       │   ├── fetchChannelMessages.ts
 │       │   └── interactionHandler.ts
+│       ├── github
+│       │   ├── githubApi.ts
+│       │   ├── githubClient.ts
+│       │   └── types.ts
 │       ├── summary
 │       │   ├── llmSummary.ts
 │       │   ├── localSummary.ts
 │       │   └── summarizer.ts
 │       ├── time
-│       │   └── formatTimestamp.ts
+│       │   ├── formatTimestamp.ts
+│       │   └── validateTimezone.ts
+│       ├── timezone
+│       │   ├── timezone.ts
+│       │   └── timezoneStore.ts
 │       └── transcript
 │           ├── buildTranscript.ts
 │           └── defaults.ts
