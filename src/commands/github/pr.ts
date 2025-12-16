@@ -1,6 +1,10 @@
 // src/commands/github/pr.ts
 
-import { MessageFlags, SlashCommandBuilder, type ChatInputCommandInteraction } from "discord.js";
+import {
+  MessageFlags,
+  SlashCommandBuilder,
+  type ChatInputCommandInteraction,
+} from "discord.js";
 import { GitHubApiError } from "../../services/github/githubClient.js";
 import { getPullRequest } from "../../services/github/githubApi.js";
 
