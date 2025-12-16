@@ -6,10 +6,17 @@ import {
   MessageFlags,
   type ChatInputCommandInteraction,
 } from "discord.js";
-import { fetchChannelMessages } from "../../services/discord/fetchChannelMessages.js";
-import { buildTranscript } from "../../services/transcript/buildTranscript.js";
+import {
+  buildTranscript,
+  type TranscriptMessage,
+} from "../../services/transcript/buildTranscript.js";
 import { HISTORY_DEFAULTS } from "../../services/transcript/defaults.js";
+import { getUserTimezone } from "../../services/timezone/timezoneStore.js";
 
+/**
+ * /history command
+ * Returns the last N raw user messages as a DM to the requester.
+ */
 export const data = new SlashCommandBuilder()
   .setName("history")
   .setDescription("DMs you the most recent messages in this channel")
@@ -22,28 +29,49 @@ export const data = new SlashCommandBuilder()
   );
 
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
-  const count =
-    interaction.options.getInteger("count") ?? HISTORY_DEFAULTS.maxLines ?? 50;
+  const count = interaction.options.getInteger("count") ?? 50;
 
+  // Ephemeral ack so only the caller sees status.
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
+  // Guard: must be text-based to fetch messages.
   if (!interaction.channel || !interaction.channel.isTextBased()) {
     await interaction.editReply("This channel does not support message history.");
     return;
   }
 
-  const messages = await fetchChannelMessages(interaction.channel, { count });
+  // Fetch recent messages
+  const messages = await interaction.channel.messages.fetch({ limit: count });
 
-  if (messages.length === 0) {
+  // Filter non-bot + non-empty content, then sort oldest -> newest
+  const userMessages = messages
+    .filter((m) => !m.author.bot && m.content)
+    .sort((a, b) => a.createdTimestamp - b.createdTimestamp);
+
+  if (userMessages.size === 0) {
     await interaction.editReply("No history found.");
     return;
   }
 
-  const transcript = buildTranscript(messages, HISTORY_DEFAULTS);
+  // Convert Discord Collection -> array in the minimal shape buildTranscript needs
+  const transcriptMessages: TranscriptMessage[] = userMessages.map((m) => ({
+    createdTimestamp: m.createdTimestamp,
+    content: m.content,
+    author: { username: m.author.username },
+  }));
 
-  const text = transcript.text;
+  // Optional per-user timezone override (fallback to defaults)
+  const userTz = getUserTimezone(interaction.user.id);
 
-  if (text.length > 2000) {
+  const result = buildTranscript(transcriptMessages, {
+    ...HISTORY_DEFAULTS,
+    timeZone: userTz ?? HISTORY_DEFAULTS.timeZone,
+  });
+
+  const text = result.text;
+
+  // If too large for a normal DM, send as a file
+  if (result.tooLong || text.length > 2000) {
     const file = new AttachmentBuilder(Buffer.from(text, "utf8"), {
       name: "history.txt",
     });
@@ -60,9 +88,11 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         "I generated the history, but your DMs appear to be closed.",
       );
     }
+
     return;
   }
 
+  // Normal-length transcript -> DM as text
   try {
     await interaction.user.send(text);
     await interaction.editReply("History sent to your DMs.");

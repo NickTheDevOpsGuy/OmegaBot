@@ -40,4 +40,7 @@ export const env = {
 
   // Optional, only needed when user chooses LLM summarization.
   openAIKey: process.env.OPENAI_API_KEY ?? null,
+
+  // GitHub
+  githubToken: process.env.GITHUB_TOKEN ?? null,
 };

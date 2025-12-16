@@ -1,76 +1,34 @@
-# 🛠️ Development Notes
+# Development Notes
 
-This document captures practical knowledge learned while building OmegaBot.
-It exists to save future-you time.
-
----
-
-## Interaction Lifecycle (Important)
-
-Every slash command must do **one** of the following within 3 seconds:
-
-- `reply()`
-- `deferReply()`
-
-Failing to do this causes:
-
-- Interaction timeout
-- Silent failures
-- “This interaction failed” messages
-
-### Best Practice
-
-- Defer early
-- Use ephemeral replies for status
-- Deliver results via DM when appropriate
+General development notes and gotchas for OmegaBot.
 
 ---
 
-## Ephemeral vs DM
+## Interaction Lifecycle
 
-### Ephemeral
-
-Use when:
-
-- Acknowledging success/failure
-- Showing short status messages
-- Avoiding channel noise
-
-### DM
-
-Use when:
-
-- Output is long
-- Content is private
-- Transcript or summary is generated
-
-Always handle **DM failures** gracefully.
+- Every slash command must reply or defer within 3 seconds
+- Prefer `deferReply()` + `editReply()` for async work
+- Use ephemeral replies for status updates
+- DM output when content is private
 
 ---
 
-## Message Fetching Pipeline
+## Message Fetching
 
-Standard pattern:
+Standard pipeline:
 
-```
-fetch
-→ filter bots
-→ sort oldest → newest
-→ map to minimal shape
-→ buildTranscript
-```
+fetch → filter bots → sort → map → transcript
 
-Important notes:
+Notes:
 
-- Discord returns a `Collection`, not an array
-- Sorting must be explicit
-- Missing permissions can fail silently
+- Discord returns `Collection`, convert to arrays before processing
+- Missing permissions can cause silent failures
 
 ---
 
-## Required Permissions
+## Permissions
 
-Your bot must have:
+Required bot permissions:
 
 - View Channels
 - Read Message History
@@ -78,19 +36,9 @@ Your bot must have:
 - Attach Files
 - Use Slash Commands
 
-Without **Read Message History**, fetch can return empty results.
+Important:
 
----
-
-## Gateway Intents
-
-Ensure these are enabled:
-
-- `Guilds`
-- `GuildMessages`
-- `MessageContent` (if needed)
-
-Mismatch between code and portal settings causes confusing bugs.
+- Missing **Read Message History** causes fetches to return empty collections
 
 ---
 
@@ -100,60 +48,29 @@ Never commit `.env`.
 
 Required:
 
-```
-DISCORD_TOKEN
-DISCORD_APP_ID
-DISCORD_GUILD_ID
-SUMMARY_MODE
-```
+- `DISCORD_TOKEN`
+- `DISCORD_APP_ID`
+- `DISCORD_GUILD_ID`
 
-Always provide `.env.example`.
+Optional:
 
----
+- `SUMMARY_MODE` (`local` | `llm`)
 
-## Command Registration
-
-During development:
-
-- Prefer **guild commands**
-- Faster propagation (seconds)
-
-Production:
-
-- Global commands
-- Can take up to 1 hour to update
+Always include `.env.example`.
 
 ---
 
-## Logging Strategy (Recommended)
+## Formatting & Limits
 
-At minimum:
-
-- Log errors server-side
-- Never expose stack traces to users
-- Prefix logs by feature
-
-Examples:
-
-- `[history] DM send failed`
-- `[summary] LLM request error`
+- Discord message limit: 2000 characters
+- Safe working limit: ~1900 characters
+- Use file attachments for overflow
 
 ---
 
-## Common Pitfalls
+## Debugging Checklist
 
-- Forgetting to defer replies
-- Assuming collections are arrays
-- Ignoring Discord message limits
-- Not handling closed DMs
-- Hardcoding timestamps without timezone support
-
----
-
-## Dev Philosophy
-
-Small helpers  
-Clear boundaries  
-No magic
-
-If logic feels duplicated, it probably belongs in `services/`.
+- Slash command not appearing → re-register commands
+- Bot replies but cannot DM → user has DMs closed
+- Interaction timeout → missing defer
+- Errors should be logged internally, not spammed to users
