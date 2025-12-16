@@ -1,41 +1,40 @@
+// src/services/summary/llmSummary.ts
+
 import OpenAI from "openai";
 import { env } from "../../config/env.js";
 
-/**
- * Set client
- */
 let client: OpenAI | null = null;
 
-/**
- * if OpenAPIKey is set use it for client
- */
 if (env.openAIKey) {
   client = new OpenAI({ apiKey: env.openAIKey });
 }
 
 /**
- * Generates an LLM summary of the provided text.
- * Falls back to a safe message if no API key is configured.
+ * Generate a structured summary (Markdown) from the transcript.
+ * Safe fallback if LLM mode is requested without a key.
  */
 export async function llmSummary(text: string): Promise<string> {
   if (!client) {
     return "LLM mode requested but no API key is configured.";
   }
 
-  /**
-   * Build a prompt instructing the LLM to summarize messages in a clean, neutral format.
-   */
-  const prompt = `
-You are a Discord channel summarizer.
-Summarize the following messages into a short readable summary.
-Do not include usernames or timestamps.
-Text:
-${text}
-  `;
+  const prompt = [
+    "You are a Discord channel summarizer.",
+    "Given the transcript below, produce a structured Markdown output with these sections:",
+    "## Summary (2 to 5 bullets)",
+    "## Key points (3 to 8 bullets)",
+    "## Action items (if any, otherwise say 'None')",
+    "## Open questions (if any, otherwise say 'None')",
+    "",
+    "Rules:",
+    "- Do not include timestamps.",
+    "- Avoid quoting usernames; paraphrase instead unless absolutely necessary.",
+    "- Keep it concise and readable.",
+    "",
+    "Transcript:",
+    text,
+  ].join("\n");
 
-  /**
-   * Send the summary prompt to the gpt-4o-mini model.
-   */
   const response = await client.chat.completions.create({
     model: "gpt-4o-mini",
     messages: [{ role: "user", content: prompt }],
@@ -46,8 +45,5 @@ ${text}
    */
   const content = response.choices?.[0]?.message?.content ?? "LLM returned no content.";
 
-  /**
-   * Return the cleaned summary text.
-   */
   return content.trim();
 }

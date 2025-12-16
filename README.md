@@ -149,6 +149,8 @@ OmegaBot is online
 │   │   │   └── pr.ts
 │   │   ├── history
 │   │   │   └── history.ts
+│   │   ├── pagination
+│   │   │   └── pagination.ts
 │   │   ├── playback
 │   │   │   └── playback.ts
 │   │   └── summary
