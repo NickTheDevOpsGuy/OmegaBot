@@ -25,28 +25,18 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
   const filePath = path.join(process.cwd(), "CHANGELOG.md");
 
   if (!fs.existsSync(filePath)) {
-    logger.warn(
-      { userId: interaction.user.id },
-      "[changelog] CHANGELOG.md not found",
-    );
+    logger.warn({ userId: interaction.user.id }, "[changelog] CHANGELOG.md not found");
 
     await interaction.editReply("No CHANGELOG.md found at the repo root.");
     return;
   }
 
   try {
-    const preview = fs
-      .readFileSync(filePath, "utf8")
-      .split("\n")
-      .slice(0, 40)
-      .join("\n");
+    const preview = fs.readFileSync(filePath, "utf8").split("\n").slice(0, 40).join("\n");
 
     await interaction.editReply(`\`\`\`md\n${preview}\n\`\`\``);
 
-    logger.debug(
-      { userId: interaction.user.id },
-      "[changelog] Preview sent",
-    );
+    logger.debug({ userId: interaction.user.id }, "[changelog] Preview sent");
   } catch (err) {
     logger.error(
       { err, userId: interaction.user.id },
