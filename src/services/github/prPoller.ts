@@ -57,12 +57,12 @@ export async function pollPullRequestsOnce(args: {
     (a, b) => Date.parse(a.updated_at) - Date.parse(b.updated_at),
   );
 
-// Extra TS guard: only proceed if this thing actually has a send() function.
-if (!("send" in fetched) || typeof fetched.send !== "function") return;
+  // Extra TS guard: only proceed if this thing actually has a send() function.
+  if (!("send" in fetched) || typeof fetched.send !== "function") return;
 
-for (const pr of oldestFirst) {
-  await fetched.send(formatPullRequest(pr));
-}
+  for (const pr of oldestFirst) {
+    await fetched.send(formatPullRequest(pr));
+  }
 
   // Update last-seen to the newest updated_at we just announced.
   const newest = oldestFirst[oldestFirst.length - 1];
