@@ -1,6 +1,6 @@
 // src/services/github/prPoller.ts
 
-import type { Client, TextBasedChannel } from "discord.js";
+import type { Client } from "discord.js";
 import { listPullRequests } from "./githubApi.js";
 import { getLastSeen, setLastSeenPr } from "./lastSeenStore.js";
 import { formatPullRequest } from "./prFormatter.js";

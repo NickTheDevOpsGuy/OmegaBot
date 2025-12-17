@@ -1,39 +1,55 @@
 import { Client, GatewayIntentBits } from "discord.js";
 import { loadCommands, type CommandClient } from "./services/discord/commandLoader.js";
 import { handleInteraction } from "./services/discord/interactionHandler.js";
+import { pollPullRequestsOnce } from "./services/github/prPoller.js";
 import { env } from "./config/env.js";
-/*
+
+/**
  * Create the Discord client with only the intents required for slash-command handling.
  */
 const client = new Client({
   intents: [GatewayIntentBits.Guilds],
 }) as CommandClient;
 
-/*
- * Initialize the command registry where loaded slash commands will be stored.
+/**
+ * Initialize the command registry.
  */
 client.commands = new Map();
 
-/*
- * Load and register all compiled command modules before the bot starts handling interactions.
+/**
+ * Load and register slash commands.
  */
 await loadCommands(client);
 
-/*
- * Forward every incoming interaction to the central interaction handler.
+/**
+ * Route all interactions through the central handler.
  */
 client.on("interactionCreate", async (interaction) => {
   await handleInteraction(interaction, client);
 });
 
-/*
- * Log a confirmation once the bot successfully connects.
+/**
+ * Start background services once the bot is fully ready.
  */
 client.once("clientReady", () => {
   console.log("OmegaBot is online");
+
+  // Poll GitHub every 5 minutes
+  setInterval(async () => {
+    try {
+      await pollPullRequestsOnce({
+        client,
+        owner: "NickTheDevOpsGuy",
+        repo: "OmegaBot",
+        announceChannelId: "1450641533509439538",
+      });
+    } catch (err) {
+      console.error("[prPoller] failed", err);
+    }
+  }, 5 * 60 * 1000);
 });
 
-/*
- * Start the bot session using the configured token.
+/**
+ * Connect to Discord.
  */
 client.login(env.token);
