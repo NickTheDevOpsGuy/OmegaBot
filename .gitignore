@@ -35,4 +35,4 @@ Thumbs.db
 *.zip
 
 # Runtime data
-data/timezones.json
+*.json
