@@ -11,6 +11,7 @@ import {
   listIssues,
   listPullRequests,
 } from "../../services/github/githubApi.js";
+import { logger } from "../../utils/logger.js";
 
 /**
  * /gh command
@@ -27,7 +28,9 @@ export const data = new SlashCommandBuilder()
       .addStringOption((o) =>
         o.setName("owner").setDescription("Org/user").setRequired(true),
       )
-      .addStringOption((o) => o.setName("repo").setDescription("Repo").setRequired(true))
+      .addStringOption((o) =>
+        o.setName("repo").setDescription("Repo").setRequired(true),
+      )
       .addIntegerOption((o) =>
         o.setName("number").setDescription("Issue #").setRequired(true),
       ),
@@ -40,7 +43,9 @@ export const data = new SlashCommandBuilder()
       .addStringOption((o) =>
         o.setName("owner").setDescription("Org/user").setRequired(true),
       )
-      .addStringOption((o) => o.setName("repo").setDescription("Repo").setRequired(true))
+      .addStringOption((o) =>
+        o.setName("repo").setDescription("Repo").setRequired(true),
+      )
       .addIntegerOption((o) =>
         o
           .setName("limit")
@@ -57,7 +62,9 @@ export const data = new SlashCommandBuilder()
       .addStringOption((o) =>
         o.setName("owner").setDescription("Org/user").setRequired(true),
       )
-      .addStringOption((o) => o.setName("repo").setDescription("Repo").setRequired(true))
+      .addStringOption((o) =>
+        o.setName("repo").setDescription("Repo").setRequired(true),
+      )
       .addIntegerOption((o) =>
         o
           .setName("limit")
@@ -67,7 +74,9 @@ export const data = new SlashCommandBuilder()
       ),
   );
 
-export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
+export async function execute(
+  interaction: ChatInputCommandInteraction,
+): Promise<void> {
   const sub = interaction.options.getSubcommand(true);
 
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
@@ -126,18 +135,37 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         [
           `**Open PRs for ${owner}/${repo}**`,
           "",
-          ...prs.map((p) => `#${p.number} ${p.title} (by ${p.user?.login ?? "unknown"})`),
+          ...prs.map(
+            (p) => `#${p.number} ${p.title} (by ${p.user?.login ?? "unknown"})`,
+          ),
         ].join("\n"),
       );
       return;
     }
+
+    // Should be unreachable because subcommand is required, but keep it safe.
+    await interaction.editReply("Unknown subcommand.");
   } catch (err) {
     if (err instanceof GitHubApiError) {
+      if (err.status === 404) {
+        await interaction.editReply("Not found. Check owner/repo and the number.");
+        return;
+      }
+
+      logger.warn(
+        { err, owner, repo, sub },
+        "[gh] GitHub API error",
+      );
+
       await interaction.editReply(`GitHub error (${err.status}): ${err.message}`);
       return;
     }
 
-    console.error("[gh] command failed", err);
+    logger.error(
+      { err, owner, repo, sub },
+      "[gh] command failed",
+    );
+
     await interaction.editReply("Something went wrong talking to GitHub.");
   }
 }

@@ -1,3 +1,4 @@
+//src/services/timezone/timezone.ts
 import {
   SlashCommandBuilder,
   MessageFlags,
@@ -9,6 +10,7 @@ import {
   getUserTimezone,
   setUserTimezone,
 } from "../../services/timezone/timezoneStore.js";
+import { logger } from "../../utils/logger.js";
 
 /**
  * /timezone command
@@ -41,32 +43,44 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
   const sub = interaction.options.getSubcommand();
   const userId = interaction.user.id;
 
-  if (sub === "show") {
-    const current = getUserTimezone(userId);
-    await interaction.editReply(
-      current ? `Your timezone is set to: ${current}` : "You have no timezone set.",
-    );
-    return;
-  }
-
-  if (sub === "clear") {
-    clearUserTimezone(userId);
-    await interaction.editReply("Timezone cleared.");
-    return;
-  }
-
-  // sub === "set"
-  const tz = interaction.options.getString("tz", true).trim();
-
   try {
-    assertValidTimeZone(tz);
-  } catch {
-    await interaction.editReply(
-      `That timezone is not valid. Use an IANA value like "America/New_York" or "Europe/London".`,
-    );
-    return;
-  }
+    if (sub === "show") {
+      const current = getUserTimezone(userId);
+      await interaction.editReply(
+        current ? `Your timezone is set to: ${current}` : "You have no timezone set.",
+      );
+      return;
+    }
 
-  setUserTimezone(userId, tz);
-  await interaction.editReply(`Timezone saved: ${tz}`);
+    if (sub === "clear") {
+      clearUserTimezone(userId);
+      logger.info({ userId }, "Timezone cleared");
+      await interaction.editReply("Timezone cleared.");
+      return;
+    }
+
+    // sub === "set"
+    const tz = interaction.options.getString("tz", true).trim();
+
+    try {
+      assertValidTimeZone(tz);
+    } catch {
+      logger.warn({ userId, tz }, "Invalid timezone provided");
+      await interaction.editReply(
+        `That timezone is not valid. Use an IANA value like "America/New_York" or "Europe/London".`,
+      );
+      return;
+    }
+
+    setUserTimezone(userId, tz);
+    logger.info({ userId, tz }, "Timezone set");
+    await interaction.editReply(`Timezone saved: ${tz}`);
+  } catch (err) {
+    logger.error(
+      { err, userId, sub },
+      "Timezone command failed unexpectedly",
+    );
+
+    await interaction.editReply("Something went wrong while updating your timezone.");
+  }
 }
