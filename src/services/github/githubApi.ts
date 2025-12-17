@@ -181,9 +181,7 @@ export async function listIssues(
   options?: ListIssuesOptions,
 ): Promise<GitHubIssueSummary[]> {
   try {
-    const data = await githubRequest<GitHubIssue[]>(
-      listIssuesPath(owner, repo, options),
-    );
+    const data = await githubRequest<GitHubIssue[]>(listIssuesPath(owner, repo, options));
 
     return data
       .filter((i) => !i.pull_request)

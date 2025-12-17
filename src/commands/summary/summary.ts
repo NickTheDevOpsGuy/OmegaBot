@@ -38,9 +38,7 @@ export const data = new SlashCommandBuilder()
  * 6. Deliver the result via DM (text or file).
  * 7. Handle failures gracefully.
  */
-export async function execute(
-  interaction: ChatInputCommandInteraction,
-): Promise<void> {
+export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const count = interaction.options.getInteger("count") ?? 50;
 
   try {
@@ -50,9 +48,7 @@ export async function execute(
      * Guard: only text-capable channels can be summarized.
      */
     if (!interaction.channel || !interaction.channel.isTextBased()) {
-      await interaction.editReply(
-        "This channel does not support summarizing messages.",
-      );
+      await interaction.editReply("This channel does not support summarizing messages.");
       return;
     }
 
@@ -79,9 +75,7 @@ export async function execute(
     /**
      * Build a simple transcript the summarizer can consume.
      */
-    const text = userMessages
-      .map((m) => `${m.author.username}: ${m.content}`)
-      .join("\n");
+    const text = userMessages.map((m) => `${m.author.username}: ${m.content}`).join("\n");
 
     const output = await summarize(text);
 
@@ -127,10 +121,7 @@ export async function execute(
       await interaction.user.send(output);
       await interaction.editReply("Summary sent to your DMs.");
     } catch (err) {
-      logger.warn(
-        { err, userId: interaction.user.id },
-        "[summary] DM text send failed",
-      );
+      logger.warn({ err, userId: interaction.user.id }, "[summary] DM text send failed");
 
       await interaction.editReply(
         "I generated the summary, but could not DM you. Your DMs may be closed.",
@@ -148,9 +139,7 @@ export async function execute(
 
     try {
       if (interaction.replied || interaction.deferred) {
-        await interaction.editReply(
-          "Something went wrong while generating the summary.",
-        );
+        await interaction.editReply("Something went wrong while generating the summary.");
       } else {
         await interaction.reply({
           content: "Something went wrong while generating the summary.",
@@ -158,10 +147,7 @@ export async function execute(
         });
       }
     } catch (replyErr) {
-      logger.error(
-        { err: replyErr },
-        "[summary] Failed to send fallback error message",
-      );
+      logger.error({ err: replyErr }, "[summary] Failed to send fallback error message");
     }
   }
 }

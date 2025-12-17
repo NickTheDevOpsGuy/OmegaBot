@@ -18,6 +18,7 @@ This document captures design decisions, conventions, and architectural guidelin
 OmegaBot uses a centralized logger for structured logs.
 
 Guidelines:
+
 - Use logger.info for lifecycle events
 - Use logger.warn for recoverable issues
 - Use logger.error inside catch blocks

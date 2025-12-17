@@ -28,9 +28,7 @@ export const data = new SlashCommandBuilder()
       .addStringOption((o) =>
         o.setName("owner").setDescription("Org/user").setRequired(true),
       )
-      .addStringOption((o) =>
-        o.setName("repo").setDescription("Repo").setRequired(true),
-      )
+      .addStringOption((o) => o.setName("repo").setDescription("Repo").setRequired(true))
       .addIntegerOption((o) =>
         o.setName("number").setDescription("Issue #").setRequired(true),
       ),
@@ -43,9 +41,7 @@ export const data = new SlashCommandBuilder()
       .addStringOption((o) =>
         o.setName("owner").setDescription("Org/user").setRequired(true),
       )
-      .addStringOption((o) =>
-        o.setName("repo").setDescription("Repo").setRequired(true),
-      )
+      .addStringOption((o) => o.setName("repo").setDescription("Repo").setRequired(true))
       .addIntegerOption((o) =>
         o
           .setName("limit")
@@ -62,9 +58,7 @@ export const data = new SlashCommandBuilder()
       .addStringOption((o) =>
         o.setName("owner").setDescription("Org/user").setRequired(true),
       )
-      .addStringOption((o) =>
-        o.setName("repo").setDescription("Repo").setRequired(true),
-      )
+      .addStringOption((o) => o.setName("repo").setDescription("Repo").setRequired(true))
       .addIntegerOption((o) =>
         o
           .setName("limit")
@@ -74,9 +68,7 @@ export const data = new SlashCommandBuilder()
       ),
   );
 
-export async function execute(
-  interaction: ChatInputCommandInteraction,
-): Promise<void> {
+export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const sub = interaction.options.getSubcommand(true);
 
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
@@ -135,9 +127,7 @@ export async function execute(
         [
           `**Open PRs for ${owner}/${repo}**`,
           "",
-          ...prs.map(
-            (p) => `#${p.number} ${p.title} (by ${p.user?.login ?? "unknown"})`,
-          ),
+          ...prs.map((p) => `#${p.number} ${p.title} (by ${p.user?.login ?? "unknown"})`),
         ].join("\n"),
       );
       return;
@@ -152,19 +142,13 @@ export async function execute(
         return;
       }
 
-      logger.warn(
-        { err, owner, repo, sub },
-        "[gh] GitHub API error",
-      );
+      logger.warn({ err, owner, repo, sub }, "[gh] GitHub API error");
 
       await interaction.editReply(`GitHub error (${err.status}): ${err.message}`);
       return;
     }
 
-    logger.error(
-      { err, owner, repo, sub },
-      "[gh] command failed",
-    );
+    logger.error({ err, owner, repo, sub }, "[gh] command failed");
 
     await interaction.editReply("Something went wrong talking to GitHub.");
   }

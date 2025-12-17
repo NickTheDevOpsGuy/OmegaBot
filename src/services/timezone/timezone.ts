@@ -76,10 +76,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     logger.info({ userId, tz }, "Timezone set");
     await interaction.editReply(`Timezone saved: ${tz}`);
   } catch (err) {
-    logger.error(
-      { err, userId, sub },
-      "Timezone command failed unexpectedly",
-    );
+    logger.error({ err, userId, sub }, "Timezone command failed unexpectedly");
 
     await interaction.editReply("Something went wrong while updating your timezone.");
   }

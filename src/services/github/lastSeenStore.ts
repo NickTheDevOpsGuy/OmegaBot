@@ -47,11 +47,7 @@ export function getLastSeen(owner: string, repo: string): number | null {
  *
  * @param updatedAtIso ISO timestamp string from GitHub API (ex: pr.updated_at)
  */
-export function setLastSeenPr(
-  owner: string,
-  repo: string,
-  updatedAtIso: string,
-): void {
+export function setLastSeenPr(owner: string, repo: string, updatedAtIso: string): void {
   const store = loadStore();
   const key = makeRepoKey(owner, repo);
 
