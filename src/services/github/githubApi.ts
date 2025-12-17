@@ -24,14 +24,16 @@ function prPath(owner: string, repo: string, number: number): string {
   return `${repoBase(owner, repo)}/pulls/${number}`;
 }
 
+export type ListIssuesOptions = {
+  state?: "open" | "closed" | "all";
+  limit?: number;
+  labels?: string[];
+};
+
 function listIssuesPath(
   owner: string,
   repo: string,
-  options?: {
-    state?: "open" | "closed" | "all";
-    limit?: number;
-    labels?: string[];
-  },
+  options?: ListIssuesOptions,
 ): string {
   const params = new URLSearchParams();
 
@@ -46,24 +48,25 @@ function listIssuesPath(
   return `${repoBase(owner, repo)}/issues${query ? `?${query}` : ""}`;
 }
 
+export type ListPrOptions = {
+  state?: "open" | "closed" | "all";
+  limit?: number;
+};
+
 function listPullRequestsPath(
   owner: string,
   repo: string,
-  options?: {
-    state?: "open" | "closed" | "all";
-    limit?: number;
-  },
+  options?: ListPrOptions,
 ): string {
   const params = new URLSearchParams();
+  params.set("state", options?.state ?? "open");
+  params.set("per_page", String(options?.limit ?? 20));
 
-  if (options?.state) params.set("state", options.state);
-  if (options?.limit) params.set("per_page", String(options.limit));
-
+  // For pulls: GitHub supports sort=updated
   params.set("sort", "updated");
   params.set("direction", "desc");
 
-  const query = params.toString();
-  return `${repoBase(owner, repo)}/pulls${query ? `?${query}` : ""}`;
+  return `${repoBase(owner, repo)}/pulls?${params.toString()}`;
 }
 
 /* ------------------------------------------------------------------ */
@@ -79,7 +82,7 @@ function is404(err: unknown): err is GitHubApiError {
 }
 
 /* ------------------------------------------------------------------ */
-/* Single-item fetchers                                                */
+/* Single item fetchers                                                */
 /* ------------------------------------------------------------------ */
 
 export async function getIssue(
@@ -117,15 +120,15 @@ export async function getIssueOrPr(
 
 /**
  * List issues (issues-only; PRs filtered out)
+ *
+ * Note:
+ * GitHub's /issues endpoint can include PRs.
+ * PRs contain `pull_request` marker. We filter those out here.
  */
 export async function listIssues(
   owner: string,
   repo: string,
-  options?: {
-    state?: "open" | "closed" | "all";
-    limit?: number;
-    labels?: string[];
-  },
+  options?: ListIssuesOptions,
 ): Promise<GitHubIssueSummary[]> {
   const data = await githubRequest<GitHubIssue[]>(listIssuesPath(owner, repo, options));
 
@@ -136,21 +139,22 @@ export async function listIssues(
       title: i.title,
       html_url: i.html_url,
       state: i.state,
-      user: i.user,
+      user: { login: i.user.login },
       comments: i.comments,
     }));
 }
 
 /**
- * List pull requests
+ * List pull requests (summary view)
+ *
+ * This is what the poller should consume because it includes:
+ * - number, title, url, author
+ * - updated_at for last-seen comparisons
  */
 export async function listPullRequests(
   owner: string,
   repo: string,
-  options?: {
-    state?: "open" | "closed" | "all";
-    limit?: number;
-  },
+  options?: ListPrOptions,
 ): Promise<GitHubPrSummary[]> {
   const data = await githubRequest<GitHubPullRequest[]>(
     listPullRequestsPath(owner, repo, options),
@@ -162,7 +166,8 @@ export async function listPullRequests(
     html_url: pr.html_url,
     state: pr.state,
     merged_at: pr.merged_at,
-    user: pr.user,
+    updated_at: pr.updated_at,
+    user: { login: pr.user.login },
     comments: pr.comments,
     review_comments: pr.review_comments,
   }));
