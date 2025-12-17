@@ -12,46 +12,23 @@ import pino, { type Logger } from "pino";
  *
  * Notes:
  * - We use `pino-pretty` only for local development readability.
- * - If `pino-pretty` is not installed, we gracefully fall back to normal JSON logs
- *   instead of crashing the bot at startup.
+ * - If `pino-pretty` is not installed, we gracefully fall back to JSON logs.
  */
 
-/**
- * Determine if we should try to use pino-pretty.
- *
- * Default behavior:
- * - Development: pretty logs (if pino-pretty is installed)
- * - Production: JSON logs
- *
- * Override:
- * - Set LOG_PRETTY="false" to force JSON logs locally if you want.
- */
 const isProd = process.env.NODE_ENV === "production";
 const prettyEnabled =
   !isProd && (process.env.LOG_PRETTY ?? "true").toLowerCase() === "true";
 
-/**
- * Build a configured Pino logger.
- *
- * We do this in a function so we can safely try the transport and fall back.
- */
 function createLogger(): Logger {
   const level = process.env.LOG_LEVEL ?? (isProd ? "info" : "debug");
 
-  // Normal JSON logger (safe default everywhere).
+  // Safe default everywhere
   const base = pino({ level });
 
   if (!prettyEnabled) {
     return base;
   }
 
-  /**
-   * Dev pretty mode:
-   * If `pino-pretty` is missing or cannot be resolved, Pino throws:
-   * "unable to determine transport target for 'pino-pretty'"
-   *
-   * We catch that and keep running with JSON logs.
-   */
   try {
     const transport = pino.transport({
       target: "pino-pretty",
@@ -63,24 +40,10 @@ function createLogger(): Logger {
     });
 
     return pino({ level }, transport);
-  } catch (err) {
-    // Do not crash the bot because a dev-only dependency is missing.
-    // Keep output readable enough to diagnose it.
-    // eslint-disable-next-line no-console
-    console.warn(
-      "[logger] pino-pretty not available, falling back to JSON logs. Install with: npm i -D pino-pretty",
-      err,
-    );
+  } catch {
+    // Dev-only dependency missing, fall back cleanly
     return base;
   }
 }
 
-/**
- * Export a single logger instance for the whole project.
- *
- * Usage:
- *   import { logger } from "../utils/logger.js";
- *   logger.info("something happened");
- *   logger.error({ err }, "something failed");
- */
 export const logger = createLogger();

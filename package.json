@@ -9,6 +9,7 @@
     "format": "prettier . --write",
     "format:check": "prettier . --check",
     "lint": "eslint . --ext .ts --max-warnings=0",
+    "lint:fix": "eslint . --ext .ts --fix",
     "prepare": "husky",
     "precheck": "bash ./scripts/precheck.sh",
     "typecheck": "tsc --noEmit"
