@@ -19,8 +19,5 @@ import type { GitHubPrSummary } from "./types.js";
 export function formatPullRequest(pr: GitHubPrSummary): string {
   const author = pr.user?.login ?? "unknown";
 
-  return [
-    `#${pr.number} ${pr.title} (by ${author})`,
-    pr.html_url,
-  ].join("\n");
+  return [`#${pr.number} ${pr.title} (by ${author})`, pr.html_url].join("\n");
 }

@@ -1,7 +1,12 @@
 // src/services/github/githubApi.ts
 
 import { githubRequest, GitHubApiError } from "./githubClient.js";
-import type { GitHubIssue, GitHubPullRequest, GitHubIssueSummary, GitHubPrSummary } from "./types.js";
+import type {
+  GitHubIssue,
+  GitHubPullRequest,
+  GitHubIssueSummary,
+  GitHubPrSummary,
+} from "./types.js";
 
 /* ------------------------------------------------------------------ */
 /* Path helpers                                                        */
@@ -25,7 +30,11 @@ export type ListIssuesOptions = {
   labels?: string[];
 };
 
-function listIssuesPath(owner: string, repo: string, options?: ListIssuesOptions): string {
+function listIssuesPath(
+  owner: string,
+  repo: string,
+  options?: ListIssuesOptions,
+): string {
   const params = new URLSearchParams();
 
   if (options?.state) params.set("state", options.state);
@@ -44,7 +53,11 @@ export type ListPrOptions = {
   limit?: number;
 };
 
-function listPullRequestsPath(owner: string, repo: string, options?: ListPrOptions): string {
+function listPullRequestsPath(
+  owner: string,
+  repo: string,
+  options?: ListPrOptions,
+): string {
   const params = new URLSearchParams();
   params.set("state", options?.state ?? "open");
   params.set("per_page", String(options?.limit ?? 20));
@@ -72,11 +85,19 @@ function is404(err: unknown): err is GitHubApiError {
 /* Single item fetchers                                                */
 /* ------------------------------------------------------------------ */
 
-export async function getIssue(owner: string, repo: string, number: number): Promise<GitHubIssue> {
+export async function getIssue(
+  owner: string,
+  repo: string,
+  number: number,
+): Promise<GitHubIssue> {
   return githubRequest<GitHubIssue>(issuePath(owner, repo, number));
 }
 
-export async function getPullRequest(owner: string, repo: string, number: number): Promise<GitHubPullRequest> {
+export async function getPullRequest(
+  owner: string,
+  repo: string,
+  number: number,
+): Promise<GitHubPullRequest> {
   return githubRequest<GitHubPullRequest>(prPath(owner, repo, number));
 }
 
@@ -104,7 +125,11 @@ export async function getIssueOrPr(
  * GitHub's /issues endpoint can include PRs.
  * PRs contain `pull_request` marker. We filter those out here.
  */
-export async function listIssues(owner: string, repo: string, options?: ListIssuesOptions): Promise<GitHubIssueSummary[]> {
+export async function listIssues(
+  owner: string,
+  repo: string,
+  options?: ListIssuesOptions,
+): Promise<GitHubIssueSummary[]> {
   const data = await githubRequest<GitHubIssue[]>(listIssuesPath(owner, repo, options));
 
   return data
@@ -131,7 +156,9 @@ export async function listPullRequests(
   repo: string,
   options?: ListPrOptions,
 ): Promise<GitHubPrSummary[]> {
-  const data = await githubRequest<GitHubPullRequest[]>(listPullRequestsPath(owner, repo, options));
+  const data = await githubRequest<GitHubPullRequest[]>(
+    listPullRequestsPath(owner, repo, options),
+  );
 
   return data.map((pr) => ({
     number: pr.number,
