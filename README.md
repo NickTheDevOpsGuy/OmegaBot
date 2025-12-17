@@ -65,23 +65,23 @@ git clone https://github.com/NickTheDevOpsGuy/OmegaBot.git
 cd OmegaBot
 ```
 
-2.	Install dependencies:
+2. Install dependencies:
 
 ```bash
 npm install
 ```
 
-3.	Create a .env file based on the example configuration:
+3. Create a .env file based on the example configuration:
 
 - [.env.example](.env.example)
 
-4.	Register slash commands with your development guild:
+4. Register slash commands with your development guild:
 
 ```bash
 npm run register
 ```
 
-5.	Run the bot locally:
+5. Run the bot locally:
 
 ```bash
 npm run dev
