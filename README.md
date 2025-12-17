@@ -104,7 +104,7 @@ OmegaBot is online
 
 ```
 .
-├── .env.example
+├── .env
 ├── .github
 │   ├── ISSUE_TEMPLATE
 │   │   ├── bug.yml
@@ -166,6 +166,9 @@ OmegaBot is online
 │       ├── github
 │       │   ├── githubApi.ts
 │       │   ├── githubClient.ts
+│       │   ├── lastSeenStore.ts
+│       │   ├── prFormatter.ts
+│       │   ├── prPoller.ts
 │       │   └── types.ts
 │       ├── summary
 │       │   ├── llmSummary.ts

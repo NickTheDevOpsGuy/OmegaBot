@@ -11,20 +11,14 @@
  */
 
 /* ------------------------------------------------------------------ */
-/* Shared base types                                                    */
+/* Shared base types                                                   */
 /* ------------------------------------------------------------------ */
 
-/**
- * GitHub user object
- */
 export type GitHubUser = {
   login: string;
   html_url: string;
 };
 
-/**
- * GitHub issue/PR label
- */
 export type GitHubLabel = {
   name: string;
   color: string;
@@ -32,7 +26,6 @@ export type GitHubLabel = {
 
 /* ------------------------------------------------------------------ */
 /* Full GitHub API response types                                      */
-/* These match what the GitHub REST API actually returns               */
 /* ------------------------------------------------------------------ */
 
 /**
@@ -59,10 +52,6 @@ export type GitHubIssue = {
   updated_at: string;
   closed_at: string | null;
 
-  /**
-   * Present only if this issue is actually a Pull Request
-   * (when fetched from the /issues API)
-   */
   pull_request?: {
     html_url: string;
   };
@@ -100,10 +89,6 @@ export type GitHubPullRequest = {
   merged_at: string | null;
 };
 
-/**
- * Lightweight repository info
- * Useful for validation, previews, or summaries later
- */
 export type GitHubRepo = {
   full_name: string;
   description: string | null;
@@ -114,13 +99,9 @@ export type GitHubRepo = {
 };
 
 /* ------------------------------------------------------------------ */
-/* Command-friendly / normalized response types                         */
-/* These are what slash commands should actually consume               */
+/* Command-friendly / normalized response types                        */
 /* ------------------------------------------------------------------ */
 
-/**
- * Minimal Issue view used by commands
- */
 export type GitHubIssueSummary = {
   number: number;
   title: string;
@@ -131,7 +112,10 @@ export type GitHubIssueSummary = {
 };
 
 /**
- * Minimal PR view used by commands
+ * PR summary used by commands and the poller.
+ *
+ * Important:
+ * - includes `updated_at` so we can do "last seen" comparisons
  */
 export type GitHubPrSummary = {
   number: number;
@@ -139,6 +123,7 @@ export type GitHubPrSummary = {
   html_url: string;
   state: "open" | "closed";
   merged_at: string | null;
+  updated_at: string;
   user?: { login: string };
   comments?: number;
   review_comments?: number;
