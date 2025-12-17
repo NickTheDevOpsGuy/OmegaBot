@@ -2,7 +2,11 @@
 
 import fs from "fs";
 import path from "path";
-import { Client, SlashCommandBuilder, type ChatInputCommandInteraction } from "discord.js";
+import {
+  Client,
+  SlashCommandBuilder,
+  type ChatInputCommandInteraction,
+} from "discord.js";
 import { logger } from "../../utils/logger.js";
 
 /**
@@ -34,7 +38,10 @@ export async function loadCommands(client: CommandClient): Promise<void> {
   const basePath = path.join(process.cwd(), "dist/commands");
 
   if (!fs.existsSync(basePath)) {
-    logger.error({ basePath }, "Command loader base path not found. Did you build the project?");
+    logger.error(
+      { basePath },
+      "Command loader base path not found. Did you build the project?",
+    );
     return;
   }
 

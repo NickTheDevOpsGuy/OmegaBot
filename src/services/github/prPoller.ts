@@ -52,10 +52,7 @@ export async function pollPullRequestsOnce(args: {
 
     const fetched = await client.channels.fetch(announceChannelId);
     if (!fetched || !fetched.isTextBased()) {
-      logger.warn(
-        { announceChannelId },
-        "PR poller could not resolve announce channel",
-      );
+      logger.warn({ announceChannelId }, "PR poller could not resolve announce channel");
       return;
     }
 
@@ -75,9 +72,6 @@ export async function pollPullRequestsOnce(args: {
     const newest = oldestFirst[oldestFirst.length - 1];
     setLastSeenPr(owner, repo, newest.updated_at);
   } catch (err) {
-    logger.error(
-      { err, owner, repo, announceChannelId },
-      "GitHub PR polling failed",
-    );
+    logger.error({ err, owner, repo, announceChannelId }, "GitHub PR polling failed");
   }
 }

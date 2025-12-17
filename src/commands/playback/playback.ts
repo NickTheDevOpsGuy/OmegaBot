@@ -60,9 +60,7 @@ export const data = new SlashCommandBuilder()
       .setRequired(false),
   );
 
-export async function execute(
-  interaction: ChatInputCommandInteraction,
-): Promise<void> {
+export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const count = interaction.options.getInteger("count") ?? 50;
   const before = interaction.options.getString("before") ?? undefined;
   const after = interaction.options.getString("after") ?? undefined;
@@ -136,8 +134,7 @@ export async function execute(
         }
 
         if (btn.customId === "pb_prev") index = Math.max(0, index - 1);
-        if (btn.customId === "pb_next")
-          index = Math.min(pages.length - 1, index + 1);
+        if (btn.customId === "pb_next") index = Math.min(pages.length - 1, index + 1);
 
         await btn.update({
           content: `Page ${index + 1}/${pages.length}\n\n${pages[index]}`,
@@ -176,10 +173,7 @@ export async function execute(
         });
       }
     } catch (replyErr) {
-      logger.error(
-        { err: replyErr },
-        "[playback] failed to send fallback error message",
-      );
+      logger.error({ err: replyErr }, "[playback] failed to send fallback error message");
     }
   }
 }

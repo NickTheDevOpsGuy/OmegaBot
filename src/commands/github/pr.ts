@@ -16,19 +16,11 @@ import { logger } from "../../utils/logger.js";
 export const data = new SlashCommandBuilder()
   .setName("pr")
   .setDescription("GitHub pull request helpers")
-  .addIntegerOption((o) =>
-    o.setName("number").setDescription("PR #").setRequired(true),
-  )
-  .addStringOption((o) =>
-    o.setName("owner").setDescription("Org/user").setRequired(true),
-  )
-  .addStringOption((o) =>
-    o.setName("repo").setDescription("Repo").setRequired(true),
-  );
+  .addIntegerOption((o) => o.setName("number").setDescription("PR #").setRequired(true))
+  .addStringOption((o) => o.setName("owner").setDescription("Org/user").setRequired(true))
+  .addStringOption((o) => o.setName("repo").setDescription("Repo").setRequired(true));
 
-export async function execute(
-  interaction: ChatInputCommandInteraction,
-): Promise<void> {
+export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   const owner = interaction.options.getString("owner", true);
@@ -51,30 +43,18 @@ export async function execute(
   } catch (err) {
     if (err instanceof GitHubApiError) {
       if (err.status === 404) {
-        await interaction.editReply(
-          "PR not found. Check owner/repo and PR number.",
-        );
+        await interaction.editReply("PR not found. Check owner/repo and PR number.");
         return;
       }
 
-      logger.warn(
-        { err, owner, repo, number },
-        "[pr] GitHub API error",
-      );
+      logger.warn({ err, owner, repo, number }, "[pr] GitHub API error");
 
-      await interaction.editReply(
-        `GitHub API error (${err.status}): ${err.message}`,
-      );
+      await interaction.editReply(`GitHub API error (${err.status}): ${err.message}`);
       return;
     }
 
-    logger.error(
-      { err, owner, repo, number },
-      "[pr] command failed",
-    );
+    logger.error({ err, owner, repo, number }, "[pr] command failed");
 
-    await interaction.editReply(
-      "Something went wrong while talking to GitHub.",
-    );
+    await interaction.editReply("Something went wrong while talking to GitHub.");
   }
 }

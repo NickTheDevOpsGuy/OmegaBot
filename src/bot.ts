@@ -1,10 +1,7 @@
 // src/bot.ts
 
 import { Client, GatewayIntentBits } from "discord.js";
-import {
-  loadCommands,
-  type CommandClient,
-} from "./services/discord/commandLoader.js";
+import { loadCommands, type CommandClient } from "./services/discord/commandLoader.js";
 import { handleInteraction } from "./services/discord/interactionHandler.js";
 import { pollPullRequestsOnce } from "./services/github/prPoller.js";
 import { env } from "./config/env.js";

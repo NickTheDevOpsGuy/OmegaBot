@@ -86,9 +86,7 @@ function renderPage(pages: string[], pageIndex: number) {
   return `${header}\n\n${pages[pageIndex]}`;
 }
 
-export async function execute(
-  interaction: ChatInputCommandInteraction,
-): Promise<void> {
+export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const count = interaction.options.getInteger("count") ?? 50;
 
   try {

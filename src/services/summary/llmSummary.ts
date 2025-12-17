@@ -54,9 +54,7 @@ export async function llmSummary(text: string): Promise<string> {
     /**
      * Extract model output, falling back safely if no content is returned.
      */
-    const content =
-      response.choices?.[0]?.message?.content ??
-      "LLM returned no content.";
+    const content = response.choices?.[0]?.message?.content ?? "LLM returned no content.";
 
     return content.trim();
   } catch (err) {

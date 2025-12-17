@@ -29,9 +29,7 @@ export const data = new SlashCommandBuilder()
       .setMaxValue(50),
   );
 
-export async function execute(
-  interaction: ChatInputCommandInteraction,
-): Promise<void> {
+export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const count = interaction.options.getInteger("count") ?? 50;
 
   try {
@@ -104,10 +102,7 @@ export async function execute(
       await interaction.user.send(text);
       await interaction.editReply("History sent to your DMs.");
     } catch (err) {
-      logger.warn(
-        { err, userId: interaction.user.id },
-        "[history] DM text send failed",
-      );
+      logger.warn({ err, userId: interaction.user.id }, "[history] DM text send failed");
       await interaction.editReply(
         "I generated the history, but could not DM you. Your DMs may be closed.",
       );
@@ -128,10 +123,7 @@ export async function execute(
         });
       }
     } catch (replyErr) {
-      logger.error(
-        { err: replyErr },
-        "[history] failed to send fallback error message",
-      );
+      logger.error({ err: replyErr }, "[history] failed to send fallback error message");
     }
   }
 }
