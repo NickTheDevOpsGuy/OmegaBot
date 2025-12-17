@@ -1,76 +1,45 @@
 # Development Notes
 
-General development notes and gotchas for OmegaBot.
+This document captures design decisions, conventions, and architectural guidelines for OmegaBot.
 
 ---
 
-## Interaction Lifecycle
+## Architecture Principles
 
-- Every slash command must reply or defer within 3 seconds
-- Prefer `deferReply()` + `editReply()` for async work
-- Use ephemeral replies for status updates
-- DM output when content is private
-
----
-
-## Message Fetching
-
-Standard pipeline:
-
-fetch → filter bots → sort → map → transcript
-
-Notes:
-
-- Discord returns `Collection`, convert to arrays before processing
-- Missing permissions can cause silent failures
+- Commands are thin and delegate logic to services
+- Services are grouped by domain (discord, github, transcript, summary, timezone)
+- Helpers are pure where possible
+- Side effects (network, fs, Discord I/O) are explicit
 
 ---
 
-## Permissions
+## Logging
 
-Required bot permissions:
+OmegaBot uses a centralized logger for structured logs.
 
-- View Channels
-- Read Message History
-- Send Messages
-- Attach Files
-- Use Slash Commands
-
-Important:
-
-- Missing **Read Message History** causes fetches to return empty collections
+Guidelines:
+- Use logger.info for lifecycle events
+- Use logger.warn for recoverable issues
+- Use logger.error inside catch blocks
+- Avoid logging inside pure helpers
 
 ---
 
 ## Environment Variables
 
-Never commit `.env`.
-
-Required:
-
-- `DISCORD_TOKEN`
-- `DISCORD_APP_ID`
-- `DISCORD_GUILD_ID`
-
-Optional:
-
-- `SUMMARY_MODE` (`local` | `llm`)
-
-Always include `.env.example`.
+See env.example for full list.
 
 ---
 
-## Formatting & Limits
+## Error Handling
 
-- Discord message limit: 2000 characters
-- Safe working limit: ~1900 characters
-- Use file attachments for overflow
+- Commands catch and reply gracefully
+- Services may throw domain-specific errors
+- Pollers and background tasks must never crash the process
 
 ---
 
-## Debugging Checklist
+## Future
 
-- Slash command not appearing → re-register commands
-- Bot replies but cannot DM → user has DMs closed
-- Interaction timeout → missing defer
-- Errors should be logged internally, not spammed to users
+- Replace file stores with DB
+- Add metrics

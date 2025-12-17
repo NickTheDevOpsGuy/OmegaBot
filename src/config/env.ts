@@ -16,6 +16,23 @@ function requireEnv(name: string): string {
 }
 
 /**
+ * Parse an integer env var safely.
+ * Falls back to `defaultValue` if missing/invalid.
+ */
+function envInt(name: string, defaultValue: number): number {
+  const raw = process.env[name];
+  if (!raw) return defaultValue;
+
+  const n = Number(raw);
+  if (!Number.isFinite(n) || !Number.isInteger(n)) return defaultValue;
+  if (n <= 0) return defaultValue;
+
+  return n;
+}
+
+type SummaryMode = "local" | "llm";
+
+/**
  * Centralized environment configuration for OmegaBot.
  *
  * Keeping this configuration in one place:
@@ -74,6 +91,12 @@ function requireEnv(name: string): string {
  * All GitHub announcement fields are optional so the bot can run
  * without polling enabled.
  */
+const summaryMode = (process.env.SUMMARY_MODE ?? "local") as SummaryMode;
+
+if (summaryMode === "llm" && !process.env.OPENAI_API_KEY) {
+  throw new Error("OPENAI_API_KEY is required when SUMMARY_MODE=llm");
+}
+
 export const env = {
   /* ---------------------------------------------------------------- */
   /* Discord (required)                                               */
@@ -88,13 +111,13 @@ export const env = {
   /* ---------------------------------------------------------------- */
 
   // Defaults to local so the bot runs without AI keys.
-  summaryMode: process.env.SUMMARY_MODE ?? "local",
+  summaryMode,
 
   // Only required when summaryMode === "llm"
   openAIKey: process.env.OPENAI_API_KEY ?? null,
 
   /* ---------------------------------------------------------------- */
-  /* GitHub                                                          */
+  /* GitHub                                                           */
   /* ---------------------------------------------------------------- */
 
   // Auth token for GitHub REST API
@@ -108,5 +131,5 @@ export const env = {
   githubAnnounceChannelId: process.env.GITHUB_ANNOUNCE_CHANNEL_ID ?? null,
 
   // Polling interval (ms). Defaults to 60s.
-  githubPollIntervalMs: Number(process.env.GITHUB_POLL_INTERVAL_MS ?? "60000"),
+  githubPollIntervalMs: envInt("GITHUB_POLL_INTERVAL_MS", 60_000),
 };
