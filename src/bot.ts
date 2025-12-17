@@ -1,3 +1,5 @@
+// src/bot.ts
+
 import { Client, GatewayIntentBits } from "discord.js";
 import { loadCommands, type CommandClient } from "./services/discord/commandLoader.js";
 import { handleInteraction } from "./services/discord/interactionHandler.js";
@@ -5,54 +7,71 @@ import { pollPullRequestsOnce } from "./services/github/prPoller.js";
 import { env } from "./config/env.js";
 
 /**
- * Create the Discord client with only the intents required for slash-command handling.
+ * Create the Discord client with only the intents required for slash commands.
  */
 const client = new Client({
   intents: [GatewayIntentBits.Guilds],
 }) as CommandClient;
 
 /**
- * Initialize the command registry.
+ * Command registry populated by the command loader.
  */
 client.commands = new Map();
 
 /**
- * Load and register slash commands.
+ * Load compiled command modules and attach them to client.commands.
  */
 await loadCommands(client);
 
 /**
- * Route all interactions through the central handler.
+ * Forward every incoming interaction to the central handler.
  */
 client.on("interactionCreate", async (interaction) => {
   await handleInteraction(interaction, client);
 });
 
 /**
- * Start background services once the bot is fully ready.
+ * GitHub PR polling is optional.
+ * We only enable it when all required env vars are present.
+ */
+const githubPollingEnabled =
+  !!env.githubToken &&
+  !!env.githubOwner &&
+  !!env.githubRepo &&
+  !!env.githubAnnounceChannelId;
+
+/**
+ * Log a confirmation once the bot successfully connects.
  */
 client.once("clientReady", () => {
   console.log("OmegaBot is online");
 
-  // Poll GitHub every 5 minutes
-  setInterval(
-    async () => {
-      try {
-        await pollPullRequestsOnce({
-          client,
-          owner: "NickTheDevOpsGuy",
-          repo: "OmegaBot",
-          announceChannelId: "1450641533509439538",
-        });
-      } catch (err) {
-        console.error("[prPoller] failed", err);
-      }
-    },
-    5 * 60 * 1000,
-  );
+  if (githubPollingEnabled) {
+    console.log(
+      `GitHub PR polling enabled for ${env.githubOwner}/${env.githubRepo} -> channel ${env.githubAnnounceChannelId}`,
+    );
+    console.log(`GitHub PR polling interval: ${env.githubPollIntervalMs}ms`);
+  } else {
+    console.log("GitHub PR polling disabled (missing env config)");
+  }
 });
 
 /**
- * Connect to Discord.
+ * Start the bot session using the configured token.
  */
 client.login(env.token);
+
+/**
+ * Schedule PR polling (if enabled).
+ * Uses void to avoid unhandled promise warnings.
+ */
+if (githubPollingEnabled) {
+  setInterval(() => {
+    void pollPullRequestsOnce({
+      client,
+      owner: env.githubOwner!,
+      repo: env.githubRepo!,
+      announceChannelId: env.githubAnnounceChannelId!,
+    });
+  }, env.githubPollIntervalMs);
+}
