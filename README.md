@@ -1,6 +1,226 @@
+<p align="center">
+  <img src="assets/banner.png" alt="OmegaBot Banner" width="900">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/github/last-commit/NickTheDevOpsGuy/OmegaBot">
+  <img src="https://img.shields.io/github/license/NickTheDevOpsGuy/OmegaBot">
+  <img src="https://img.shields.io/badge/node-18+-blue">
+  <img src="https://img.shields.io/badge/made%20with-JavaScript-yellow">
+</p>
+
 # OmegaBot
 
-OmegaBot is a modular Discord bot designed to support development projects with quick summaries, GitHub lookups, and automated notifications.
+OmegaBot is a modular Discord bot designed to support development projects with quick summaries, FAQs, GitHub lookups, and automated notifications. The structure is clean and fully service based which makes it easy to extend.
 
-See the repository for full documentation:
-https://github.com/NickTheDevOpsGuy/OmegaBot
+---
+
+## Features
+
+Current features
+
+- Modular slash-command system (auto-loaded from dist/commands)
+- /ping command for testing
+- /summary command (local + LLM mode)
+- /history command (DM + file fallback)
+- /playback command (button pagination)
+- /pagination command (inline paging)
+- /timezone command (per-user IANA timezone)
+- /changelog command (ephemeral preview)
+- Centralized structured logging
+
+Planned features
+
+- FAQ storage and quick lookup
+- GitHub issues and pull request lookups
+- Pull request announcements
+- Pagination for large history/playback (buttons or follow-ups)
+- Per-user timezone support (store IANA timezone and apply to transcripts)
+- Improved summary output (highlights, action items, structured sections)
+
+---
+
+## Documentation
+
+- 📘 [Command Reference](docs/commands.md)
+- 🧠 [Transcript & Summary Design](docs/transcripts.md)
+- 🛠️ [Development Notes](docs/dev-notes.md)
+
+---
+
+## Getting Started
+
+### Requirements
+
+- Node 18 or newer
+- A Discord bot token
+- A development server where you have Manage Server permissions
+
+### Setup
+
+1. Clone the repository:
+
+```bash
+git clone https://github.com/NickTheDevOpsGuy/OmegaBot.git
+cd OmegaBot
+```
+
+2.	Install dependencies:
+
+```bash
+npm install
+```
+
+3.	Create a .env file based on the example configuration:
+
+- [.env.example](.env.example)
+
+4.	Register slash commands with your development guild:
+
+```bash
+npm run register
+```
+
+5.	Run the bot locally:
+
+```bash
+npm run dev
+```
+
+You should see:
+
+```
+OmegaBot is online
+```
+
+---
+
+## Project Structure
+
+<details>
+<summary>📁 Click to expand file structure</summary>
+
+```
+.
+├── .env.example
+├── .github
+│   ├── ISSUE_TEMPLATE
+│   │   ├── bug.yml
+│   │   ├── config.yml
+│   │   ├── documentation.yml
+│   │   ├── enhancement_refactor.yml
+│   │   ├── feature_request.yml
+│   │   └── question_discussion.yml
+│   ├── pull_request_template.md
+│   └── workflows
+│       └── OmegaBot.yml
+├── .gitignore
+├── .husky
+
+│   ├── pre-commit
+│   └── pre-push
+├── .prettierignore
+├── .prettierrc.yml
+├── assets
+│   ├── banner.png
+│   └── omegabot.png
+├── CHANGELOG.md
+├── CONTRIBUTORS.md
+├── data
+│   ├── last-seen.json
+│   └── timezones.json
+├── docs
+│   ├── commands.md
+│   ├── dev-notes.md
+│   └── transcripts.md
+├── eslint.config.ts
+├── LICENSE
+├── package-lock.json
+├── package.json
+├── README.md
+├── scripts
+│   └── precheck.sh
+├── src
+│   ├── bot.ts
+│   ├── commands
+│   │   ├── changelog
+│   │   │   └── changelog.ts
+│   │   ├── general
+│   │   │   └── ping.ts
+│   │   ├── github
+│   │   │   ├── gh.ts
+│   │   │   └── pr.ts
+│   │   ├── history
+│   │   │   └── history.ts
+│   │   ├── pagination
+│   │   │   └── pagination.ts
+│   │   ├── playback
+│   │   │   └── playback.ts
+│   │   └── summary
+│   │       └── summary.ts
+│   ├── config
+│   │   └── env.ts
+│   ├── registerCommands.ts
+│   ├── services
+│   │   ├── discord
+│   │   │   ├── commandLoader.ts
+│   │   │   ├── fetchChannelMessages.ts
+│   │   │   └── interactionHandler.ts
+│   │   ├── github
+│   │   │   ├── githubApi.ts
+│   │   │   ├── githubClient.ts
+│   │   │   ├── lastSeenStore.ts
+│   │   │   ├── prFormatter.ts
+│   │   │   ├── prPoller.ts
+│   │   │   └── types.ts
+│   │   ├── summary
+│   │   │   ├── llmSummary.ts
+│   │   │   ├── localSummary.ts
+│   │   │   └── summarizer.ts
+│   │   ├── time
+│   │   │   ├── formatTimestamp.ts
+│   │   │   └── validateTimezone.ts
+│   │   ├── timezone
+│   │   │   ├── timezone.ts
+│   │   │   └── timezoneStore.ts
+│   │   └── transcript
+│   │       ├── buildTranscript.ts
+│   │       └── defaults.ts
+│   └── utils
+│       └── logger.ts
+└── tsconfig.json
+```
+
+</details>
+
+---
+
+## Extending OmegaBot
+
+OmegaBot is designed for small, focused modules. To add new features:
+
+1. Create a new command file under `src/commands/<category>/`
+2. Add any logic needed inside `src/services/<feature>/`
+3. Run `npm run register` to publish new slash commands
+
+---
+
+## Contributors
+
+Thanks to everyone who has helped build or improve OmegaBot.
+
+<a href="https://contrib.rocks/image?repo=NickTheDevOpsGuy/OmegaBot">
+  <img src="https://contrib.rocks/image?repo=NickTheDevOpsGuy/OmegaBot" alt="Contributors">
+</a>
+
+Generated using https://contrib.rocks
+
+To learn how to contribute, read the [CONTRIBUTOR.md](CONTRIBUTOR.md) file.
+
+If you would like to contribute, please open an issue or submit a pull request.
+
+---
+
+## License
+
+MIT License. Use and modify freely.
