@@ -5,6 +5,7 @@ import { loadCommands, type CommandClient } from "./services/discord/commandLoad
 import { handleInteraction } from "./services/discord/interactionHandler.js";
 import { pollPullRequestsOnce } from "./services/github/prPoller.js";
 import { env } from "./config/env.js";
+import { logger } from "./utils/logger.js";
 
 /**
  * Create the Discord client with only the intents required for slash commands.
@@ -44,22 +45,27 @@ const githubPollingEnabled =
  * Log a confirmation once the bot successfully connects.
  */
 client.once("clientReady", () => {
-  console.log("OmegaBot is online");
+  logger.info("OmegaBot is online");
 
   if (githubPollingEnabled) {
-    console.log(
-      `GitHub PR polling enabled for ${env.githubOwner}/${env.githubRepo} -> channel ${env.githubAnnounceChannelId}`,
+    logger.info(
+      {
+        owner: env.githubOwner,
+        repo: env.githubRepo,
+        channelId: env.githubAnnounceChannelId,
+        intervalMs: env.githubPollIntervalMs,
+      },
+      "GitHub PR polling enabled",
     );
-    console.log(`GitHub PR polling interval: ${env.githubPollIntervalMs}ms`);
   } else {
-    console.log("GitHub PR polling disabled (missing env config)");
+    logger.info("GitHub PR polling disabled (missing env config)");
   }
 });
 
 /**
  * Start the bot session using the configured token.
  */
-client.login(env.token);
+void client.login(env.token);
 
 /**
  * Schedule PR polling (if enabled).

@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import { env } from "./config/env.js";
 import type { RESTPostAPIChatInputApplicationCommandsJSONBody } from "discord-api-types/v10";
+import { logger } from "./utils/logger.js";
 
 /*
  * Read all compiled command definitions and prepare them for registration
@@ -69,13 +70,13 @@ async function register() {
     body: commands,
   });
 
-  console.log("Commands registered.");
+  logger.info("Commands registered.");
 }
 
 /*
  * Wrapper so errors throw clearly and stop the script immediately.
  */
 register().catch((err) => {
-  console.error("Failed to register commands:", err);
+  logger.error(err, "Failed to register commands");
   process.exit(1);
 });
