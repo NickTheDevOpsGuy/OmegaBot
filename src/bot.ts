@@ -35,18 +35,21 @@ client.once("clientReady", () => {
   console.log("OmegaBot is online");
 
   // Poll GitHub every 5 minutes
-  setInterval(async () => {
-    try {
-      await pollPullRequestsOnce({
-        client,
-        owner: "NickTheDevOpsGuy",
-        repo: "OmegaBot",
-        announceChannelId: "1450641533509439538",
-      });
-    } catch (err) {
-      console.error("[prPoller] failed", err);
-    }
-  }, 5 * 60 * 1000);
+  setInterval(
+    async () => {
+      try {
+        await pollPullRequestsOnce({
+          client,
+          owner: "NickTheDevOpsGuy",
+          repo: "OmegaBot",
+          announceChannelId: "1450641533509439538",
+        });
+      } catch (err) {
+        console.error("[prPoller] failed", err);
+      }
+    },
+    5 * 60 * 1000,
+  );
 });
 
 /**
