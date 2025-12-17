@@ -1,4 +1,5 @@
 // src/commands/pagination/pagination.ts
+
 import {
   SlashCommandBuilder,
   ActionRowBuilder,
@@ -7,6 +8,7 @@ import {
   ComponentType,
   type ChatInputCommandInteraction,
 } from "discord.js";
+import { logger } from "../../utils/logger.js";
 
 /**
  * /pagination command
@@ -87,79 +89,111 @@ function renderPage(pages: string[], pageIndex: number) {
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const count = interaction.options.getInteger("count") ?? 50;
 
-  // Not ephemeral: buttons + paging is easier as a normal message.
-  await interaction.deferReply();
+  try {
+    // Not ephemeral: buttons + paging is easier as a normal message.
+    await interaction.deferReply();
 
-  if (!interaction.channel || !interaction.channel.isTextBased()) {
-    await interaction.editReply("This channel does not support pagination.");
-    return;
-  }
+    if (!interaction.channel || !interaction.channel.isTextBased()) {
+      await interaction.editReply("This channel does not support pagination.");
+      return;
+    }
 
-  const messages = await interaction.channel.messages.fetch({ limit: count });
+    const messages = await interaction.channel.messages.fetch({ limit: count });
 
-  const userMessages = messages
-    .filter((m) => !m.author.bot && m.content)
-    .sort((a, b) => a.createdTimestamp - b.createdTimestamp);
+    const userMessages = messages
+      .filter((m) => !m.author.bot && m.content)
+      .sort((a, b) => a.createdTimestamp - b.createdTimestamp);
 
-  if (userMessages.size === 0) {
-    await interaction.editReply("No usable messages found.");
-    return;
-  }
+    if (userMessages.size === 0) {
+      await interaction.editReply("No usable messages found.");
+      return;
+    }
 
-  const transcript = userMessages
-    .map((m) => `${m.author.username}: ${m.content}`)
-    .join("\n");
+    const transcript = userMessages
+      .map((m) => `${m.author.username}: ${m.content}`)
+      .join("\n");
 
-  const pages = chunkByChars(transcript, MAX_PAGE_CHARS);
-  let pageIndex = 0;
+    const pages = chunkByChars(transcript, MAX_PAGE_CHARS);
+    let pageIndex = 0;
 
-  const replyMessage = await interaction.editReply({
-    content: renderPage(pages, pageIndex),
-    components: [buildRow(pageIndex, pages.length)],
-  });
+    const replyMessage = await interaction.editReply({
+      content: renderPage(pages, pageIndex),
+      components: [buildRow(pageIndex, pages.length)],
+    });
 
-  const collector = replyMessage.createMessageComponentCollector({
-    componentType: ComponentType.Button,
-    time: COLLECTOR_MS,
-    filter: (i) => i.user.id === interaction.user.id,
-  });
+    const collector = replyMessage.createMessageComponentCollector({
+      componentType: ComponentType.Button,
+      time: COLLECTOR_MS,
+      filter: (i) => i.user.id === interaction.user.id,
+    });
 
-  collector.on("collect", async (i) => {
-    try {
-      if (i.customId === "pagination_stop") {
-        collector.stop("stopped");
+    collector.on("collect", async (i) => {
+      try {
+        if (i.customId === "pagination_stop") {
+          collector.stop("stopped");
+          await i.update({
+            content: renderPage(pages, pageIndex),
+            components: [buildRow(pageIndex, pages.length, true)],
+          });
+          return;
+        }
+
+        if (i.customId === "pagination_prev") {
+          pageIndex = Math.max(0, pageIndex - 1);
+        }
+
+        if (i.customId === "pagination_next") {
+          pageIndex = Math.min(pages.length - 1, pageIndex + 1);
+        }
+
         await i.update({
+          content: renderPage(pages, pageIndex),
+          components: [buildRow(pageIndex, pages.length)],
+        });
+      } catch (err) {
+        logger.warn(
+          { err, userId: interaction.user.id },
+          "[pagination] button update failed",
+        );
+      }
+    });
+
+    collector.on("end", async (collected, reason) => {
+      try {
+        await replyMessage.edit({
           content: renderPage(pages, pageIndex),
           components: [buildRow(pageIndex, pages.length, true)],
         });
-        return;
+
+        logger.debug(
+          {
+            reason,
+            clicks: collected.size,
+            userId: interaction.user.id,
+          },
+          "[pagination] collector ended",
+        );
+      } catch (err) {
+        logger.warn({ err }, "[pagination] failed to disable buttons");
       }
+    });
+  } catch (err) {
+    logger.error(
+      { err, command: "pagination", userId: interaction.user.id },
+      "[pagination] command failed",
+    );
 
-      if (i.customId === "pagination_prev") {
-        pageIndex = Math.max(0, pageIndex - 1);
-      }
-
-      if (i.customId === "pagination_next") {
-        pageIndex = Math.min(pages.length - 1, pageIndex + 1);
-      }
-
-      await i.update({
-        content: renderPage(pages, pageIndex),
-        components: [buildRow(pageIndex, pages.length)],
-      });
-    } catch (err) {
-      console.error("[pagination] button update failed", err);
-    }
-  });
-
-  collector.on("end", async () => {
     try {
-      await replyMessage.edit({
-        content: renderPage(pages, pageIndex),
-        components: [buildRow(pageIndex, pages.length, true)],
-      });
-    } catch (err) {
-      console.error("[pagination] failed to disable buttons", err);
+      if (interaction.replied || interaction.deferred) {
+        await interaction.editReply("Something went wrong during pagination.");
+      } else {
+        await interaction.reply("Something went wrong during pagination.");
+      }
+    } catch (replyErr) {
+      logger.error(
+        { err: replyErr },
+        "[pagination] failed to send fallback error message",
+      );
     }
-  });
+  }
 }

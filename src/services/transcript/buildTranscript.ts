@@ -31,6 +31,13 @@ export type TranscriptResult = {
 /**
  * Builds a readable transcript from a list of messages.
  * Responsible ONLY for formatting + truncation rules.
+ *
+ * This function intentionally:
+ * - Does not log
+ * - Does not throw
+ * - Does not mutate external state
+ *
+ * Callers decide how to handle results and failures.
  */
 export function buildTranscript(
   messages: TranscriptMessage[],
@@ -77,6 +84,7 @@ export function buildTranscript(
     if (maxChars) {
       const joinedLen =
         lines.reduce((acc, l) => acc + l.length, 0) + Math.max(0, lines.length - 1);
+
       if (joinedLen >= maxChars) {
         tooLong = true;
         break;

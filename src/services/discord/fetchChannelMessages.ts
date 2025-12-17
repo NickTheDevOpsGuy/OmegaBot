@@ -1,4 +1,7 @@
+// src/services/discord/fetchChannelMessages.ts
+
 import type { TextBasedChannel, Message } from "discord.js";
+import { logger } from "../../utils/logger.js";
 
 export type FetchMessagesOptions = {
   count?: number;
@@ -7,10 +10,18 @@ export type FetchMessagesOptions = {
 };
 
 /**
- * Fetch messages from a text-based channel with optional
- * count / before / after filters.
+ * Fetch messages from a text-based Discord channel.
+ *
+ * Supports optional:
+ * - count  → max number of messages to fetch
+ * - before → message ID cursor
+ * - after  → message ID cursor
  *
  * Returns messages sorted oldest → newest.
+ *
+ * This function performs network I/O and therefore:
+ * - Wraps fetch in try/catch
+ * - Logs failures with context
  */
 export async function fetchChannelMessages(
   channel: TextBasedChannel,
@@ -29,10 +40,30 @@ export async function fetchChannelMessages(
   if (before) fetchOptions.before = before;
   if (after) fetchOptions.after = after;
 
-  const collection = await channel.messages.fetch(fetchOptions);
+  try {
+    const collection = await channel.messages.fetch(fetchOptions);
 
-  // Convert Collection → Array and sort chronologically
-  return Array.from(collection.values()).sort(
-    (a, b) => a.createdTimestamp - b.createdTimestamp,
-  );
+    // Convert Collection → Array and sort chronologically
+    return Array.from(collection.values()).sort(
+      (a, b) => a.createdTimestamp - b.createdTimestamp,
+    );
+  } catch (err) {
+    logger.error(
+      {
+        err,
+        channelId: channel.id,
+        count,
+        before,
+        after,
+      },
+      "Failed to fetch channel messages",
+    );
+
+    /**
+     * Fail safe:
+     * - Return empty list instead of crashing caller
+     * - Callers can decide how to handle missing messages
+     */
+    return [];
+  }
 }

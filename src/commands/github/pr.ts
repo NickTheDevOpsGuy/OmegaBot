@@ -7,6 +7,7 @@ import {
 } from "discord.js";
 import { GitHubApiError } from "../../services/github/githubClient.js";
 import { getPullRequest } from "../../services/github/githubApi.js";
+import { logger } from "../../utils/logger.js";
 
 /**
  * /pr command
@@ -32,7 +33,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     const mergedLabel = pr.merged ? "merged" : "not merged";
     const body = [
       `**${owner}/${repo} PR #${pr.number}**`,
-      `${pr.title}`,
+      pr.title,
       `State: ${pr.state} (${mergedLabel})`,
       `Author: ${pr.user?.login ?? "unknown"}`,
       `URL: ${pr.html_url}`,
@@ -45,11 +46,15 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         await interaction.editReply("PR not found. Check owner/repo and PR number.");
         return;
       }
+
+      logger.warn({ err, owner, repo, number }, "[pr] GitHub API error");
+
       await interaction.editReply(`GitHub API error (${err.status}): ${err.message}`);
       return;
     }
 
-    console.error("[pr] command failed", err);
+    logger.error({ err, owner, repo, number }, "[pr] command failed");
+
     await interaction.editReply("Something went wrong while talking to GitHub.");
   }
 }

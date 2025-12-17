@@ -11,6 +11,7 @@ import {
   listIssues,
   listPullRequests,
 } from "../../services/github/githubApi.js";
+import { logger } from "../../utils/logger.js";
 
 /**
  * /gh command
@@ -131,13 +132,24 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       );
       return;
     }
+
+    // Should be unreachable because subcommand is required, but keep it safe.
+    await interaction.editReply("Unknown subcommand.");
   } catch (err) {
     if (err instanceof GitHubApiError) {
+      if (err.status === 404) {
+        await interaction.editReply("Not found. Check owner/repo and the number.");
+        return;
+      }
+
+      logger.warn({ err, owner, repo, sub }, "[gh] GitHub API error");
+
       await interaction.editReply(`GitHub error (${err.status}): ${err.message}`);
       return;
     }
 
-    console.error("[gh] command failed", err);
+    logger.error({ err, owner, repo, sub }, "[gh] command failed");
+
     await interaction.editReply("Something went wrong talking to GitHub.");
   }
 }
