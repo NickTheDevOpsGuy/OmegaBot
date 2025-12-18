@@ -30,12 +30,14 @@ Messages flow through the system in the following order:
 ## ⚙️ Modes
 
 ### Local
+
 - Rule-based or heuristic summaries
 - Fast and deterministic
 - No external API calls
 - Best for quick overviews or offline usage
 
 ### LLM
+
 - Uses a language model to generate summaries
 - Produces more contextual and natural summaries
 - Requires external API access

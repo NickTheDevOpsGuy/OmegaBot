@@ -23,6 +23,7 @@ In the **Bot** section:
 - Enable **Server Members Intent** (optional but recommended)
 
 ## 4. Invite the Bot to Your Server
+
 Go to **OAuth2 → URL Generator**
 
 - Scopes:
@@ -58,7 +59,6 @@ You will use these in `.env`.
 - Empty message history → missing **Read Message History** permission
 
 ## Official Discord Documentation
-
 
 If you want more detail or need help beyond this guide, these official resources are useful:
 
