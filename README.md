@@ -15,6 +15,18 @@ OmegaBot is a modular Discord bot designed to support development projects with 
 
 ---
 
+## Table of Contents
+
+- [Features](#features)
+- [Documentation](#documentation)
+- [Getting Started](#getting-started)
+- [Project Structure](#project-structure)
+- [Extending OmegaBot](#extending-omegabot)
+- [Contributors](#contributors)
+- [License](#license)
+
+---
+
 ## Features
 
 Current features
@@ -42,6 +54,7 @@ Planned features
 
 ## Documentation
 
+- 🤖 [Discord Bot Setup Guide](docs/discord-bot-setup.md)
 - 📘 [Command Reference](docs/commands.md)
 - 🧠 [Transcript & Summary Design](docs/transcripts.md)
 - 🛠️ [Development Notes](docs/dev-notes.md)
@@ -57,6 +70,9 @@ Planned features
 - A development server where you have Manage Server permissions
 
 ### Setup
+
+> Need help creating a Discord bot and token?  
+> See the [Discord Bot Setup Guide](docs/discord-bot-setup.md).
 
 1. Clone the repository:
 
@@ -116,7 +132,24 @@ OmegaBot is online
 │       └── OmegaBot.yml
 ├── .gitignore
 ├── .husky
-
+│   ├── _
+│   │   ├── .gitignore
+│   │   ├── applypatch-msg
+│   │   ├── commit-msg
+│   │   ├── h
+│   │   ├── husky.sh
+│   │   ├── post-applypatch
+│   │   ├── post-checkout
+│   │   ├── post-commit
+│   │   ├── post-merge
+│   │   ├── post-rewrite
+│   │   ├── pre-applypatch
+│   │   ├── pre-auto-gc
+│   │   ├── pre-commit
+│   │   ├── pre-merge-commit
+│   │   ├── pre-push
+│   │   ├── pre-rebase
+│   │   └── prepare-commit-msg
 │   ├── pre-commit
 │   └── pre-push
 ├── .prettierignore
@@ -132,6 +165,8 @@ OmegaBot is online
 ├── docs
 │   ├── commands.md
 │   ├── dev-notes.md
+│   ├── setup-discord.md
+│   ├── setup-env.md
 │   └── transcripts.md
 ├── eslint.config.ts
 ├── LICENSE
@@ -188,7 +223,6 @@ OmegaBot is online
 │   │       └── defaults.ts
 │   └── utils
 │       └── logger.ts
-└── tsconfig.json
 ```
 
 </details>
