@@ -23,24 +23,27 @@ Guidelines:
 - Use logger.warn for recoverable issues
 - Use logger.error inside catch blocks
 - Avoid logging inside pure helpers
+- Prefer logging at command boundaries and service entry points
 
 ---
 
 ## Environment Variables
 
-See env.example for full list.
+See [.env.example](../.env.example) for the full list of required and optional
+environment variables.
 
 ---
 
 ## Error Handling
 
-- Commands catch and reply gracefully
+- Commands must catch errors and reply gracefully
 - Services may throw domain-specific errors
-- Pollers and background tasks must never crash the process
+- Background tasks and pollers must never crash the process
+- Unexpected errors should be logged with context
 
 ---
 
-## Future
+## Future Improvements
 
-- Replace file stores with DB
-- Add metrics
+- Replace file stores with a database
+- Add metrics and observability
