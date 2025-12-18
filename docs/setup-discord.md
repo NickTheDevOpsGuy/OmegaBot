@@ -47,10 +47,12 @@ https://discord.com/developers/docs/topics/gateway#gateway-intents
 Go to **OAuth2 → URL Generator**
 
 **Scopes**
+
 - bot
 - applications.commands
 
 **Bot Permissions**
+
 - View Channels
 - Read Message History
 - Send Messages
