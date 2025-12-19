@@ -1,22 +1,16 @@
-// src/commands/fun/fun.ts
+// src/commands/fun/subcommands/chucknorris.ts
 
 import type { ChatInputCommandInteraction } from "discord.js";
 import { logger } from "../../../utils/logger.js";
 
-/**
- * Supported execution modes for Chuck Norris jokes.
- *
- * The parent command (fun.ts) decides which mode to use
- * based on slash command options.
- */
+type ChuckNorrisApiResponse = {
+  value: string;
+};
+
 export type ChuckNorrisMode =
   | { kind: "random" }
   | { kind: "category"; category: string }
   | { kind: "search"; query: string };
-
-type ChuckNorrisApiResponse = {
-  value: string;
-};
 
 /**
  * Run handler for /fun chucknorris
@@ -31,73 +25,36 @@ export async function run(
   mode: ChuckNorrisMode,
 ): Promise<void> {
   try {
-    let joke: string;
-
-    switch (mode.kind) {
-      case "category":
-        joke = await fetchCategoryJoke(mode.category);
-        break;
-
-      case "search":
-        joke = await fetchSearchJoke(mode.query);
-        break;
-
-      case "random":
-      default:
-        joke = await fetchRandomJoke();
-        break;
-    }
+    const joke = await fetchChuckNorris(mode);
 
     await interaction.editReply(joke);
 
     logger.debug(
-      {
-        userId: interaction.user.id,
-        mode: mode.kind,
-      },
-      "[fun/chucknorris] joke sent",
+      { userId: interaction.user.id, mode: mode.kind },
+      "[fun/chucknorris] sent",
     );
   } catch (err) {
-    logger.error({ err, mode }, "[fun/chucknorris] fetch failed");
-
+    logger.error({ err, mode }, "[fun/chucknorris] failed");
     await interaction.editReply(
       "Chuck Norris is currently roundhouse kicking the API. Try again later.",
     );
   }
 }
 
-/* -------------------------------------------------------------------------- */
-/*                               API FETCHERS                                 */
-/* -------------------------------------------------------------------------- */
+async function fetchChuckNorris(mode: ChuckNorrisMode): Promise<string> {
+  if (mode.kind === "random")
+    return fetchSingle("https://api.chucknorris.io/jokes/random");
 
-/**
- * Fetch a random Chuck Norris joke.
- */
-async function fetchRandomJoke(): Promise<string> {
-  return fetchJoke("https://api.chucknorris.io/jokes/random");
-}
+  if (mode.kind === "category") {
+    const url = `https://api.chucknorris.io/jokes/random?category=${encodeURIComponent(
+      mode.category,
+    )}`;
+    return fetchSingle(url);
+  }
 
-/**
- * Fetch a random Chuck Norris joke from a specific category.
- */
-async function fetchCategoryJoke(category: string): Promise<string> {
-  const url = `https://api.chucknorris.io/jokes/random?category=${encodeURIComponent(
-    category,
-  )}`;
-
-  return fetchJoke(url);
-}
-
-/**
- * Fetch a Chuck Norris joke matching a search query.
- *
- * NOTE:
- * The API returns an array for search results.
- * We pick the first result for simplicity.
- */
-async function fetchSearchJoke(query: string): Promise<string> {
+  // mode.kind === "search"
   const url = `https://api.chucknorris.io/jokes/search?query=${encodeURIComponent(
-    query,
+    mode.query,
   )}`;
 
   const res = await fetch(url, {
@@ -112,18 +69,16 @@ async function fetchSearchJoke(query: string): Promise<string> {
   }
 
   const data = (await res.json()) as { result?: ChuckNorrisApiResponse[] };
+  const first = data.result?.[0]?.value;
 
-  if (!data.result || data.result.length === 0) {
-    throw new Error("No Chuck Norris jokes found for that search");
+  if (!first || typeof first !== "string") {
+    throw new Error("No results for that search");
   }
 
-  return data.result[0].value.trim();
+  return first.trim();
 }
 
-/**
- * Shared helper for endpoints that return a single joke object.
- */
-async function fetchJoke(url: string): Promise<string> {
+async function fetchSingle(url: string): Promise<string> {
   const res = await fetch(url, {
     headers: {
       Accept: "application/json",
