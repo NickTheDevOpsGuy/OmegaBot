@@ -197,9 +197,13 @@ OmegaBot is online
 │   │   ├── timezone
 │   │   │   ├── timezone.ts
 │   │   │   └── timezoneStore.ts
-│   │   └── transcript
-│   │       ├── buildTranscript.ts
-│   │       └── defaults.ts
+│   │   ├── transcript
+│   │   │   ├── buildTranscript.ts
+│   │   │   └── defaults.ts
+│   │   └── weather
+│   │       ├── forecast.ts
+│   │       ├── geocode.ts
+│   │       └── types.ts
 │   ├── utils
 │   │   └── logger.ts
 │   ├── bot.ts
