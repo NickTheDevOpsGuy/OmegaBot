@@ -23,9 +23,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
   const isHeads = Math.random() < 0.5;
 
   // Make the two results visually distinct
-  const result = isHeads
-    ? "🟡 **HEADS**  👑"
-    : "⚪ **TAILS**  🌀";
+  const result = isHeads ? "🟡 **HEADS**  👑" : "⚪ **TAILS**  🌀";
 
   await interaction.editReply(`${result}`);
 
