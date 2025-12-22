@@ -11,6 +11,8 @@ import { run as runChuckNorris } from "./subcommands/chucknorris.js";
 import type { ChuckNorrisMode } from "./subcommands/chucknorris.js";
 
 import { run as runDadJoke } from "./subcommands/dadjoke.js";
+import type { DadJokeMode } from "./subcommands/dadjoke.js";
+
 import { run as runDice } from "./subcommands/dice.js";
 
 import { run as runWeather } from "./subcommands/weather.js";
@@ -28,7 +30,13 @@ export const data = new SlashCommandBuilder()
   .addSubcommand((s) =>
     s
       .setName("chucknorris")
-      .setDescription("Random Chuck Norris fact")
+      .setDescription("Chuck Norris facts (random, category, or search)")
+      .addStringOption((o) =>
+        o.setName("category").setDescription("Category (optional)").setRequired(false),
+      )
+      .addStringOption((o) =>
+        o.setName("query").setDescription("Search term (optional)").setRequired(false),
+      )
       .addBooleanOption((o) =>
         o
           .setName("ephemeral")
@@ -41,7 +49,10 @@ export const data = new SlashCommandBuilder()
   .addSubcommand((s) =>
     s
       .setName("dadjoke")
-      .setDescription("Random dad joke")
+      .setDescription("Random dad joke (or search)")
+      .addStringOption((o) =>
+        o.setName("query").setDescription("Search term (optional)").setRequired(false),
+      )
       .addBooleanOption((o) =>
         o
           .setName("ephemeral")
@@ -55,6 +66,22 @@ export const data = new SlashCommandBuilder()
     s
       .setName("dice")
       .setDescription("Roll some dice")
+      .addIntegerOption((o) =>
+        o
+          .setName("sides")
+          .setDescription("Number of sides on each die")
+          .setMinValue(2)
+          .setMaxValue(100)
+          .setRequired(false),
+      )
+      .addIntegerOption((o) =>
+        o
+          .setName("count")
+          .setDescription("How many dice to roll")
+          .setMinValue(1)
+          .setMaxValue(10)
+          .setRequired(false),
+      )
       .addBooleanOption((o) =>
         o
           .setName("ephemeral")
@@ -124,12 +151,24 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
   try {
     if (sub === "chucknorris") {
-      const mode: ChuckNorrisMode = { kind: "random" };
+      const category = interaction.options.getString("category")?.trim();
+      const query = interaction.options.getString("query")?.trim();
+
+      const mode: ChuckNorrisMode = query
+        ? { kind: "search", query }
+        : category
+          ? { kind: "category", category }
+          : { kind: "random" };
+
       return await runChuckNorris(interaction, mode);
     }
 
     if (sub === "dadjoke") {
-      return await runDadJoke(interaction);
+      const query = interaction.options.getString("search")?.trim() ?? "";
+
+      const mode: DadJokeMode = query ? { kind: "search", query } : { kind: "random" };
+
+      return await runDadJoke(interaction, mode);
     }
 
     if (sub === "dice") {
@@ -138,7 +177,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
     if (sub === "weather" || sub === "weather7") {
       const location = interaction.options.getString("location", true).trim();
-      const unit = parseTempUnit(interaction.options.getString("unit"));
+      const unit = parseTempUnit(interaction.options.getString("unit") ?? "f");
 
       const mode: WeatherMode =
         sub === "weather"

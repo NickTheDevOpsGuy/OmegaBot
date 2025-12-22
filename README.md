@@ -119,7 +119,7 @@ OmegaBot is online
 
 ```
 .
-├── .env.example
+├── .env-example
 ├── .github
 │   ├── ISSUE_TEMPLATE
 │   │   ├── bug.yml
@@ -209,6 +209,7 @@ OmegaBot is online
 │   ├── bot.ts
 │   └── registerCommands.ts
 ├── .env.example
+├── .eslintcache
 ├── .gitignore
 ├── .prettierignore
 ├── .prettierrc.yml
