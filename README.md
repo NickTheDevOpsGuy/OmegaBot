@@ -57,6 +57,7 @@ Planned features
 
 - 🤖 [Discord Bot Setup Guide](docs/discord-bot-setup.md)
 - 📘 [Command Reference](docs/commands.md)
+- ❓ [FAQ Storage Design](docs/faq.md)
 - 🧠 [Transcript & Summary Design](docs/transcripts.md)
 - 🛠️ [Development Notes](docs/dev-notes.md)
 
