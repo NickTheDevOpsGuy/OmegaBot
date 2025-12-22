@@ -39,6 +39,7 @@ Current features
 - /pagination command (inline paging)
 - /timezone command (per-user IANA timezone)
 - /changelog command (ephemeral preview)
+- /fun commands: chucknorris, dadjoke, coinflip, dice, weather
 - Centralized structured logging
 
 Planned features
@@ -118,7 +119,7 @@ OmegaBot is online
 
 ```
 .
-├── .env.example
+├── .env-example
 ├── .github
 │   ├── ISSUE_TEMPLATE
 │   │   ├── bug.yml
@@ -127,38 +128,15 @@ OmegaBot is online
 │   │   ├── enhancement_refactor.yml
 │   │   ├── feature_request.yml
 │   │   └── question_discussion.yml
-│   ├── pull_request_template.md
-│   └── workflows
-│       └── OmegaBot.yml
-├── .gitignore
+│   ├── workflows
+│   │   └── OmegaBot.yml
+│   └── pull_request_template.md
 ├── .husky
-│   ├── _
-│   │   ├── .gitignore
-│   │   ├── applypatch-msg
-│   │   ├── commit-msg
-│   │   ├── h
-│   │   ├── husky.sh
-│   │   ├── post-applypatch
-│   │   ├── post-checkout
-│   │   ├── post-commit
-│   │   ├── post-merge
-│   │   ├── post-rewrite
-│   │   ├── pre-applypatch
-│   │   ├── pre-auto-gc
-│   │   ├── pre-commit
-│   │   ├── pre-merge-commit
-│   │   ├── pre-push
-│   │   ├── pre-rebase
-│   │   └── prepare-commit-msg
 │   ├── pre-commit
 │   └── pre-push
-├── .prettierignore
-├── .prettierrc.yml
 ├── assets
 │   ├── banner.png
 │   └── omegabot.png
-├── CHANGELOG.md
-├── CONTRIBUTORS.md
 ├── data
 │   ├── last-seen.json
 │   └── timezones.json
@@ -168,18 +146,20 @@ OmegaBot is online
 │   ├── setup-discord.md
 │   ├── setup-env.md
 │   └── transcripts.md
-├── eslint.config.ts
-├── LICENSE
-├── package-lock.json
-├── package.json
-├── README.md
 ├── scripts
 │   └── precheck.sh
 ├── src
-│   ├── bot.ts
 │   ├── commands
 │   │   ├── changelog
 │   │   │   └── changelog.ts
+│   │   ├── fun
+│   │   │   ├── subcommands
+│   │   │   │   ├── chucknorris.ts
+│   │   │   │   ├── coinflip.ts
+│   │   │   │   ├── dadjoke.ts
+│   │   │   │   ├── dice.ts
+│   │   │   │   └── weather.ts
+│   │   │   └── fun.ts
 │   │   ├── general
 │   │   │   └── ping.ts
 │   │   ├── github
@@ -195,7 +175,6 @@ OmegaBot is online
 │   │       └── summary.ts
 │   ├── config
 │   │   └── env.ts
-│   ├── registerCommands.ts
 │   ├── services
 │   │   ├── discord
 │   │   │   ├── commandLoader.ts
@@ -218,11 +197,30 @@ OmegaBot is online
 │   │   ├── timezone
 │   │   │   ├── timezone.ts
 │   │   │   └── timezoneStore.ts
-│   │   └── transcript
-│   │       ├── buildTranscript.ts
-│   │       └── defaults.ts
-│   └── utils
-│       └── logger.ts
+│   │   ├── transcript
+│   │   │   ├── buildTranscript.ts
+│   │   │   └── defaults.ts
+│   │   └── weather
+│   │       ├── forecast.ts
+│   │       ├── geocode.ts
+│   │       └── types.ts
+│   ├── utils
+│   │   └── logger.ts
+│   ├── bot.ts
+│   └── registerCommands.ts
+├── .env.example
+├── .eslintcache
+├── .gitignore
+├── .prettierignore
+├── .prettierrc.yml
+├── CHANGELOG.md
+├── CONTRIBUTORS.md
+├── eslint.config.ts
+├── LICENSE
+├── package-lock.json
+├── package.json
+├── README.md
+└── tsconfig.json
 ```
 
 </details>
