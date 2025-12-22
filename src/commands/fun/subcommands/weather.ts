@@ -2,12 +2,16 @@
 
 import type { ChatInputCommandInteraction } from "discord.js";
 import { logger } from "../../../utils/logger.js";
-import type { WeatherMode, TempUnit } from "../../../services/weather/types.js";
+import type {
+  WeatherMode,
+  TempUnit,
+  NwsForecastResponse,
+} from "../../../services/weather/types.js";
 import { geocodeLocation } from "../../../services/weather/geocode.js";
 import { fetchForecast } from "../../../services/weather/forecast.js";
 
 /**
- * Run handler for /fun weather
+ * Run handler for /fun weather and /fun weather7
  *
  * IMPORTANT:
  * - NOT a slash command by itself
@@ -20,7 +24,7 @@ export async function run(
 ): Promise<void> {
   try {
     const point = await geocodeLocation(mode.location);
-    const forecast = await fetchForecast(point);
+    const forecast = (await fetchForecast(point)) as NwsForecastResponse;
 
     const text =
       mode.kind === "daily"
@@ -45,52 +49,135 @@ export async function run(
 }
 
 /* -------------------------------------------------------------------------- */
-/*                               FORMATTERS                                   */
+/*                                   TYPES                                    */
 /* -------------------------------------------------------------------------- */
 
-function formatTemp(celsius: number, unit: TempUnit): string {
-  return unit === "f"
-    ? `${Math.round((celsius * 9) / 5 + 32)}°F`
-    : `${Math.round(celsius)}°C`;
+type NwsPeriod = {
+  name?: string;
+  startTime?: string;
+  isDaytime?: boolean;
+  temperature?: number;
+  temperatureUnit?: string; // "F" or "C" typically
+  shortForecast?: string;
+  detailedForecast?: string;
+  probabilityOfPrecipitation?: { value: number | null } | null;
+};
+
+function getPeriods(forecast: NwsForecastResponse): NwsPeriod[] {
+  const periods = forecast?.properties?.periods;
+  return Array.isArray(periods) ? (periods as NwsPeriod[]) : [];
 }
 
-function weatherEmoji(code: number): string {
-  if (code === 0) return "☀️";
-  if (code <= 2) return "🌤️";
-  if (code <= 45) return "☁️";
-  if (code <= 65) return "🌧️";
-  if (code <= 75) return "❄️";
-  return "🌩️";
+/* -------------------------------------------------------------------------- */
+/*                                 FORMATTERS                                 */
+/* -------------------------------------------------------------------------- */
+
+function toC(f: number): number {
+  return (f - 32) * (5 / 9);
 }
 
-function formatDaily(label: string, forecast: any, unit: TempUnit): string {
-  const day = forecast.daily;
+function toF(c: number): number {
+  return c * (9 / 5) + 32;
+}
 
-  const emoji = weatherEmoji(day.weathercode[0]);
-  const min = formatTemp(day.temperature_2m_min[0], unit);
-  const max = formatTemp(day.temperature_2m_max[0], unit);
+function formatTemp(
+  value: number,
+  fromUnit: string | undefined,
+  target: TempUnit,
+): string {
+  const from = (fromUnit ?? "F").toUpperCase();
 
-  const rain = day.precipitation_probability_max?.[0] ?? 0;
+  // target is "f" | "c"
+  if (target === "f") {
+    const f = from === "C" ? toF(value) : value;
+    return `${Math.round(f)}°F`;
+  }
+
+  const c = from === "F" ? toC(value) : value;
+  return `${Math.round(c)}°C`;
+}
+
+function forecastEmoji(text: string): string {
+  const t = text.toLowerCase();
+  if (t.includes("thunder")) return "🌩️";
+  if (t.includes("snow") || t.includes("flurr")) return "❄️";
+  if (t.includes("rain") || t.includes("shower") || t.includes("drizzle")) return "🌧️";
+  if (t.includes("cloud")) return "☁️";
+  if (t.includes("sun") || t.includes("clear")) return "☀️";
+  if (t.includes("fog") || t.includes("haze")) return "🌫️";
+  return "🌤️";
+}
+
+function safePop(period: NwsPeriod): number {
+  const v = period.probabilityOfPrecipitation?.value;
+  return typeof v === "number" ? v : 0;
+}
+
+function formatDaily(
+  label: string,
+  forecast: NwsForecastResponse,
+  unit: TempUnit,
+): string {
+  const periods = getPeriods(forecast);
+
+  if (periods.length === 0) {
+    return `📍 **${label}**\nNo forecast data available right now.`;
+  }
+
+  const p = periods[0];
+
+  const name = p.name ?? "Today";
+  const short = p.shortForecast ?? "Forecast unavailable";
+  const emoji = forecastEmoji(short);
+
+  const temp =
+    typeof p.temperature === "number"
+      ? formatTemp(p.temperature, p.temperatureUnit, unit)
+      : "N/A";
+
+  const pop = safePop(p);
+
+  const details = p.detailedForecast ?? short;
 
   return [
     `📍 **${label}**`,
-    `${emoji} **Today**`,
-    `🌡️ ${min} → ${max}`,
-    `☔ ${rain}%`,
+    `${emoji} **${name}**`,
+    `🌡️ ${temp}`,
+    `☔ ${pop}%`,
+    details,
   ].join("\n");
 }
 
-function format7Day(label: string, forecast: any, unit: TempUnit): string {
+function format7Day(
+  label: string,
+  forecast: NwsForecastResponse,
+  unit: TempUnit,
+): string {
+  const periods = getPeriods(forecast);
+
+  if (periods.length === 0) {
+    return `📍 **${label}**\nNo forecast data available right now.`;
+  }
+
+  // Prefer daytime periods for a cleaner "7 day" list.
+  const dayPeriods = periods.filter((p) => p.isDaytime === true);
+  const list = (dayPeriods.length ? dayPeriods : periods).slice(0, 7);
+
   const lines: string[] = [`📍 **${label}**`, "📆 **7-Day Forecast**"];
 
-  for (let i = 0; i < 7; i++) {
-    const emoji = weatherEmoji(forecast.daily.weathercode[i]);
-    const min = formatTemp(forecast.daily.temperature_2m_min[i], unit);
-    const max = formatTemp(forecast.daily.temperature_2m_max[i], unit);
-    const rain = forecast.daily.precipitation_probability_max?.[i] ?? 0;
-    const date = forecast.daily.time[i];
+  for (const p of list) {
+    const name = p.name ?? "Day";
+    const short = p.shortForecast ?? "Forecast unavailable";
+    const emoji = forecastEmoji(short);
 
-    lines.push(`${emoji} ${date}: ${min} → ${max} ☔ ${rain}%`);
+    const temp =
+      typeof p.temperature === "number"
+        ? formatTemp(p.temperature, p.temperatureUnit, unit)
+        : "N/A";
+
+    const pop = safePop(p);
+
+    lines.push(`${emoji} **${name}**: ${temp} ☔ ${pop}%`);
   }
 
   return lines.join("\n");

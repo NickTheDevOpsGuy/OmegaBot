@@ -28,3 +28,22 @@ export type WeatherPoint = {
    */
   forecastUrl: string;
 };
+
+/**
+ * Minimal NWS forecast response shape we actually use.
+ * https://api.weather.gov/gridpoints/{office}/{gridX},{gridY}/forecast
+ */
+export type NwsForecastResponse = {
+  properties?: {
+    periods?: Array<{
+      name?: string;
+      startTime?: string;
+      isDaytime?: boolean;
+      temperature?: number;
+      temperatureUnit?: string; // usually "F" or "C"
+      shortForecast?: string;
+      detailedForecast?: string;
+      probabilityOfPrecipitation?: { value: number | null } | null;
+    }>;
+  };
+};
