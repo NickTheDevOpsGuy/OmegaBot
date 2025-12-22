@@ -120,6 +120,7 @@ OmegaBot is online
 ```
 .
 ├── .env-example
+.
 ├── .github
 │   ├── ISSUE_TEMPLATE
 │   │   ├── bug.yml
@@ -132,17 +133,37 @@ OmegaBot is online
 │   │   └── OmegaBot.yml
 │   └── pull_request_template.md
 ├── .husky
+│   ├── _
+│   │   ├── .gitignore
+│   │   ├── applypatch-msg
+│   │   ├── commit-msg
+│   │   ├── h
+│   │   ├── husky.sh
+│   │   ├── post-applypatch
+│   │   ├── post-checkout
+│   │   ├── post-commit
+│   │   ├── post-merge
+│   │   ├── post-rewrite
+│   │   ├── pre-applypatch
+│   │   ├── pre-auto-gc
+│   │   ├── pre-commit
+│   │   ├── pre-merge-commit
+│   │   ├── pre-push
+│   │   ├── pre-rebase
+│   │   └── prepare-commit-msg
 │   ├── pre-commit
 │   └── pre-push
 ├── assets
 │   ├── banner.png
 │   └── omegabot.png
 ├── data
+│   ├── faqs.json
 │   ├── last-seen.json
 │   └── timezones.json
 ├── docs
 │   ├── commands.md
 │   ├── dev-notes.md
+│   ├── faq.md
 │   ├── setup-discord.md
 │   ├── setup-env.md
 │   └── transcripts.md
@@ -209,7 +230,6 @@ OmegaBot is online
 │   ├── bot.ts
 │   └── registerCommands.ts
 ├── .env.example
-├── .eslintcache
 ├── .gitignore
 ├── .prettierignore
 ├── .prettierrc.yml
@@ -220,7 +240,6 @@ OmegaBot is online
 ├── package-lock.json
 ├── package.json
 ├── README.md
-└── tsconfig.json
 ```
 
 </details>
