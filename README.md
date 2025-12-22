@@ -183,6 +183,8 @@ OmegaBot is online
 │   │   │   ├── fetchChannelMessages.ts
 │   │   │   └── interactionHandler.ts
 │   │   ├── faq
+│   │   │   ├── faqService.ts
+│   │   │   ├── store.ts
 │   │   │   └── type.ts
 │   │   ├── github
 │   │   │   ├── githubApi.ts

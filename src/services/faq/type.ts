@@ -1,3 +1,5 @@
+//src/services/faq/types.ts
+
 export type FaqEntry = {
   key: string;
   title: string;
