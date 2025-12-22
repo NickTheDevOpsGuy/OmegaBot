@@ -1,7 +1,7 @@
 // src/services/weather/forecast.ts
 
 import { logger } from "../../utils/logger.js";
-import type { TempUnit, WeatherPoint, WeatherMode } from "./types.js";
+import type { TempUnit, WeatherPoint } from "./types.js";
 
 /**
  * NWS forecast response shape (trimmed to what we use).
@@ -33,6 +33,10 @@ export type NwsPeriod = {
   };
 };
 
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null;
+}
+
 /**
  * Fetch forecast for a resolved weather point.
  * Expects point.forecastUrl to be a valid NWS forecast endpoint.
@@ -52,10 +56,13 @@ export async function fetchForecast(point: WeatherPoint): Promise<NwsForecastRes
   const data = (await res.json()) as unknown;
 
   // Light validation so we fail with a useful message (not "cannot read 0")
-  const periods = (data as any)?.properties?.periods;
+  const root = isRecord(data) ? data : null;
+  const props = root && isRecord(root.properties) ? root.properties : null;
+  const periods = props?.periods;
+
   if (!Array.isArray(periods)) {
     logger.warn(
-      { label: point.label, keys: Object.keys((data as any) ?? {}) },
+      { label: point.label, keys: root ? Object.keys(root) : [] },
       "[weather] forecast missing properties.periods",
     );
   }
