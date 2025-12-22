@@ -57,6 +57,7 @@ Planned features
 
 - 🤖 [Discord Bot Setup Guide](docs/discord-bot-setup.md)
 - 📘 [Command Reference](docs/commands.md)
+- ❓ [FAQ Storage Design](docs/faq.md)
 - 🧠 [Transcript & Summary Design](docs/transcripts.md)
 - 🛠️ [Development Notes](docs/dev-notes.md)
 
@@ -143,6 +144,7 @@ OmegaBot is online
 ├── docs
 │   ├── commands.md
 │   ├── dev-notes.md
+│   ├── faq.md
 │   ├── setup-discord.md
 │   ├── setup-env.md
 │   └── transcripts.md
@@ -180,6 +182,8 @@ OmegaBot is online
 │   │   │   ├── commandLoader.ts
 │   │   │   ├── fetchChannelMessages.ts
 │   │   │   └── interactionHandler.ts
+│   │   ├── faq
+│   │   │   └── type.ts
 │   │   ├── github
 │   │   │   ├── githubApi.ts
 │   │   │   ├── githubClient.ts
@@ -209,7 +213,6 @@ OmegaBot is online
 │   ├── bot.ts
 │   └── registerCommands.ts
 ├── .env.example
-├── .eslintcache
 ├── .gitignore
 ├── .prettierignore
 ├── .prettierrc.yml
