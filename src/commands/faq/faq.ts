@@ -100,16 +100,12 @@ export const data = new SlashCommandBuilder()
  * This function intentionally contains no business logic.
  * Subcommand implementations will live in separate files/services.
  */
-export async function execute(
-  interaction: ChatInputCommandInteraction,
-): Promise<void> {
+export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const sub = interaction.options.getSubcommand(true);
   const ephemeral = interaction.options.getBoolean("ephemeral") ?? false;
 
   // Parent command owns the interaction lifecycle
-  await interaction.deferReply(
-    ephemeral ? { flags: MessageFlags.Ephemeral } : undefined,
-  );
+  await interaction.deferReply(ephemeral ? { flags: MessageFlags.Ephemeral } : undefined);
 
   try {
     // Placeholder routing targets.
