@@ -1,7 +1,6 @@
 // src/services/faq/services.ts
 
 import { loadStore, saveStore } from "./store.js";
-import { logger } from "../../utils/logger.js";
 import { MAX_KEY_LEN, type CreateFaqInput, type FaqEntry } from "./types.js";
 
 /* -------------------------------------------------------------------------- */
