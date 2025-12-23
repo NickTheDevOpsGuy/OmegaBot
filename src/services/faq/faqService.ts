@@ -171,9 +171,7 @@ function assertValidKey(key: string): string {
  * - de-dupe
  */
 function normalizeTags(tags: string[]): string[] {
-  const cleaned = tags
-    .map((t) => t.trim().toLowerCase())
-    .filter((t) => t.length > 0);
+  const cleaned = tags.map((t) => t.trim().toLowerCase()).filter((t) => t.length > 0);
 
   return Array.from(new Set(cleaned));
 }

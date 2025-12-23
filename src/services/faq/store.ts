@@ -33,11 +33,7 @@ export function ensureStoreFile(): void {
   }
 
   fs.mkdirSync(path.dirname(STORE_PATH), { recursive: true });
-  fs.writeFileSync(
-    STORE_PATH,
-    JSON.stringify(EMPTY_STORE, null, 2),
-    "utf8",
-  );
+  fs.writeFileSync(STORE_PATH, JSON.stringify(EMPTY_STORE, null, 2), "utf8");
 
   logger.info("[faq] created empty FAQ store");
 }
@@ -68,10 +64,7 @@ export function loadStore(): FaqStoreV1 {
 
     return parsed;
   } catch (err) {
-    logger.error(
-      { err },
-      "[faq] failed to load store, falling back to empty store",
-    );
+    logger.error({ err }, "[faq] failed to load store, falling back to empty store");
 
     return {
       version: 1,
@@ -86,9 +79,5 @@ export function loadStore(): FaqStoreV1 {
  * Overwrites the entire store atomically.
  */
 export function saveStore(store: FaqStoreV1): void {
-  fs.writeFileSync(
-    STORE_PATH,
-    JSON.stringify(store, null, 2),
-    "utf8",
-  );
+  fs.writeFileSync(STORE_PATH, JSON.stringify(store, null, 2), "utf8");
 }
