@@ -120,7 +120,6 @@ OmegaBot is online
 
 ```
 .
-├── .env-example
 ├── .github
 │   ├── ISSUE_TEMPLATE
 │   │   ├── bug.yml
@@ -133,24 +132,6 @@ OmegaBot is online
 │   │   └── OmegaBot.yml
 │   └── pull_request_template.md
 ├── .husky
-│   ├── _
-│   │   ├── .gitignore
-│   │   ├── applypatch-msg
-│   │   ├── commit-msg
-│   │   ├── h
-│   │   ├── husky.sh
-│   │   ├── post-applypatch
-│   │   ├── post-checkout
-│   │   ├── post-commit
-│   │   ├── post-merge
-│   │   ├── post-rewrite
-│   │   ├── pre-applypatch
-│   │   ├── pre-auto-gc
-│   │   ├── pre-commit
-│   │   ├── pre-merge-commit
-│   │   ├── pre-push
-│   │   ├── pre-rebase
-│   │   └── prepare-commit-msg
 │   ├── pre-commit
 │   └── pre-push
 ├── assets
@@ -173,6 +154,14 @@ OmegaBot is online
 │   ├── commands
 │   │   ├── changelog
 │   │   │   └── changelog.ts
+│   │   ├── faq
+│   │   │   ├── subcommands
+│   │   │   │   ├── _shared.ts
+│   │   │   │   ├── add.ts
+│   │   │   │   ├── get.ts
+│   │   │   │   ├── list.ts
+│   │   │   │   └── remove.ts
+│   │   │   └── faq.ts
 │   │   ├── fun
 │   │   │   ├── subcommands
 │   │   │   │   ├── chucknorris.ts
