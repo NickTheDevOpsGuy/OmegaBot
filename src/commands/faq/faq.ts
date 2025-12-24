@@ -84,10 +84,7 @@ export const data = new SlashCommandBuilder()
       .setName("list")
       .setDescription("List FAQ entries")
       .addStringOption((o) =>
-        o
-          .setName("tag")
-          .setDescription("Filter by a tag (optional)")
-          .setRequired(false),
+        o.setName("tag").setDescription("Filter by a tag (optional)").setRequired(false),
       )
       .addBooleanOption((o) =>
         o
@@ -124,16 +121,12 @@ export const data = new SlashCommandBuilder()
  * IMPORTANT:
  * Subcommand handlers must only use editReply (no reply/defer).
  */
-export async function execute(
-  interaction: ChatInputCommandInteraction,
-): Promise<void> {
+export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const sub = interaction.options.getSubcommand(true);
   const ephemeral = interaction.options.getBoolean("ephemeral") ?? false;
 
   // Own the lifecycle here (subcommands only editReply)
-  await interaction.deferReply(
-    ephemeral ? { flags: MessageFlags.Ephemeral } : undefined,
-  );
+  await interaction.deferReply(ephemeral ? { flags: MessageFlags.Ephemeral } : undefined);
 
   try {
     if (sub === "add") {

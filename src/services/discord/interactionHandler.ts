@@ -29,7 +29,6 @@ export async function handleInteraction(
   interaction: Interaction,
   client: CommandClient,
 ): Promise<void> {
-
   /**
    * IMPORTANT:
    * Button interactions (confirm / cancel, etc.) are NOT routed here.

@@ -119,7 +119,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
     }
 
     // Confirm path
-    
+
     const ok = remove(existing.key);
 
     await clicked.update({
