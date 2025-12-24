@@ -161,7 +161,10 @@ OmegaBot is online
 │   │   │   │   ├── get.ts
 │   │   │   │   ├── list.ts
 │   │   │   │   └── remove.ts
-│   │   │   └── faq.ts
+│   │   │   ├── faq.ts
+│   │   │   ├── services.ts
+│   │   │   ├── store.ts
+│   │   │   └── types.ts
 │   │   ├── fun
 │   │   │   ├── subcommands
 │   │   │   │   ├── chucknorris.ts

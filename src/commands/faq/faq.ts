@@ -1,20 +1,17 @@
 // src/commands/faq/faq.ts
-
-/**
- * Base /faq slash command.
- *
- * Responsibilities of this file:
- * - Define the /faq command and its subcommands
- * - Handle the Discord interaction lifecycle (defer + reply)
- * - Route execution to the correct subcommand handler
- *
- * Non-goals (by design):
- * - No FAQ business logic
- * - No file I/O
- * - No validation or permissions
- *
- * All real work is delegated to FAQ services in src/services/faq/.
- */
+//
+// Base /faq slash command.
+//
+// Responsibilities:
+// - Define the /faq command + subcommands (Discord API shape)
+// - Own the interaction lifecycle (deferReply + editReply)
+// - Route to subcommand handlers
+//
+// Non-goals:
+// - No business logic (validation, storage, permissions)
+// - No file I/O
+//
+// Subcommands live in: src/commands/faq/subcommands/
 
 import {
   MessageFlags,
@@ -23,27 +20,29 @@ import {
 } from "discord.js";
 import { logger } from "../../utils/logger.js";
 
-/**
- * Slash command definition.
- *
- * This defines the public Discord API shape only.
- * Each subcommand intentionally mirrors a future service operation:
- * - add    → create FAQ
- * - get    → retrieve FAQ
- * - list   → list FAQs
- * - remove → delete FAQ
- *
- * Each subcommand supports an optional ephemeral flag so users
- * can avoid spamming public channels.
- */
+import { run as runAdd } from "./subcommands/add.js";
+
 export const data = new SlashCommandBuilder()
   .setName("faq")
   .setDescription("FAQ commands")
 
+  // /faq add
   .addSubcommand((s) =>
     s
       .setName("add")
       .setDescription("Add a FAQ entry")
+      .addStringOption((o) =>
+        o.setName("key").setDescription("Unique key").setRequired(true),
+      )
+      .addStringOption((o) =>
+        o.setName("title").setDescription("Short title").setRequired(true),
+      )
+      .addStringOption((o) =>
+        o.setName("body").setDescription("Answer text").setRequired(true),
+      )
+      .addStringOption((o) =>
+        o.setName("tags").setDescription("Comma-separated tags").setRequired(false),
+      )
       .addBooleanOption((o) =>
         o
           .setName("ephemeral")
@@ -52,10 +51,14 @@ export const data = new SlashCommandBuilder()
       ),
   )
 
+  // /faq get
   .addSubcommand((s) =>
     s
       .setName("get")
       .setDescription("Get a FAQ entry by key")
+      .addStringOption((o) =>
+        o.setName("key").setDescription("FAQ key").setRequired(true),
+      )
       .addBooleanOption((o) =>
         o
           .setName("ephemeral")
@@ -64,6 +67,7 @@ export const data = new SlashCommandBuilder()
       ),
   )
 
+  // /faq list
   .addSubcommand((s) =>
     s
       .setName("list")
@@ -76,10 +80,14 @@ export const data = new SlashCommandBuilder()
       ),
   )
 
+  // /faq remove
   .addSubcommand((s) =>
     s
       .setName("remove")
       .setDescription("Remove a FAQ entry by key")
+      .addStringOption((o) =>
+        o.setName("key").setDescription("FAQ key").setRequired(true),
+      )
       .addBooleanOption((o) =>
         o
           .setName("ephemeral")
@@ -88,33 +96,20 @@ export const data = new SlashCommandBuilder()
       ),
   );
 
-/**
- * Command execution entry point.
- *
- * Pattern used here:
- * - Determine subcommand
- * - Defer reply immediately (avoid 3s timeout)
- * - Route to the correct handler
- *
- * IMPORTANT:
- * This function intentionally contains no business logic.
- * Subcommand implementations will live in separate files/services.
- */
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const sub = interaction.options.getSubcommand(true);
   const ephemeral = interaction.options.getBoolean("ephemeral") ?? false;
 
-  // Parent command owns the interaction lifecycle
+  // Parent command owns the interaction lifecycle.
   await interaction.deferReply(ephemeral ? { flags: MessageFlags.Ephemeral } : undefined);
 
   try {
-    // Placeholder routing targets.
-    // Each branch will later call into faqService helpers.
     if (sub === "add") {
-      await interaction.editReply("TODO: /faq add");
+      await runAdd(interaction);
       return;
     }
 
+    // Placeholders for upcoming tickets
     if (sub === "get") {
       await interaction.editReply("TODO: /faq get");
       return;
@@ -130,10 +125,8 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       return;
     }
 
-    // Safety net in case Discord sends something unexpected
     await interaction.editReply("Unknown subcommand.");
   } catch (err) {
-    // Centralized error logging, user sees generic failure
     logger.error({ err, sub }, "[faq] subcommand failed");
     await interaction.editReply("Something went wrong. Try again in a bit.");
   }
