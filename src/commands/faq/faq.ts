@@ -1,17 +1,20 @@
 // src/commands/faq/faq.ts
 //
-// Base /faq slash command.
+// Base /faq slash command (router).
 //
 // Responsibilities:
-// - Define the /faq command + subcommands (Discord API shape)
+// - Define the public Discord command shape (/faq + subcommands + options)
 // - Own the interaction lifecycle (deferReply + editReply)
-// - Route to subcommand handlers
+// - Route to subcommand handlers (thin controller)
 //
 // Non-goals:
-// - No business logic (validation, storage, permissions)
+// - No FAQ business logic
 // - No file I/O
+// - No persistence or validation rules beyond “required option” at the Discord level
 //
-// Subcommands live in: src/commands/faq/subcommands/
+// All real work is delegated to:
+// - src/commands/faq/subcommands/*   (Discord-facing handlers)
+// - src/services/faq/*              (business logic + persistence)
 
 import {
   MessageFlags,
@@ -20,7 +23,12 @@ import {
 } from "discord.js";
 import { logger } from "../../utils/logger.js";
 
+// Subcommand runners (each one must NOT reply/defer on its own)
 import { run as runAdd } from "./subcommands/add.js";
+import { run as runRemove } from "./subcommands/remove.js";
+// Future:
+// import { run as runGet } from "./subcommands/get.js";
+// import { run as runList } from "./subcommands/list.js";
 
 export const data = new SlashCommandBuilder()
   .setName("faq")
@@ -41,7 +49,10 @@ export const data = new SlashCommandBuilder()
         o.setName("body").setDescription("Answer text").setRequired(true),
       )
       .addStringOption((o) =>
-        o.setName("tags").setDescription("Comma-separated tags").setRequired(false),
+        o
+          .setName("tags")
+          .setDescription("Comma-separated tags (optional)")
+          .setRequired(false),
       )
       .addBooleanOption((o) =>
         o
@@ -57,7 +68,7 @@ export const data = new SlashCommandBuilder()
       .setName("get")
       .setDescription("Get a FAQ entry by key")
       .addStringOption((o) =>
-        o.setName("key").setDescription("FAQ key").setRequired(true),
+        o.setName("key").setDescription("Key to fetch").setRequired(true),
       )
       .addBooleanOption((o) =>
         o
@@ -72,6 +83,9 @@ export const data = new SlashCommandBuilder()
     s
       .setName("list")
       .setDescription("List FAQ entries")
+      .addStringOption((o) =>
+        o.setName("tag").setDescription("Filter by a tag (optional)").setRequired(false),
+      )
       .addBooleanOption((o) =>
         o
           .setName("ephemeral")
@@ -86,7 +100,7 @@ export const data = new SlashCommandBuilder()
       .setName("remove")
       .setDescription("Remove a FAQ entry by key")
       .addStringOption((o) =>
-        o.setName("key").setDescription("FAQ key").setRequired(true),
+        o.setName("key").setDescription("Key to remove").setRequired(true),
       )
       .addBooleanOption((o) =>
         o
@@ -96,11 +110,22 @@ export const data = new SlashCommandBuilder()
       ),
   );
 
+/**
+ * Command execution entry point.
+ *
+ * Pattern:
+ * - Read subcommand name
+ * - Defer reply immediately (avoids Discord 3s timeout)
+ * - Route to subcommand handler
+ *
+ * IMPORTANT:
+ * Subcommand handlers must only use editReply (no reply/defer).
+ */
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const sub = interaction.options.getSubcommand(true);
   const ephemeral = interaction.options.getBoolean("ephemeral") ?? false;
 
-  // Parent command owns the interaction lifecycle.
+  // Own the lifecycle here (subcommands only editReply)
   await interaction.deferReply(ephemeral ? { flags: MessageFlags.Ephemeral } : undefined);
 
   try {
@@ -109,7 +134,12 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       return;
     }
 
-    // Placeholders for upcoming tickets
+    if (sub === "remove") {
+      await runRemove(interaction);
+      return;
+    }
+
+    // Placeholders until you wire these up
     if (sub === "get") {
       await interaction.editReply("TODO: /faq get");
       return;
@@ -117,11 +147,6 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
     if (sub === "list") {
       await interaction.editReply("TODO: /faq list");
-      return;
-    }
-
-    if (sub === "remove") {
-      await interaction.editReply("TODO: /faq remove");
       return;
     }
 
