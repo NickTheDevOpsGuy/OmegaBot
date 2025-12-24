@@ -22,8 +22,8 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
     // - disallow empty key after trim
     // - maybe guard title/body too
     // - keep it small here, deeper rules can live in services.ts
-    if (key.length === 0) {
-      await interaction.editReply("❌ Key cannot be empty.");
+    if (key.length > MAX_KEY_LEN) {
+      await interaction.editReply(`❌ Key is too long (max ${MAX_KEY_LEN} characters).`);
       return;
     }
 
