@@ -3,73 +3,47 @@
 // /faq remove
 //
 // Responsibilities:
+// - Enforce permissions (via shared guard)
 // - Confirm intent (button) before deleting
-// - Enforce basic permissions (Manage Guild or Administrator)
-// - Delegate all real work to the FAQ service layer
+// - Delegate all persistence + rules to the FAQ service layer
 //
 // IMPORTANT:
 // - This file is NOT a slash command by itself
 // - It must NOT call reply() or deferReply()
 // - The parent command (faq.ts) owns the interaction lifecycle
 
-import type { ChatInputCommandInteraction } from "discord.js";
-import {
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-  ComponentType,
-  PermissionsBitField,
-} from "discord.js";
+import type { ChatInputCommandInteraction, Message, ButtonInteraction } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } from "discord.js";
+
 import { logger } from "../../../utils/logger.js";
-
-// NOTE: Import from the real service layer (src/services/faq/services.ts).
-// This path is relative from src/commands/faq/subcommands/remove.ts
-
-import { getByKey, remove } from "../services.js";
-
-function canRemoveFaq(interaction: ChatInputCommandInteraction): boolean {
-  // memberPermissions is the safe v14 way (avoids the string|PermissionsBitField union)
-  const perms = interaction.memberPermissions;
-  if (!perms) return false;
-
-  return (
-    perms.has(PermissionsBitField.Flags.ManageGuild) ||
-    perms.has(PermissionsBitField.Flags.Administrator)
-  );
-}
+import { getByKey, remove } from "../../../services/faq/services.js";
+import { guardFaqAction, readRequiredKey, handleFaqSubcommandError } from "./_shared.js";
 
 export async function run(interaction: ChatInputCommandInteraction): Promise<void> {
   try {
-    // Permissions only make sense in a guild context.
+    // Permissions only make sense in a guild context
     if (!interaction.inGuild()) {
       await interaction.editReply("❌ `/faq remove` can only be used in a server.");
       return;
     }
 
-    if (!canRemoveFaq(interaction)) {
-      await interaction.editReply("❌ You do not have permission to remove FAQs.");
-      return;
-    }
+    // Centralized permission gate (ManageGuild/Admin or whatever your policy is)
+    if (!(await guardFaqAction(interaction, "remove"))) return;
 
-    const rawKey = interaction.options.getString("key", true);
-    const key = rawKey.trim();
+    // Read + minimal validate key from options
+    const rawKey = await readRequiredKey(interaction, "key");
+    if (!rawKey) return;
 
-    if (key.length === 0) {
-      await interaction.editReply("❌ Key cannot be empty.");
-      return;
-    }
-
-    const existing = getByKey(key);
+    // Lookup entry (service normalizes internally too, but we keep messaging clean here)
+    const existing = getByKey(rawKey);
     if (!existing) {
-      await interaction.editReply(`❌ FAQ not found: **${key}**`);
+      await interaction.editReply(`❌ FAQ not found: **${rawKey}**`);
       return;
     }
 
-    // Use interaction.id to keep ids unique per invocation.
-    // The filter below ensures only the invoking user can click them.
-
-    const confirmId = `faq_remove_confirm:${interaction.id}`;
-    const cancelId = `faq_remove_cancel:${interaction.id}`;
+    // Build a confirmation UI
+    const confirmId = `faq:remove:confirm:${existing.key}:${interaction.user.id}`;
+    const cancelId = `faq:remove:cancel:${existing.key}:${interaction.user.id}`;
 
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
@@ -82,34 +56,24 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
         .setStyle(ButtonStyle.Secondary),
     );
 
-    const msg = await interaction.editReply({
-      content: [
-        `🗑️ Remove FAQ **${existing.key}**?`,
-        `Title: **${existing.title}**`,
-        "",
-        "This cannot be undone.",
-      ].join("\n"),
+    // Show confirmation prompt (keep it very explicit)
+    const replied = (await interaction.editReply({
+      content:
+        `🗑️ **Confirm delete**\n` +
+        `Key: **${existing.key}**\n` +
+        `Title: **${existing.title}**\n\n` +
+        `This cannot be undone.`,
       components: [row],
-    });
+    })) as unknown as Message<true>;
 
-    // Wait for the user to confirm or cancel.
-    // If it times out, clear buttons and exit cleanly.
+    // Wait for the requester's button click
+    const clicked = (await replied.awaitMessageComponent({
+      componentType: ComponentType.Button,
+      time: 20_000,
+      filter: (i: ButtonInteraction) => i.user.id === interaction.user.id,
+    })) as ButtonInteraction;
 
-    let clicked;
-    try {
-      clicked = await msg.awaitMessageComponent({
-        componentType: ComponentType.Button,
-        time: 20_000,
-        filter: (i) => i.user.id === interaction.user.id,
-      });
-    } catch {
-      await interaction.editReply({
-        content: "⏱️ Timed out. Nothing was deleted.",
-        components: [],
-      });
-      return;
-    }
-
+    // Cancel path
     if (clicked.customId === cancelId) {
       await clicked.update({
         content: "✅ Cancelled. Nothing was deleted.",
@@ -119,7 +83,6 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
     }
 
     // Confirm path
-
     const ok = remove(existing.key);
 
     await clicked.update({
@@ -133,8 +96,8 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       { userId: interaction.user.id, key: existing.key },
       "[faq/remove] removed",
     );
-  } catch (err) {
-    logger.error({ err }, "[faq/remove] failed");
-    await interaction.editReply("❌ Could not remove FAQ right now. Try again in a bit.");
+  } catch (err: unknown) {
+    // No `any` here. Keep the handler strict and log the raw error.
+    await handleFaqSubcommandError(interaction, err, "[faq/remove] failed");
   }
 }

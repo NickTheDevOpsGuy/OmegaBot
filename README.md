@@ -29,26 +29,46 @@ OmegaBot is a modular Discord bot designed to support development projects with 
 
 ## Features
 
-Current features
+## Current features
 
 - Modular slash-command system (auto-loaded from dist/commands)
-- /ping command for testing
-- /summary command (local + LLM mode)
-- /history command (DM + file fallback)
-- /playback command (button pagination)
-- /pagination command (inline paging)
-- /timezone command (per-user IANA timezone)
-- /changelog command (ephemeral preview)
-- /fun commands: chucknorris, dadjoke, coinflip, dice, weather
-- Centralized structured logging
+- Centralized interaction routing with safe error handling
+- Structured logging (pino)
 
-Planned features
+### Core commands
 
-- FAQ storage and quick lookup
+- /ping – health check
+- /summary – conversation summaries (local + LLM mode)
+- /history – conversation history (DM + file fallback)
+- /playback – transcript playback with button pagination
+- /pagination – reusable inline paging helper
+- /timezone – per-user IANA timezone support
+- /changelog – ephemeral release preview
+
+### FAQ system
+
+- /faq add – create persistent FAQ entries
+- /faq get – retrieve FAQs by key
+- /faq list – list FAQs with sorting and filtering
+- /faq remove – remove FAQs with confirmation flow
+- Persistent on-disk storage (versioned JSON)
+- Usage tracking for FAQs
+- Permission guardrails for destructive actions
+
+### Fun / utility commands
+
+- chucknorris
+- dadjoke
+- coinflip
+- dice
+- weather
+
+## Planned features
+
+- /help command for command discovery
+- /docs command for documentation lookups
 - GitHub issues and pull request lookups
 - Pull request announcements
-- Pagination for large history/playback (buttons or follow-ups)
-- Per-user timezone support (store IANA timezone and apply to transcripts)
 - Improved summary output (highlights, action items, structured sections)
 
 ---
@@ -195,6 +215,10 @@ OmegaBot is online
 │   │   │   └── interactionHandler.ts
 │   │   ├── faq
 │   │   │   ├── faqService.ts
+│   │   │   ├── permissions.ts
+│   │   │   ├── services.test.ts
+│   │   │   ├── services.ts
+│   │   │   ├── store.test.ts
 │   │   │   ├── store.ts
 │   │   │   └── types.ts
 │   │   ├── github
@@ -236,7 +260,8 @@ OmegaBot is online
 ├── package-lock.json
 ├── package.json
 ├── README.md
-└── tsconfig.json
+├── tsconfig.json
+└── vitest.config.ts
 ```
 
 </details>

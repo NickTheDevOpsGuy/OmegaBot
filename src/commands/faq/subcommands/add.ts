@@ -1,40 +1,48 @@
-// src/commands/faq/subcommand/add.ts
+// src/commands/faq/subcommands/add.ts
+//
+// /faq add
+//
+// Responsibilities:
+// - Read slash command options
+// - Run shared guardrails (permissions, basic input checks)
+// - Delegate creation to FAQ service layer
+//
+// IMPORTANT:
+// - This file is NOT a slash command by itself
+// - It must NOT call reply() or deferReply()
+// - The parent command (faq.ts) owns the interaction lifecycle
 
 import type { ChatInputCommandInteraction } from "discord.js";
 import { logger } from "../../../utils/logger.js";
-import { create } from "../services.js";
-import { MAX_KEY_LEN } from "../../../services/faq/types.js";
+import { create } from "../../../services/faq/services.js";
+
+import { guardFaqAction, parseTags, handleFaqSubcommandError } from "./_shared.js";
 
 export async function run(interaction: ChatInputCommandInteraction): Promise<void> {
   try {
-    // 1) Read inputs (these must exist in faq.ts builder options)
-    const rawKey = interaction.options.getString("key", true);
-    const rawTitle = interaction.options.getString("title", true);
-    const rawBody = interaction.options.getString("body", true);
-    const rawTags = interaction.options.getString("tags", false); // optional
+    if (!(await guardFaqAction(interaction, "add"))) return;
 
-    // 2) Clean / normalize user input
-    const key = rawKey.trim();
-    const title = rawTitle.trim();
-    const body = rawBody.trim();
+    const key = interaction.options.getString("key", true).trim();
+    const title = interaction.options.getString("title", true).trim();
+    const body = interaction.options.getString("body", true).trim();
+    const tagsRaw = interaction.options.getString("tags", false);
 
-    // 3) Validate minimal stuff here (empty, obvious length checks)
-    // - disallow empty key after trim
-    // - maybe guard title/body too
-    // - keep it small here, deeper rules can live in services.ts
-    if (key.length > MAX_KEY_LEN) {
-      await interaction.editReply(`❌ Key is too long (max ${MAX_KEY_LEN} characters).`);
+    // Keep command-layer checks tiny. Service layer is strict.
+    if (!key) {
+      await interaction.editReply("❌ Key cannot be empty.");
+      return;
+    }
+    if (!title) {
+      await interaction.editReply("❌ Title cannot be empty.");
+      return;
+    }
+    if (!body) {
+      await interaction.editReply("❌ Body cannot be empty.");
       return;
     }
 
-    // 4) Parse tags (comma-separated)
-    const tags =
-      rawTags
-        ?.split(",")
-        .map((t) => t.trim())
-        .filter(Boolean) ?? [];
+    const tags = parseTags(tagsRaw);
 
-    // 5) Call service (service does normalization + persistence)
     const entry = create({
       key,
       title,
@@ -43,12 +51,10 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       actor: interaction.user.id,
     });
 
-    // 6) Reply
     await interaction.editReply(`✅ Added FAQ **${entry.key}**`);
 
     logger.info({ userId: interaction.user.id, key: entry.key }, "[faq/add] created");
   } catch (err) {
-    logger.error({ err }, "[faq/add] failed");
-    await interaction.editReply("❌ Could not add FAQ right now. Try again in a bit.");
+    await handleFaqSubcommandError(interaction, err, "[faq/add] failed");
   }
 }
