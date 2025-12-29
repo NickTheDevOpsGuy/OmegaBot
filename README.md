@@ -195,6 +195,10 @@ OmegaBot is online
 │   │   │   └── interactionHandler.ts
 │   │   ├── faq
 │   │   │   ├── faqService.ts
+│   │   │   ├── permissions.ts
+│   │   │   ├── services.test.ts
+│   │   │   ├── services.ts
+│   │   │   ├── store.test.ts
 │   │   │   ├── store.ts
 │   │   │   └── types.ts
 │   │   ├── github
@@ -236,7 +240,8 @@ OmegaBot is online
 ├── package-lock.json
 ├── package.json
 ├── README.md
-└── tsconfig.json
+├── tsconfig.json
+└── vitest.config.ts
 ```
 
 </details>
