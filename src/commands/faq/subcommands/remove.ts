@@ -13,20 +13,11 @@
 // - The parent command (faq.ts) owns the interaction lifecycle
 
 import type { ChatInputCommandInteraction, Message, ButtonInteraction } from "discord.js";
-import {
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-  ComponentType,
-} from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } from "discord.js";
 
 import { logger } from "../../../utils/logger.js";
 import { getByKey, remove } from "../../../services/faq/services.js";
-import {
-  guardFaqAction,
-  readRequiredKey,
-  handleFaqSubcommandError,
-} from "./_shared.js";
+import { guardFaqAction, readRequiredKey, handleFaqSubcommandError } from "./_shared.js";
 
 export async function run(interaction: ChatInputCommandInteraction): Promise<void> {
   try {
@@ -55,8 +46,14 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
     const cancelId = `faq:remove:cancel:${existing.key}:${interaction.user.id}`;
 
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
-      new ButtonBuilder().setCustomId(confirmId).setLabel("Delete").setStyle(ButtonStyle.Danger),
-      new ButtonBuilder().setCustomId(cancelId).setLabel("Cancel").setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId(confirmId)
+        .setLabel("Delete")
+        .setStyle(ButtonStyle.Danger),
+      new ButtonBuilder()
+        .setCustomId(cancelId)
+        .setLabel("Cancel")
+        .setStyle(ButtonStyle.Secondary),
     );
 
     // Show confirmation prompt (keep it very explicit)
@@ -95,7 +92,10 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       components: [],
     });
 
-    logger.info({ userId: interaction.user.id, key: existing.key }, "[faq/remove] removed");
+    logger.info(
+      { userId: interaction.user.id, key: existing.key },
+      "[faq/remove] removed",
+    );
   } catch (err: unknown) {
     // No `any` here. Keep the handler strict and log the raw error.
     await handleFaqSubcommandError(interaction, err, "[faq/remove] failed");
