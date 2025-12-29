@@ -16,9 +16,7 @@ import { PermissionsBitField } from "discord.js";
 
 export type FaqAction = "add" | "get" | "list" | "remove";
 
-export type PermissionResult =
-  | { ok: true }
-  | { ok: false; reason: string };
+export type PermissionResult = { ok: true } | { ok: false; reason: string };
 
 export function canFaqAction(
   interaction: ChatInputCommandInteraction,

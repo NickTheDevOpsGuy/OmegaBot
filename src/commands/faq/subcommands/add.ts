@@ -16,15 +16,9 @@ import type { ChatInputCommandInteraction } from "discord.js";
 import { logger } from "../../../utils/logger.js";
 import { create } from "../../../services/faq/services.js";
 
-import {
-  guardFaqAction,
-  parseTags,
-  handleFaqSubcommandError,
-} from "./_shared.js";
+import { guardFaqAction, parseTags, handleFaqSubcommandError } from "./_shared.js";
 
-export async function run(
-  interaction: ChatInputCommandInteraction,
-): Promise<void> {
+export async function run(interaction: ChatInputCommandInteraction): Promise<void> {
   try {
     if (!(await guardFaqAction(interaction, "add"))) return;
 
@@ -59,10 +53,7 @@ export async function run(
 
     await interaction.editReply(`✅ Added FAQ **${entry.key}**`);
 
-    logger.info(
-      { userId: interaction.user.id, key: entry.key },
-      "[faq/add] created",
-    );
+    logger.info({ userId: interaction.user.id, key: entry.key }, "[faq/add] created");
   } catch (err) {
     await handleFaqSubcommandError(interaction, err, "[faq/add] failed");
   }

@@ -20,7 +20,11 @@ import {
   MAX_TAGS,
   MAX_TAG_LEN,
 } from "../../commands/faq/types.js";
-import type { FaqEntry, CreateFaqInput, UpdateFaqPatch } from "../../commands/faq/types.js";
+import type {
+  FaqEntry,
+  CreateFaqInput,
+  UpdateFaqPatch,
+} from "../../commands/faq/types.js";
 
 /**
  * Return all FAQ entries (unordered).
@@ -36,7 +40,7 @@ export function getAll(): FaqEntry[] {
 export function getByKey(rawKey: string): FaqEntry | null {
   const key = assertValidKey(rawKey);
   const store = loadStore();
-  return store.entries[key] ?? null;  
+  return store.entries[key] ?? null;
 }
 
 /**

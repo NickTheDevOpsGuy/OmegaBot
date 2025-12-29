@@ -69,9 +69,7 @@ export async function readRequiredKey(
   }
 
   if (key.length > MAX_KEY_LEN) {
-    await interaction.editReply(
-      `❌ Key is too long (max ${MAX_KEY_LEN} characters).`,
-    );
+    await interaction.editReply(`❌ Key is too long (max ${MAX_KEY_LEN} characters).`);
     return null;
   }
 
@@ -102,12 +100,7 @@ export function parseTags(raw: string | null): string[] {
 export function formatFaqEntry(entry: FaqEntry): string {
   const tagsLine = entry.tags?.length ? `🏷️ ${entry.tags.join(", ")}` : null;
 
-  return [
-    `📌 **${entry.key}**`,
-    `**${entry.title}**`,
-    entry.body,
-    tagsLine,
-  ]
+  return [`📌 **${entry.key}**`, `**${entry.title}**`, entry.body, tagsLine]
     .filter(Boolean)
     .join("\n");
 }
@@ -196,12 +189,7 @@ function applyListFilters(entries: FaqEntry[], filter: FaqListFilter): FaqEntry[
     const q = filter.query.trim().toLowerCase();
 
     out = out.filter((e) => {
-      const hay = [
-        e.key,
-        e.title,
-        e.body,
-        ...(e.tags ?? []),
-      ]
+      const hay = [e.key, e.title, e.body, ...(e.tags ?? [])]
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
@@ -221,7 +209,9 @@ function applyListSort(entries: FaqEntry[], sort: FaqListFilter["sort"]): FaqEnt
   }
 
   if (mode === "updated") {
-    return [...entries].sort((a, b) => (b.updatedAt ?? "").localeCompare(a.updatedAt ?? ""));
+    return [...entries].sort((a, b) =>
+      (b.updatedAt ?? "").localeCompare(a.updatedAt ?? ""),
+    );
   }
 
   // default: usage desc, then updated desc, then key asc
