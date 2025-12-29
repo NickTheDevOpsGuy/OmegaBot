@@ -1,20 +1,17 @@
 // src/commands/faq/faq.ts
 //
-// Base /faq slash command (router).
+// Base /faq slash command.
 //
 // Responsibilities:
-// - Define the public Discord command shape (/faq + subcommands + options)
-// - Own the interaction lifecycle (deferReply + editReply)
-// - Route to subcommand handlers (thin controller)
+// - Define the /faq command and subcommands (Discord API surface)
+// - Own the interaction lifecycle (deferReply + final reply)
+// - Route execution to subcommand handlers
 //
 // Non-goals:
-// - No FAQ business logic
+// - No FAQ business logic (validation, persistence, permissions, filtering logic)
 // - No file I/O
-// - No persistence or validation rules beyond “required option” at the Discord level
 //
-// All real work is delegated to:
-// - src/commands/faq/subcommands/*   (Discord-facing handlers)
-// - src/services/faq/*              (business logic + persistence)
+// Subcommands live in ./subcommands/*.ts and delegate to src/services/faq/*.
 
 import {
   MessageFlags,
@@ -23,13 +20,19 @@ import {
 } from "discord.js";
 import { logger } from "../../utils/logger.js";
 
-// Subcommand runners (each one must NOT reply/defer on its own)
 import { run as runAdd } from "./subcommands/add.js";
+import { run as runGet } from "./subcommands/get.js";
+import { run as runList } from "./subcommands/list.js";
 import { run as runRemove } from "./subcommands/remove.js";
-// Future:
-// import { run as runGet } from "./subcommands/get.js";
-// import { run as runList } from "./subcommands/list.js";
 
+/**
+ * Slash command definition.
+ *
+ * This is the public "contract" Discord registers.
+ * Keep this file focused on:
+ * - option names/types/descriptions
+ * - routing to subcommand handlers
+ */
 export const data = new SlashCommandBuilder()
   .setName("faq")
   .setDescription("FAQ commands")
@@ -72,6 +75,12 @@ export const data = new SlashCommandBuilder()
       )
       .addBooleanOption((o) =>
         o
+          .setName("full")
+          .setDescription("Show the full answer text")
+          .setRequired(false),
+      )
+      .addBooleanOption((o) =>
+        o
           .setName("ephemeral")
           .setDescription("Only show the result to you")
           .setRequired(false),
@@ -84,7 +93,22 @@ export const data = new SlashCommandBuilder()
       .setName("list")
       .setDescription("List FAQ entries")
       .addStringOption((o) =>
-        o.setName("tag").setDescription("Filter by a tag (optional)").setRequired(false),
+        o
+          .setName("query")
+          .setDescription("Search in key/title/body (optional)")
+          .setRequired(false),
+      )
+      .addStringOption((o) =>
+        o
+          .setName("tag")
+          .setDescription("Filter by tag (optional)")
+          .setRequired(false),
+      )
+      .addBooleanOption((o) =>
+        o
+          .setName("full")
+          .setDescription("Show full entries (not just a compact list)")
+          .setRequired(false),
       )
       .addBooleanOption((o) =>
         o
@@ -114,23 +138,34 @@ export const data = new SlashCommandBuilder()
  * Command execution entry point.
  *
  * Pattern:
- * - Read subcommand name
- * - Defer reply immediately (avoids Discord 3s timeout)
- * - Route to subcommand handler
- *
- * IMPORTANT:
- * Subcommand handlers must only use editReply (no reply/defer).
+ * - Determine subcommand
+ * - Defer reply immediately (avoids the 3s Discord timeout)
+ * - Route to handler
  */
-export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
+export async function execute(
+  interaction: ChatInputCommandInteraction,
+): Promise<void> {
   const sub = interaction.options.getSubcommand(true);
   const ephemeral = interaction.options.getBoolean("ephemeral") ?? false;
 
-  // Own the lifecycle here (subcommands only editReply)
-  await interaction.deferReply(ephemeral ? { flags: MessageFlags.Ephemeral } : undefined);
+  // Parent owns the interaction lifecycle: always defer first.
+  await interaction.deferReply(
+    ephemeral ? { flags: MessageFlags.Ephemeral } : undefined,
+  );
 
   try {
     if (sub === "add") {
       await runAdd(interaction);
+      return;
+    }
+
+    if (sub === "get") {
+      await runGet(interaction);
+      return;
+    }
+
+    if (sub === "list") {
+      await runList(interaction);
       return;
     }
 
@@ -139,17 +174,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       return;
     }
 
-    // Placeholders until you wire these up
-    if (sub === "get") {
-      await interaction.editReply("TODO: /faq get");
-      return;
-    }
-
-    if (sub === "list") {
-      await interaction.editReply("TODO: /faq list");
-      return;
-    }
-
+    // Safety net in case Discord sends something unexpected
     await interaction.editReply("Unknown subcommand.");
   } catch (err) {
     logger.error({ err, sub }, "[faq] subcommand failed");
