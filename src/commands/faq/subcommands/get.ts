@@ -18,9 +18,7 @@ import {
   handleFaqSubcommandError,
 } from "./_shared.js";
 
-export async function run(
-  interaction: ChatInputCommandInteraction,
-): Promise<void> {
+export async function run(interaction: ChatInputCommandInteraction): Promise<void> {
   try {
     if (!(await guardFaqAction(interaction, "get"))) return;
 

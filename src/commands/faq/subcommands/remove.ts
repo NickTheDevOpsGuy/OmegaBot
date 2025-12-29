@@ -17,19 +17,12 @@
 // - The parent command (faq.ts) owns the interaction lifecycle (deferReply/editReply)
 
 import type { ChatInputCommandInteraction } from "discord.js";
-import {
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-  ComponentType,
-} from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } from "discord.js";
 import { logger } from "../../../utils/logger.js";
 import { canFaqAction } from "../../../services/faq/permissions.js";
 import { getByKey, remove } from "../../../services/faq/services.js";
 
-export async function run(
-  interaction: ChatInputCommandInteraction,
-): Promise<void> {
+export async function run(interaction: ChatInputCommandInteraction): Promise<void> {
   try {
     /* ---------------------------------------------------------------------- */
     /* Permission + context checks (must happen first)                         */

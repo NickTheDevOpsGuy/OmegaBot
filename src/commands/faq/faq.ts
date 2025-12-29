@@ -74,10 +74,7 @@ export const data = new SlashCommandBuilder()
         o.setName("key").setDescription("Key to fetch").setRequired(true),
       )
       .addBooleanOption((o) =>
-        o
-          .setName("full")
-          .setDescription("Show the full answer text")
-          .setRequired(false),
+        o.setName("full").setDescription("Show the full answer text").setRequired(false),
       )
       .addBooleanOption((o) =>
         o
@@ -99,10 +96,7 @@ export const data = new SlashCommandBuilder()
           .setRequired(false),
       )
       .addStringOption((o) =>
-        o
-          .setName("tag")
-          .setDescription("Filter by tag (optional)")
-          .setRequired(false),
+        o.setName("tag").setDescription("Filter by tag (optional)").setRequired(false),
       )
       .addBooleanOption((o) =>
         o
@@ -142,16 +136,12 @@ export const data = new SlashCommandBuilder()
  * - Defer reply immediately (avoids the 3s Discord timeout)
  * - Route to handler
  */
-export async function execute(
-  interaction: ChatInputCommandInteraction,
-): Promise<void> {
+export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const sub = interaction.options.getSubcommand(true);
   const ephemeral = interaction.options.getBoolean("ephemeral") ?? false;
 
   // Parent owns the interaction lifecycle: always defer first.
-  await interaction.deferReply(
-    ephemeral ? { flags: MessageFlags.Ephemeral } : undefined,
-  );
+  await interaction.deferReply(ephemeral ? { flags: MessageFlags.Ephemeral } : undefined);
 
   try {
     if (sub === "add") {
