@@ -63,6 +63,14 @@ OmegaBot is a modular Discord bot designed to support development projects with 
 - dice
 - weather
 
+## Planned features
+
+- /help command for command discovery
+- /docs command for documentation lookups
+- GitHub issues and pull request lookups
+- Pull request announcements
+- Improved summary output (highlights, action items, structured sections)
+
 ---
 
 ## Documentation
