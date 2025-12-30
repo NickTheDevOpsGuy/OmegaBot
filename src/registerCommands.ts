@@ -1,6 +1,9 @@
+// src/registerCommands.ts
+
 import { REST, Routes } from "discord.js";
 import fs from "fs";
 import path from "path";
+import { pathToFileURL } from "url";
 import { env } from "./config/env.js";
 import type { RESTPostAPIChatInputApplicationCommandsJSONBody } from "discord-api-types/v10";
 import { logger } from "./utils/logger.js";
@@ -9,41 +12,66 @@ import { logger } from "./utils/logger.js";
  * Read all compiled command definitions and prepare them for registration
  * with the Discord API.
  *
- * This function:
- * - walks through dist/commands/
- * - loads every compiled .js command file
- * - extracts each command’s JSON definition
- * - returns them in an array for API registration
+ * Only registers REAL slash command modules:
+ * - must export `data` (SlashCommandBuilder)
+ * - must export `execute` (function)
+ *
+ * Helper files (services.js, store.js, _shared.js, etc.) are skipped.
  */
-async function loadCommandData() {
+async function loadCommandData(): Promise<
+  RESTPostAPIChatInputApplicationCommandsJSONBody[]
+> {
   const commands: RESTPostAPIChatInputApplicationCommandsJSONBody[] = [];
 
-  // Commands are loaded from compiled JS in dist/
-  const basePath = path.join(process.cwd(), "dist/commands");
+  const basePath = path.join(process.cwd(), "dist", "commands");
+
+  if (!fs.existsSync(basePath)) {
+    logger.warn({ basePath }, "dist/commands not found. Did you run build?");
+    return commands;
+  }
+
   const groups = fs.readdirSync(basePath);
 
   for (const group of groups) {
     const groupPath = path.join(basePath, group);
-
-    // Skip stray files — only process folders
     if (!fs.statSync(groupPath).isDirectory()) continue;
 
     const files = fs.readdirSync(groupPath);
 
     for (const file of files) {
-      // Only load compiled command files
       if (!file.endsWith(".js")) continue;
 
       const modulePath = path.join(groupPath, file);
-      const mod = await import(modulePath);
+      const moduleUrl = pathToFileURL(modulePath).href;
 
-      /*
-       * Each command module exports `data`,
-       * which contains a SlashCommandBuilder.
-       * Convert that builder to JSON and push it into the list.
-       */
-      if (mod.data) {
-        commands.push(mod.data.toJSON());
+      try {
+        const mod = await import(moduleUrl);
+
+        if (mod?.data && typeof mod.execute === "function") {
+          const json = mod.data.toJSON();
+
+          // 👇 Log exactly what is being registered
+          logger.info(
+            {
+              command: json.name,
+              group,
+              file,
+            },
+            "Registering slash command",
+          );
+
+          commands.push(json);
+        } else {
+          logger.debug(
+            { file: `${group}/${file}` },
+            "Skipping non-command module (missing data or execute)",
+          );
+        }
+      } catch (err) {
+        logger.warn(
+          { err, file: `${group}/${file}` },
+          "Failed to import command module",
+        );
       }
     }
   }
@@ -53,29 +81,27 @@ async function loadCommandData() {
 
 /*
  * Register all slash commands with Discord for the configured application & guild.
- *
- * This uses REST.put() to completely replace the current slash-command set
- * for the guild. This makes command updates instant for testing.
  */
-async function register() {
+async function register(): Promise<void> {
   const rest = new REST({ version: "10" }).setToken(env.token);
 
   const commands = await loadCommandData();
 
-  /*
-   * Overwrite the guild’s existing slash commands with the updated list.
-   * This is preferred during development because changes propagate immediately.
-   */
+  logger.info(
+    {
+      count: commands.length,
+      commands: commands.map((c) => c.name),
+    },
+    "Final slash command payload",
+  );
+
   await rest.put(Routes.applicationGuildCommands(env.appId, env.guildId), {
     body: commands,
   });
 
-  logger.info("Commands registered.");
+  logger.info("Commands registered successfully.");
 }
 
-/*
- * Wrapper so errors throw clearly and stop the script immediately.
- */
 register().catch((err) => {
   logger.error(err, "Failed to register commands");
   process.exit(1);

@@ -13,11 +13,11 @@
 // - No Discord lifecycle (defer/reply) decisions
 
 import type { ChatInputCommandInteraction } from "discord.js";
-import { logger } from "../../../utils/logger.js";
+import { logger } from "../../utils/logger.js";
 
-import { canFaqAction } from "../../../services/faq/permissions.js";
-import { MAX_KEY_LEN } from "../../../services/faq/types.js";
-import type { FaqEntry } from "../../../services/faq/types.js";
+import { canFaqAction } from "./permissions.js";
+import { MAX_KEY_LEN } from "./types.js";
+import type { FaqEntry } from "./types.js";
 
 export type FaqAction = "add" | "get" | "list" | "remove";
 

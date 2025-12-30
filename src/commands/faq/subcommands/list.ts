@@ -17,7 +17,7 @@
 
 import type { ChatInputCommandInteraction } from "discord.js";
 import { getAll } from "../../../services/faq/services.js";
-import { guardFaqAction, formatFaqList, handleFaqSubcommandError } from "./_shared.js";
+import { guardFaqAction, formatFaqList, handleFaqSubcommandError } from "../../../services/faq/_shared.js";
 
 export async function run(interaction: ChatInputCommandInteraction): Promise<void> {
   try {

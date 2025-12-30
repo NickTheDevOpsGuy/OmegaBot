@@ -16,7 +16,7 @@ import {
   readRequiredKey,
   formatFaqEntry,
   handleFaqSubcommandError,
-} from "./_shared.js";
+} from "../../../services/faq/_shared.js";
 
 export async function run(interaction: ChatInputCommandInteraction): Promise<void> {
   try {
