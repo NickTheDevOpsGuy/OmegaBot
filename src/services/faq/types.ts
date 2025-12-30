@@ -16,6 +16,31 @@
  */
 export const MAX_KEY_LEN = 48;
 
+/**
+ * Max title length after trimming.
+ * Keep this short so list views stay readable.
+ */
+export const MAX_TITLE_LEN = 80;
+
+/**
+ * Max body length after trimming.
+ * 4000 is a reasonable starting point and stays under typical Discord limits
+ * once you add formatting and headers.
+ */
+export const MAX_BODY_LEN = 4000;
+
+/**
+ * Max number of tags allowed on an entry.
+ * Prevents spam and keeps list filters usable.
+ */
+export const MAX_TAGS = 10;
+
+/**
+ * Max length per tag after trimming.
+ * Keeps tags compact for list output.
+ */
+export const MAX_TAG_LEN = 24;
+
 /* -------------------------------------------------------------------------- */
 /* Core Types                                                                  */
 /* -------------------------------------------------------------------------- */
@@ -71,4 +96,15 @@ export type CreateFaqInput = {
   body: string;
   tags?: string[];
   actor: string; // user id or "system"
+};
+
+/**
+ * Allowed fields when updating an FAQ entry.
+ *
+ * Notes:
+ * - actor is required so updatedBy is always attributable.
+ * - patch fields are optional and validated by the service layer if present.
+ */
+export type UpdateFaqPatch = Partial<Pick<FaqEntry, "title" | "body" | "tags">> & {
+  actor: string;
 };

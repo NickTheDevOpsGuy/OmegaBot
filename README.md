@@ -176,15 +176,11 @@ OmegaBot is online
 │   │   │   └── changelog.ts
 │   │   ├── faq
 │   │   │   ├── subcommands
-│   │   │   │   ├── _shared.ts
 │   │   │   │   ├── add.ts
 │   │   │   │   ├── get.ts
 │   │   │   │   ├── list.ts
 │   │   │   │   └── remove.ts
-│   │   │   ├── faq.ts
-│   │   │   ├── services.ts
-│   │   │   ├── store.ts
-│   │   │   └── types.ts
+│   │   │   └── faq.ts
 │   │   ├── fun
 │   │   │   ├── subcommands
 │   │   │   │   ├── chucknorris.ts
@@ -214,6 +210,7 @@ OmegaBot is online
 │   │   │   ├── fetchChannelMessages.ts
 │   │   │   └── interactionHandler.ts
 │   │   ├── faq
+│   │   │   ├── _shared.ts
 │   │   │   ├── faqService.ts
 │   │   │   ├── permissions.ts
 │   │   │   ├── services.test.ts

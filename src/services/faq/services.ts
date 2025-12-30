@@ -11,7 +11,7 @@
 // - Discord interaction handling (that stays in commands)
 // - Low-level file I/O details (that stays in store.ts)
 
-import { loadStore, saveStore } from "../../commands/faq/store.js";
+import { loadStore, saveStore } from "./store.js";
 import { logger } from "../../utils/logger.js";
 import {
   MAX_KEY_LEN,
@@ -19,12 +19,8 @@ import {
   MAX_BODY_LEN,
   MAX_TAGS,
   MAX_TAG_LEN,
-} from "../../commands/faq/types.js";
-import type {
-  FaqEntry,
-  CreateFaqInput,
-  UpdateFaqPatch,
-} from "../../commands/faq/types.js";
+} from "./types.js";
+import type { FaqEntry, CreateFaqInput, UpdateFaqPatch } from "./types.js";
 
 /**
  * Return all FAQ entries (unordered).
