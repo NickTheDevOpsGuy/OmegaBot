@@ -16,7 +16,11 @@ import type { ChatInputCommandInteraction } from "discord.js";
 import { logger } from "../../../utils/logger.js";
 import { create } from "../../../services/faq/services.js";
 
-import { guardFaqAction, parseTags, handleFaqSubcommandError } from "../../../services/faq/_shared.js";
+import {
+  guardFaqAction,
+  parseTags,
+  handleFaqSubcommandError,
+} from "../../../services/faq/_shared.js";
 
 export async function run(interaction: ChatInputCommandInteraction): Promise<void> {
   try {
