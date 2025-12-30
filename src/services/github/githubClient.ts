@@ -28,27 +28,29 @@ export class GitHubApiError extends Error {
  * Low-level GitHub request helper.
  *
  * Responsibilities:
- * - Validate auth is configured
+ * - Validate auth is configured (only when GitHub features are invoked)
  * - Add auth headers
  * - Perform fetch
  * - Handle non-OK responses
  * - Return typed JSON
  *
  * Higher-level logic (issues, PRs, fallback behavior) lives in githubApi.ts.
+ *
+ * Note:
+ * This function SHOULD NOT be called at startup unless GitHub features are enabled.
+ * The bot must be able to run without GitHub tokens/config.
  */
 export async function githubRequest<T>(path: string): Promise<T> {
   const url = `${GITHUB_API_BASE}${path}`;
 
-  if (!env.githubToken) {
-    // This should be caught at startup, but keep a defensive check here too.
-    throw new Error("GITHUB_TOKEN is not set in environment");
-  }
+  // Enforce token only when a GitHub code path is actually executed.
+  const token = env.requireGithubToken();
 
   try {
     const res = await fetch(url, {
       headers: {
         Accept: "application/vnd.github+json",
-        Authorization: `Bearer ${env.githubToken}`,
+        Authorization: `Bearer ${token}`,
         "X-GitHub-Api-Version": "2022-11-28",
         "User-Agent": "OmegaBot",
       },
@@ -75,12 +77,8 @@ export async function githubRequest<T>(path: string): Promise<T> {
 
     return (await res.json()) as T;
   } catch (err) {
-    // If it's already our rich error, bubble it up unchanged.
-    if (err instanceof GitHubApiError) {
-      throw err;
-    }
+    if (err instanceof GitHubApiError) throw err;
 
-    // Network errors, DNS failures, timeouts, etc.
     logger.error({ err, url, path }, "GitHub API request threw");
     throw err;
   }
