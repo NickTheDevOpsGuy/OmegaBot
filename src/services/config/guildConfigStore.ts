@@ -2,7 +2,11 @@
 
 import fs from "fs";
 import path from "path";
-import { DEFAULT_GUILD_CONFIG, type GuildConfig, type GuildConfigPatch } from "./types.js";
+import {
+  DEFAULT_GUILD_CONFIG,
+  type GuildConfig,
+  type GuildConfigPatch,
+} from "./types.js";
 
 /**
  * Simple JSON-backed store for guild configuration.
