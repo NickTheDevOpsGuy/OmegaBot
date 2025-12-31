@@ -1,58 +1,52 @@
 // src/services/welcome/welcomeHandler.ts
 
-import type {
-  Guild,
-  GuildMember,
-  TextChannel,
-  NewsChannel,
-  ThreadChannel,
-} from "discord.js";
+import type { Guild, GuildMember, TextBasedChannel } from "discord.js";
 import { logger } from "../../utils/logger.js";
 import { buildWelcomeMessage } from "./welcomeMessage.js";
+import { getGuildConfig } from "../config/index.js";
 
 /**
- * Channels we can safely call `.send()` on in a guild context.
+ * Type guard to ensure a text-based channel supports `.send()`.
  *
- * Note:
- * `TextBasedChannel` is broader and can include DM-ish channel types where
- * `.send()` is not guaranteed in the type system.
+ * This avoids `any` and satisfies ESLint while keeping runtime safety.
  */
-type SendableGuildChannel = TextChannel | NewsChannel | ThreadChannel;
+function isSendableChannel(
+  channel: TextBasedChannel,
+): channel is TextBasedChannel & { send: (content: unknown) => Promise<unknown> } {
+  return typeof (channel as { send?: unknown }).send === "function";
+}
 
 /**
  * Resolve the best channel to post onboarding messages.
  *
  * Order:
- * 1) WELCOME_CHANNEL_ID (if set)
- * 2) Guild system channel (if set)
- * 3) First writable guild text channel we can find
+ * 1) Guild config (welcomeEnabled / welcomeChannelId)
+ * 2) Guild system channel
+ * 3) First available text-based channel
  */
-async function resolveWelcomeChannel(guild: Guild): Promise<SendableGuildChannel | null> {
-  const envChannelId = process.env.WELCOME_CHANNEL_ID;
+async function resolveWelcomeChannel(guild: Guild): Promise<TextBasedChannel | null> {
+  const cfg = getGuildConfig(guild.id);
 
-  if (envChannelId) {
-    const ch = await guild.channels.fetch(envChannelId).catch(() => null);
+  // Allow per-guild disabling of welcome messages.
+  if (!cfg.welcomeEnabled) return null;
 
-    if (ch && ch.isTextBased() && "send" in ch) {
-      return ch as SendableGuildChannel;
-    }
+  // Prefer configured welcome channel.
+  if (cfg.welcomeChannelId) {
+    const ch = await guild.channels.fetch(cfg.welcomeChannelId).catch(() => null);
+    if (ch?.isTextBased()) return ch;
   }
 
-  const system = guild.systemChannel;
-  if (system && system.isTextBased() && "send" in system) {
-    return system as SendableGuildChannel;
+  // Fallback to system channel.
+  if (guild.systemChannel?.isTextBased()) {
+    return guild.systemChannel;
   }
 
+  // Final fallback: first text-based channel found.
   const channels = await guild.channels.fetch().catch(() => null);
   if (!channels) return null;
 
   for (const [, ch] of channels) {
-    if (!ch) continue;
-
-    // We only want channels that can accept .send()
-    if (ch.isTextBased() && "send" in ch) {
-      return ch as SendableGuildChannel;
-    }
+    if (ch?.isTextBased()) return ch;
   }
 
   return null;
@@ -60,16 +54,24 @@ async function resolveWelcomeChannel(guild: Guild): Promise<SendableGuildChannel
 
 /**
  * Event handler for new members joining a guild.
- * Never throws: this is a background event path.
+ * Never throws — background event safety.
  */
 export async function onGuildMemberAdd(member: GuildMember): Promise<void> {
   try {
     const channel = await resolveWelcomeChannel(member.guild);
 
     if (!channel) {
+      logger.info(
+        { guildId: member.guild.id },
+        "Welcome handler skipped (no channel resolved or disabled)",
+      );
+      return;
+    }
+
+    if (!isSendableChannel(channel)) {
       logger.warn(
         { guildId: member.guild.id },
-        "Welcome handler could not find a sendable channel",
+        "Resolved welcome channel is not sendable",
       );
       return;
     }
