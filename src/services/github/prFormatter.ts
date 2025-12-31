@@ -1,23 +1,53 @@
 // src/services/github/prFormatter.ts
 
-import type { GitHubPrSummary } from "./types.js";
+import type { GitHubPullRequest } from "./types.js";
+
+/* ------------------------------------------------------------------ */
+/* Formatting helpers                                                  */
+/* ------------------------------------------------------------------ */
 
 /**
- * PR formatting helpers for Discord output.
+ * Format a single GitHub pull request into a Discord-friendly message.
  *
  * Design goals:
- * - Keep output readable in a busy channel
- * - Use only fields we already have in the PR summary
- * - Make it easy to swap formatting later without touching poller logic
+ * - Pure function (no I/O, no Discord client usage)
+ * - Safe to reuse in commands and background pollers
+ * - Stable output for future diffing / testing
+ *
+ * IMPORTANT:
+ * This file must NOT import itself or re-export via a barrel,
+ * otherwise TypeScript will create circular alias errors.
  */
 
 /**
- * 2-line PR output (readable, compact):
- * Line 1: "#123 Title (by author)"
- * Line 2: URL
+ * Format a pull request announcement message.
  */
-export function formatPullRequest(pr: GitHubPrSummary): string {
-  const author = pr.user?.login ?? "unknown";
+export function formatPullRequest(pr: GitHubPullRequest): string {
+  const author = pr.user?.login ? ` by @${pr.user.login}` : "";
+  const state = pr.merged_at ? "merged" : pr.state === "closed" ? "closed" : "open";
 
-  return [`#${pr.number} ${pr.title} (by ${author})`, pr.html_url].join("\n");
+  const updatedAt = pr.updated_at ? ` (updated ${formatTimestamp(pr.updated_at)})` : "";
+
+  return [
+    `**PR #${pr.number}** ${pr.title}`,
+    `${state}${author}${updatedAt}`,
+    pr.html_url,
+  ].join("\n");
+}
+
+/* ------------------------------------------------------------------ */
+/* Internal utilities                                                  */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Format an ISO timestamp into a short, readable form.
+ *
+ * We intentionally avoid locale-specific formatting so output
+ * is consistent across environments.
+ */
+function formatTimestamp(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+
+  return date.toISOString().replace("T", " ").replace("Z", " UTC");
 }

@@ -17,7 +17,11 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } from "dis
 
 import { logger } from "../../../utils/logger.js";
 import { getByKey, remove } from "../../../services/faq/services.js";
-import { guardFaqAction, readRequiredKey, handleFaqSubcommandError } from "./_shared.js";
+import {
+  guardFaqAction,
+  readRequiredKey,
+  handleFaqSubcommandError,
+} from "../../../services/faq/_shared.js";
 
 export async function run(interaction: ChatInputCommandInteraction): Promise<void> {
   try {
