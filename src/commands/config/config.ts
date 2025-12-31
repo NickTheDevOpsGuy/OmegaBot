@@ -6,7 +6,10 @@ import {
   ChannelType,
   type ChatInputCommandInteraction,
 } from "discord.js";
-import { setGuildConfig, getGuildConfig } from "../../services/config/guildConfigStore.js";
+import {
+  setGuildConfig,
+  getGuildConfig,
+} from "../../services/config/guildConfigStore.js";
 import { logger } from "../../utils/logger.js";
 
 /**
