@@ -9,13 +9,16 @@ import { env } from "./config/env.js";
 import { logger } from "./utils/logger.js";
 
 /**
- * Create the Discord client with only the intents required for slash commands
- * and member join events.
+ * Create the Discord client.
+ *
+ * Required intents:
+ * - Guilds: base guild access, slash commands
+ * - GuildMembers: REQUIRED for guildMemberAdd (welcome messages)
  */
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMembers, // required for guildMemberAdd (welcome messages)
+    GatewayIntentBits.GuildMembers,
   ],
 }) as CommandClient;
 
@@ -25,30 +28,40 @@ const client = new Client({
 client.commands = new Map();
 
 /**
- * Load compiled command modules and attach them to client.commands.
+ * Load compiled slash command modules.
  */
 await loadCommands(client);
 
 /**
- * Forward every incoming interaction to the central handler.
+ * Handle slash command interactions.
  */
 client.on("interactionCreate", async (interaction) => {
   await handleInteraction(interaction, client);
 });
 
 /**
- * Handle new members joining a guild (welcome messages).
+ * Welcome handler for new guild members.
  *
- * This listener is intentionally lightweight and delegates
- * all logic to the welcome service.
+ * This will ONLY fire if:
+ * - Server Members Intent is enabled in the portal
+ * - GatewayIntentBits.GuildMembers is requested here
  */
-client.on("guildMemberAdd", (member) => {
-  void onGuildMemberAdd(member);
+client.on("guildMemberAdd", async (member) => {
+  logger.info(
+    {
+      guildId: member.guild.id,
+      userId: member.user.id,
+      username: member.user.username,
+    },
+    "guildMemberAdd event fired",
+  );
+
+  await onGuildMemberAdd(member);
 });
 
 /**
- * GitHub PR polling is optional.
- * We only enable it when all required env vars are present.
+ * Optional GitHub PR polling.
+ * Enabled only when all required env vars are present.
  */
 const githubPollingEnabled =
   !!env.githubToken &&
@@ -57,7 +70,7 @@ const githubPollingEnabled =
   !!env.githubAnnounceChannelId;
 
 /**
- * Log a confirmation once the bot successfully connects.
+ * Log once when the bot is ready.
  */
 client.once("clientReady", () => {
   logger.info("OmegaBot is online");
@@ -73,18 +86,17 @@ client.once("clientReady", () => {
       "GitHub PR polling enabled",
     );
   } else {
-    logger.info("GitHub PR polling disabled (missing env config)");
+    logger.info("GitHub PR polling disabled");
   }
 });
 
 /**
- * Start the bot session using the configured token.
+ * Start the bot.
  */
 void client.login(env.token);
 
 /**
- * Schedule PR polling (if enabled).
- * Uses void to avoid unhandled promise warnings.
+ * Schedule GitHub PR polling (if enabled).
  */
 if (githubPollingEnabled) {
   setInterval(() => {
