@@ -29,10 +29,11 @@ OmegaBot is a modular Discord bot designed to support development projects with 
 
 ## Current features
 
-- Modular slash-command system (auto-loaded from dist/commands)
+- Modular slash-command system (auto-loaded from `dist/commands`)
 - Centralized interaction routing with safe error handling
 - Structured logging (pino)
 - Welcome / onboarding system triggered on member join (`guildMemberAdd`)
+- Per-guild configuration system backed by persistent storage
 
 ### Core commands
 
@@ -151,13 +152,13 @@ OmegaBot is online
 │   │   └── OmegaBot.yml
 │   └── pull_request_template.md
 ├── .husky
-│   ├── pre-commit
 │   └── pre-push
 ├── assets
 │   ├── banner.png
 │   └── omegabot.png
 ├── data
 │   ├── faqs.json
+│   ├── guild-config.json
 │   ├── last-seen.json
 │   └── timezones.json
 ├── docs
@@ -173,6 +174,8 @@ OmegaBot is online
 │   ├── commands
 │   │   ├── changelog
 │   │   │   └── changelog.ts
+│   │   ├── config
+│   │   │   └── config.ts
 │   │   ├── faq
 │   │   │   ├── subcommands
 │   │   │   │   ├── add.ts
@@ -204,6 +207,10 @@ OmegaBot is online
 │   ├── config
 │   │   └── env.ts
 │   ├── services
+│   │   ├── config
+│   │   │   ├── guildConfigStore.ts
+│   │   │   ├── index.ts
+│   │   │   └── types.ts
 │   │   ├── discord
 │   │   │   ├── commandLoader.ts
 │   │   │   ├── fetchChannelMessages.ts
