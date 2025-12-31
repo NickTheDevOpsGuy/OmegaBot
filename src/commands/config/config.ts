@@ -6,7 +6,10 @@ import {
   ChannelType,
   type ChatInputCommandInteraction,
 } from "discord.js";
-import { setGuildConfig, getGuildConfig } from "../../services/config/guildConfigStore.js";
+import {
+  setGuildConfig,
+  getGuildConfig,
+} from "../../services/config/guildConfigStore.js";
 import { logger } from "../../utils/logger.js";
 
 /**
@@ -98,7 +101,8 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     // If nothing is set, still respond clearly.
     if (!current.welcomeChannelId) {
       await interaction.reply({
-        content: "Welcome channel is already not set. I will use the system channel or first text channel as a fallback.",
+        content:
+          "Welcome channel is already not set. I will use the system channel or first text channel as a fallback.",
         ephemeral: true,
       });
       return;
