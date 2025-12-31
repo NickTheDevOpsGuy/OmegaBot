@@ -16,10 +16,7 @@ import { logger } from "./utils/logger.js";
  * - GuildMembers: REQUIRED for guildMemberAdd (welcome messages)
  */
 const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMembers,
-  ],
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
 }) as CommandClient;
 
 /**
