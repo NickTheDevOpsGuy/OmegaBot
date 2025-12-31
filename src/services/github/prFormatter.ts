@@ -1,77 +1,59 @@
-// src/services/github/prPoller.ts
+// src/services/github/prFormatter.ts
 
-import type { Client } from "discord.js";
-import { listPullRequests } from "./githubApi.js";
-import { getLastSeen, setLastSeenPr } from "./lastSeenStore.js";
-import { formatPullRequest } from "./prFormatter.js";
-import { logger } from "../../utils/logger.js";
+import type { GitHubPullRequest } from "./types.js";
 
-/**
- * Minimal shape we need from the GitHub PR list for polling announcements.
- * githubApi.listPullRequests must return objects with `updated_at`.
- */
-type PrForPolling = {
-  updated_at: string;
-};
+/* ------------------------------------------------------------------ */
+/* Formatting helpers                                                  */
+/* ------------------------------------------------------------------ */
 
 /**
- * Poll GitHub for new or updated PRs and announce them in a Discord channel.
+ * Format a single GitHub pull request into a Discord-friendly message.
  *
  * Design goals:
- * - Never throw (background job safety)
- * - Log failures once with context
- * - Skip quietly when nothing to do
+ * - Pure function (no I/O, no Discord client usage)
+ * - Safe to reuse in commands and background pollers
+ * - Stable output for future diffing / testing
+ *
+ * IMPORTANT:
+ * This file must NOT import itself or re-export via a barrel,
+ * otherwise TypeScript will create circular alias errors.
  */
-export async function pollPullRequestsOnce(args: {
-  client: Client;
-  owner: string;
-  repo: string;
-  announceChannelId: string;
-  limit?: number;
-}): Promise<void> {
-  const { client, owner, repo, announceChannelId, limit = 20 } = args;
 
-  try {
-    // Pull newest-updated first (based on githubApi query params)
-    const prs = (await listPullRequests(owner, repo, {
-      state: "open",
-      limit,
-    })) as unknown as (PrForPolling & Parameters<typeof formatPullRequest>[0])[];
+/**
+ * Format a pull request announcement message.
+ */
+export function formatPullRequest(pr: GitHubPullRequest): string {
+  const author = pr.user?.login ? ` by @${pr.user.login}` : "";
+  const state = pr.merged_at
+    ? "merged"
+    : pr.state === "closed"
+      ? "closed"
+      : "open";
 
-    if (prs.length === 0) return;
+  const updatedAt = pr.updated_at
+    ? ` (updated ${formatTimestamp(pr.updated_at)})`
+    : "";
 
-    const lastSeen = getLastSeen(owner, repo) ?? 0;
+  return [
+    `**PR #${pr.number}** ${pr.title}`,
+    `${state}${author}${updatedAt}`,
+    pr.html_url,
+  ].join("\n");
+}
 
-    // Keep only PRs updated after our stored timestamp
-    const fresh = prs.filter((pr) => {
-      const ms = Date.parse(pr.updated_at);
-      return !Number.isNaN(ms) && ms > lastSeen;
-    });
+/* ------------------------------------------------------------------ */
+/* Internal utilities                                                  */
+/* ------------------------------------------------------------------ */
 
-    if (fresh.length === 0) return;
+/**
+ * Format an ISO timestamp into a short, readable form.
+ *
+ * We intentionally avoid locale-specific formatting so output
+ * is consistent across environments.
+ */
+function formatTimestamp(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
 
-    const fetched = await client.channels.fetch(announceChannelId);
-    if (!fetched || !fetched.isTextBased()) {
-      logger.warn({ announceChannelId }, "PR poller could not resolve announce channel");
-      return;
-    }
-
-    // Extra runtime guard
-    if (!("send" in fetched) || typeof fetched.send !== "function") return;
-
-    // Post oldest-first so announcements read naturally
-    const oldestFirst = [...fresh].sort(
-      (a, b) => Date.parse(a.updated_at) - Date.parse(b.updated_at),
-    );
-
-    for (const pr of oldestFirst) {
-      await fetched.send(formatPullRequest(pr));
-    }
-
-    // Update last-seen to newest PR we announced
-    const newest = oldestFirst[oldestFirst.length - 1];
-    setLastSeenPr(owner, repo, newest.updated_at);
-  } catch (err) {
-    logger.error({ err, owner, repo, announceChannelId }, "GitHub PR polling failed");
-  }
+  return date.toISOString().replace("T", " ").replace("Z", " UTC");
 }

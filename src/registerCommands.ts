@@ -68,7 +68,10 @@ async function loadCommandData(): Promise<
           );
         }
       } catch (err) {
-        logger.warn({ err, file: `${group}/${file}` }, "Failed to import command module");
+        logger.warn(
+          { err, file: `${group}/${file}` },
+          "Failed to import command module",
+        );
       }
     }
   }
@@ -77,7 +80,10 @@ async function loadCommandData(): Promise<
 }
 
 /*
- * Register all slash commands with Discord for the configured application & guild.
+ * Register all slash commands with Discord for the configured application.
+ *
+ * If DISCORD_GUILD_ID is set, we register to that guild (fast iteration).
+ * Otherwise we register globally (can take longer to propagate).
  */
 async function register(): Promise<void> {
   const rest = new REST({ version: "10" }).setToken(env.token);
@@ -92,11 +98,20 @@ async function register(): Promise<void> {
     "Final slash command payload",
   );
 
-  await rest.put(Routes.applicationGuildCommands(env.appId, env.guildId), {
+  if (env.guildId) {
+    await rest.put(Routes.applicationGuildCommands(env.appId, env.guildId), {
+      body: commands,
+    });
+
+    logger.info({ guildId: env.guildId }, "Commands registered to guild.");
+    return;
+  }
+
+  await rest.put(Routes.applicationCommands(env.appId), {
     body: commands,
   });
 
-  logger.info("Commands registered successfully.");
+  logger.info("Commands registered globally.");
 }
 
 register().catch((err) => {
