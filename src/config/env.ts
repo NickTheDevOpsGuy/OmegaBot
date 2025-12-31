@@ -51,7 +51,8 @@ type SummaryMode = "local" | "llm";
  *      Application ID required for slash command registration.
  *
  *  - DISCORD_GUILD_ID
- *      Guild where development commands are registered.
+ *      OPTIONAL: Guild where development commands are registered.
+ *      If not set, commands should be registered globally instead.
  *
  * ------------------------------------------------------------------
  * Optional (feature flags / enhancements)
@@ -70,10 +71,7 @@ type SummaryMode = "local" | "llm";
  *
  *  - GITHUB_TOKEN
  *      Personal Access Token used for authenticated GitHub REST calls.
- *      Required for:
- *        - Issue lookup
- *        - PR lookup
- *        - PR announcements
+ *      Required only when GitHub-backed features are enabled.
  *
  *  - GITHUB_OWNER
  *      Default repository owner for polling PRs (optional).
@@ -88,11 +86,12 @@ type SummaryMode = "local" | "llm";
  *      Polling interval for PR announcements.
  *      Defaults to 60 seconds if not provided.
  *
- * All GitHub announcement fields are optional so the bot can run
- * without polling enabled.
+ * All GitHub-related fields are OPTIONAL so the bot can run
+ * without any GitHub configuration or tokens.
  */
 const summaryMode = (process.env.SUMMARY_MODE ?? "local") as SummaryMode;
 
+// Fail fast ONLY when LLM summaries are explicitly enabled
 if (summaryMode === "llm" && !process.env.OPENAI_API_KEY) {
   throw new Error("OPENAI_API_KEY is required when SUMMARY_MODE=llm");
 }
@@ -104,7 +103,13 @@ export const env = {
 
   token: requireEnv("DISCORD_TOKEN"),
   appId: requireEnv("DISCORD_APP_ID"),
-  guildId: requireEnv("DISCORD_GUILD_ID"),
+
+  /**
+   * Optional:
+   * Used for faster slash-command iteration during development.
+   * If unset, you can register commands globally instead.
+   */
+  guildId: process.env.DISCORD_GUILD_ID ?? null,
 
   /* ---------------------------------------------------------------- */
   /* Summaries                                                        */
@@ -120,16 +125,47 @@ export const env = {
   /* GitHub                                                           */
   /* ---------------------------------------------------------------- */
 
-  // Auth token for GitHub REST API
+  // Auth token for GitHub REST API (optional)
   githubToken: process.env.GITHUB_TOKEN ?? null,
 
   // Default repo configuration for PR polling (optional)
   githubOwner: process.env.GITHUB_OWNER ?? null,
   githubRepo: process.env.GITHUB_REPO ?? null,
 
-  // Where PR announcements should be posted
+  // Where PR announcements should be posted (optional)
   githubAnnounceChannelId: process.env.GITHUB_ANNOUNCE_CHANNEL_ID ?? null,
 
   // Polling interval (ms). Defaults to 60s.
   githubPollIntervalMs: envInt("GITHUB_POLL_INTERVAL_MS", 60_000),
+
+  /**
+   * Feature gate:
+   *
+   * GitHub announcement polling is enabled ONLY when all required
+   * configuration is present. This prevents the bot from attempting
+   * GitHub API calls (or requiring tokens) at startup.
+   */
+  githubAnnouncementsEnabled:
+    Boolean(process.env.GITHUB_TOKEN) &&
+    Boolean(process.env.GITHUB_OWNER) &&
+    Boolean(process.env.GITHUB_REPO) &&
+    Boolean(process.env.GITHUB_ANNOUNCE_CHANNEL_ID),
+
+  /**
+   * Helper for GitHub-only code paths.
+   *
+   * Call this ONLY inside GitHub feature implementations
+   * (commands, pollers, handlers).
+   *
+   * This ensures:
+   * - The bot can start without GitHub config
+   * - GitHub features fail loudly and clearly when misconfigured
+   */
+  requireGithubToken(): string {
+    const token = process.env.GITHUB_TOKEN;
+    if (!token) {
+      throw new Error("GITHUB_TOKEN is required for this GitHub feature");
+    }
+    return token;
+  },
 };
