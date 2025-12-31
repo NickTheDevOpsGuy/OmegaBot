@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-dotenv.config();
+dotenv.config({ path: ".env" });
 
 /**
  * Helper to enforce that required environment variables are present.

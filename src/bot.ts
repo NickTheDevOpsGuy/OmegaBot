@@ -4,14 +4,19 @@ import { Client, GatewayIntentBits } from "discord.js";
 import { loadCommands, type CommandClient } from "./services/discord/commandLoader.js";
 import { handleInteraction } from "./services/discord/interactionHandler.js";
 import { pollPullRequestsOnce } from "./services/github/prPoller.js";
+import { onGuildMemberAdd } from "./services/welcome/welcomeHandler.js";
 import { env } from "./config/env.js";
 import { logger } from "./utils/logger.js";
 
 /**
- * Create the Discord client with only the intents required for slash commands.
+ * Create the Discord client with only the intents required for slash commands
+ * and member join events.
  */
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds],
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMembers, // required for guildMemberAdd (welcome messages)
+  ],
 }) as CommandClient;
 
 /**
@@ -29,6 +34,16 @@ await loadCommands(client);
  */
 client.on("interactionCreate", async (interaction) => {
   await handleInteraction(interaction, client);
+});
+
+/**
+ * Handle new members joining a guild (welcome messages).
+ *
+ * This listener is intentionally lightweight and delegates
+ * all logic to the welcome service.
+ */
+client.on("guildMemberAdd", (member) => {
+  void onGuildMemberAdd(member);
 });
 
 /**
