@@ -24,15 +24,9 @@ import type { GitHubPullRequest } from "./types.js";
  */
 export function formatPullRequest(pr: GitHubPullRequest): string {
   const author = pr.user?.login ? ` by @${pr.user.login}` : "";
-  const state = pr.merged_at
-    ? "merged"
-    : pr.state === "closed"
-      ? "closed"
-      : "open";
+  const state = pr.merged_at ? "merged" : pr.state === "closed" ? "closed" : "open";
 
-  const updatedAt = pr.updated_at
-    ? ` (updated ${formatTimestamp(pr.updated_at)})`
-    : "";
+  const updatedAt = pr.updated_at ? ` (updated ${formatTimestamp(pr.updated_at)})` : "";
 
   return [
     `**PR #${pr.number}** ${pr.title}`,

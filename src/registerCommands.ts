@@ -68,10 +68,7 @@ async function loadCommandData(): Promise<
           );
         }
       } catch (err) {
-        logger.warn(
-          { err, file: `${group}/${file}` },
-          "Failed to import command module",
-        );
+        logger.warn({ err, file: `${group}/${file}` }, "Failed to import command module");
       }
     }
   }
