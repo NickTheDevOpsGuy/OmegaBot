@@ -27,13 +27,12 @@ OmegaBot is a modular Discord bot designed to support development projects with 
 
 ---
 
-## Features
-
 ## Current features
 
 - Modular slash-command system (auto-loaded from dist/commands)
 - Centralized interaction routing with safe error handling
 - Structured logging (pino)
+- Welcome / onboarding system triggered on member join (`guildMemberAdd`)
 
 ### Core commands
 
@@ -238,15 +237,17 @@ OmegaBot is online
 │   │   ├── transcript
 │   │   │   ├── buildTranscript.ts
 │   │   │   └── defaults.ts
-│   │   └── weather
-│   │       ├── forecast.ts
-│   │       ├── geocode.ts
-│   │       └── types.ts
+│   │   ├── weather
+│   │   │   ├── forecast.ts
+│   │   │   ├── geocode.ts
+│   │   │   └── types.ts
+│   │   └── welcome
+│   │       ├── welcomeHandler.ts
+│   │       └── welcomeMessage.ts
 │   ├── utils
 │   │   └── logger.ts
 │   ├── bot.ts
 │   └── registerCommands.ts
-├── .env.example
 ├── .gitignore
 ├── .prettierignore
 ├── .prettierrc.yml

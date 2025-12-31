@@ -1,89 +1,210 @@
-# Discord Bot Setup Guide
+# Discord Bot Setup Guide (OmegaBot)
 
-This guide walks you through creating and configuring a Discord bot for OmegaBot.
+This guide walks you through creating and configuring a Discord bot for **OmegaBot**, including required gateway intents, installation settings, and common pitfalls.
+
+---
 
 ## 1. Create a Discord Application
 
-1. Go to https://discord.com/developers/applications
+1. Go to [Applications](https://discord.com/developers/applications)
 2. Click **New Application**
-3. Name it (e.g. OmegaBot)
+3. Name it (e.g. `OmegaBot`)
+4. Open the application
 
-## 2. Create a Bot User
+---
 
-1. Open your application
-2. Go to **Bot**
-3. Click **Add Bot**
-4. Copy the **Bot Token** (keep it secret)
+## 2. Create a Bot User (Required)
 
-## 3. Enable Required Bot Settings
+1. In the left sidebar, click **Bot**
+2. Click **Add Bot**
+3. Confirm
 
-In the **Bot** section:
+> Without a bot user, gateway intents and bot tokens will not behave correctly.
 
-- Enable **Message Content Intent**
-- Enable **Server Members Intent** (optional but recommended)
+---
 
-## 4. Invite the Bot to Your Server
+## 3. Copy Required Credentials
 
-Go to **OAuth2 → URL Generator**
+### Bot Token
+- Location: **Bot → Token**
+- Click **Reset Token** or **Copy**
+- Store securely in `.env`:
 
-- Scopes:
-  - bot
-  - applications.commands
-- Bot Permissions:
-  - View Channels
-  - Read Message History
-  - Send Messages
-  - Attach Files
-  - Use Slash Commands
+```env
+DISCORD_TOKEN=your_bot_token_here
+```
+
+### Application ID
+- Location: **General Information → Application ID**
+- Store in `.env`:
+
+```env
+DISCORD_APP_ID=your_application_id_here
+```
+
+> The Application ID is **not secret**.  
+> The Bot Token **must be kept private**.
+
+---
+
+## 4. Select Installation Type (Important)
+
+Go to **Installation** (sometimes labeled Integration Type).
+
+### Enable:
+- ✅ **Guild Install**
+
+### Do NOT rely on:
+- ❌ User Install (OAuth-only apps, no gateway events)
+
+Guild Install is required for:
+- Gateway bots
+- Slash commands
+- Member join events
+- Welcome messages
+
+Save changes.
+
+---
+
+## 5. Enable Privileged Gateway Intents
+
+Go to **Bot → Privileged Gateway Intents**.
+
+Enable:
+- ✅ **Server Members Intent**
+
+This is required for:
+- `guildMemberAdd`
+- welcome / onboarding messages
+
+Optional (enable only if needed later):
+- Message Content Intent
+- Presence Intent
+
+Click **Save Changes**.
+
+> Both the **portal toggle** and the **code intent** must be enabled.
+
+---
+
+## 6. Invite the Bot to Your Server
+
+Go to **OAuth2 → URL Generator**.
+
+### Scopes
+- ✅ `bot`
+- ✅ `applications.commands`
+
+### Bot Permissions (minimum)
+- View Channels
+- Send Messages
+- Read Message History
 
 Copy the generated URL and open it in your browser to invite the bot.
 
-## 5. Enable Developer Mode
+> If you change permissions later, you must **re-invite** the bot.
+
+---
+
+## 7. Enable Developer Mode (Local Setup)
 
 In Discord:
+1. User Settings → Advanced
+2. Enable **Developer Mode**
 
-- User Settings → Advanced
-- Enable **Developer Mode**
+This allows copying IDs.
 
-## 6. Get IDs
+---
 
-- Guild ID: Right-click your server → Copy ID
-- Channel ID: Right-click channel → Copy ID
+## 8. Get IDs
 
-You will use these in `.env`.
+- **Guild ID**: Right-click server → Copy ID
+- **Channel ID**: Right-click channel → Copy ID
+
+Add to `.env` as needed:
+
+```env
+DISCORD_GUILD_ID=your_guild_id_here
+WELCOME_CHANNEL_ID=your_channel_id_here
+```
+
+---
+
+## 9. Verify Gateway Intents in Code
+
+Your bot client **must request the same intents** you enabled in the portal.
+
+Example:
+
+```ts
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMembers,
+  ],
+});
+```
+
+Missing either side causes:
+- Gateway disconnects
+- “Used disallowed intents” errors
+
+---
+
+## Testing Welcome Messages
+
+The `guildMemberAdd` event **only fires when a real join happens**.
+
+Valid test methods:
+- Join with an alt account
+- Ask an admin to kick you once and rejoin
+- Create a private test server and join there
+
+There is no “fake join” or manual trigger in Discord.
+
+---
 
 ## Common Issues
 
-- Slash commands not showing → run `npm run register`
-- Bot replies but DMs fail → user has DMs closed
-- Empty message history → missing **Read Message History** permission
+### Bot logs in but welcome message never fires
+- Server Members Intent not enabled in portal
+- `GatewayIntentBits.GuildMembers` missing in code
+- Bot was not restarted after enabling intent
 
-## Official Discord Documentation
+### Slash commands not showing
+- Run the command registration script
+- Ensure `applications.commands` scope was used on invite
 
-If you want more detail or need help beyond this guide, these official resources are useful:
-
-**Discord Developer Portal**
+### Bot cannot send welcome message
+- Missing **View Channel** or **Send Messages** permission
+- Wrong `WELCOME_CHANNEL_ID`
+- Channel overrides blocking the bot role
 
 ---
 
 ## Official Discord Documentation
 
-If you want more detail or need help beyond this guide, these official resources are useful:
+- Developer Portal  
 
-- **Discord Developer Portal**  
-  [https://discord.com/developers/applications](https://discord.com/developers/applications)
+  [Applications](https://discord.com/developers/applications)
 
-- **Creating a Discord Bot Account**  
-  [https://discord.com/developers/docs/getting-started](https://discord.com/developers/docs/getting-started)
+- Getting Started
 
-- **OAuth2 & Inviting Bots**  
-  [https://discord.com/developers/docs/topics/oauth2](https://discord.com/developers/docs/topics/oauth2)
+  [Getting-Started](https://discord.com/developers/docs/getting-started)
 
-- **Bot Permissions Reference**  
-  [https://discord.com/developers/docs/topics/permissions](https://discord.com/developers/docs/topics/permissions)
+- OAuth2 & Inviting Bots
 
-- **Gateway Intents (Message Content, Members, etc.)**  
-  [https://discord.com/developers/docs/topics/gateway#gateway-intents](https://discord.com/developers/docs/topics/gateway#gateway-intents)
+  [Oauth2](https://discord.com/developers/docs/topics/oauth2)
 
-- **Discord.js Guide (Slash Commands)**  
-  [https://discordjs.guide/interactions/slash-commands.html](https://discordjs.guide/interactions/slash-commands.html)
+- Bot Permissions Reference
+
+  [Permissions](https://discord.com/developers/docs/topics/permissions)
+
+- Gateway Intents
+
+  [Gateway](https://discord.com/developers/docs/topics/gateway#gateway-intents)
+
+- discord.js Slash Commands
+
+  [Slash Commands](https://discordjs.guide/interactions/slash-commands.html)
