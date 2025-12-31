@@ -27,9 +27,7 @@ type SendableGuildChannel = TextChannel | NewsChannel | ThreadChannel;
  * 2) Guild system channel (if set)
  * 3) First writable guild text channel we can find
  */
-async function resolveWelcomeChannel(
-  guild: Guild,
-): Promise<SendableGuildChannel | null> {
+async function resolveWelcomeChannel(guild: Guild): Promise<SendableGuildChannel | null> {
   const envChannelId = process.env.WELCOME_CHANNEL_ID;
 
   if (envChannelId) {
