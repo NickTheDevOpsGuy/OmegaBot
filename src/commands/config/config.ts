@@ -6,10 +6,7 @@ import {
   ChannelType,
   type ChatInputCommandInteraction,
 } from "discord.js";
-import {
-  setGuildConfig,
-  getGuildConfig,
-} from "../../services/config/guildConfigStore.js";
+import { setGuildConfig, getGuildConfig } from "../../services/config/guildConfigStore.js";
 import { logger } from "../../utils/logger.js";
 
 /**
@@ -108,7 +105,8 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       return;
     }
 
-    const updated = setGuildConfig(interaction.guildId, {
+    // Clear configured channel and fall back to system/first text channel.
+    setGuildConfig(interaction.guildId, {
       welcomeChannelId: null,
     });
 
