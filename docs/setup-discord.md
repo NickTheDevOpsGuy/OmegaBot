@@ -26,6 +26,7 @@ This guide walks you through creating and configuring a Discord bot for **OmegaB
 ## 3. Copy Required Credentials
 
 ### Bot Token
+
 - Location: **Bot → Token**
 - Click **Reset Token** or **Copy**
 - Store securely in `.env`:
@@ -35,6 +36,7 @@ DISCORD_TOKEN=your_bot_token_here
 ```
 
 ### Application ID
+
 - Location: **General Information → Application ID**
 - Store in `.env`:
 
@@ -52,12 +54,15 @@ DISCORD_APP_ID=your_application_id_here
 Go to **Installation** (sometimes labeled Integration Type).
 
 ### Enable:
+
 - ✅ **Guild Install**
 
 ### Do NOT rely on:
+
 - ❌ User Install (OAuth-only apps, no gateway events)
 
 Guild Install is required for:
+
 - Gateway bots
 - Slash commands
 - Member join events
@@ -72,13 +77,16 @@ Save changes.
 Go to **Bot → Privileged Gateway Intents**.
 
 Enable:
+
 - ✅ **Server Members Intent**
 
 This is required for:
+
 - `guildMemberAdd`
 - welcome / onboarding messages
 
 Optional (enable only if needed later):
+
 - Message Content Intent
 - Presence Intent
 
@@ -93,10 +101,12 @@ Click **Save Changes**.
 Go to **OAuth2 → URL Generator**.
 
 ### Scopes
+
 - ✅ `bot`
 - ✅ `applications.commands`
 
 ### Bot Permissions (minimum)
+
 - View Channels
 - Send Messages
 - Read Message History
@@ -110,6 +120,7 @@ Copy the generated URL and open it in your browser to invite the bot.
 ## 7. Enable Developer Mode (Local Setup)
 
 In Discord:
+
 1. User Settings → Advanced
 2. Enable **Developer Mode**
 
@@ -139,14 +150,12 @@ Example:
 
 ```ts
 const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMembers,
-  ],
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
 });
 ```
 
 Missing either side causes:
+
 - Gateway disconnects
 - “Used disallowed intents” errors
 
@@ -157,6 +166,7 @@ Missing either side causes:
 The `guildMemberAdd` event **only fires when a real join happens**.
 
 Valid test methods:
+
 - Join with an alt account
 - Ask an admin to kick you once and rejoin
 - Create a private test server and join there
@@ -168,15 +178,18 @@ There is no “fake join” or manual trigger in Discord.
 ## Common Issues
 
 ### Bot logs in but welcome message never fires
+
 - Server Members Intent not enabled in portal
 - `GatewayIntentBits.GuildMembers` missing in code
 - Bot was not restarted after enabling intent
 
 ### Slash commands not showing
+
 - Run the command registration script
 - Ensure `applications.commands` scope was used on invite
 
 ### Bot cannot send welcome message
+
 - Missing **View Channel** or **Send Messages** permission
 - Wrong `WELCOME_CHANNEL_ID`
 - Channel overrides blocking the bot role
@@ -185,7 +198,7 @@ There is no “fake join” or manual trigger in Discord.
 
 ## Official Discord Documentation
 
-- Developer Portal  
+- Developer Portal
 
   [Applications](https://discord.com/developers/applications)
 
