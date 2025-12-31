@@ -51,7 +51,8 @@ type SummaryMode = "local" | "llm";
  *      Application ID required for slash command registration.
  *
  *  - DISCORD_GUILD_ID
- *      Guild where development commands are registered.
+ *      OPTIONAL: Guild where development commands are registered.
+ *      If not set, commands should be registered globally instead.
  *
  * ------------------------------------------------------------------
  * Optional (feature flags / enhancements)
@@ -102,7 +103,13 @@ export const env = {
 
   token: requireEnv("DISCORD_TOKEN"),
   appId: requireEnv("DISCORD_APP_ID"),
-  guildId: requireEnv("DISCORD_GUILD_ID"),
+
+  /**
+   * Optional:
+   * Used for faster slash-command iteration during development.
+   * If unset, you can register commands globally instead.
+   */
+  guildId: process.env.DISCORD_GUILD_ID ?? null,
 
   /* ---------------------------------------------------------------- */
   /* Summaries                                                        */
