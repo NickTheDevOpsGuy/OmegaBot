@@ -33,10 +33,11 @@ OmegaBot is a modular Discord bot designed to support development projects with 
 - Centralized interaction routing with safe error handling
 - Structured logging (pino)
 - Welcome / onboarding system triggered on member join (`guildMemberAdd`)
-- Per-guild configuration system backed by persistent storage
+- Per-guild configuration system backed by persistent storage and admin slash commands
 
 ### Core commands
 
+- /help – command discovery and getting started guide
 - /ping – health check
 - /summary – conversation summaries (local + LLM mode)
 - /history – conversation history (DM + file fallback)
@@ -65,7 +66,6 @@ OmegaBot is a modular Discord bot designed to support development projects with 
 
 ## Planned features
 
-- /help command for command discovery
 - /docs command for documentation lookups
 - GitHub issues and pull request lookups
 - Pull request announcements
@@ -152,6 +152,7 @@ OmegaBot is online
 │   │   └── OmegaBot.yml
 │   └── pull_request_template.md
 ├── .husky
+│   ├── pre-commit
 │   └── pre-push
 ├── assets
 │   ├── banner.png
@@ -196,6 +197,9 @@ OmegaBot is online
 │   │   ├── github
 │   │   │   ├── gh.ts
 │   │   │   └── pr.ts
+│   │   ├── help
+│   │   │   ├── help.ts
+│   │   │   └── helpText.ts
 │   │   ├── history
 │   │   │   └── history.ts
 │   │   ├── pagination
@@ -213,6 +217,7 @@ OmegaBot is online
 │   │   │   └── types.ts
 │   │   ├── discord
 │   │   │   ├── commandLoader.ts
+│   │   │   ├── commandMeta.ts
 │   │   │   ├── fetchChannelMessages.ts
 │   │   │   └── interactionHandler.ts
 │   │   ├── faq
