@@ -260,6 +260,7 @@ OmegaBot is online
 │   │   └── logger.ts
 │   ├── bot.ts
 │   └── registerCommands.ts
+├── .env.example
 ├── .gitignore
 ├── .prettierignore
 ├── .prettierrc.yml
