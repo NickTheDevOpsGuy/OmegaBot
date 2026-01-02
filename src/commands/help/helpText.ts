@@ -45,7 +45,9 @@ export function buildHelpText(args: {
     lines.push("");
   }
 
-  lines.push("_Tip: If new commands don’t show up, admins may need to run the register script._");
+  lines.push(
+    "_Tip: If new commands don’t show up, admins may need to run the register script._",
+  );
 
   return lines.join("\n");
 }
