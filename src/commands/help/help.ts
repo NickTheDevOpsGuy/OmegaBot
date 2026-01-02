@@ -6,7 +6,10 @@ import {
   type ChatInputCommandInteraction,
 } from "discord.js";
 import { buildHelpText } from "./helpText.js";
-import { extractCommandList, type CommandListItem } from "../../services/discord/commandMeta.js";
+import {
+  extractCommandList,
+  type CommandListItem,
+} from "../../services/discord/commandMeta.js";
 
 /**
  * /help
