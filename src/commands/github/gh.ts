@@ -5,12 +5,12 @@ import {
   SlashCommandBuilder,
   type ChatInputCommandInteraction,
 } from "discord.js";
-import { GitHubApiError } from "../../services/github/githubClient.js";
 import {
   getIssue,
   listIssues,
   listPullRequests,
 } from "../../services/github/githubApi.js";
+import { getGitHubUserMessage } from "../../services/github/githubErrorMessage.js";
 import { logger } from "../../utils/logger.js";
 
 /**
@@ -54,7 +54,7 @@ export const data = new SlashCommandBuilder()
   .addSubcommand((s) =>
     s
       .setName("prs")
-      .setDescription("List pull requests")
+      .setDescription("List open pull requests")
       .addStringOption((o) =>
         o.setName("owner").setDescription("Org/user").setRequired(true),
       )
@@ -107,7 +107,8 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
           `**Open issues for ${owner}/${repo}**`,
           "",
           ...issues.map(
-            (i) => `#${i.number} ${i.title} (by ${i.user?.login ?? "unknown"})`,
+            (i) =>
+              `#${i.number} ${i.title} (by ${i.user?.login ?? "unknown"})\n${i.html_url}`,
           ),
         ].join("\n"),
       );
@@ -127,29 +128,26 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         [
           `**Open PRs for ${owner}/${repo}**`,
           "",
-          ...prs.map((p) => `#${p.number} ${p.title} (by ${p.user?.login ?? "unknown"})`),
+          ...prs.map(
+            (p) =>
+              `#${p.number} ${p.title} (by ${p.user?.login ?? "unknown"})\n${p.html_url}`,
+          ),
         ].join("\n"),
       );
       return;
     }
 
-    // Should be unreachable because subcommand is required, but keep it safe.
     await interaction.editReply("Unknown subcommand.");
+    return;
   } catch (err) {
-    if (err instanceof GitHubApiError) {
-      if (err.status === 404) {
-        await interaction.editReply("Not found. Check owner/repo and the number.");
-        return;
-      }
-
-      logger.warn({ err, owner, repo, sub }, "[gh] GitHub API error");
-
-      await interaction.editReply(`GitHub error (${err.status}): ${err.message}`);
+    const msg = getGitHubUserMessage(err);
+    if (msg) {
+      await interaction.editReply(msg);
       return;
     }
 
-    logger.error({ err, owner, repo, sub }, "[gh] command failed");
-
-    await interaction.editReply("Something went wrong talking to GitHub.");
+    logger.warn({ err, owner, repo, sub }, "[gh] GitHub request failed");
+    await interaction.editReply("GitHub request failed. Please try again in a bit.");
+    return;
   }
 }
