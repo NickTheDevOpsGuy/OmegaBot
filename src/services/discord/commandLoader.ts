@@ -63,9 +63,9 @@ export async function loadCommands(client: CommandClient): Promise<void> {
         const mod = (await import(fullPath)) as Partial<SlashCommand>;
 
         if (!mod.data || !mod.execute) {
-          logger.warn(
+          logger.debug(
             { file: `${group}/${file}` },
-            "Skipping command module (missing data or execute)",
+            "Skipping non-command module (missing data or execute)",
           );
           continue;
         }

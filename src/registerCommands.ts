@@ -30,15 +30,21 @@ async function loadCommandData(): Promise<
     return commands;
   }
 
-  const groups = fs.readdirSync(basePath);
+  // Read command groups (folders) safely
+  const groupEntries = fs.readdirSync(basePath, { withFileTypes: true });
 
-  for (const group of groups) {
+  for (const groupEntry of groupEntries) {
+    if (!groupEntry.isDirectory()) continue;
+
+    const group = groupEntry.name;
     const groupPath = path.join(basePath, group);
-    if (!fs.statSync(groupPath).isDirectory()) continue;
 
-    const files = fs.readdirSync(groupPath);
+    const fileEntries = fs.readdirSync(groupPath, { withFileTypes: true });
 
-    for (const file of files) {
+    for (const fileEntry of fileEntries) {
+      if (!fileEntry.isFile()) continue;
+
+      const file = fileEntry.name;
       if (!file.endsWith(".js")) continue;
 
       const modulePath = path.join(groupPath, file);
