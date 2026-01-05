@@ -5,8 +5,8 @@ import {
   SlashCommandBuilder,
   type ChatInputCommandInteraction,
 } from "discord.js";
-import { GitHubApiError } from "../../services/github/githubClient.js";
 import { getPullRequest } from "../../services/github/githubApi.js";
+import { getGitHubUserMessage } from "../../services/github/githubErrorMessage.js";
 import { logger } from "../../utils/logger.js";
 
 /**
@@ -15,12 +15,20 @@ import { logger } from "../../utils/logger.js";
  */
 export const data = new SlashCommandBuilder()
   .setName("pr")
-  .setDescription("GitHub pull request helpers")
-  .addIntegerOption((o) => o.setName("number").setDescription("PR #").setRequired(true))
-  .addStringOption((o) => o.setName("owner").setDescription("Org/user").setRequired(true))
-  .addStringOption((o) => o.setName("repo").setDescription("Repo").setRequired(true));
+  .setDescription("Fetch a GitHub pull request by number")
+  .addIntegerOption((o) =>
+    o.setName("number").setDescription("PR #").setRequired(true),
+  )
+  .addStringOption((o) =>
+    o.setName("owner").setDescription("Org/user").setRequired(true),
+  )
+  .addStringOption((o) =>
+    o.setName("repo").setDescription("Repo").setRequired(true),
+  );
 
-export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
+export async function execute(
+  interaction: ChatInputCommandInteraction,
+): Promise<void> {
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   const owner = interaction.options.getString("owner", true);
@@ -31,30 +39,26 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     const pr = await getPullRequest(owner, repo, number);
 
     const mergedLabel = pr.merged ? "merged" : "not merged";
+
     const body = [
       `**${owner}/${repo} PR #${pr.number}**`,
       pr.title,
       `State: ${pr.state} (${mergedLabel})`,
       `Author: ${pr.user?.login ?? "unknown"}`,
-      `URL: ${pr.html_url}`,
+      pr.html_url,
     ].join("\n");
 
     await interaction.editReply(body);
+    return;
   } catch (err) {
-    if (err instanceof GitHubApiError) {
-      if (err.status === 404) {
-        await interaction.editReply("PR not found. Check owner/repo and PR number.");
-        return;
-      }
-
-      logger.warn({ err, owner, repo, number }, "[pr] GitHub API error");
-
-      await interaction.editReply(`GitHub API error (${err.status}): ${err.message}`);
+    const msg = getGitHubUserMessage(err);
+    if (msg) {
+      await interaction.editReply(msg);
       return;
     }
 
-    logger.error({ err, owner, repo, number }, "[pr] command failed");
-
-    await interaction.editReply("Something went wrong while talking to GitHub.");
+    logger.warn({ err, owner, repo, number }, "[pr] GitHub request failed");
+    await interaction.editReply("GitHub request failed. Please try again in a bit.");
+    return;
   }
 }
