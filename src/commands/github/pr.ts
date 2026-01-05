@@ -16,19 +16,11 @@ import { logger } from "../../utils/logger.js";
 export const data = new SlashCommandBuilder()
   .setName("pr")
   .setDescription("Fetch a GitHub pull request by number")
-  .addIntegerOption((o) =>
-    o.setName("number").setDescription("PR #").setRequired(true),
-  )
-  .addStringOption((o) =>
-    o.setName("owner").setDescription("Org/user").setRequired(true),
-  )
-  .addStringOption((o) =>
-    o.setName("repo").setDescription("Repo").setRequired(true),
-  );
+  .addIntegerOption((o) => o.setName("number").setDescription("PR #").setRequired(true))
+  .addStringOption((o) => o.setName("owner").setDescription("Org/user").setRequired(true))
+  .addStringOption((o) => o.setName("repo").setDescription("Repo").setRequired(true));
 
-export async function execute(
-  interaction: ChatInputCommandInteraction,
-): Promise<void> {
+export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   const owner = interaction.options.getString("owner", true);

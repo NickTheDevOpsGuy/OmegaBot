@@ -28,9 +28,7 @@ export const data = new SlashCommandBuilder()
       .addStringOption((o) =>
         o.setName("owner").setDescription("Org/user").setRequired(true),
       )
-      .addStringOption((o) =>
-        o.setName("repo").setDescription("Repo").setRequired(true),
-      )
+      .addStringOption((o) => o.setName("repo").setDescription("Repo").setRequired(true))
       .addIntegerOption((o) =>
         o.setName("number").setDescription("Issue #").setRequired(true),
       ),
@@ -43,9 +41,7 @@ export const data = new SlashCommandBuilder()
       .addStringOption((o) =>
         o.setName("owner").setDescription("Org/user").setRequired(true),
       )
-      .addStringOption((o) =>
-        o.setName("repo").setDescription("Repo").setRequired(true),
-      )
+      .addStringOption((o) => o.setName("repo").setDescription("Repo").setRequired(true))
       .addIntegerOption((o) =>
         o
           .setName("limit")
@@ -62,9 +58,7 @@ export const data = new SlashCommandBuilder()
       .addStringOption((o) =>
         o.setName("owner").setDescription("Org/user").setRequired(true),
       )
-      .addStringOption((o) =>
-        o.setName("repo").setDescription("Repo").setRequired(true),
-      )
+      .addStringOption((o) => o.setName("repo").setDescription("Repo").setRequired(true))
       .addIntegerOption((o) =>
         o
           .setName("limit")
@@ -74,9 +68,7 @@ export const data = new SlashCommandBuilder()
       ),
   );
 
-export async function execute(
-  interaction: ChatInputCommandInteraction,
-): Promise<void> {
+export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const sub = interaction.options.getSubcommand(true);
 
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
