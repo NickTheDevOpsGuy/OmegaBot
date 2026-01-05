@@ -56,7 +56,6 @@ async function loadCommandData(): Promise<
         if (mod?.data && typeof mod.execute === "function") {
           const json = mod.data.toJSON();
 
-          // 👇 Log exactly what is being registered
           logger.info(
             {
               command: json.name,
@@ -99,6 +98,14 @@ async function register(): Promise<void> {
       commands: commands.map((c) => c.name),
     },
     "Final slash command payload",
+  );
+
+  logger.info(
+    {
+      mode: env.guildId ? "guild" : "global",
+      guildId: env.guildId ?? undefined,
+    },
+    "Slash command registration mode",
   );
 
   if (env.guildId) {
