@@ -16,10 +16,7 @@ function makeKey(userId: string, commandName: string): string {
  * Returns remaining cooldown time in milliseconds.
  * Returns 0 if no cooldown is active.
  */
-export function getCooldownRemainingMs(
-  userId: string,
-  commandName: string,
-): number {
+export function getCooldownRemainingMs(userId: string, commandName: string): number {
   const key = makeKey(userId, commandName);
   const expiresAt = cooldowns.get(key);
 
