@@ -150,6 +150,7 @@ OmegaBot is online
 
 ```
 .
+.
 ├── .github
 │   ├── ISSUE_TEMPLATE
 │   │   ├── bug.yml
@@ -230,7 +231,8 @@ OmegaBot is online
 │   │   │   ├── commandMeta.ts
 │   │   │   ├── cooldowns.ts
 │   │   │   ├── fetchChannelMessages.ts
-│   │   │   └── interactionHandler.ts
+│   │   │   ├── interactionHandler.ts
+│   │   │   └── safeReply.ts
 │   │   ├── faq
 │   │   │   ├── _shared.ts
 │   │   │   ├── faqService.ts
@@ -243,6 +245,7 @@ OmegaBot is online
 │   │   ├── github
 │   │   │   ├── githubApi.ts
 │   │   │   ├── githubClient.ts
+│   │   │   ├── githubErrorMessage.ts
 │   │   │   ├── lastSeenStore.ts
 │   │   │   ├── prFormatter.ts
 │   │   │   ├── prPoller.ts
