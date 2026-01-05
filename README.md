@@ -228,6 +228,7 @@ OmegaBot is online
 │   │   ├── discord
 │   │   │   ├── commandLoader.ts
 │   │   │   ├── commandMeta.ts
+│   │   │   ├── cooldowns.ts
 │   │   │   ├── fetchChannelMessages.ts
 │   │   │   └── interactionHandler.ts
 │   │   ├── faq
