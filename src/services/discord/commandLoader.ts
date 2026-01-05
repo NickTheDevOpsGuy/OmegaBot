@@ -2,6 +2,7 @@
 
 import fs from "fs";
 import path from "path";
+import { pathToFileURL } from "url";
 import {
   Client,
   SlashCommandBuilder,
@@ -33,20 +34,30 @@ export type CommandClient = Client & {
  * Notes:
  * - We load from dist/ because the bot runs compiled JS.
  * - A single broken command should not crash the entire bot.
+ * - Helper modules may exist alongside commands and will be skipped.
  */
 export async function loadCommands(client: CommandClient): Promise<void> {
-  const basePath = path.join(process.cwd(), "dist/commands");
+  const basePath = path.join(process.cwd(), "dist", "commands");
+
+  // Diagnostics
+  let loadedCount = 0;
+  let skippedCount = 0;
+  let failedCount = 0;
+
+  const loadedNames: string[] = [];
+  const skippedFiles: string[] = [];
+  const failedFiles: string[] = [];
 
   if (!fs.existsSync(basePath)) {
     logger.error(
       { basePath },
       "Command loader base path not found. Did you build the project?",
     );
+    logger.info({ loadedCount: 0 }, "Commands loaded");
     return;
   }
 
   const groups = fs.readdirSync(basePath);
-  let loadedCount = 0;
 
   for (const group of groups) {
     const groupPath = path.join(basePath, group);
@@ -58,13 +69,20 @@ export async function loadCommands(client: CommandClient): Promise<void> {
       if (!file.endsWith(".js")) continue;
 
       const fullPath = path.join(groupPath, file);
+      const relFile = `${group}/${file}`;
 
       try {
-        const mod = (await import(fullPath)) as Partial<SlashCommand>;
+        // ESM-safe import path
+        const moduleUrl = pathToFileURL(fullPath).href;
+        const mod = (await import(moduleUrl)) as Partial<SlashCommand>;
 
+        // Helpers are expected to be skipped
         if (!mod.data || !mod.execute) {
+          skippedCount += 1;
+          skippedFiles.push(relFile);
+
           logger.debug(
-            { file: `${group}/${file}` },
+            { file: relFile },
             "Skipping non-command module (missing data or execute)",
           );
           continue;
@@ -73,8 +91,11 @@ export async function loadCommands(client: CommandClient): Promise<void> {
         const name = mod.data.name;
 
         if (!name || typeof name !== "string") {
+          skippedCount += 1;
+          skippedFiles.push(relFile);
+
           logger.warn(
-            { file: `${group}/${file}` },
+            { file: relFile },
             "Skipping command module (invalid command name)",
           );
           continue;
@@ -82,8 +103,11 @@ export async function loadCommands(client: CommandClient): Promise<void> {
 
         // Avoid silent overwrites if two commands share the same name
         if (client.commands.has(name)) {
+          skippedCount += 1;
+          skippedFiles.push(relFile);
+
           logger.warn(
-            { name, file: `${group}/${file}` },
+            { name, file: relFile },
             "Duplicate command name detected. Skipping this module.",
           );
           continue;
@@ -91,14 +115,35 @@ export async function loadCommands(client: CommandClient): Promise<void> {
 
         client.commands.set(name, mod as SlashCommand);
         loadedCount += 1;
+        loadedNames.push(name);
       } catch (err) {
-        logger.error(
-          { err, file: `${group}/${file}`, fullPath },
+        failedCount += 1;
+        failedFiles.push(relFile);
+
+        logger.warn(
+          { err, file: relFile, fullPath },
           "Failed to import command module",
         );
       }
     }
   }
 
-  logger.info({ loadedCount }, "Commands loaded");
+  // Summary (info)
+  logger.info(
+    {
+      loadedCount,
+      loadedNames,
+      skippedCount,
+      failedCount,
+    },
+    "Commands loaded",
+  );
+
+  // Details only when useful
+  if (failedCount > 0) {
+    logger.warn({ failedCount, failedFiles }, "One or more command modules failed to load");
+  }
+
+  // Keep skip list debug-only to avoid noise
+  logger.debug({ skippedCount, skippedFiles }, "Non-command modules skipped");
 }
