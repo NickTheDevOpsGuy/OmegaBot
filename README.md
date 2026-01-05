@@ -124,10 +124,10 @@ Command registration mode
 OmegaBot supports two registration modes:
 
 - Guild registration (recommended for development)
-If DISCORD_GUILD_ID is set, commands are registered to that guild and appear immediately.
+  If DISCORD_GUILD_ID is set, commands are registered to that guild and appear immediately.
 
 - Global registration
-If DISCORD_GUILD_ID is not set, commands are registered globally and may take up to 1 hour to appear.
+  If DISCORD_GUILD_ID is not set, commands are registered globally and may take up to 1 hour to appear.
 
 5. Run the bot locally:
 
