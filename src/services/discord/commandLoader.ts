@@ -120,10 +120,7 @@ export async function loadCommands(client: CommandClient): Promise<void> {
         failedCount += 1;
         failedFiles.push(relFile);
 
-        logger.warn(
-          { err, file: relFile, fullPath },
-          "Failed to import command module",
-        );
+        logger.warn({ err, file: relFile, fullPath }, "Failed to import command module");
       }
     }
   }
@@ -141,7 +138,10 @@ export async function loadCommands(client: CommandClient): Promise<void> {
 
   // Details only when useful
   if (failedCount > 0) {
-    logger.warn({ failedCount, failedFiles }, "One or more command modules failed to load");
+    logger.warn(
+      { failedCount, failedFiles },
+      "One or more command modules failed to load",
+    );
   }
 
   // Keep skip list debug-only to avoid noise
