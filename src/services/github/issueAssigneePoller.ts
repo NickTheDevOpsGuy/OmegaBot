@@ -46,8 +46,8 @@ const DATA_DIR = path.join(process.cwd(), "data");
 const STATE_PATH = path.join(DATA_DIR, "github-assignees.json");
 
 function uniqSorted(list: string[]): string[] {
-  return Array.from(new Set(list.map((s) => s.trim()).filter(Boolean))).sort(
-    (a, b) => a.localeCompare(b),
+  return Array.from(new Set(list.map((s) => s.trim()).filter(Boolean))).sort((a, b) =>
+    a.localeCompare(b),
   );
 }
 
