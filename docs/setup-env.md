@@ -33,7 +33,15 @@ OPENAI_API_KEY=your-key
 GITHUB_TOKEN=your-github-pat
 GITHUB_OWNER=org-or-user
 GITHUB_REPO=repo-name
+
+# Channel for PR creation / PR updates
 GITHUB_ANNOUNCE_CHANNEL_ID=channel-id
+
+# Channel for issue + PR assignee changes and closures
+# (can be the same as above if you want)
+GITHUB_ASSIGNEE_CHANNEL_ID=channel-id
+
+# Polling interval (milliseconds)
 GITHUB_POLL_INTERVAL_MS=60000
 ```
 
