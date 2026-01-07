@@ -245,6 +245,7 @@ OmegaBot is online
 │   │   │   ├── githubApi.ts
 │   │   │   ├── githubClient.ts
 │   │   │   ├── githubErrorMessage.ts
+│   │   │   ├── issueAssigneePoller.ts
 │   │   │   ├── lastSeenStore.ts
 │   │   │   ├── prFormatter.ts
 │   │   │   ├── prPoller.ts
