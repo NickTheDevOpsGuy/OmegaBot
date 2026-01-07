@@ -8,19 +8,20 @@ import { logger } from "../../utils/logger.js";
 
 /**
  * Minimal shape we need from the GitHub PR list for polling announcements.
- * githubApi.listPullRequests must return objects with `updated_at`.
+ * githubApi.listPullRequests must return objects with `created_at`.
  */
 type PrForPolling = {
-  updated_at: string;
+  created_at: string;
 };
 
 /**
- * Poll GitHub for new or updated PRs and announce them in a Discord channel.
+ * Poll GitHub for NEW PRs (created since last seen) and announce them in a Discord channel.
  *
  * Design goals:
  * - Never throw (background job safety)
  * - Log failures once with context
  * - Skip quietly when nothing to do
+ * - Baseline-first: first successful run stores lastSeen and does NOT announce
  */
 export async function pollPullRequestsOnce(args: {
   client: Client;
@@ -32,7 +33,8 @@ export async function pollPullRequestsOnce(args: {
   const { client, owner, repo, announceChannelId, limit = 20 } = args;
 
   try {
-    // Pull newest-updated first (based on githubApi query params)
+    // Pull newest-first (based on githubApi query params)
+    // IMPORTANT: We only announce PRs based on created_at (not updated_at)
     const prs = (await listPullRequests(owner, repo, {
       state: "open",
       limit,
@@ -42,9 +44,25 @@ export async function pollPullRequestsOnce(args: {
 
     const lastSeen = getLastSeen(owner, repo) ?? 0;
 
-    // Keep only PRs updated after our stored timestamp
+    // Baseline-first: if we've never seen anything, set marker and do not announce
+    if (lastSeen === 0) {
+      const newestCreated = prs
+        .map((pr) => Date.parse(pr.created_at))
+        .filter((ms) => !Number.isNaN(ms))
+        .sort((a, b) => b - a)[0];
+
+      if (newestCreated && newestCreated > 0) {
+        // Store the timestamp as an ISO string via setLastSeenPr
+        setLastSeenPr(owner, repo, new Date(newestCreated).toISOString());
+        logger.info({ owner, repo }, "PR poller baseline saved (no announcements)");
+      }
+
+      return;
+    }
+
+    // Keep only PRs created after our stored timestamp
     const fresh = prs.filter((pr) => {
-      const ms = Date.parse(pr.updated_at);
+      const ms = Date.parse(pr.created_at);
       return !Number.isNaN(ms) && ms > lastSeen;
     });
 
@@ -61,16 +79,16 @@ export async function pollPullRequestsOnce(args: {
 
     // Post oldest-first so announcements read naturally
     const oldestFirst = [...fresh].sort(
-      (a, b) => Date.parse(a.updated_at) - Date.parse(b.updated_at),
+      (a, b) => Date.parse(a.created_at) - Date.parse(b.created_at),
     );
 
     for (const pr of oldestFirst) {
       await fetched.send(formatPullRequest(pr));
     }
 
-    // Update last-seen to newest PR we announced
+    // Update last-seen to newest PR we announced (by created_at)
     const newest = oldestFirst[oldestFirst.length - 1];
-    setLastSeenPr(owner, repo, newest.updated_at);
+    setLastSeenPr(owner, repo, newest.created_at);
   } catch (err) {
     logger.error({ err, owner, repo, announceChannelId }, "GitHub PR polling failed");
   }

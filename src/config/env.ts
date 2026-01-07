@@ -1,3 +1,5 @@
+// src/config/env.ts
+
 import dotenv from "dotenv";
 dotenv.config({ path: ".env" });
 
@@ -74,16 +76,24 @@ type SummaryMode = "local" | "llm";
  *      Required only when GitHub-backed features are enabled.
  *
  *  - GITHUB_OWNER
- *      Default repository owner for polling PRs (optional).
+ *      Default repository owner for polling (optional).
  *
  *  - GITHUB_REPO
- *      Default repository name for polling PRs (optional).
+ *      Default repository name for polling (optional).
  *
  *  - GITHUB_ANNOUNCE_CHANNEL_ID
- *      Discord channel ID where PR announcements are posted (optional).
+ *      Legacy: single channel where GitHub announcements are posted (optional).
+ *
+ *  - GITHUB_PR_ANNOUNCE_CHANNEL_ID
+ *      NEW: channel where PR creation announcements are posted (optional).
+ *      Falls back to GITHUB_ANNOUNCE_CHANNEL_ID if unset.
+ *
+ *  - GITHUB_ASSIGNEE_ANNOUNCE_CHANNEL_ID
+ *      NEW: channel where assignee change announcements are posted (optional).
+ *      Falls back to GITHUB_ANNOUNCE_CHANNEL_ID if unset.
  *
  *  - GITHUB_POLL_INTERVAL_MS
- *      Polling interval for PR announcements.
+ *      Polling interval for GitHub polling.
  *      Defaults to 60 seconds if not provided.
  *
  * All GitHub-related fields are OPTIONAL so the bot can run
@@ -95,6 +105,15 @@ const summaryMode = (process.env.SUMMARY_MODE ?? "local") as SummaryMode;
 if (summaryMode === "llm" && !process.env.OPENAI_API_KEY) {
   throw new Error("OPENAI_API_KEY is required when SUMMARY_MODE=llm");
 }
+
+const legacyGithubAnnounceChannelId = process.env.GITHUB_ANNOUNCE_CHANNEL_ID ?? null;
+
+// New split channels (fall back to legacy)
+const githubPrAnnounceChannelId =
+  process.env.GITHUB_PR_ANNOUNCE_CHANNEL_ID ?? legacyGithubAnnounceChannelId;
+
+const githubAssigneeAnnounceChannelId =
+  process.env.GITHUB_ASSIGNEE_ANNOUNCE_CHANNEL_ID ?? legacyGithubAnnounceChannelId;
 
 export const env = {
   /* ---------------------------------------------------------------- */
@@ -128,18 +147,22 @@ export const env = {
   // Auth token for GitHub REST API (optional)
   githubToken: process.env.GITHUB_TOKEN ?? null,
 
-  // Default repo configuration for PR polling (optional)
+  // Default repo configuration for polling (optional)
   githubOwner: process.env.GITHUB_OWNER ?? null,
   githubRepo: process.env.GITHUB_REPO ?? null,
 
-  // Where PR announcements should be posted (optional)
-  githubAnnounceChannelId: process.env.GITHUB_ANNOUNCE_CHANNEL_ID ?? null,
+  // Legacy: Where GitHub announcements should be posted (optional)
+  githubAnnounceChannelId: legacyGithubAnnounceChannelId,
+
+  // NEW: split announcement channels (optional; fall back to legacy)
+  githubPrAnnounceChannelId,
+  githubAssigneeAnnounceChannelId,
 
   // Polling interval (ms). Defaults to 60s.
   githubPollIntervalMs: envInt("GITHUB_POLL_INTERVAL_MS", 60_000),
 
   /**
-   * Feature gate:
+   * Legacy feature gate:
    *
    * GitHub announcement polling is enabled ONLY when all required
    * configuration is present. This prevents the bot from attempting
@@ -150,6 +173,24 @@ export const env = {
     Boolean(process.env.GITHUB_OWNER) &&
     Boolean(process.env.GITHUB_REPO) &&
     Boolean(process.env.GITHUB_ANNOUNCE_CHANNEL_ID),
+
+  /**
+   * NEW feature gates:
+   *
+   * Separate enablement for each GitHub polling stream.
+   * These fall back to the legacy channel var automatically.
+   */
+  githubPrPollingEnabled:
+    Boolean(process.env.GITHUB_TOKEN) &&
+    Boolean(process.env.GITHUB_OWNER) &&
+    Boolean(process.env.GITHUB_REPO) &&
+    Boolean(githubPrAnnounceChannelId),
+
+  githubAssigneePollingEnabled:
+    Boolean(process.env.GITHUB_TOKEN) &&
+    Boolean(process.env.GITHUB_OWNER) &&
+    Boolean(process.env.GITHUB_REPO) &&
+    Boolean(githubAssigneeAnnounceChannelId),
 
   /**
    * Helper for GitHub-only code paths.
