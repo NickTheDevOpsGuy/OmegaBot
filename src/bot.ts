@@ -4,6 +4,7 @@ import { Client, GatewayIntentBits } from "discord.js";
 import { loadCommands, type CommandClient } from "./services/discord/commandLoader.js";
 import { handleInteraction } from "./services/discord/interactionHandler.js";
 import { pollPullRequestsOnce } from "./services/github/prPoller.js";
+import { pollIssueAssigneesOnce } from "./services/github/issueAssigneePoller.js";
 import { onGuildMemberAdd } from "./services/welcome/welcomeHandler.js";
 import { env } from "./config/env.js";
 import { logger } from "./utils/logger.js";
@@ -57,14 +58,11 @@ client.on("guildMemberAdd", async (member) => {
 });
 
 /**
- * Optional GitHub PR polling.
- * Enabled only when all required env vars are present.
+ * Optional GitHub polling.
+ * Each stream is enabled only when all required env vars are present.
  */
-const githubPollingEnabled =
-  !!env.githubToken &&
-  !!env.githubOwner &&
-  !!env.githubRepo &&
-  !!env.githubAnnounceChannelId;
+const githubPrPollingEnabled = env.githubPrPollingEnabled;
+const githubAssigneePollingEnabled = env.githubAssigneePollingEnabled;
 
 /**
  * Log once when the bot is ready.
@@ -72,18 +70,36 @@ const githubPollingEnabled =
 client.once("clientReady", () => {
   logger.info("OmegaBot is online");
 
-  if (githubPollingEnabled) {
+  if (githubPrPollingEnabled) {
     logger.info(
       {
         owner: env.githubOwner,
         repo: env.githubRepo,
-        channelId: env.githubAnnounceChannelId,
+        channelId: env.githubPrAnnounceChannelId,
         intervalMs: env.githubPollIntervalMs,
       },
-      "GitHub PR polling enabled",
+      "GitHub PR polling enabled (new PRs)",
     );
   } else {
     logger.info("GitHub PR polling disabled");
+  }
+
+  if (githubAssigneePollingEnabled) {
+    logger.info(
+      {
+        owner: env.githubOwner,
+        repo: env.githubRepo,
+        channelId: env.githubAssigneeAnnounceChannelId,
+        intervalMs: env.githubPollIntervalMs,
+      },
+      "GitHub assignee polling enabled (assignee changes)",
+    );
+  } else {
+    logger.info("GitHub assignee polling disabled");
+  }
+
+  if (!githubPrPollingEnabled && !githubAssigneePollingEnabled) {
+    logger.info("GitHub polling disabled");
   }
 });
 
@@ -93,15 +109,28 @@ client.once("clientReady", () => {
 void client.login(env.token);
 
 /**
- * Schedule GitHub PR polling (if enabled).
+ * Schedule GitHub polling (if enabled).
  */
-if (githubPollingEnabled) {
+if (githubPrPollingEnabled || githubAssigneePollingEnabled) {
   setInterval(() => {
-    void pollPullRequestsOnce({
-      client,
-      owner: env.githubOwner!,
-      repo: env.githubRepo!,
-      announceChannelId: env.githubAnnounceChannelId!,
-    });
+    // 1) PR creation polling (new PR detection)
+    if (githubPrPollingEnabled) {
+      void pollPullRequestsOnce({
+        client,
+        owner: env.githubOwner!,
+        repo: env.githubRepo!,
+        announceChannelId: env.githubPrAnnounceChannelId!,
+      });
+    }
+
+    // 2) Assignee change polling (issues and PRs)
+    if (githubAssigneePollingEnabled) {
+      void pollIssueAssigneesOnce({
+        client,
+        owner: env.githubOwner!,
+        repo: env.githubRepo!,
+        announceChannelId: env.githubAssigneeAnnounceChannelId!,
+      });
+    }
   }, env.githubPollIntervalMs);
 }
