@@ -7,6 +7,11 @@ type ChuckNorrisApiResponse = {
   value: string;
 };
 
+type ChuckNorrisSearchResponse = {
+  total?: number;
+  result?: ChuckNorrisApiResponse[];
+};
+
 export type ChuckNorrisMode =
   | { kind: "random" }
   | { kind: "category"; category: string }
@@ -34,11 +39,35 @@ export async function run(
       "[fun/chucknorris] sent",
     );
   } catch (err) {
-    logger.error({ err, mode }, "[fun/chucknorris] failed");
-    await interaction.editReply(
-      "Chuck Norris is currently roundhouse kicking the API. Try again later.",
-    );
+    const userMessage = toUserMessage(err);
+
+    logger.error({ err, mode, userMessage }, "[fun/chucknorris] failed");
+    await interaction.editReply(userMessage);
   }
+}
+
+class UserFacingError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "UserFacingError";
+  }
+}
+
+function toUserMessage(err: unknown): string {
+  if (err instanceof UserFacingError) return err.message;
+
+  // Keep the fun fallback, but also provide a tiny bit of “why” for non-user errors.
+  if (err instanceof Error) {
+    // Avoid leaking raw internals; give a short category of failure.
+    if (err.message.toLowerCase().includes("network")) {
+      return "I couldn’t reach the Chuck Norris API (network issue). Try again in a bit.";
+    }
+    if (err.message.toLowerCase().includes("api error")) {
+      return "The Chuck Norris API returned an error. Try again later.";
+    }
+  }
+
+  return "Chuck Norris is currently roundhouse kicking the API. Try again later.";
 }
 
 async function fetchChuckNorris(mode: ChuckNorrisMode): Promise<string> {
@@ -46,15 +75,44 @@ async function fetchChuckNorris(mode: ChuckNorrisMode): Promise<string> {
     return fetchSingle("https://api.chucknorris.io/jokes/random");
 
   if (mode.kind === "category") {
+    const category = mode.category.trim();
+    if (!category) {
+      throw new UserFacingError("Please provide a category.");
+    }
+
     const url = `https://api.chucknorris.io/jokes/random?category=${encodeURIComponent(
-      mode.category,
+      category,
     )}`;
-    return fetchSingle(url);
+
+    // fetchSingle throws on non-OK; we intercept 404 here to explain “why”.
+    try {
+      return await fetchSingle(url);
+    } catch (err) {
+      if (isHttpError(err, 404)) {
+        const categories = await safeFetchCategories();
+        const hint = categories?.length
+          ? `Valid categories include: ${categories
+              .slice(0, 12)
+              .map((c) => `\`${c}\``)
+              .join(", ")}`
+          : "Try something like `dev`, `movie`, or `science`.";
+
+        throw new UserFacingError(
+          `That category was not found: \`${category}\`. ${hint}`,
+        );
+      }
+      throw err;
+    }
   }
 
   // mode.kind === "search"
+  const query = mode.query.trim();
+  if (!query) {
+    throw new UserFacingError("Please provide a search query.");
+  }
+
   const url = `https://api.chucknorris.io/jokes/search?query=${encodeURIComponent(
-    mode.query,
+    query,
   )}`;
 
   const res = await fetch(url, {
@@ -65,29 +123,54 @@ async function fetchChuckNorris(mode: ChuckNorrisMode): Promise<string> {
   });
 
   if (!res.ok) {
+    // For search, a 400 usually means bad query; treat as user-facing
+    if (res.status === 400) {
+      throw new UserFacingError(
+        "That search query didn’t work. Try a simpler word or phrase.",
+      );
+    }
     throw new Error(`Chuck Norris API error: ${res.status} ${res.statusText}`);
   }
 
-  const data = (await res.json()) as { result?: ChuckNorrisApiResponse[] };
-  const first = data.result?.[0]?.value;
+  const data = (await res.json()) as ChuckNorrisSearchResponse;
+  const results = Array.isArray(data.result) ? data.result : [];
 
-  if (!first || typeof first !== "string") {
-    throw new Error("No results for that search");
+  if (!results.length) {
+    throw new UserFacingError(`No results for \`${query}\`. Try something broader.`);
   }
 
-  return first.trim();
+  // Pick a random result so it feels fresh
+  const pick = results[Math.floor(Math.random() * results.length)];
+  const joke = pick?.value;
+
+  if (!joke || typeof joke !== "string") {
+    throw new Error("Chuck Norris API returned an unexpected response shape");
+  }
+
+  return joke.trim();
 }
 
 async function fetchSingle(url: string): Promise<string> {
-  const res = await fetch(url, {
-    headers: {
-      Accept: "application/json",
-      "User-Agent": "OmegaBot",
-    },
-  });
+  let res: Response;
+
+  try {
+    res = await fetch(url, {
+      headers: {
+        Accept: "application/json",
+        "User-Agent": "OmegaBot",
+      },
+    });
+  } catch (err) {
+    throw new Error(
+      `Network error calling Chuck Norris API: ${(err as Error)?.message ?? String(err)}`,
+    );
+  }
 
   if (!res.ok) {
-    throw new Error(`Chuck Norris API error: ${res.status} ${res.statusText}`);
+    throw new HttpError(
+      `Chuck Norris API error: ${res.status} ${res.statusText}`,
+      res.status,
+    );
   }
 
   const data = (await res.json()) as ChuckNorrisApiResponse;
@@ -97,4 +180,41 @@ async function fetchSingle(url: string): Promise<string> {
   }
 
   return data.value.trim();
+}
+
+class HttpError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+  ) {
+    super(message);
+    this.name = "HttpError";
+  }
+}
+
+function isHttpError(err: unknown, status: number): boolean {
+  return err instanceof HttpError && err.status === status;
+}
+
+async function safeFetchCategories(): Promise<string[] | null> {
+  try {
+    const res = await fetch("https://api.chucknorris.io/jokes/categories", {
+      headers: {
+        Accept: "application/json",
+        "User-Agent": "OmegaBot",
+      },
+    });
+
+    if (!res.ok) return null;
+
+    const data = (await res.json()) as unknown;
+
+    if (!Array.isArray(data) || !data.every((x) => typeof x === "string")) {
+      return null;
+    }
+
+    return data as string[];
+  } catch {
+    return null;
+  }
 }

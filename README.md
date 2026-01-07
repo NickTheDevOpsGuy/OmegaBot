@@ -150,7 +150,6 @@ OmegaBot is online
 
 ```
 .
-.
 ├── .github
 │   ├── ISSUE_TEMPLATE
 │   │   ├── bug.yml
