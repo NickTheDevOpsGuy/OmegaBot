@@ -53,6 +53,7 @@ Examples:
 - LLM summaries are enabled only when SUMMARY_MODE=llm and OPENAI_API_KEY is present
 
 This allows:
+
 - Safe local development without external services
 - Gradual feature rollout via configuration
 - Clear operational behavior without code changes
