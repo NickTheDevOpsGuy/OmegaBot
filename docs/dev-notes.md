@@ -34,6 +34,31 @@ environment variables.
 
 ---
 
+## Configuration and Feature Gating
+
+OmegaBot uses environment variables not only for secrets, but also
+to enable or disable optional features at runtime.
+
+Design principles:
+
+- Required variables are validated at startup and fail fast
+- Optional features are gated by the presence of their related env vars
+- The bot must be able to start and run safely with optional features disabled
+- Feature-specific code should never assume configuration exists
+
+Examples:
+
+- GitHub polling is enabled only when all required GitHub env vars are present
+- Auto-role assignment is enabled only when DISCORD_AUTO_ROLE_ID is set
+- LLM summaries are enabled only when SUMMARY_MODE=llm and OPENAI_API_KEY is present
+
+This allows:
+- Safe local development without external services
+- Gradual feature rollout via configuration
+- Clear operational behavior without code changes
+
+---
+
 ## Error Handling
 
 - Commands must catch errors and reply gracefully

@@ -34,6 +34,7 @@ OmegaBot is a modular Discord bot designed to support development projects with 
 - Structured logging (pino)
 - Welcome / onboarding system triggered on member join (`guildMemberAdd`)
 - Per-guild configuration system backed by persistent storage and admin slash commands
+- Auto-role assignment on member join (optional via DISCORD_AUTO_ROLE_ID)
 
 ### Core commands
 
@@ -162,6 +163,24 @@ OmegaBot is online
 │   │   └── OmegaBot.yml
 │   └── pull_request_template.md
 ├── .husky
+│   ├── _
+│   │   ├── .gitignore
+│   │   ├── applypatch-msg
+│   │   ├── commit-msg
+│   │   ├── h
+│   │   ├── husky.sh
+│   │   ├── post-applypatch
+│   │   ├── post-checkout
+│   │   ├── post-commit
+│   │   ├── post-merge
+│   │   ├── post-rewrite
+│   │   ├── pre-applypatch
+│   │   ├── pre-auto-gc
+│   │   ├── pre-commit
+│   │   ├── pre-merge-commit
+│   │   ├── pre-push
+│   │   ├── pre-rebase
+│   │   └── prepare-commit-msg
 │   ├── pre-commit
 │   └── pre-push
 ├── assets
@@ -250,6 +269,8 @@ OmegaBot is online
 │   │   │   ├── prFormatter.ts
 │   │   │   ├── prPoller.ts
 │   │   │   └── types.ts
+│   │   ├── roles
+│   │   │   └── autoRoleHandler.ts
 │   │   ├── summary
 │   │   │   ├── llmSummary.ts
 │   │   │   ├── localSummary.ts

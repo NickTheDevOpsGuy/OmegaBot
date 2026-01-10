@@ -130,6 +130,19 @@ export const env = {
    */
   guildId: process.env.DISCORD_GUILD_ID ?? null,
 
+  /**
+   * Optional:
+   * Discord role ID automatically assigned to new members on join.
+   *
+   * If unset, auto-role assignment is disabled.
+   *
+   * IMPORTANT:
+   * - This must be a ROLE ID, not a role name
+   * - The bot must have permission to manage this role
+   * - The role must be lower than the bot’s highest role
+   */
+  discordAutoRoleId: process.env.DISCORD_AUTO_ROLE_ID ?? null,
+
   /* ---------------------------------------------------------------- */
   /* Summaries                                                        */
   /* ---------------------------------------------------------------- */

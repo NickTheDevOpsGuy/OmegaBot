@@ -5,6 +5,7 @@ import { loadCommands, type CommandClient } from "./services/discord/commandLoad
 import { handleInteraction } from "./services/discord/interactionHandler.js";
 import { pollPullRequestsOnce } from "./services/github/prPoller.js";
 import { pollIssueAssigneesOnce } from "./services/github/issueAssigneePoller.js";
+import { handleAutoRole } from "./services/roles/autoRoleHandler.js";
 import { onGuildMemberAdd } from "./services/welcome/welcomeHandler.js";
 import { env } from "./config/env.js";
 import { logger } from "./utils/logger.js";
@@ -53,6 +54,9 @@ client.on("guildMemberAdd", async (member) => {
     },
     "guildMemberAdd event fired",
   );
+
+  // Auto-assign a default role on join (if configured)
+  await handleAutoRole(member);
 
   await onGuildMemberAdd(member);
 });
