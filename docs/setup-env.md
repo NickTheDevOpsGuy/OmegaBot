@@ -34,12 +34,20 @@ GITHUB_TOKEN=your-github-pat
 GITHUB_OWNER=org-or-user
 GITHUB_REPO=repo-name
 
-# Channel for PR creation / PR updates
+# Legacy (fallback) channel:
+# If set, it will be used as the default for GitHub announcements
+# unless a more specific channel is provided below.
 GITHUB_ANNOUNCE_CHANNEL_ID=channel-id
 
-# Channel for issue + PR assignee changes and closures
-# (can be the same as above if you want)
-GITHUB_ASSIGNEE_CHANNEL_ID=channel-id
+# Assignee + closure activity channel:
+# Used for:
+# - Assignee added / removed
+# - Self-assignment / unassignment
+# - Issue / PR closed events
+#
+# If unset, falls back to GITHUB_ANNOUNCE_CHANNEL_ID.
+# If neither is set, assignee polling is disabled.
+GITHUB_ASSIGNEE_ANNOUNCE_CHANNEL_ID=
 
 # Polling interval (milliseconds)
 GITHUB_POLL_INTERVAL_MS=60000
