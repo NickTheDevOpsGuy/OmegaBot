@@ -25,6 +25,7 @@ export async function handleAutoRole(member: GuildMember): Promise<void> {
   }
 
   const hasAutoRole = member.roles.cache.has(role.id);
+
   if (hasAutoRole) {
     logger.debug(
       { userId: member.user.id, roleId: role.id },
@@ -34,6 +35,7 @@ export async function handleAutoRole(member: GuildMember): Promise<void> {
   }
 
   const botMember = member.guild.members.me;
+
   if (!botMember) {
     logger.warn("auto-role failed: could not resolve bot member in guild");
     return;
@@ -44,13 +46,11 @@ export async function handleAutoRole(member: GuildMember): Promise<void> {
     return;
   }
 
-  // 4) Role hierarchy guard
   if (role.position >= botMember.roles.highest.position) {
     logger.warn("auto-role failed: role is higher than bot's highest role");
     return;
   }
 
-  // 5) Assign
   try {
     await member.roles.add(role);
     logger.info({ userId: member.user.id, roleId: role.id }, "auto-role assigned");
