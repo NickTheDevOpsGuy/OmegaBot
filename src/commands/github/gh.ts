@@ -27,10 +27,10 @@ export const data = new SlashCommandBuilder()
       .setName("status")
       .setDescription("Show GitHub integration status for this bot")
       .addStringOption((o) =>
-        o.setName("owner").setDescription("Org/user (optional; defaults to env)")
+        o.setName("owner").setDescription("Org/user (optional; defaults to env)"),
       )
       .addStringOption((o) =>
-        o.setName("repo").setDescription("Repo (optional; defaults to env)")
+        o.setName("repo").setDescription("Repo (optional; defaults to env)"),
       ),
   )
 
@@ -88,7 +88,8 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
   try {
     if (sub === "status") {
-      const owner = interaction.options.getString("owner") ?? env.githubOwner ?? "(unset)";
+      const owner =
+        interaction.options.getString("owner") ?? env.githubOwner ?? "(unset)";
       const repo = interaction.options.getString("repo") ?? env.githubRepo ?? "(unset)";
 
       const lines: string[] = [];
@@ -106,15 +107,11 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       lines.push(
         `- PR announcements: ${env.githubPrPollingEnabled ? "enabled" : "disabled"}`,
       );
-      lines.push(
-        `  - Channel: ${env.githubPrAnnounceChannelId ?? "(unset)"}`,
-      );
+      lines.push(`  - Channel: ${env.githubPrAnnounceChannelId ?? "(unset)"}`);
       lines.push(
         `- Assignee activity: ${env.githubAssigneePollingEnabled ? "enabled" : "disabled"}`,
       );
-      lines.push(
-        `  - Channel: ${env.githubAssigneeAnnounceChannelId ?? "(unset)"}`,
-      );
+      lines.push(`  - Channel: ${env.githubAssigneeAnnounceChannelId ?? "(unset)"}`);
 
       lines.push("");
       lines.push(
