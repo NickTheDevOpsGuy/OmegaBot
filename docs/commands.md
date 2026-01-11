@@ -16,7 +16,8 @@
 - `/gh issue` — Fetch a GitHub issue by number
 - `/gh issues` — List open GitHub issues
 - `/gh prs` — List open pull requests
-- `/pr` — Fetch a single pull request by number
+- `/gh status` — Show GitHub integration status (configuration, polling, and channels)
+- `/pr` — Fetch a single pull request by number (legacy shortcut)
 
 ## Timezone
 

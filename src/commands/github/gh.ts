@@ -5,6 +5,7 @@ import {
   SlashCommandBuilder,
   type ChatInputCommandInteraction,
 } from "discord.js";
+import { env } from "../../config/env.js";
 import {
   getIssue,
   listIssues,
@@ -20,6 +21,18 @@ import { logger } from "../../utils/logger.js";
 export const data = new SlashCommandBuilder()
   .setName("gh")
   .setDescription("GitHub helpers")
+
+  .addSubcommand((s) =>
+    s
+      .setName("status")
+      .setDescription("Show GitHub integration status for this bot")
+      .addStringOption((o) =>
+        o.setName("owner").setDescription("Org/user (optional; defaults to env)")
+      )
+      .addStringOption((o) =>
+        o.setName("repo").setDescription("Repo (optional; defaults to env)")
+      ),
+  )
 
   .addSubcommand((s) =>
     s
@@ -73,10 +86,49 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-  const owner = interaction.options.getString("owner", true);
-  const repo = interaction.options.getString("repo", true);
-
   try {
+    if (sub === "status") {
+      const owner = interaction.options.getString("owner") ?? env.githubOwner ?? "(unset)";
+      const repo = interaction.options.getString("repo") ?? env.githubRepo ?? "(unset)";
+
+      const lines: string[] = [];
+      lines.push("**GitHub Status**");
+      lines.push("");
+
+      // Config (never print secrets)
+      lines.push(`Token: ${env.githubToken ? "configured" : "missing"}`);
+      lines.push(`Default repo: ${owner}/${repo}`);
+      lines.push(`Poll interval: ${env.githubPollIntervalMs}ms`);
+      lines.push("");
+
+      // Polling streams
+      lines.push("**Polling streams**");
+      lines.push(
+        `- PR announcements: ${env.githubPrPollingEnabled ? "enabled" : "disabled"}`,
+      );
+      lines.push(
+        `  - Channel: ${env.githubPrAnnounceChannelId ?? "(unset)"}`,
+      );
+      lines.push(
+        `- Assignee activity: ${env.githubAssigneePollingEnabled ? "enabled" : "disabled"}`,
+      );
+      lines.push(
+        `  - Channel: ${env.githubAssigneeAnnounceChannelId ?? "(unset)"}`,
+      );
+
+      lines.push("");
+      lines.push(
+        "_Tip: If polling is disabled, set GITHUB_TOKEN + GITHUB_OWNER + GITHUB_REPO + the channel env var(s)._",
+      );
+
+      await interaction.editReply(lines.join("\n"));
+      return;
+    }
+
+    // The remaining subcommands require explicit owner/repo options
+    const owner = interaction.options.getString("owner", true);
+    const repo = interaction.options.getString("repo", true);
+
     if (sub === "issue") {
       const number = interaction.options.getInteger("number", true);
       const issue = await getIssue(owner, repo, number);
@@ -138,7 +190,6 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     }
 
     await interaction.editReply("Unknown subcommand.");
-    return;
   } catch (err) {
     const msg = getGitHubUserMessage(err);
     if (msg) {
@@ -146,8 +197,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       return;
     }
 
-    logger.warn({ err, owner, repo, sub }, "[gh] GitHub request failed");
+    logger.warn({ err, sub }, "[gh] GitHub request failed");
     await interaction.editReply("GitHub request failed. Please try again in a bit.");
-    return;
   }
 }
