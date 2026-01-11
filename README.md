@@ -277,6 +277,8 @@ OmegaBot is online
 │   │   │   ├── prFormatter.ts
 │   │   │   ├── prPoller.ts
 │   │   │   └── types.ts
+│   │   ├── roles
+│   │   │   └── autoRoleHandler.ts
 │   │   ├── summary
 │   │   │   ├── llmSummary.ts
 │   │   │   ├── localSummary.ts
