@@ -35,7 +35,7 @@ OmegaBot is a modular Discord bot designed to support development projects with 
 - Welcome and onboarding flows triggered on member join (`guildMemberAdd`)
 - Optional auto-role assignment for new members (`DISCORD_AUTO_ROLE_ID`)
 - GitHub integration: issue and PR lookups plus polling-based announcements
-  - Check if Github is working 
+  - Check if Github is working
   - New PR announcements
   - Issue and PR assignee change announcements
   - Issue and PR closed announcements
