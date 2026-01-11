@@ -32,9 +32,15 @@ OmegaBot is a modular Discord bot designed to support development projects with 
 - Modular slash-command system (auto-loaded from `dist/commands`)
 - Centralized interaction routing with safe error handling
 - Structured logging (pino)
-- Welcome / onboarding system triggered on member join (`guildMemberAdd`)
-- Per-guild configuration system backed by persistent storage and admin slash commands
-- Auto-role assignment on member join (optional via DISCORD_AUTO_ROLE_ID)
+- Welcome and onboarding flows triggered on member join (`guildMemberAdd`)
+- Optional auto-role assignment for new members (`DISCORD_AUTO_ROLE_ID`)
+- GitHub integration: issue and PR lookups plus polling-based announcements
+  - Check if Github is working
+  - New PR announcements
+  - Issue and PR assignee change announcements
+  - Issue and PR closed announcements
+- Configuration and feature gating via environment variables (optional features run only when configured)
+- Per-guild configuration backed by persistent storage and admin slash commands
 
 ### Core commands
 
@@ -188,6 +194,7 @@ OmegaBot is online
 │   └── omegabot.png
 ├── data
 │   ├── faqs.json
+│   ├── github-assignees.json
 │   ├── guild-config.json
 │   ├── last-seen.json
 │   └── timezones.json
@@ -225,7 +232,8 @@ OmegaBot is online
 │   │   │   └── ping.ts
 │   │   ├── github
 │   │   │   ├── gh.ts
-│   │   │   └── pr.ts
+│   │   │   ├── pr.ts
+│   │   │   └── status.ts
 │   │   ├── help
 │   │   │   ├── help.ts
 │   │   │   └── helpText.ts
@@ -308,6 +316,7 @@ OmegaBot is online
 ├── README.md
 ├── tsconfig.json
 └── vitest.config.ts
+
 ```
 
 </details>
