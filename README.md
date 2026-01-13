@@ -34,8 +34,9 @@ OmegaBot is a modular Discord bot designed to support development projects with 
 - Structured logging (pino)
 - Welcome and onboarding flows triggered on member join (`guildMemberAdd`)
 - Optional auto-role assignment for new members (`DISCORD_AUTO_ROLE_ID`)
-- GitHub integration: issue and PR lookups plus polling-based announcements
-  - Check if Github is working
+- GitHub integration with polling-based automation
+  - Health/status checks
+  - Issue and PR lookups
   - New PR announcements
   - Issue and PR assignee change announcements
   - Issue and PR closed announcements
@@ -65,17 +66,21 @@ OmegaBot is a modular Discord bot designed to support development projects with 
 
 ### Fun / utility commands
 
-- chucknorris
-- dadjoke
-- coinflip
-- dice
-- weather
+All fun commands are available under `/fun`:
+
+- `/fun chucknorris` — Chuck Norris facts (random, category, or search)
+- `/fun dadjoke` — Random or searched dad jokes
+- `/fun coinflip` — Heads or tails
+- `/fun dice` — Custom dice rolls
+- `/fun weather` — Daily weather
+- `/fun weather7` — 7-day forecast
+- `/fun leaderboard` — Track fun command usage and top users
 
 ## Planned features
 
-- /docs command for documentation lookups
-- GitHub issues and pull request lookups
-- Pull request announcements
+- `/docs` command for documentation lookups
+- Expanded GitHub automation (labels, reviews, merge events)
+- Enhanced fun leaderboard views and stats
 - Improved summary output (highlights, action items, structured sections)
 
 ---
