@@ -155,7 +155,9 @@ async function loadStore(): Promise<FunUsageStoreV1> {
     );
 
     const initializedAt =
-      typeof parsed.initializedAt === "string" ? parsed.initializedAt : base.initializedAt;
+      typeof parsed.initializedAt === "string"
+        ? parsed.initializedAt
+        : base.initializedAt;
 
     const updatedAt =
       typeof parsed.updatedAt === "string" ? parsed.updatedAt : base.updatedAt;
