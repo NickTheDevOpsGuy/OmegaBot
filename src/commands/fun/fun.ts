@@ -25,7 +25,10 @@ import { run as runJava } from "./subcommands/java.js";
 import { run as runLeaderboard } from "./subcommands/leaderboard.js";
 import type { LeaderboardMode } from "./subcommands/leaderboard.js";
 
-import { recordFunUsage, type FunCommandKey } from "../../services/fun/funUsageStore.js";
+import {
+  recordFunUsage,
+  type FunCommandKey,
+} from "../../services/fun/funUsageStore.js";
 
 function parseTempUnit(raw: string | null): TempUnit {
   return raw?.toLowerCase() === "c" ? "c" : "f";
@@ -247,6 +250,21 @@ function funKeyFromSub(sub: string): FunCommandKey | null {
   return allowed[sub] ?? null;
 }
 
+async function maybeRecordUsage(
+  interaction: ChatInputCommandInteraction,
+  sub: string,
+): Promise<void> {
+  const key = funKeyFromSub(sub);
+  if (!key) return;
+
+  try {
+    await recordFunUsage({ userId: interaction.user.id, command: key });
+  } catch (err) {
+    // Do not fail the command if usage tracking fails
+    logger.warn({ err, sub }, "[fun] failed to record usage");
+  }
+}
+
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const sub = interaction.options.getSubcommand(true);
 
@@ -268,7 +286,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
           : { kind: "random" };
 
       await runChuckNorris(interaction, mode);
-      await recordFunUsage({ userId: interaction.user.id, command: "chucknorris" });
+      await maybeRecordUsage(interaction, sub);
       return;
     }
 
@@ -279,31 +297,31 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       const mode: DadJokeMode = query ? { kind: "search", query } : { kind: "random" };
 
       await runDadJoke(interaction, mode);
-      await recordFunUsage({ userId: interaction.user.id, command: "dadjoke" });
+      await maybeRecordUsage(interaction, sub);
       return;
     }
 
     if (sub === "dice") {
       await runDice(interaction);
-      await recordFunUsage({ userId: interaction.user.id, command: "dice" });
+      await maybeRecordUsage(interaction, sub);
       return;
     }
 
     if (sub === "coinflip") {
       await runCoinflip(interaction);
-      await recordFunUsage({ userId: interaction.user.id, command: "coinflip" });
+      await maybeRecordUsage(interaction, sub);
       return;
     }
 
     if (sub === "java") {
       await runJava(interaction);
-      await recordFunUsage({ userId: interaction.user.id, command: "java" });
+      await maybeRecordUsage(interaction, sub);
       return;
     }
 
     if (sub === "poll") {
       await runPoll(interaction);
-      await recordFunUsage({ userId: interaction.user.id, command: "poll" });
+      await maybeRecordUsage(interaction, sub);
       return;
     }
 
@@ -316,7 +334,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         await runLeaderboard(interaction, mode);
       } else if (view === "user") {
         const u = interaction.options.getUser("user");
-        const targetId = (u?.id ?? interaction.user.id) as string;
+        const targetId = u?.id ?? interaction.user.id;
         const mode: LeaderboardMode = { kind: "user", userId: targetId };
         await runLeaderboard(interaction, mode);
       } else {
@@ -324,7 +342,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         await runLeaderboard(interaction, mode);
       }
 
-      await recordFunUsage({ userId: interaction.user.id, command: "leaderboard" });
+      await maybeRecordUsage(interaction, sub);
       return;
     }
 
@@ -338,10 +356,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
           : { kind: "7day", location, unit };
 
       await runWeather(interaction, mode);
-      await recordFunUsage({
-        userId: interaction.user.id,
-        command: sub === "weather" ? "weather" : "weather7",
-      });
+      await maybeRecordUsage(interaction, sub);
       return;
     }
 
