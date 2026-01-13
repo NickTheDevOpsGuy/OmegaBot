@@ -15,8 +15,6 @@ export type FunCommandKey =
   | "weather7"
   | "leaderboard";
 
-type Breakdown = Record<FunCommandKey, number>;
-
 type FunUsageStoreV1 = {
   version: 1;
   initializedAt: string;
@@ -25,11 +23,17 @@ type FunUsageStoreV1 = {
   totalsByUser: Record<string, number>;
   totalsByCommand: Record<FunCommandKey, number>;
 
-  // Canonical field name going forward
-  breakdownByUser: Record<string, Breakdown>;
+  /**
+   * Canonical breakdown key.
+   * (We'll also accept legacy "breakdownByUser" on disk)
+   */
+  byUserByCommand: Record<string, Record<FunCommandKey, number>>;
 
-  // Back-compat only (older shape some dev builds used)
-  byUserByCommand?: Record<string, Partial<Breakdown>>;
+  /**
+   * Back-compat alias kept in-memory so older code can still read it.
+   * Do not write this separately; it mirrors byUserByCommand.
+   */
+  breakdownByUser: Record<string, Record<FunCommandKey, number>>;
 };
 
 export type FunUsageSnapshot = FunUsageStoreV1;
@@ -56,19 +60,18 @@ function emptyTotalsByCommand(): Record<FunCommandKey, number> {
   >;
 }
 
-function emptyBreakdown(): Breakdown {
-  return Object.fromEntries(ALL_COMMANDS.map((k) => [k, 0])) as Breakdown;
-}
-
 function emptyStore(): FunUsageStoreV1 {
   const now = new Date().toISOString();
+  const byUserByCommand: Record<string, Record<FunCommandKey, number>> = {};
+
   return {
     version: 1,
     initializedAt: now,
     updatedAt: now,
     totalsByUser: {},
     totalsByCommand: emptyTotalsByCommand(),
-    breakdownByUser: {},
+    byUserByCommand,
+    breakdownByUser: byUserByCommand, // alias
   };
 }
 
@@ -80,22 +83,52 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
-function coerceNonNegativeInt(value: unknown): number | null {
-  if (typeof value !== "number") return null;
-  if (!Number.isFinite(value)) return null;
-  if (!Number.isInteger(value)) return null;
-  if (value < 0) return null;
-  return value;
+function normalizeTotalsByUser(raw: unknown): Record<string, number> {
+  if (!isRecord(raw)) return {};
+  const out: Record<string, number> = {};
+
+  for (const [k, v] of Object.entries(raw)) {
+    if (typeof v === "number" && Number.isFinite(v) && v >= 0) out[k] = v;
+  }
+  return out;
 }
 
-function coerceBreakdown(value: unknown): Breakdown | null {
-  if (!isRecord(value)) return null;
+function normalizeTotalsByCommand(raw: unknown): Record<FunCommandKey, number> {
+  const base = emptyTotalsByCommand();
+  if (!isRecord(raw)) return base;
 
-  const out = emptyBreakdown();
   for (const k of ALL_COMMANDS) {
-    const n = coerceNonNegativeInt(value[k]);
-    if (n !== null) out[k] = n;
+    const v = raw[k];
+    if (typeof v === "number" && Number.isFinite(v) && v >= 0) base[k] = v;
   }
+  return base;
+}
+
+function normalizeByUserByCommand(
+  raw: unknown,
+): Record<string, Record<FunCommandKey, number>> {
+  if (!isRecord(raw)) return {};
+
+  const out: Record<string, Record<FunCommandKey, number>> = {};
+
+  for (const [userId, perCmd] of Object.entries(raw)) {
+    if (!isRecord(perCmd)) continue;
+
+    const normalized: Record<FunCommandKey, number> = {} as Record<FunCommandKey, number>;
+
+    for (const cmd of ALL_COMMANDS) {
+      const v = perCmd[cmd];
+      if (typeof v === "number" && Number.isFinite(v) && v > 0) {
+        normalized[cmd] = v;
+      }
+    }
+
+    // Only store if it has at least one entry
+    if (Object.keys(normalized).length > 0) {
+      out[userId] = normalized;
+    }
+  }
+
   return out;
 }
 
@@ -109,61 +142,34 @@ async function loadStore(): Promise<FunUsageStoreV1> {
 
     const base = emptyStore();
 
-    const totalsByUser = isRecord(parsed.totalsByUser)
-      ? (parsed.totalsByUser as Record<string, number>)
-      : {};
+    const totalsByUser = normalizeTotalsByUser(parsed.totalsByUser);
+    const totalsByCommand = normalizeTotalsByCommand(parsed.totalsByCommand);
 
-    const totalsByCommandRaw = isRecord(parsed.totalsByCommand)
-      ? (parsed.totalsByCommand as Record<string, unknown>)
-      : {};
+    /**
+     * ✅ Back-compat: accept either key from disk
+     * - preferred: byUserByCommand
+     * - legacy: breakdownByUser
+     */
+    const byUserByCommand = normalizeByUserByCommand(
+      parsed.byUserByCommand ?? parsed.breakdownByUser,
+    );
 
-    const totalsByCommand = { ...base.totalsByCommand };
-    for (const k of ALL_COMMANDS) {
-      const n = coerceNonNegativeInt(totalsByCommandRaw[k]);
-      if (n !== null) totalsByCommand[k] = n;
-    }
+    const initializedAt =
+      typeof parsed.initializedAt === "string" ? parsed.initializedAt : base.initializedAt;
 
-    // Canonical new field
-    const breakdownByUserRaw = isRecord(parsed.breakdownByUser)
-      ? (parsed.breakdownByUser as Record<string, unknown>)
-      : {};
-
-    // Back-compat field (your current JSON)
-    const byUserByCommandRaw = isRecord(parsed.byUserByCommand)
-      ? (parsed.byUserByCommand as Record<string, unknown>)
-      : {};
-
-    // Merge: breakdownByUser wins, else fallback to byUserByCommand
-    const breakdownByUser: Record<string, Breakdown> = {};
-
-    const userIds = new Set<string>([
-      ...Object.keys(breakdownByUserRaw),
-      ...Object.keys(byUserByCommandRaw),
-      ...Object.keys(totalsByUser),
-    ]);
-
-    for (const userId of userIds) {
-      const fromNew = coerceBreakdown(breakdownByUserRaw[userId]);
-      const fromOld = coerceBreakdown(byUserByCommandRaw[userId]);
-      const chosen = fromNew ?? fromOld;
-
-      if (chosen) breakdownByUser[userId] = chosen;
-    }
+    const updatedAt =
+      typeof parsed.updatedAt === "string" ? parsed.updatedAt : base.updatedAt;
 
     return {
-      ...base,
-      initializedAt:
-        typeof parsed.initializedAt === "string"
-          ? parsed.initializedAt
-          : base.initializedAt,
-      updatedAt: typeof parsed.updatedAt === "string" ? parsed.updatedAt : base.updatedAt,
+      version: 1,
+      initializedAt,
+      updatedAt,
       totalsByUser,
       totalsByCommand,
-      breakdownByUser,
-      // keep the optional field if it existed, but we won't write it anymore
-      byUserByCommand: isRecord(parsed.byUserByCommand)
-        ? (parsed.byUserByCommand as Record<string, Partial<Breakdown>>)
-        : undefined,
+
+      // Canonical + alias
+      byUserByCommand,
+      breakdownByUser: byUserByCommand,
     };
   } catch {
     return emptyStore();
@@ -172,7 +178,18 @@ async function loadStore(): Promise<FunUsageStoreV1> {
 
 async function saveStore(store: FunUsageStoreV1): Promise<void> {
   await ensureDataDir();
-  await fs.writeFile(STORE_PATH, JSON.stringify(store, null, 2), "utf8");
+
+  // Write ONLY the canonical breakdown key to disk
+  const toWrite = {
+    version: store.version,
+    initializedAt: store.initializedAt,
+    updatedAt: store.updatedAt,
+    totalsByUser: store.totalsByUser,
+    totalsByCommand: store.totalsByCommand,
+    byUserByCommand: store.byUserByCommand,
+  };
+
+  await fs.writeFile(STORE_PATH, JSON.stringify(toWrite, null, 2), "utf8");
 }
 
 export async function recordFunUsage(args: {
@@ -183,12 +200,21 @@ export async function recordFunUsage(args: {
 
   const store = await loadStore();
 
+  // totalsByUser
   store.totalsByUser[userId] = (store.totalsByUser[userId] ?? 0) + 1;
+
+  // totalsByCommand
   store.totalsByCommand[command] = (store.totalsByCommand[command] ?? 0) + 1;
 
-  const current = store.breakdownByUser[userId] ?? emptyBreakdown();
-  current[command] = (current[command] ?? 0) + 1;
-  store.breakdownByUser[userId] = current;
+  // byUserByCommand (canonical)
+  const userMap: Record<FunCommandKey, number> =
+    store.byUserByCommand[userId] ?? ({} as Record<FunCommandKey, number>);
+
+  userMap[command] = (userMap[command] ?? 0) + 1;
+  store.byUserByCommand[userId] = userMap;
+
+  // keep alias in sync
+  store.breakdownByUser = store.byUserByCommand;
 
   store.updatedAt = new Date().toISOString();
 
