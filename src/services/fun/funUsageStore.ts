@@ -52,7 +52,10 @@ function nowIso(): string {
 }
 
 function emptyTotalsByCommand(): Record<FunCommandKey, number> {
-  return Object.fromEntries(ALL_COMMANDS.map((k) => [k, 0])) as Record<FunCommandKey, number>;
+  return Object.fromEntries(ALL_COMMANDS.map((k) => [k, 0])) as Record<
+    FunCommandKey,
+    number
+  >;
 }
 
 function emptyStore(): FunUsageStoreV1 {
@@ -96,7 +99,9 @@ function sanitizeTotalsByCommand(input: unknown): Record<FunCommandKey, number> 
   return base;
 }
 
-function sanitizeByUserByCommand(input: unknown): Record<string, Record<FunCommandKey, number>> {
+function sanitizeByUserByCommand(
+  input: unknown,
+): Record<string, Record<FunCommandKey, number>> {
   if (!isRecord(input)) return {};
   const out: Record<string, Record<FunCommandKey, number>> = {};
 
@@ -131,8 +136,11 @@ async function loadStore(): Promise<FunUsageStoreV1> {
     const base = emptyStore();
 
     const initializedAt =
-      typeof parsed.initializedAt === "string" ? parsed.initializedAt : base.initializedAt;
-    const updatedAt = typeof parsed.updatedAt === "string" ? parsed.updatedAt : base.updatedAt;
+      typeof parsed.initializedAt === "string"
+        ? parsed.initializedAt
+        : base.initializedAt;
+    const updatedAt =
+      typeof parsed.updatedAt === "string" ? parsed.updatedAt : base.updatedAt;
 
     const totalsByUser = sanitizeTotalsByUser(parsed.totalsByUser);
     const totalsByCommand = sanitizeTotalsByCommand(parsed.totalsByCommand);
