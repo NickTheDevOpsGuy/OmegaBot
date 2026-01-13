@@ -1,10 +1,6 @@
 // src/commands/fun/subcommands/leaderboard.ts
 
-import {
-  EmbedBuilder,
-  type ChatInputCommandInteraction,
-  type User,
-} from "discord.js";
+import { EmbedBuilder, type ChatInputCommandInteraction, type User } from "discord.js";
 import {
   getFunUsageSnapshot,
   type FunCommandKey,
@@ -65,7 +61,9 @@ export async function run(
   }
 
   if (mode.kind === "commands") {
-    const items = (Object.entries(store.totalsByCommand) as Array<[FunCommandKey, number]>)
+    const items = (
+      Object.entries(store.totalsByCommand) as Array<[FunCommandKey, number]>
+    )
       .filter(([, n]) => n > 0)
       .sort((a, c) => c[1] - a[1])
       .slice(0, mode.limit);

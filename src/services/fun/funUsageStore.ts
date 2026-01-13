@@ -42,9 +42,10 @@ const ALL_COMMANDS: FunCommandKey[] = [
 ];
 
 function emptyStore(): FunUsageStoreV1 {
-  const totalsByCommand = Object.fromEntries(
-    ALL_COMMANDS.map((k) => [k, 0]),
-  ) as Record<FunCommandKey, number>;
+  const totalsByCommand = Object.fromEntries(ALL_COMMANDS.map((k) => [k, 0])) as Record<
+    FunCommandKey,
+    number
+  >;
 
   const now = new Date().toISOString();
 
@@ -99,7 +100,9 @@ async function loadStore(): Promise<FunUsageStoreV1> {
     return {
       ...base,
       initializedAt:
-        typeof parsed.initializedAt === "string" ? parsed.initializedAt : base.initializedAt,
+        typeof parsed.initializedAt === "string"
+          ? parsed.initializedAt
+          : base.initializedAt,
       updatedAt: typeof parsed.updatedAt === "string" ? parsed.updatedAt : base.updatedAt,
       totalsByUser,
       totalsByCommand,
@@ -131,10 +134,8 @@ export async function recordFunUsage(args: {
 
   // breakdownByUser
   const userBreakdown: Record<FunCommandKey, number> =
-    (store.breakdownByUser[userId] as Record<FunCommandKey, number> | undefined) ?? ({} as Record<
-      FunCommandKey,
-      number
-    >);
+    (store.breakdownByUser[userId] as Record<FunCommandKey, number> | undefined) ??
+    ({} as Record<FunCommandKey, number>);
 
   userBreakdown[command] = (userBreakdown[command] ?? 0) + 1;
   store.breakdownByUser[userId] = userBreakdown;
