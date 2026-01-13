@@ -236,8 +236,7 @@ OmegaBot is online
 │   │   │   │   ├── leaderboard.ts
 │   │   │   │   ├── poll.ts
 │   │   │   │   └── weather.ts
-│   │   │   ├── fun.ts
-│   │   │   └── funUsageStore.ts
+│   │   │   └── fun.ts
 │   │   ├── general
 │   │   │   └── ping.ts
 │   │   ├── github
@@ -278,6 +277,8 @@ OmegaBot is online
 │   │   │   ├── store.test.ts
 │   │   │   ├── store.ts
 │   │   │   └── types.ts
+│   │   ├── fun
+│   │   │   └── funUsageStore.ts
 │   │   ├── github
 │   │   │   ├── githubApi.ts
 │   │   │   ├── githubClient.ts
