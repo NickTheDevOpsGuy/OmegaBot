@@ -1,232 +1,127 @@
-// src/services/fun/funUsageStore.ts
+// src/commands/fun/subcommands/leaderboard.ts
 
-import { promises as fs } from "node:fs";
-import path from "node:path";
-import { logger } from "../../utils/logger.js";
+import { EmbedBuilder, type ChatInputCommandInteraction, type User } from "discord.js";
+import {
+  getFunUsageSnapshot,
+  type FunCommandKey,
+} from "../../../services/fun/funUsageStore.js";
+import { logger } from "../../../utils/logger.js";
 
-export type FunCommandKey =
-  | "chucknorris"
-  | "dadjoke"
-  | "dice"
-  | "coinflip"
-  | "java"
-  | "poll"
-  | "weather"
-  | "weather7"
-  | "leaderboard";
+export type LeaderboardMode =
+  | { kind: "users"; limit: number }
+  | { kind: "commands"; limit: number }
+  | { kind: "user"; userId: string };
 
-type FunUsageStoreV1 = {
-  version: 1;
-  initializedAt: string;
-  updatedAt: string;
+type Breakdown = Record<FunCommandKey, number>;
 
-  totalsByUser: Record<string, number>;
-  totalsByCommand: Record<FunCommandKey, number>;
+function formatBreakdown(b: Breakdown | undefined, maxItems: number): string {
+  if (!b) return "";
 
-  /**
-   * Canonical breakdown key.
-   * (We'll also accept legacy "breakdownByUser" on disk)
-   */
-  byUserByCommand: Record<string, Record<FunCommandKey, number>>;
+  const items = (Object.entries(b) as Array<[FunCommandKey, number]>)
+    .filter(([, n]) => typeof n === "number" && Number.isFinite(n) && n > 0)
+    .sort((a, c) => c[1] - a[1])
+    .slice(0, maxItems)
+    .map(([k, n]) => `${n}x ${k}`);
 
-  /**
-   * Back-compat alias kept in-memory so older code can still read it.
-   * Do not write this separately; it mirrors byUserByCommand.
-   */
-  breakdownByUser: Record<string, Record<FunCommandKey, number>>;
-};
-
-export type FunUsageSnapshot = FunUsageStoreV1;
-
-const DATA_DIR = path.join(process.cwd(), "data");
-const STORE_PATH = path.join(DATA_DIR, "fun-usage.json");
-
-const ALL_COMMANDS: FunCommandKey[] = [
-  "chucknorris",
-  "dadjoke",
-  "dice",
-  "coinflip",
-  "java",
-  "poll",
-  "weather",
-  "weather7",
-  "leaderboard",
-];
-
-function emptyTotalsByCommand(): Record<FunCommandKey, number> {
-  return Object.fromEntries(ALL_COMMANDS.map((k) => [k, 0])) as Record<
-    FunCommandKey,
-    number
-  >;
+  return items.length ? ` (${items.join(", ")})` : "";
 }
 
-function emptyStore(): FunUsageStoreV1 {
-  const now = new Date().toISOString();
-  const byUserByCommand: Record<string, Record<FunCommandKey, number>> = {};
-
-  return {
-    version: 1,
-    initializedAt: now,
-    updatedAt: now,
-    totalsByUser: {},
-    totalsByCommand: emptyTotalsByCommand(),
-    byUserByCommand,
-    breakdownByUser: byUserByCommand, // alias
-  };
-}
-
-async function ensureDataDir(): Promise<void> {
-  await fs.mkdir(DATA_DIR, { recursive: true });
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-}
-
-function normalizeTotalsByUser(raw: unknown): Record<string, number> {
-  if (!isRecord(raw)) return {};
-  const out: Record<string, number> = {};
-
-  for (const [k, v] of Object.entries(raw)) {
-    if (typeof v === "number" && Number.isFinite(v) && v >= 0) out[k] = v;
-  }
-  return out;
-}
-
-function normalizeTotalsByCommand(raw: unknown): Record<FunCommandKey, number> {
-  const base = emptyTotalsByCommand();
-  if (!isRecord(raw)) return base;
-
-  for (const k of ALL_COMMANDS) {
-    const v = raw[k];
-    if (typeof v === "number" && Number.isFinite(v) && v >= 0) base[k] = v;
-  }
-  return base;
-}
-
-function normalizeByUserByCommand(
-  raw: unknown,
-): Record<string, Record<FunCommandKey, number>> {
-  if (!isRecord(raw)) return {};
-
-  const out: Record<string, Record<FunCommandKey, number>> = {};
-
-  for (const [userId, perCmd] of Object.entries(raw)) {
-    if (!isRecord(perCmd)) continue;
-
-    const normalized: Record<FunCommandKey, number> = {} as Record<FunCommandKey, number>;
-
-    for (const cmd of ALL_COMMANDS) {
-      const v = perCmd[cmd];
-      if (typeof v === "number" && Number.isFinite(v) && v > 0) {
-        normalized[cmd] = v;
-      }
-    }
-
-    // Only store if it has at least one entry
-    if (Object.keys(normalized).length > 0) {
-      out[userId] = normalized;
-    }
-  }
-
-  return out;
-}
-
-async function loadStore(): Promise<FunUsageStoreV1> {
+async function safeFetchUser(
+  interaction: ChatInputCommandInteraction,
+  userId: string,
+): Promise<User | null> {
   try {
-    const raw = await fs.readFile(STORE_PATH, "utf8");
-    const parsed = JSON.parse(raw) as unknown;
+    return await interaction.client.users.fetch(userId);
+  } catch (err) {
+    logger.debug({ err, userId }, "[fun/leaderboard] failed to fetch user");
+    return null;
+  }
+}
 
-    if (!isRecord(parsed)) return emptyStore();
-    if (parsed.version !== 1) return emptyStore();
+export async function run(
+  interaction: ChatInputCommandInteraction,
+  mode: LeaderboardMode,
+): Promise<void> {
+  const store = await getFunUsageSnapshot();
 
-    const base = emptyStore();
+  const embed = new EmbedBuilder().setFooter({
+    text: `Updated: ${store.updatedAt}`,
+  });
 
-    const totalsByUser = normalizeTotalsByUser(parsed.totalsByUser);
-    const totalsByCommand = normalizeTotalsByCommand(parsed.totalsByCommand);
+  const anyUsage =
+    Object.keys(store.totalsByUser).length > 0 ||
+    Object.values(store.totalsByCommand).some((n) => typeof n === "number" && n > 0);
 
-    /**
-     * ✅ Back-compat: accept either key from disk
-     * - preferred: byUserByCommand
-     * - legacy: breakdownByUser
-     */
-    const byUserByCommand = normalizeByUserByCommand(
-      parsed.byUserByCommand ?? parsed.breakdownByUser,
+  if (!anyUsage) {
+    embed.setTitle("🏆 Fun Leaderboard");
+    embed.setDescription("No fun command usage recorded yet.");
+    await interaction.editReply({ embeds: [embed] });
+    return;
+  }
+
+  if (mode.kind === "commands") {
+    const items = (
+      Object.entries(store.totalsByCommand) as Array<[FunCommandKey, number]>
+    )
+      .filter(([, n]) => typeof n === "number" && n > 0)
+      .sort((a, c) => c[1] - a[1])
+      .slice(0, mode.limit);
+
+    embed.setTitle("🎉 Fun Leaderboard: Top Commands");
+
+    const lines = items.map(([cmd, count], idx) => {
+      const rank = idx + 1;
+      return `${rank}. \`${cmd}\` — **${count}**`;
+    });
+
+    embed.setDescription(lines.length ? lines.join("\n") : "No command usage yet.");
+    await interaction.editReply({ embeds: [embed] });
+    return;
+  }
+
+  if (mode.kind === "user") {
+    const total = store.totalsByUser[mode.userId] ?? 0;
+    const breakdown = store.byUserByCommand[mode.userId] as Breakdown | undefined;
+
+    const u = await safeFetchUser(interaction, mode.userId);
+    const titleName = u ? u.username : `User ${mode.userId}`;
+    const avatarUrl = u?.displayAvatarURL() ?? null;
+
+    embed.setTitle(`👤 Fun Usage: ${titleName}`);
+    if (avatarUrl) embed.setThumbnail(avatarUrl);
+
+    const breakdownText = formatBreakdown(breakdown, 25);
+    embed.setDescription(
+      [
+        `User: <@${mode.userId}>`,
+        `Total uses: **${total}**`,
+        breakdownText ? `Breakdown:${breakdownText}` : "Breakdown: (none yet)",
+      ].join("\n"),
     );
 
-    const initializedAt =
-      typeof parsed.initializedAt === "string"
-        ? parsed.initializedAt
-        : base.initializedAt;
-
-    const updatedAt =
-      typeof parsed.updatedAt === "string" ? parsed.updatedAt : base.updatedAt;
-
-    return {
-      version: 1,
-      initializedAt,
-      updatedAt,
-      totalsByUser,
-      totalsByCommand,
-
-      // Canonical + alias
-      byUserByCommand,
-      breakdownByUser: byUserByCommand,
-    };
-  } catch {
-    return emptyStore();
+    await interaction.editReply({ embeds: [embed] });
+    return;
   }
-}
 
-async function saveStore(store: FunUsageStoreV1): Promise<void> {
-  await ensureDataDir();
+  // Top users (default)
+  const userItems = Object.entries(store.totalsByUser)
+    .filter(([, n]) => typeof n === "number" && Number.isFinite(n) && n > 0)
+    .sort((a, c) => c[1] - a[1])
+    .slice(0, mode.limit);
 
-  // Write ONLY the canonical breakdown key to disk
-  const toWrite = {
-    version: store.version,
-    initializedAt: store.initializedAt,
-    updatedAt: store.updatedAt,
-    totalsByUser: store.totalsByUser,
-    totalsByCommand: store.totalsByCommand,
-    byUserByCommand: store.byUserByCommand,
-  };
+  embed.setTitle("🏆 Fun Leaderboard: Top Users");
 
-  await fs.writeFile(STORE_PATH, JSON.stringify(toWrite, null, 2), "utf8");
-}
+  const lines = userItems.map(([userId, total], idx) => {
+    const rank = idx + 1;
 
-export async function recordFunUsage(args: {
-  userId: string;
-  command: FunCommandKey;
-}): Promise<void> {
-  const { userId, command } = args;
+    const breakdown = store.byUserByCommand[userId] as Breakdown | undefined;
+    const suffix = formatBreakdown(breakdown, 6); // show up to 6 commands per user line
 
-  const store = await loadStore();
+    // This is the exact thing you want:
+    // "Nick — 10 (3x chucknorris, 2x coinflip, ...)"
+    return `${rank}. <@${userId}> — **${total}**${suffix}`;
+  });
 
-  // totalsByUser
-  store.totalsByUser[userId] = (store.totalsByUser[userId] ?? 0) + 1;
-
-  // totalsByCommand
-  store.totalsByCommand[command] = (store.totalsByCommand[command] ?? 0) + 1;
-
-  // byUserByCommand (canonical)
-  const userMap: Record<FunCommandKey, number> =
-    store.byUserByCommand[userId] ?? ({} as Record<FunCommandKey, number>);
-
-  userMap[command] = (userMap[command] ?? 0) + 1;
-  store.byUserByCommand[userId] = userMap;
-
-  // keep alias in sync
-  store.breakdownByUser = store.byUserByCommand;
-
-  store.updatedAt = new Date().toISOString();
-
-  try {
-    await saveStore(store);
-  } catch (err) {
-    logger.error({ err }, "[fun/usage] failed to save fun usage store");
-  }
-}
-
-export async function getFunUsageSnapshot(): Promise<FunUsageSnapshot> {
-  return loadStore();
+  embed.setDescription(lines.length ? lines.join("\n") : "No user usage yet.");
+  await interaction.editReply({ embeds: [embed] });
 }
