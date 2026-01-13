@@ -64,16 +64,11 @@ async function loadStore(): Promise<FunUsageStoreV1> {
 
     if (!parsed || typeof parsed !== "object") return emptyStore();
     if (parsed.version !== 1) return emptyStore();
-    if (!parsed.totalsByUser || typeof parsed.totalsByUser !== "object") return emptyStore();
-    if (
-      !parsed.totalsByCommand ||
-      typeof parsed.totalsByCommand !== "object"
-    )
+    if (!parsed.totalsByUser || typeof parsed.totalsByUser !== "object")
       return emptyStore();
-    if (
-      !parsed.breakdownByUser ||
-      typeof parsed.breakdownByUser !== "object"
-    )
+    if (!parsed.totalsByCommand || typeof parsed.totalsByCommand !== "object")
+      return emptyStore();
+    if (!parsed.breakdownByUser || typeof parsed.breakdownByUser !== "object")
       return emptyStore();
 
     return parsed;
@@ -118,9 +113,9 @@ export async function getFunUsageSnapshot(): Promise<FunUsageSnapshot> {
     .map(([userId, total]) => ({ userId, total }))
     .sort((a, b) => b.total - a.total);
 
-  const totalsByCommand = (Object.entries(store.totalsByCommand) as Array<
-    [FunCommandKey, number]
-  >)
+  const totalsByCommand = (
+    Object.entries(store.totalsByCommand) as Array<[FunCommandKey, number]>
+  )
     .map(([command, total]) => ({ command, total }))
     .sort((a, b) => b.total - a.total);
 
