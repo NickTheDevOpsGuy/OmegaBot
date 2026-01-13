@@ -2,7 +2,10 @@
 
 import type { ChatInputCommandInteraction } from "discord.js";
 import { EmbedBuilder } from "discord.js";
-import { getFunUsageSnapshot, type FunCommandKey } from "../../../services/fun/funUsageStore.js";
+import {
+  getFunUsageSnapshot,
+  type FunCommandKey,
+} from "../../../services/fun/funUsageStore.js";
 import { logger } from "../../../utils/logger.js";
 
 export type LeaderboardMode =
@@ -71,9 +74,11 @@ export async function run(
 
     if (!store || Object.keys(store.users ?? {}).length === 0) {
       await interaction.editReply(
-        ["No fun command usage recorded yet.", "", buildUpdatedLine(store?.updatedAt ?? null)].join(
-          "\n",
-        ),
+        [
+          "No fun command usage recorded yet.",
+          "",
+          buildUpdatedLine(store?.updatedAt ?? null),
+        ].join("\n"),
       );
       return;
     }
@@ -120,7 +125,9 @@ export async function run(
 
       const top = sortDesc(rows, (r) => r.total).slice(0, limit);
 
-      const lines = top.map((r, idx) => `${medal(idx)} \`${formatCmd(r.command)}\` — **${r.total}**`);
+      const lines = top.map(
+        (r, idx) => `${medal(idx)} \`${formatCmd(r.command)}\` — **${r.total}**`,
+      );
 
       const embed = new EmbedBuilder()
         .setTitle("🏆 Fun Leaderboard: Top Commands")
@@ -145,7 +152,9 @@ export async function run(
       const mention = `<@${userId}>`;
 
       // Build breakdown lines: "chucknorris x2"
-      const entries = Object.entries(stats.commands ?? {}) as Array<[FunCommandKey, number]>;
+      const entries = Object.entries(stats.commands ?? {}) as Array<
+        [FunCommandKey, number]
+      >;
       const sorted = sortDesc(entries, (e) => e[1]);
 
       const breakdown =
@@ -155,7 +164,9 @@ export async function run(
 
       const embed = new EmbedBuilder()
         .setTitle("📊 Fun Usage: User Breakdown")
-        .setDescription([`${mention} — **${stats.total}** total`, "", ...breakdown].join("\n"))
+        .setDescription(
+          [`${mention} — **${stats.total}** total`, "", ...breakdown].join("\n"),
+        )
         .setFooter({ text: buildUpdatedLine(stats.updatedAt ?? store.updatedAt) });
 
       if (u?.avatarUrl) {
