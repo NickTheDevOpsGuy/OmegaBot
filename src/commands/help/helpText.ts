@@ -15,23 +15,32 @@ export function buildHelpText(args: {
 
   const lines: string[] = [];
 
-  lines.push("**OmegaBot Help**");
+  lines.push("**🤖 OmegaBot Help**");
   lines.push("");
-  lines.push("**Start here**");
+
+  lines.push("**🚀 Start here**");
   lines.push("- Try `/help` any time you forget what I can do");
   lines.push("");
 
-  lines.push("**Onboarding**");
+  lines.push("**👋 Onboarding**");
   lines.push("- Welcome messages are posted when someone joins");
   lines.push("");
 
+  lines.push("**🎉 Fun**");
+  lines.push("- Use `/fun` to access lightweight, fun commands:");
+  lines.push("  - `/fun chucknorris`, `/fun dadjoke`, `/fun dice` 😄");
+  lines.push("  - `/fun weather`, `/fun weather7` 🌦️");
+  lines.push("  - `/fun leaderboard` 🏆 see who’s having the most fun");
+  lines.push("- Tip: type `/fun` and choose a subcommand from the menu");
+  lines.push("");
+
   if (isAdmin) {
-    lines.push("**Admin config** (Manage Server)");
+    lines.push("**🛠️ Admin config** (Manage Server)");
     lines.push("- `/config welcome-channel set channel:#your-channel`");
     lines.push("- `/config welcome-channel clear`");
     lines.push("");
   } else {
-    lines.push("**Admin config**");
+    lines.push("**🛠️ Admin config**");
     lines.push("- Ask a server admin to run `/config welcome-channel set` if needed");
     lines.push("");
   }
@@ -40,7 +49,7 @@ export function buildHelpText(args: {
   const pretty = formatCommandList(commands, { isAdmin });
 
   if (pretty.length) {
-    lines.push("**Commands**");
+    lines.push("**📚 Commands**");
     lines.push(...pretty);
     lines.push("");
   }
