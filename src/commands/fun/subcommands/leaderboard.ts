@@ -1,183 +1,133 @@
-// src/commands/fun/subcommands/leaderboard.ts
+// src/services/fun/funUsageStore.ts
 
-import type { ChatInputCommandInteraction } from "discord.js";
-import { EmbedBuilder } from "discord.js";
-import {
-  getFunUsageSnapshot,
-  type FunCommandKey,
-} from "../../../services/fun/funUsageStore.js";
-import { logger } from "../../../utils/logger.js";
+import { promises as fs } from "node:fs";
+import path from "node:path";
+import { logger } from "../../utils/logger.js";
 
-export type LeaderboardMode =
-  | { kind: "users"; limit: number }
-  | { kind: "commands"; limit: number }
-  | { kind: "user"; userId: string };
+export type FunCommandKey =
+  | "chucknorris"
+  | "dadjoke"
+  | "dice"
+  | "coinflip"
+  | "java"
+  | "poll"
+  | "weather"
+  | "weather7"
+  | "leaderboard";
 
-type UserRow = {
-  userId: string;
-  total: number;
+type FunUsageStoreV1 = {
+  version: 1;
+  updatedAt: string;
+  totalsByUser: Record<string, number>;
+  totalsByCommand: Record<FunCommandKey, number>;
+  breakdownByUser: Record<string, Partial<Record<FunCommandKey, number>>>;
 };
 
-type CommandRow = {
-  command: FunCommandKey;
-  total: number;
+export type FunUsageSnapshot = {
+  updatedAt: string;
+  totalsByUser: Array<{ userId: string; total: number }>;
+  totalsByCommand: Array<{ command: FunCommandKey; total: number }>;
+  breakdownByUser: Record<string, Partial<Record<FunCommandKey, number>>>;
 };
 
-function clamp(n: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, n));
+const DATA_DIR = path.join(process.cwd(), "data");
+const STORE_PATH = path.join(DATA_DIR, "fun-usage.json");
+
+async function ensureDataDir(): Promise<void> {
+  await fs.mkdir(DATA_DIR, { recursive: true });
 }
 
-function sortDesc<T>(items: T[], getValue: (t: T) => number): T[] {
-  return [...items].sort((a, b) => getValue(b) - getValue(a));
+function emptyStore(): FunUsageStoreV1 {
+  return {
+    version: 1,
+    updatedAt: new Date().toISOString(),
+    totalsByUser: {},
+    totalsByCommand: {
+      chucknorris: 0,
+      dadjoke: 0,
+      dice: 0,
+      coinflip: 0,
+      java: 0,
+      poll: 0,
+      weather: 0,
+      weather7: 0,
+      leaderboard: 0,
+    },
+    breakdownByUser: {},
+  };
 }
 
-function formatCmd(cmd: string): string {
-  // Make it a little prettier in output
-  // weather7 -> weather7, chucknorris -> chucknorris etc
-  return cmd;
-}
-
-function medal(idx: number): string {
-  if (idx === 0) return "🥇";
-  if (idx === 1) return "🥈";
-  if (idx === 2) return "🥉";
-  return "🏅";
-}
-
-async function safeFetchUser(
-  interaction: ChatInputCommandInteraction,
-  userId: string,
-): Promise<{ id: string; tag: string; avatarUrl: string } | null> {
+async function loadStore(): Promise<FunUsageStoreV1> {
   try {
-    const u = await interaction.client.users.fetch(userId);
-    return {
-      id: u.id,
-      tag: u.tag,
-      avatarUrl: u.displayAvatarURL({ size: 128 }),
-    };
+    const raw = await fs.readFile(STORE_PATH, "utf8");
+    const parsed = JSON.parse(raw) as FunUsageStoreV1;
+
+    if (!parsed || typeof parsed !== "object") return emptyStore();
+    if (parsed.version !== 1) return emptyStore();
+    if (!parsed.totalsByUser || typeof parsed.totalsByUser !== "object") return emptyStore();
+    if (
+      !parsed.totalsByCommand ||
+      typeof parsed.totalsByCommand !== "object"
+    )
+      return emptyStore();
+    if (
+      !parsed.breakdownByUser ||
+      typeof parsed.breakdownByUser !== "object"
+    )
+      return emptyStore();
+
+    return parsed;
   } catch {
-    return null;
+    return emptyStore();
   }
 }
 
-function buildUpdatedLine(updatedAt: string | null): string {
-  const ts = updatedAt ?? new Date().toISOString();
-  return `Updated: ${ts}`;
+async function saveStore(store: FunUsageStoreV1): Promise<void> {
+  await ensureDataDir();
+  await fs.writeFile(STORE_PATH, JSON.stringify(store, null, 2), "utf8");
 }
 
-export async function run(
-  interaction: ChatInputCommandInteraction,
-  mode: LeaderboardMode,
-): Promise<void> {
+export async function recordFunUsage(args: {
+  userId: string;
+  command: FunCommandKey;
+}): Promise<void> {
+  const { userId, command } = args;
+
   try {
-    const store = await getFunUsageSnapshot();
+    const store = await loadStore();
 
-    if (!store || Object.keys(store.users ?? {}).length === 0) {
-      await interaction.editReply(
-        [
-          "No fun command usage recorded yet.",
-          "",
-          buildUpdatedLine(store?.updatedAt ?? null),
-        ].join("\n"),
-      );
-      return;
-    }
+    store.totalsByUser[userId] = (store.totalsByUser[userId] ?? 0) + 1;
+    store.totalsByCommand[command] = (store.totalsByCommand[command] ?? 0) + 1;
 
-    if (mode.kind === "users") {
-      const limit = clamp(mode.limit, 1, 25);
+    const currentBreakdown = store.breakdownByUser[userId] ?? {};
+    currentBreakdown[command] = (currentBreakdown[command] ?? 0) + 1;
+    store.breakdownByUser[userId] = currentBreakdown;
 
-      const rows: UserRow[] = Object.entries(store.users).map(([userId, stats]) => ({
-        userId,
-        total: stats.total ?? 0,
-      }));
+    store.updatedAt = new Date().toISOString();
 
-      const top = sortDesc(rows, (r) => r.total).slice(0, limit);
-
-      const lines: string[] = [];
-      for (let i = 0; i < top.length; i += 1) {
-        const row = top[i];
-        const u = await safeFetchUser(interaction, row.userId);
-        const mention = `<@${row.userId}>`;
-
-        // Avatar: we cannot show inline images per line, but we can include a clickable link.
-        const avatarLink = u?.avatarUrl ? `[avatar](${u.avatarUrl})` : "";
-
-        lines.push(`${medal(i)} ${mention} — **${row.total}** ${avatarLink}`.trim());
-      }
-
-      const embed = new EmbedBuilder()
-        .setTitle("🏆 Fun Leaderboard: Top Users")
-        .setDescription(lines.join("\n"))
-        .setFooter({ text: buildUpdatedLine(store.updatedAt) });
-
-      await interaction.editReply({ embeds: [embed] });
-      return;
-    }
-
-    if (mode.kind === "commands") {
-      const limit = clamp(mode.limit, 1, 25);
-
-      const totals = store.totals ?? {};
-      const rows: CommandRow[] = Object.entries(totals).map(([k, v]) => ({
-        command: k as FunCommandKey,
-        total: v ?? 0,
-      }));
-
-      const top = sortDesc(rows, (r) => r.total).slice(0, limit);
-
-      const lines = top.map(
-        (r, idx) => `${medal(idx)} \`${formatCmd(r.command)}\` — **${r.total}**`,
-      );
-
-      const embed = new EmbedBuilder()
-        .setTitle("🏆 Fun Leaderboard: Top Commands")
-        .setDescription(lines.join("\n"))
-        .setFooter({ text: buildUpdatedLine(store.updatedAt) });
-
-      await interaction.editReply({ embeds: [embed] });
-      return;
-    }
-
-    // Single user view
-    if (mode.kind === "user") {
-      const userId = mode.userId;
-      const stats = store.users[userId];
-
-      if (!stats) {
-        await interaction.editReply(`No fun usage found for <@${userId}> yet.`);
-        return;
-      }
-
-      const u = await safeFetchUser(interaction, userId);
-      const mention = `<@${userId}>`;
-
-      // Build breakdown lines: "chucknorris x2"
-      const entries = Object.entries(stats.commands ?? {}) as Array<
-        [FunCommandKey, number]
-      >;
-      const sorted = sortDesc(entries, (e) => e[1]);
-
-      const breakdown =
-        sorted.length === 0
-          ? ["No per-command breakdown recorded yet."]
-          : sorted.map(([cmd, count]) => `• \`${formatCmd(cmd)}\` x**${count}**`);
-
-      const embed = new EmbedBuilder()
-        .setTitle("📊 Fun Usage: User Breakdown")
-        .setDescription(
-          [`${mention} — **${stats.total}** total`, "", ...breakdown].join("\n"),
-        )
-        .setFooter({ text: buildUpdatedLine(stats.updatedAt ?? store.updatedAt) });
-
-      if (u?.avatarUrl) {
-        embed.setThumbnail(u.avatarUrl);
-      }
-
-      await interaction.editReply({ embeds: [embed] });
-      return;
-    }
+    await saveStore(store);
   } catch (err) {
-    logger.error({ err, mode }, "[leaderboard] failed");
-    await interaction.editReply("Something went wrong building the leaderboard.");
+    logger.warn({ err, userId, command }, "[funUsageStore] failed to record usage");
   }
+}
+
+export async function getFunUsageSnapshot(): Promise<FunUsageSnapshot> {
+  const store = await loadStore();
+
+  const totalsByUser = Object.entries(store.totalsByUser)
+    .map(([userId, total]) => ({ userId, total }))
+    .sort((a, b) => b.total - a.total);
+
+  const totalsByCommand = (Object.entries(store.totalsByCommand) as Array<
+    [FunCommandKey, number]
+  >)
+    .map(([command, total]) => ({ command, total }))
+    .sort((a, b) => b.total - a.total);
+
+  return {
+    updatedAt: store.updatedAt,
+    totalsByUser,
+    totalsByCommand,
+    breakdownByUser: store.breakdownByUser,
+  };
 }
