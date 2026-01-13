@@ -15,58 +15,74 @@ export type FunCommandKey =
   | "weather7"
   | "leaderboard";
 
-export type FunUsageUserStats = {
-  total: number;
-  commands: Partial<Record<FunCommandKey, number>>;
-  updatedAt: string;
-};
-
-export type FunUsageStore = {
+type FunUsageStoreV1 = {
   version: 1;
   updatedAt: string;
-  totals: Partial<Record<FunCommandKey, number>>;
-  users: Record<string, FunUsageUserStats>;
+  totalsByUser: Record<string, number>;
+  totalsByCommand: Record<FunCommandKey, number>;
+  breakdownByUser: Record<string, Partial<Record<FunCommandKey, number>>>;
+};
+
+export type FunUsageSnapshot = {
+  updatedAt: string;
+  totalsByUser: Array<{ userId: string; total: number }>;
+  totalsByCommand: Array<{ command: FunCommandKey; total: number }>;
+  breakdownByUser: Record<string, Partial<Record<FunCommandKey, number>>>;
 };
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const STORE_PATH = path.join(DATA_DIR, "fun-usage.json");
 
-function nowIso(): string {
-  return new Date().toISOString();
-}
-
-function emptyStore(): FunUsageStore {
-  return {
-    version: 1,
-    updatedAt: nowIso(),
-    totals: {},
-    users: {},
-  };
-}
-
 async function ensureDataDir(): Promise<void> {
   await fs.mkdir(DATA_DIR, { recursive: true });
 }
 
-async function readStore(): Promise<FunUsageStore> {
+function emptyStore(): FunUsageStoreV1 {
+  return {
+    version: 1,
+    updatedAt: new Date().toISOString(),
+    totalsByUser: {},
+    totalsByCommand: {
+      chucknorris: 0,
+      dadjoke: 0,
+      dice: 0,
+      coinflip: 0,
+      java: 0,
+      poll: 0,
+      weather: 0,
+      weather7: 0,
+      leaderboard: 0,
+    },
+    breakdownByUser: {},
+  };
+}
+
+async function loadStore(): Promise<FunUsageStoreV1> {
   try {
     const raw = await fs.readFile(STORE_PATH, "utf8");
-    const parsed = JSON.parse(raw) as FunUsageStore;
+    const parsed = JSON.parse(raw) as FunUsageStoreV1;
 
-    // Minimal validation + forward-safe defaults
-    if (!parsed || parsed.version !== 1) return emptyStore();
-    if (!parsed.totals) parsed.totals = {};
-    if (!parsed.users) parsed.users = {};
-    if (!parsed.updatedAt) parsed.updatedAt = nowIso();
+    if (!parsed || typeof parsed !== "object") return emptyStore();
+    if (parsed.version !== 1) return emptyStore();
+    if (!parsed.totalsByUser || typeof parsed.totalsByUser !== "object") return emptyStore();
+    if (
+      !parsed.totalsByCommand ||
+      typeof parsed.totalsByCommand !== "object"
+    )
+      return emptyStore();
+    if (
+      !parsed.breakdownByUser ||
+      typeof parsed.breakdownByUser !== "object"
+    )
+      return emptyStore();
 
     return parsed;
-  } catch (err) {
-    // First run or file missing is fine
+  } catch {
     return emptyStore();
   }
 }
 
-async function writeStore(store: FunUsageStore): Promise<void> {
+async function saveStore(store: FunUsageStoreV1): Promise<void> {
   await ensureDataDir();
   await fs.writeFile(STORE_PATH, JSON.stringify(store, null, 2), "utf8");
 }
@@ -78,34 +94,40 @@ export async function recordFunUsage(args: {
   const { userId, command } = args;
 
   try {
-    const store = await readStore();
+    const store = await loadStore();
 
-    // Totals
-    const prevTotal = store.totals[command] ?? 0;
-    store.totals[command] = prevTotal + 1;
+    store.totalsByUser[userId] = (store.totalsByUser[userId] ?? 0) + 1;
+    store.totalsByCommand[command] = (store.totalsByCommand[command] ?? 0) + 1;
 
-    // User stats
-    const user = store.users[userId] ?? {
-      total: 0,
-      commands: {},
-      updatedAt: nowIso(),
-    };
+    const currentBreakdown = store.breakdownByUser[userId] ?? {};
+    currentBreakdown[command] = (currentBreakdown[command] ?? 0) + 1;
+    store.breakdownByUser[userId] = currentBreakdown;
 
-    user.total += 1;
-    const prevCmd = user.commands[command] ?? 0;
-    user.commands[command] = prevCmd + 1;
-    user.updatedAt = nowIso();
+    store.updatedAt = new Date().toISOString();
 
-    store.users[userId] = user;
-    store.updatedAt = nowIso();
-
-    await writeStore(store);
+    await saveStore(store);
   } catch (err) {
-    // Do not crash commands if stats storage fails
-    logger.warn({ err }, "[funUsageStore] recordFunUsage failed");
+    logger.warn({ err, userId, command }, "[funUsageStore] failed to record usage");
   }
 }
 
-export async function getFunUsageSnapshot(): Promise<FunUsageStore> {
-  return await readStore();
+export async function getFunUsageSnapshot(): Promise<FunUsageSnapshot> {
+  const store = await loadStore();
+
+  const totalsByUser = Object.entries(store.totalsByUser)
+    .map(([userId, total]) => ({ userId, total }))
+    .sort((a, b) => b.total - a.total);
+
+  const totalsByCommand = (Object.entries(store.totalsByCommand) as Array<
+    [FunCommandKey, number]
+  >)
+    .map(([command, total]) => ({ command, total }))
+    .sort((a, b) => b.total - a.total);
+
+  return {
+    updatedAt: store.updatedAt,
+    totalsByUser,
+    totalsByCommand,
+    breakdownByUser: store.breakdownByUser,
+  };
 }
