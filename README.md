@@ -199,6 +199,7 @@ OmegaBot is online
 │   └── omegabot.png
 ├── data
 │   ├── faqs.json
+│   ├── fun-usage.json
 │   ├── github-assignees.json
 │   ├── guild-config.json
 │   ├── last-seen.json
@@ -231,8 +232,12 @@ OmegaBot is online
 │   │   │   │   ├── coinflip.ts
 │   │   │   │   ├── dadjoke.ts
 │   │   │   │   ├── dice.ts
+│   │   │   │   ├── java.ts
+│   │   │   │   ├── leaderboard.ts
+│   │   │   │   ├── poll.ts
 │   │   │   │   └── weather.ts
-│   │   │   └── fun.ts
+│   │   │   ├── fun.ts
+│   │   │   └── funUsageStore.ts
 │   │   ├── general
 │   │   │   └── ping.ts
 │   │   ├── github
