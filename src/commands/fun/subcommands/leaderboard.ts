@@ -1,7 +1,10 @@
 // src/commands/fun/subcommands/leaderboard.ts
 
 import { EmbedBuilder, type ChatInputCommandInteraction, type User } from "discord.js";
-import { getFunUsageSnapshot, type FunCommandKey } from "../../../services/fun/funUsageStore.js";
+import {
+  getFunUsageSnapshot,
+  type FunCommandKey,
+} from "../../../services/fun/funUsageStore.js";
 import { logger } from "../../../utils/logger.js";
 
 export type LeaderboardMode =
@@ -56,7 +59,9 @@ export async function run(
   }
 
   if (mode.kind === "commands") {
-    const items = (Object.entries(store.totalsByCommand) as Array<[FunCommandKey, number]>)
+    const items = (
+      Object.entries(store.totalsByCommand) as Array<[FunCommandKey, number]>
+    )
       .filter(([, n]) => typeof n === "number" && n > 0)
       .sort((a, c) => c[1] - a[1])
       .slice(0, mode.limit);
