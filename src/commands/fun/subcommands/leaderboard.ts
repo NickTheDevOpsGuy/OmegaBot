@@ -1,10 +1,7 @@
 // src/commands/fun/subcommands/leaderboard.ts
 
 import { EmbedBuilder, type ChatInputCommandInteraction, type User } from "discord.js";
-import {
-  getFunUsageSnapshot,
-  type FunCommandKey,
-} from "../../../services/fun/funUsageStore.js";
+import { getFunUsageSnapshot, type FunCommandKey } from "../../../services/fun/funUsageStore.js";
 import { logger } from "../../../utils/logger.js";
 
 export type LeaderboardMode =
@@ -13,13 +10,6 @@ export type LeaderboardMode =
   | { kind: "user"; userId: string };
 
 type Breakdown = Record<FunCommandKey, number>;
-
-function medalForRank(rank: number): string {
-  if (rank === 1) return "🥇";
-  if (rank === 2) return "🥈";
-  if (rank === 3) return "🥉";
-  return "•";
-}
 
 function formatBreakdown(b: Breakdown | undefined, maxItems: number): string {
   if (!b) return "";
@@ -30,7 +20,7 @@ function formatBreakdown(b: Breakdown | undefined, maxItems: number): string {
     .slice(0, maxItems)
     .map(([k, n]) => `${n}x ${k}`);
 
-  return parts.length ? ` (${parts.join(", ")})` : "";
+  return parts.length ? parts.join(", ") : "";
 }
 
 async function safeFetchUser(
@@ -57,31 +47,26 @@ export async function run(
 
   const anyUsage =
     Object.keys(store.totalsByUser).length > 0 ||
-    Object.values(store.totalsByCommand).some((n) => typeof n === "number" && n > 0);
+    Object.values(store.totalsByCommand).some((n) => n > 0);
 
   if (!anyUsage) {
-    embed.setTitle("🎮 Fun Leaderboard");
+    embed.setTitle("🏆 Fun Leaderboard");
     embed.setDescription("No fun command usage recorded yet.");
     await interaction.editReply({ embeds: [embed] });
     return;
   }
 
-  // ---------------------------------------------------------------------------
-  // Top Commands
-  // ---------------------------------------------------------------------------
   if (mode.kind === "commands") {
-    const items = (
-      Object.entries(store.totalsByCommand) as Array<[FunCommandKey, number]>
-    )
-      .filter(([, n]) => typeof n === "number" && Number.isFinite(n) && n > 0)
+    const items = (Object.entries(store.totalsByCommand) as Array<[FunCommandKey, number]>)
+      .filter(([, n]) => n > 0)
       .sort((a, c) => c[1] - a[1])
       .slice(0, mode.limit);
 
     embed.setTitle("🎉 Fun Leaderboard: Top Commands");
 
-    const lines = items.map(([cmd, count], idx: number) => {
+    const lines = items.map(([cmd, count], idx) => {
       const rank = idx + 1;
-      return `${medalForRank(rank)} \`/${cmd}\` — **${count}**`;
+      return `${rank}. \`${cmd}\` — **${count}**`;
     });
 
     embed.setDescription(lines.length ? lines.join("\n") : "No command usage yet.");
@@ -89,25 +74,22 @@ export async function run(
     return;
   }
 
-  // ---------------------------------------------------------------------------
-  // Single User
-  // ---------------------------------------------------------------------------
   if (mode.kind === "user") {
     const total = store.totalsByUser[mode.userId] ?? 0;
-    const breakdown = store.breakdownByUser[mode.userId] as Breakdown | undefined;
+    const breakdown = store.breakdownByUser[mode.userId];
 
     const u = await safeFetchUser(interaction, mode.userId);
-    const titleName = u?.username ?? `User ${mode.userId}`;
+    const display = u ? `${u.username}` : `User ${mode.userId}`;
     const avatarUrl = u?.displayAvatarURL() ?? null;
 
-    embed.setTitle(`👤 Fun Usage: ${titleName}`);
+    embed.setTitle(`👤 Fun Usage: ${display}`);
     if (avatarUrl) embed.setThumbnail(avatarUrl);
 
-    const breakdownText = formatBreakdown(breakdown, 25);
+    const breakdownText = formatBreakdown(breakdown, 10);
     embed.setDescription(
       [
-        `**Total uses:** **${total}**`,
-        breakdownText ? `**Breakdown:**${breakdownText}` : "**Breakdown:** (none yet)",
+        `Total uses: **${total}**`,
+        breakdownText ? `Breakdown: ${breakdownText}` : "Breakdown: (none yet)",
       ].join("\n"),
     );
 
@@ -115,9 +97,7 @@ export async function run(
     return;
   }
 
-  // ---------------------------------------------------------------------------
-  // Top Users (default)
-  // ---------------------------------------------------------------------------
+  // Top users
   const userItems = Object.entries(store.totalsByUser)
     .filter(([, n]) => typeof n === "number" && Number.isFinite(n) && n > 0)
     .sort((a, c) => c[1] - a[1])
@@ -125,7 +105,6 @@ export async function run(
 
   embed.setTitle("🏆 Fun Leaderboard: Top Users");
 
-  // Fetch users once (best effort)
   const users = await Promise.all(
     userItems.map(async ([userId]) => {
       const u = await safeFetchUser(interaction, userId);
@@ -133,18 +112,18 @@ export async function run(
     }),
   );
 
-  // Use #1 user avatar as the embed thumbnail (Discord supports one thumbnail)
-  const topUser = users[0]?.user ?? null;
-  const topAvatarUrl = topUser?.displayAvatarURL() ?? null;
-  if (topAvatarUrl) embed.setThumbnail(topAvatarUrl);
-
-  const lines = userItems.map(([userId, total], idx: number) => {
+  const lines = userItems.map(([userId, total], idx) => {
     const rank = idx + 1;
+    const u = users.find((x) => x.userId === userId)?.user ?? null;
 
-    const breakdown = store.breakdownByUser[userId] as Breakdown | undefined;
-    const suffix = formatBreakdown(breakdown, 6);
+    const avatarUrl = u?.displayAvatarURL() ?? null;
+    const breakdown = store.breakdownByUser[userId];
+    const breakdownText = formatBreakdown(breakdown, 4);
 
-    return `${medalForRank(rank)} <@${userId}> — **${total}**${suffix}`;
+    const avatarPart = avatarUrl ? ` • ${avatarUrl}` : "";
+    const breakdownPart = breakdownText ? ` • ${breakdownText}` : "";
+
+    return `${rank}. <@${userId}> — **${total}**${breakdownPart}${avatarPart}`;
   });
 
   embed.setDescription(lines.length ? lines.join("\n") : "No user usage yet.");
