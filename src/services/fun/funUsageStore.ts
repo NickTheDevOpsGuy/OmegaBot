@@ -50,7 +50,10 @@ const ALL_COMMANDS: FunCommandKey[] = [
 ];
 
 function emptyTotalsByCommand(): Record<FunCommandKey, number> {
-  return Object.fromEntries(ALL_COMMANDS.map((k) => [k, 0])) as Record<FunCommandKey, number>;
+  return Object.fromEntries(ALL_COMMANDS.map((k) => [k, 0])) as Record<
+    FunCommandKey,
+    number
+  >;
 }
 
 function emptyBreakdown(): Breakdown {
@@ -149,7 +152,10 @@ async function loadStore(): Promise<FunUsageStoreV1> {
 
     return {
       ...base,
-      initializedAt: typeof parsed.initializedAt === "string" ? parsed.initializedAt : base.initializedAt,
+      initializedAt:
+        typeof parsed.initializedAt === "string"
+          ? parsed.initializedAt
+          : base.initializedAt,
       updatedAt: typeof parsed.updatedAt === "string" ? parsed.updatedAt : base.updatedAt,
       totalsByUser,
       totalsByCommand,
@@ -169,7 +175,10 @@ async function saveStore(store: FunUsageStoreV1): Promise<void> {
   await fs.writeFile(STORE_PATH, JSON.stringify(store, null, 2), "utf8");
 }
 
-export async function recordFunUsage(args: { userId: string; command: FunCommandKey }): Promise<void> {
+export async function recordFunUsage(args: {
+  userId: string;
+  command: FunCommandKey;
+}): Promise<void> {
   const { userId, command } = args;
 
   const store = await loadStore();
