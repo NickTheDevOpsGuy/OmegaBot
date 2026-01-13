@@ -14,6 +14,13 @@ export type LeaderboardMode =
 
 type Breakdown = Record<FunCommandKey, number>;
 
+function medalForRank(rank: number): string {
+  if (rank === 1) return "🥇";
+  if (rank === 2) return "🥈";
+  if (rank === 3) return "🥉";
+  return "•";
+}
+
 function formatBreakdown(b: Breakdown | undefined, maxItems: number): string {
   if (!b) return "";
 
@@ -48,31 +55,33 @@ export async function run(
     text: `Updated: ${store.updatedAt}`,
   });
 
-  // No usage yet
   const anyUsage =
     Object.keys(store.totalsByUser).length > 0 ||
-    Object.values(store.totalsByCommand).some((n) => n > 0);
+    Object.values(store.totalsByCommand).some((n) => typeof n === "number" && n > 0);
 
   if (!anyUsage) {
-    embed.setTitle("Fun Leaderboard");
+    embed.setTitle("🎮 Fun Leaderboard");
     embed.setDescription("No fun command usage recorded yet.");
     await interaction.editReply({ embeds: [embed] });
     return;
   }
 
+  // ---------------------------------------------------------------------------
+  // Top Commands
+  // ---------------------------------------------------------------------------
   if (mode.kind === "commands") {
     const items = (
       Object.entries(store.totalsByCommand) as Array<[FunCommandKey, number]>
     )
-      .filter(([, n]) => n > 0)
+      .filter(([, n]) => typeof n === "number" && Number.isFinite(n) && n > 0)
       .sort((a, c) => c[1] - a[1])
       .slice(0, mode.limit);
 
-    embed.setTitle("Fun Leaderboard: Top Commands");
+    embed.setTitle("🎉 Fun Leaderboard: Top Commands");
 
-    const lines = items.map(([cmd, count], idx) => {
+    const lines = items.map(([cmd, count], idx: number) => {
       const rank = idx + 1;
-      return `${rank}. \`${cmd}\` — **${count}**`;
+      return `${medalForRank(rank)} \`/${cmd}\` — **${count}**`;
     });
 
     embed.setDescription(lines.length ? lines.join("\n") : "No command usage yet.");
@@ -80,41 +89,43 @@ export async function run(
     return;
   }
 
+  // ---------------------------------------------------------------------------
+  // Single User
+  // ---------------------------------------------------------------------------
   if (mode.kind === "user") {
     const total = store.totalsByUser[mode.userId] ?? 0;
     const breakdown = store.breakdownByUser[mode.userId] as Breakdown | undefined;
 
     const u = await safeFetchUser(interaction, mode.userId);
-    const display = u ? `${u.username}` : `User ${mode.userId}`;
+    const titleName = u?.username ?? `User ${mode.userId}`;
     const avatarUrl = u?.displayAvatarURL() ?? null;
 
-    embed.setTitle("Fun Leaderboard: User Stats");
+    embed.setTitle(`👤 Fun Usage: ${titleName}`);
     if (avatarUrl) embed.setThumbnail(avatarUrl);
 
-    const breakdownLine = formatBreakdown(breakdown, 10) || " (no breakdown yet)";
+    const breakdownText = formatBreakdown(breakdown, 25);
     embed.setDescription(
       [
-        `**${display}**`,
-        `Total uses: **${total}**${breakdownLine}`,
-        avatarUrl ? `Avatar: ${avatarUrl}` : "",
-      ]
-        .filter(Boolean)
-        .join("\n"),
+        `**Total uses:** **${total}**`,
+        breakdownText ? `**Breakdown:**${breakdownText}` : "**Breakdown:** (none yet)",
+      ].join("\n"),
     );
 
     await interaction.editReply({ embeds: [embed] });
     return;
   }
 
-  // Top users (default)
+  // ---------------------------------------------------------------------------
+  // Top Users (default)
+  // ---------------------------------------------------------------------------
   const userItems = Object.entries(store.totalsByUser)
     .filter(([, n]) => typeof n === "number" && Number.isFinite(n) && n > 0)
     .sort((a, c) => c[1] - a[1])
     .slice(0, mode.limit);
 
-  embed.setTitle("Fun Leaderboard: Top Users");
+  embed.setTitle("🏆 Fun Leaderboard: Top Users");
 
-  // Fetch users for avatar urls (best effort)
+  // Fetch users once (best effort)
   const users = await Promise.all(
     userItems.map(async ([userId]) => {
       const u = await safeFetchUser(interaction, userId);
@@ -122,21 +133,20 @@ export async function run(
     }),
   );
 
-  const lines = userItems.map(([userId, total], idx) => {
+  // Use #1 user avatar as the embed thumbnail (Discord supports one thumbnail)
+  const topUser = users[0]?.user ?? null;
+  const topAvatarUrl = topUser?.displayAvatarURL() ?? null;
+  if (topAvatarUrl) embed.setThumbnail(topAvatarUrl);
+
+  const lines = userItems.map(([userId, total], idx: number) => {
     const rank = idx + 1;
 
-    const u = users.find((x) => x.userId === userId)?.user ?? null;
-    const avatarUrl = u?.displayAvatarURL() ?? null;
-
     const breakdown = store.breakdownByUser[userId] as Breakdown | undefined;
-    const suffix = formatBreakdown(breakdown, 4);
+    const suffix = formatBreakdown(breakdown, 6);
 
-    // Mention + total + breakdown + avatar link
-    const avatarPart = avatarUrl ? ` • ${avatarUrl}` : "";
-    return `${rank}. <@${userId}> — **${total}**${suffix}${avatarPart}`;
+    return `${medalForRank(rank)} <@${userId}> — **${total}**${suffix}`;
   });
 
   embed.setDescription(lines.length ? lines.join("\n") : "No user usage yet.");
-
   await interaction.editReply({ embeds: [embed] });
 }
