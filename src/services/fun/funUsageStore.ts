@@ -17,61 +17,94 @@ export type FunCommandKey =
 
 type FunUsageStoreV1 = {
   version: 1;
+  initializedAt: string;
   updatedAt: string;
   totalsByUser: Record<string, number>;
   totalsByCommand: Record<FunCommandKey, number>;
-  breakdownByUser: Record<string, Partial<Record<FunCommandKey, number>>>;
+  breakdownByUser: Record<string, Record<FunCommandKey, number>>;
 };
 
-export type FunUsageSnapshot = {
-  updatedAt: string;
-  totalsByUser: Array<{ userId: string; total: number }>;
-  totalsByCommand: Array<{ command: FunCommandKey; total: number }>;
-  breakdownByUser: Record<string, Partial<Record<FunCommandKey, number>>>;
-};
+export type FunUsageSnapshot = FunUsageStoreV1;
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const STORE_PATH = path.join(DATA_DIR, "fun-usage.json");
+
+const ALL_COMMANDS: FunCommandKey[] = [
+  "chucknorris",
+  "dadjoke",
+  "dice",
+  "coinflip",
+  "java",
+  "poll",
+  "weather",
+  "weather7",
+  "leaderboard",
+];
+
+function emptyStore(): FunUsageStoreV1 {
+  const totalsByCommand = Object.fromEntries(
+    ALL_COMMANDS.map((k) => [k, 0]),
+  ) as Record<FunCommandKey, number>;
+
+  const now = new Date().toISOString();
+
+  return {
+    version: 1,
+    initializedAt: now,
+    updatedAt: now,
+    totalsByUser: {},
+    totalsByCommand,
+    breakdownByUser: {},
+  };
+}
 
 async function ensureDataDir(): Promise<void> {
   await fs.mkdir(DATA_DIR, { recursive: true });
 }
 
-function emptyStore(): FunUsageStoreV1 {
-  return {
-    version: 1,
-    updatedAt: new Date().toISOString(),
-    totalsByUser: {},
-    totalsByCommand: {
-      chucknorris: 0,
-      dadjoke: 0,
-      dice: 0,
-      coinflip: 0,
-      java: 0,
-      poll: 0,
-      weather: 0,
-      weather7: 0,
-      leaderboard: 0,
-    },
-    breakdownByUser: {},
-  };
-}
-
 async function loadStore(): Promise<FunUsageStoreV1> {
   try {
     const raw = await fs.readFile(STORE_PATH, "utf8");
-    const parsed = JSON.parse(raw) as FunUsageStoreV1;
+    const parsed = JSON.parse(raw) as Partial<FunUsageStoreV1> | null;
 
     if (!parsed || typeof parsed !== "object") return emptyStore();
     if (parsed.version !== 1) return emptyStore();
-    if (!parsed.totalsByUser || typeof parsed.totalsByUser !== "object")
-      return emptyStore();
-    if (!parsed.totalsByCommand || typeof parsed.totalsByCommand !== "object")
-      return emptyStore();
-    if (!parsed.breakdownByUser || typeof parsed.breakdownByUser !== "object")
-      return emptyStore();
 
-    return parsed;
+    // Start from a known-good shape and merge in what exists
+    const base = emptyStore();
+
+    const totalsByUser =
+      parsed.totalsByUser && typeof parsed.totalsByUser === "object"
+        ? parsed.totalsByUser
+        : {};
+
+    const breakdownByUser =
+      parsed.breakdownByUser && typeof parsed.breakdownByUser === "object"
+        ? parsed.breakdownByUser
+        : {};
+
+    const totalsByCommandRaw =
+      parsed.totalsByCommand && typeof parsed.totalsByCommand === "object"
+        ? parsed.totalsByCommand
+        : {};
+
+    const totalsByCommand = { ...base.totalsByCommand };
+    for (const k of ALL_COMMANDS) {
+      const v = (totalsByCommandRaw as Record<string, unknown>)[k];
+      if (typeof v === "number" && Number.isFinite(v) && v >= 0) {
+        totalsByCommand[k] = v;
+      }
+    }
+
+    return {
+      ...base,
+      initializedAt:
+        typeof parsed.initializedAt === "string" ? parsed.initializedAt : base.initializedAt,
+      updatedAt: typeof parsed.updatedAt === "string" ? parsed.updatedAt : base.updatedAt,
+      totalsByUser,
+      totalsByCommand,
+      breakdownByUser,
+    };
   } catch {
     return emptyStore();
   }
@@ -88,41 +121,33 @@ export async function recordFunUsage(args: {
 }): Promise<void> {
   const { userId, command } = args;
 
+  const store = await loadStore();
+
+  // totalsByUser
+  store.totalsByUser[userId] = (store.totalsByUser[userId] ?? 0) + 1;
+
+  // totalsByCommand
+  store.totalsByCommand[command] = (store.totalsByCommand[command] ?? 0) + 1;
+
+  // breakdownByUser
+  const userBreakdown: Record<FunCommandKey, number> =
+    (store.breakdownByUser[userId] as Record<FunCommandKey, number> | undefined) ?? ({} as Record<
+      FunCommandKey,
+      number
+    >);
+
+  userBreakdown[command] = (userBreakdown[command] ?? 0) + 1;
+  store.breakdownByUser[userId] = userBreakdown;
+
+  store.updatedAt = new Date().toISOString();
+
   try {
-    const store = await loadStore();
-
-    store.totalsByUser[userId] = (store.totalsByUser[userId] ?? 0) + 1;
-    store.totalsByCommand[command] = (store.totalsByCommand[command] ?? 0) + 1;
-
-    const currentBreakdown = store.breakdownByUser[userId] ?? {};
-    currentBreakdown[command] = (currentBreakdown[command] ?? 0) + 1;
-    store.breakdownByUser[userId] = currentBreakdown;
-
-    store.updatedAt = new Date().toISOString();
-
     await saveStore(store);
   } catch (err) {
-    logger.warn({ err, userId, command }, "[funUsageStore] failed to record usage");
+    logger.error({ err }, "[fun/usage] failed to save fun usage store");
   }
 }
 
 export async function getFunUsageSnapshot(): Promise<FunUsageSnapshot> {
-  const store = await loadStore();
-
-  const totalsByUser = Object.entries(store.totalsByUser)
-    .map(([userId, total]) => ({ userId, total }))
-    .sort((a, b) => b.total - a.total);
-
-  const totalsByCommand = (
-    Object.entries(store.totalsByCommand) as Array<[FunCommandKey, number]>
-  )
-    .map(([command, total]) => ({ command, total }))
-    .sort((a, b) => b.total - a.total);
-
-  return {
-    updatedAt: store.updatedAt,
-    totalsByUser,
-    totalsByCommand,
-    breakdownByUser: store.breakdownByUser,
-  };
+  return loadStore();
 }
