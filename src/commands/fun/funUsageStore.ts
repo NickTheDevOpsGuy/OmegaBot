@@ -56,7 +56,10 @@ async function loadState(): Promise<FunUsageFile> {
 
     return {
       version: 1,
-      updatedAt: typeof parsed.updatedAt === "string" ? parsed.updatedAt : new Date().toISOString(),
+      updatedAt:
+        typeof parsed.updatedAt === "string"
+          ? parsed.updatedAt
+          : new Date().toISOString(),
       totalsByCommand:
         parsed.totalsByCommand && typeof parsed.totalsByCommand === "object"
           ? parsed.totalsByCommand

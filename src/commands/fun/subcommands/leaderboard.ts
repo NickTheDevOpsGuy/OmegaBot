@@ -54,7 +54,9 @@ export async function run(
 
   if (totalEvents === 0) {
     await interaction.editReply(
-      [`Updated: ${snapshot.updatedAt}`, "", "No fun command usage recorded yet."].join("\n"),
+      [`Updated: ${snapshot.updatedAt}`, "", "No fun command usage recorded yet."].join(
+        "\n",
+      ),
     );
     return;
   }
