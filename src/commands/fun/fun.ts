@@ -25,7 +25,7 @@ import { run as runJava } from "./subcommands/java.js";
 import { run as runLeaderboard } from "./subcommands/leaderboard.js";
 import type { LeaderboardMode } from "./subcommands/leaderboard.js";
 
-import { recordFunUsage, type FunCommandKey } from "./funUsageStore.js";
+import { recordFunUsage, type FunCommandKey } from "../../services/fun/funUsageStore.js";
 
 function parseTempUnit(raw: string | null): TempUnit {
   return raw?.toLowerCase() === "c" ? "c" : "f";
