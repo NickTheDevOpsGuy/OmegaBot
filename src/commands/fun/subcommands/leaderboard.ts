@@ -53,8 +53,10 @@ export async function run(
   const snapshot = await getFunUsageSnapshot();
 
   // Defensive casts (the JSON file can drift in shape)
-  const totalsByUserRaw = (snapshot as unknown as { totalsByUser?: unknown }).totalsByUser;
-  const totalsByCommandRaw = (snapshot as unknown as { totalsByCommand?: unknown }).totalsByCommand;
+  const totalsByUserRaw = (snapshot as unknown as { totalsByUser?: unknown })
+    .totalsByUser;
+  const totalsByCommandRaw = (snapshot as unknown as { totalsByCommand?: unknown })
+    .totalsByCommand;
   const byUserByCommandRaw = (snapshot as unknown as { byUserByCommand?: unknown })
     .byUserByCommand;
 
@@ -73,16 +75,14 @@ export async function run(
 
   if (!anyUserUsage && !anyCommandUsage) {
     embed.setTitle("Fun Leaderboard");
-    embed.setDescription("No fun command usage recorded yet. Try `/fun dadjoke` to get started.");
+    embed.setDescription(
+      "No fun command usage recorded yet. Try `/fun dadjoke` to get started.",
+    );
     await interaction.editReply({ embeds: [embed] });
     return;
   }
 
-  const limit = clampLimit(
-    "limit" in mode ? mode.limit : 10,
-    1,
-    25,
-  );
+  const limit = clampLimit("limit" in mode ? mode.limit : 10, 1, 25);
 
   // ---- Top Commands view ----
   if (mode.kind === "commands") {
