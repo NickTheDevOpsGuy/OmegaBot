@@ -35,14 +35,18 @@ export function buildHelpText(args: {
   lines.push("- `/fun poll` — Create a quick poll (2–4 options)");
   lines.push("- `/fun weather` — Today’s weather for a location");
   lines.push("- `/fun weather7` — 7-day forecast for a location");
-  lines.push("- `/fun leaderboard` — Usage stats (top users, top commands, or a single user)");
+  lines.push(
+    "- `/fun leaderboard` — Usage stats (top users, top commands, or a single user)",
+  );
   lines.push("");
 
   lines.push("**GitHub**");
   lines.push("- `/gh issue` — Fetch a GitHub issue by number");
   lines.push("- `/gh issues` — List open GitHub issues");
   lines.push("- `/gh prs` — List open pull requests");
-  lines.push("- `/gh status` — Show GitHub integration status (config, polling, channels)");
+  lines.push(
+    "- `/gh status` — Show GitHub integration status (config, polling, channels)",
+  );
   lines.push("- `/pr` — Fetch a single pull request by number (legacy shortcut)");
   lines.push("");
 
@@ -80,7 +84,9 @@ export function buildHelpText(args: {
     lines.push("");
   }
 
-  lines.push("_Tip: If new commands don’t show up, admins may need to run the register script._");
+  lines.push(
+    "_Tip: If new commands don’t show up, admins may need to run the register script._",
+  );
 
   return lines.join("\n");
 }

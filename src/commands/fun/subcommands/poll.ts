@@ -9,7 +9,11 @@ import {
   type ChatInputCommandInteraction,
 } from "discord.js";
 import { logger } from "../../../utils/logger.js";
-import { createPoll, recordVote, type StoredPoll } from "../../../services/fun/pollStore.js";
+import {
+  createPoll,
+  recordVote,
+  type StoredPoll,
+} from "../../../services/fun/pollStore.js";
 
 type PollOption = {
   label: string;
@@ -27,18 +31,17 @@ function buildPollEmbed(poll: StoredPoll): EmbedBuilder {
   return new EmbedBuilder()
     .setTitle("📊 Fun Poll")
     .setDescription(
-      [
-        `**${poll.question}**`,
-        "",
-        ...lines,
-        "",
-        `Total votes: **${totalVotes}**`,
-      ].join("\n"),
+      [`**${poll.question}**`, "", ...lines, "", `Total votes: **${totalVotes}**`].join(
+        "\n",
+      ),
     )
     .setFooter({ text: `Poll ID: ${poll.messageId}` });
 }
 
-function buildPollButtons(poll: StoredPoll, opts?: { disabled?: boolean }): ActionRowBuilder<ButtonBuilder>[] {
+function buildPollButtons(
+  poll: StoredPoll,
+  opts?: { disabled?: boolean },
+): ActionRowBuilder<ButtonBuilder>[] {
   const disabled = opts?.disabled ?? false;
 
   // Discord max 5 buttons per row. We have 2–4 options: one row is fine.
@@ -97,7 +100,9 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
   }
 
   // Create a placeholder message first so we can use messageId as pollId.
-  const placeholder = new EmbedBuilder().setTitle("📊 Fun Poll").setDescription("Creating poll…");
+  const placeholder = new EmbedBuilder()
+    .setTitle("📊 Fun Poll")
+    .setDescription("Creating poll…");
   await interaction.editReply({ embeds: [placeholder] });
 
   const sent = await interaction.fetchReply();
@@ -162,7 +167,10 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       }
 
       if (result.kind === "notFound") {
-        await btn.reply({ content: "Poll not found (maybe it expired).", ephemeral: true });
+        await btn.reply({
+          content: "Poll not found (maybe it expired).",
+          ephemeral: true,
+        });
         return;
       }
 

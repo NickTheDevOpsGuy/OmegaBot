@@ -49,8 +49,7 @@ async function loadStore(): Promise<PollStoreFileV1> {
     if (!parsed || typeof parsed !== "object") return emptyStore();
     if (parsed.version !== 1) return emptyStore();
 
-    const polls =
-      parsed.polls && typeof parsed.polls === "object" ? parsed.polls : {};
+    const polls = parsed.polls && typeof parsed.polls === "object" ? parsed.polls : {};
 
     return {
       version: 1,
