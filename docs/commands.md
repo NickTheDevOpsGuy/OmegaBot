@@ -1,193 +1,172 @@
-# Command Reference
+# OmegaBot — Command Reference
 
-This page documents all slash commands supported by OmegaBot, including subcommands and options where relevant.
+This document describes all user-facing slash commands supported by OmegaBot.
+Commands are grouped by category and include subcommands and expected behavior.
 
 ---
 
 ## General
 
-- `/ping`
-  - Verify the bot is online and measure latency
+### `/ping`
 
----
-
-## GitHub
-
-Commands for interacting with GitHub repositories configured for the server.
-
-- `/gh issue`
-  - Fetch a GitHub issue by number
-- `/gh issues`
-  - List open GitHub issues
-- `/gh prs`
-  - List open pull requests
-- `/gh status`
-  - Show GitHub integration status
-  - Includes configuration, polling, and channel bindings
-- `/pr`
-  - Fetch a single pull request by number
-  - Legacy shortcut for /gh pr
+Check whether the bot is online and measure response latency.
 
 ---
 
 ## Fun
 
-All fun commands are grouped under /fun.
+All fun commands are grouped under `/fun`.
 
-`/fun chucknorris`
+### `/fun chucknorris`
 
 Chuck Norris facts.
 
-Options:
+- Random fact by default
+- Optional category
+- Optional search query
 
-- category (optional) — Fetch a fact from a specific category
-- query (optional) — Search facts by keyword
-- ephemeral (optional) — Show result only to you
-
-Modes:
-
-- Random fact (no options)
-- Category- based fact
-- Search- based fact
-
-⸻
-
-`/fun dadjoke`
+### `/fun dadjoke`
 
 Dad jokes.
+- Random joke by default
+- Optional search query
 
-Options:
+### `/fun coinflip`
 
-- query (optional) — Search jokes by keyword
-- ephemeral (optional) — Show result only to you
+Flip a coin.
+- Animated flip
+- Result is either **HEADS** or **TAILS**
+- Usage is tracked per user
 
-Modes:
+### `/fun dice`
 
-- Random joke
-- Search results
+Roll one or more dice.
+- Options:
+  - `sides` (default: 6, max: 100)
+  - `count` (default: 1, max: 10)
+- Animated roll
+- Shows individual rolls
+- Shows total when rolling more than one die
 
----
-
-`/fun coinflip`
-
-Flip a coin with a short animation.
-
-Options:
-
-- ephemeral (optional) — Show result only to you
-
-Output:
-
-- Heads or tails
-
----
-
-`/fun dice`
-
-Roll dice with optional animation.
-
-Options:
-
-- sides (optional, default: 6) — Number of sides per die (2–100)
-- count (optional, default: 1) — Number of dice to roll (1–10)
-- ephemeral (optional) — Show result only to you
-
-Behavior:
-
-- d6 rolls display dice face emojis
-- Multiple dice rolls show individual results and a total
-
----
-
-`/fun poll`
+### `/fun poll`
 
 Create a quick poll.
-
-Options:
-
-- question — Poll question
-- option1 — First option
-- option2 — Second option
-- option3 (optional)
-- option4 (optional)
-
-Behavior:
-
 - 2–4 options
 - One vote per user
-- Poll automatically closes after a timeout
+- Poll automatically closes after timeout
+- Results update live
 
----
+### `/fun weather`
 
-`/fun weather`
+Today’s weather for a location.
+- City, ZIP, or region
+- Optional temperature unit (F or C)
 
-Show today’s weather for a location.
+### `/fun weather7`
 
-Options:
+7-day weather forecast.
+- City, ZIP, or region
+- Optional temperature unit (F or C)
 
-- location — City, ZIP, or region
-- unit (optional) — Temperature unit (F or C)
-- ephemeral (optional) — Show result only to you
-
----
-
-`/fun weather7`
-
-Show a 7- day weather forecast.
-
-Options:
-
-- location — City, ZIP, or region
-- unit (optional) — Temperature unit (F or C)
-- ephemeral (optional) — Show result only to you
-
----
-
-`/fun leaderboard`
+### `/fun leaderboard`
 
 View fun command usage statistics.
 
-Options:
+**Views**
 
-- view (optional)
-  - users — Top users (default)
-  - commands — Top fun commands
-  - user — Single- user breakdown
-- user (optional) — Target user (used with view:user)
-- limit (optional) — Number of results to show (default: 10, max: 25)
+- Default: top users
+- `view:commands` → most-used fun commands
+- `view:user` → your usage breakdown
+- `view:user user:@Someone` → another user’s breakdown
 
-Views:
+**Output**
 
-- Top users with per- command highlights
-- Top commands by usage count
-- Single- user view with avatar and command breakdown
+- Shows total usage counts
+- Shows per-command usage (e.g. `dadjoke 3x, coinflip 2x`)
+- Single-user view includes avatar
 
 ---
 
-Summary & History
+## GitHub
 
-Commands for summarizing and reviewing recent messages.
+### `/gh issue`
 
-- /summary
-  - Summarize recent messages
-  - Uses local or LLM- based summarization
-- `/history`
-  - DM recent channel history
-  - Falls back to file upload if content is too long
-- `/playback`
-  - Page through recent messages using buttons
-  - `/pagination`
-- Demo the reusable pagination helper
+Fetch a GitHub issue by number.
+
+### `/gh issues`
+
+List open GitHub issues.
+
+### `/gh prs`
+
+List open pull requests.
+
+### `/gh status`
+
+Show GitHub integration status.
+- Configuration
+- Polling state
+- Channels in use
+
+### `/pr`
+
+Legacy shortcut to fetch a single pull request by number.
 
 ---
 
-Timezone
+## Summary & History
 
-Commands for managing user timezones.
+### `/summary`
 
-- `/timezone set`
-  - Save your IANA timezone (example: America/New_York)
-- `/timezone show`
-  - Display your currently saved timezone
-- `/timezone clear`
-  - Remove your saved timezone
+Summarize recent messages.
+- Local summary by default
+- LLM-based summary when enabled
+
+### `/history`
+
+Send recent channel history via DM.
+- Falls back to file upload if content is long
+
+### `/playback`
+
+Page through recent messages using buttons.
+
+### `/pagination`
+
+Demonstration of the reusable pagination helper.
+
+---
+
+## Timezone
+
+### `/timezone set`
+
+Save your IANA timezone (example: `America/New_York`).
+
+### `/timezone show`
+
+Display your currently saved timezone.
+
+### `/timezone clear`
+
+Remove your saved timezone.
+
+---
+
+## Admin (Manage Server)
+
+### `/config welcome-channel set`
+
+Set the channel used for welcome messages.
+
+### `/config welcome-channel clear`
+
+Remove the configured welcome channel.
+
+---
+
+## Notes
+
+- Slash commands may take up to an hour to appear if registered globally
+- Admin-only commands are hidden from non-admin users
+- Usage-based features require the bot to have write access to the data directory
