@@ -7,77 +7,89 @@ import { logger } from "../../../utils/logger.js";
  */
 const D6_FACES = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
 
-export async function run(interaction: ChatInputCommandInteraction): Promise<void> {
-  const sides = interaction.options.getInteger("sides") ?? 6;
-  const count = interaction.options.getInteger("count") ?? 1;
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
-  const safeSides = Math.min(Math.max(sides, 2), 100);
-  const safeCount = Math.min(Math.max(count, 1), 10);
+function clampInt(n: number, min: number, max: number): number {
+  return Math.min(Math.max(n, min), max);
+}
+
+function rollDie(sides: number): number {
+  return Math.floor(Math.random() * sides) + 1;
+}
+
+function formatOneRoll(sides: number, roll: number): string {
+  if (sides === 6) {
+    const face = D6_FACES[roll - 1] ?? "🎲";
+    return `${face} (${roll})`;
+  }
+  return `${roll}`;
+}
+
+async function rollAnimation(
+  interaction: ChatInputCommandInteraction,
+  sides: number,
+  count: number,
+): Promise<void> {
+  const frames = 8;
+
+  for (let i = 0; i < frames; i += 1) {
+    let frameText = "";
+
+    if (sides === 6) {
+      // show a few random faces when rolling multiple dice
+      const shown = Math.min(count, 5);
+      const faces: string[] = [];
+      for (let j = 0; j < shown; j += 1) {
+        faces.push(D6_FACES[Math.floor(Math.random() * D6_FACES.length)] ?? "🎲");
+      }
+      frameText = faces.join(" ");
+    } else {
+      // show one changing number for non-d6
+      frameText = String(rollDie(sides));
+    }
+
+    await interaction.editReply(`🎲 Rolling… ${frameText}`);
+    await sleep(120);
+  }
+}
+
+export async function run(interaction: ChatInputCommandInteraction): Promise<void> {
+  const sidesRaw = interaction.options.getInteger("sides") ?? 6;
+  const countRaw = interaction.options.getInteger("count") ?? 1;
+
+  const sides = clampInt(sidesRaw, 2, 100);
+  const count = clampInt(countRaw, 1, 10);
 
   try {
-    await rollAnimation(interaction, safeSides);
+    await rollAnimation(interaction, sides, count);
 
     const rolls: number[] = [];
-    for (let i = 0; i < safeCount; i += 1) {
-      rolls.push(Math.floor(Math.random() * safeSides) + 1);
+    for (let i = 0; i < count; i += 1) {
+      rolls.push(rollDie(sides));
     }
 
     const total = rolls.reduce((a, b) => a + b, 0);
 
-    const rollDisplay =
-      safeSides === 6
-        ? rolls.map((r) => D6_FACES[r - 1]).join(" ")
-        : rolls.join(", ");
+    // Stacked output like you showed
+    const display = rolls.map((r) => formatOneRoll(sides, r)).join(", ");
 
-    const resultLines: string[] = [];
+    const lines: string[] = [];
+    lines.push(`You rolled: ${display}`);
 
-    resultLines.push(`🎲 **Dice Roll${safeCount > 1 ? "s" : ""}**`);
-    resultLines.push(`Sides: d${safeSides}`);
-    resultLines.push(`Rolls: ${rollDisplay}`);
-
-    if (safeCount > 1) {
-      resultLines.push(`Total: **${total}**`);
+    if (count > 1) {
+      lines.push(`Total: ${total}`);
     }
 
-    await interaction.editReply(resultLines.join("\n"));
+    await interaction.editReply(lines.join("\n"));
 
     logger.debug(
-      {
-        userId: interaction.user.id,
-        sides: safeSides,
-        count: safeCount,
-        rolls,
-        total,
-      },
+      { userId: interaction.user.id, sides, count, rolls, total },
       "[fun/dice] roll complete",
     );
   } catch (err) {
     logger.error({ err }, "[fun/dice] failed");
     await interaction.editReply("🎲 The dice fell off the table. Try again.");
   }
-}
-
-/* -------------------------------------------------------------------------- */
-/*                                ANIMATION                                   */
-/* -------------------------------------------------------------------------- */
-
-async function rollAnimation(
-  interaction: ChatInputCommandInteraction,
-  sides: number,
-): Promise<void> {
-  const frames = 8;
-
-  for (let i = 0; i < frames; i += 1) {
-    const frame =
-      sides === 6
-        ? D6_FACES[Math.floor(Math.random() * D6_FACES.length)]
-        : Math.floor(Math.random() * sides) + 1;
-
-    await interaction.editReply(`🎲 Rolling… ${frame}`);
-    await sleep(120);
-  }
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
