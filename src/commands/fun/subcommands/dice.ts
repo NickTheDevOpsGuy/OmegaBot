@@ -1,128 +1,94 @@
 // src/commands/fun/subcommands/dice.ts
 
-import { randomInt } from "node:crypto";
-import { EmbedBuilder, type ChatInputCommandInteraction } from "discord.js";
+import type { ChatInputCommandInteraction } from "discord.js";
+import { logger } from "../../../utils/logger.js";
 
-type DiceSpec = {
-  count: number;
-  sides: number;
-  modifier: number;
-  source: "notation" | "options";
-};
+/**
+ * Dice faces for a standard d6.
+ * Used only when sides === 6.
+ */
+const D6_FACES = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
 
-type ParseResult = { ok: true; spec: DiceSpec } | { ok: false; message: string };
+/**
+ * /fun dice
+ *
+ * IMPORTANT:
+ * - NOT a slash command by itself
+ * - Must NOT call reply() or deferReply()
+ * - Parent command owns the interaction lifecycle
+ */
+export async function run(interaction: ChatInputCommandInteraction): Promise<void> {
+  const sidesRaw = interaction.options.getInteger("sides") ?? 6;
+  const countRaw = interaction.options.getInteger("count") ?? 1;
 
-const DEFAULT_COUNT = 1;
-const DEFAULT_SIDES = 6;
+  // Clamp defensively (even though Discord option validation already exists)
+  const sides = clampInt(sidesRaw, 2, 100);
+  const count = clampInt(countRaw, 1, 10);
 
-const MIN_COUNT = 1;
-const MAX_COUNT = 10;
+  try {
+    await rollAnimation(interaction, sides);
 
-const MIN_SIDES = 2;
-const MAX_SIDES = 100;
+    const rolls: number[] = [];
+    for (let i = 0; i < count; i += 1) {
+      rolls.push(randomInt(1, sides));
+    }
 
-const MIN_MOD = -1000;
-const MAX_MOD = 1000;
+    const total = rolls.reduce((a, b) => a + b, 0);
+
+    const renderedRolls =
+      sides === 6
+        ? rolls.map((r) => `${D6_FACES[r - 1]} (${r})`).join(", ")
+        : rolls.map((r) => `${r}`).join(", ");
+
+    // Keep output clean and consistent
+    // - 1 die: show single result
+    // - multiple dice: show list + total
+    const text =
+      count === 1
+        ? `You rolled: ${sides === 6 ? `${D6_FACES[rolls[0] - 1]} (${rolls[0]})` : `${rolls[0]} (d${sides})`}`
+        : `You rolled: ${renderedRolls}\nTotal: ${total}`;
+
+    await interaction.editReply(text);
+
+    logger.debug(
+      { userId: interaction.user.id, sides, count, rolls, total },
+      "[fun/dice] roll complete",
+    );
+  } catch (err) {
+    logger.error({ err }, "[fun/dice] failed");
+    await interaction.editReply("The dice fell off the table. Try again.");
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                ANIMATION                                   */
+/* -------------------------------------------------------------------------- */
+
+async function rollAnimation(
+  interaction: ChatInputCommandInteraction,
+  sides: number,
+): Promise<void> {
+  const frames = 8;
+
+  for (let i = 0; i < frames; i += 1) {
+    const frame =
+      sides === 6
+        ? D6_FACES[randomInt(1, D6_FACES.length) - 1]
+        : String(randomInt(1, sides));
+
+    await interaction.editReply(`Rolling... ${frame}`);
+    await sleep(120);
+  }
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function randomInt(minInclusive: number, maxInclusive: number): number {
+  return Math.floor(Math.random() * (maxInclusive - minInclusive + 1)) + minInclusive;
+}
 
 function clampInt(n: number, min: number, max: number): number {
-  if (!Number.isFinite(n)) return min;
-  return Math.min(max, Math.max(min, Math.trunc(n)));
-}
-
-function rollDie(sides: number): number {
-  // randomInt is [min, max) so use 1..sides+1
-  return randomInt(1, sides + 1);
-}
-
-function parseNotation(raw: string): ParseResult {
-  // Supports: "10d6", "2d20+5", "4d8-1"
-  const cleaned = raw.trim().toLowerCase();
-
-  const m = /^(\d{1,3})d(\d{1,3})([+-]\d{1,5})?$/.exec(cleaned);
-  if (!m) {
-    return {
-      ok: false,
-      message:
-        "Invalid notation. Try `10d6`, `2d20+5`, or use `count` + `sides` options.",
-    };
-  }
-
-  const countRaw = Number(m[1]);
-  const sidesRaw = Number(m[2]);
-  const modRaw = m[3] ? Number(m[3]) : 0;
-
-  const count = clampInt(countRaw, MIN_COUNT, MAX_COUNT);
-  const sides = clampInt(sidesRaw, MIN_SIDES, MAX_SIDES);
-  const modifier = clampInt(modRaw, MIN_MOD, MAX_MOD);
-
-  return {
-    ok: true,
-    spec: { count, sides, modifier, source: "notation" },
-  };
-}
-
-function resolveDiceSpec(interaction: ChatInputCommandInteraction): ParseResult {
-  const notation = interaction.options.getString("notation")?.trim() ?? "";
-
-  if (notation.length > 0) {
-    return parseNotation(notation);
-  }
-
-  const countOpt = interaction.options.getInteger("count") ?? DEFAULT_COUNT;
-  const sidesOpt = interaction.options.getInteger("sides") ?? DEFAULT_SIDES;
-
-  const count = clampInt(countOpt, MIN_COUNT, MAX_COUNT);
-  const sides = clampInt(sidesOpt, MIN_SIDES, MAX_SIDES);
-
-  return {
-    ok: true,
-    spec: { count, sides, modifier: 0, source: "options" },
-  };
-}
-
-function formatSpec(spec: DiceSpec): string {
-  const base = `${spec.count}d${spec.sides}`;
-  if (spec.modifier === 0) return base;
-  return spec.modifier > 0 ? `${base}+${spec.modifier}` : `${base}${spec.modifier}`;
-}
-
-export async function run(interaction: ChatInputCommandInteraction): Promise<void> {
-  const resolved = resolveDiceSpec(interaction);
-
-  if (!resolved.ok) {
-    await interaction.editReply(resolved.message);
-    return;
-  }
-
-  const spec = resolved.spec;
-
-  const rolls: number[] = [];
-  for (let i = 0; i < spec.count; i += 1) {
-    rolls.push(rollDie(spec.sides));
-  }
-
-  const sum = rolls.reduce((a, b) => a + b, 0);
-  const total = sum + spec.modifier;
-
-  const specText = formatSpec(spec);
-
-  // Keep output readable
-  const showRolls = spec.count <= 10;
-  const rollsText = showRolls ? rolls.join(", ") : "(hidden)";
-
-  const embed = new EmbedBuilder()
-    .setTitle("🎲 Fun: Dice Roll")
-    .setDescription(
-      [
-        `**Roll:** \`${specText}\``,
-        `**Result:** ${total}`,
-        "",
-        spec.modifier !== 0
-          ? `**Dice sum:** ${sum} (modifier ${spec.modifier})`
-          : `**Dice sum:** ${sum}`,
-        `**Rolls:** ${rollsText}`,
-      ].join("\n"),
-    );
-
-  await interaction.editReply({ embeds: [embed] });
+  return Math.min(Math.max(n, min), max);
 }
