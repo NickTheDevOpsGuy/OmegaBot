@@ -130,7 +130,11 @@ export async function run(
 
     const user = await safeFetchUser(interaction, userId);
     const name = user?.username ?? `User ${userId}`;
-    const avatar = user?.displayAvatarURL() ?? null;
+    const avatar =
+      user?.displayAvatarURL({
+        extension: "png",
+        size: 512,
+      }) ?? null;
 
     embed.setTitle(`Fun Usage: ${name}`);
     if (avatar) embed.setThumbnail(avatar);
