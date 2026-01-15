@@ -28,12 +28,14 @@ Chuck Norris facts.
 ### `/fun dadjoke`
 
 Dad jokes.
+
 - Random joke by default
 - Optional search query
 
 ### `/fun coinflip`
 
 Flip a coin.
+
 - Animated flip
 - Result is either **HEADS** or **TAILS**
 - Usage is tracked per user
@@ -41,6 +43,7 @@ Flip a coin.
 ### `/fun dice`
 
 Roll one or more dice.
+
 - Options:
   - `sides` (default: 6, max: 100)
   - `count` (default: 1, max: 10)
@@ -51,6 +54,7 @@ Roll one or more dice.
 ### `/fun poll`
 
 Create a quick poll.
+
 - 2–4 options
 - One vote per user
 - Poll automatically closes after timeout
@@ -59,12 +63,14 @@ Create a quick poll.
 ### `/fun weather`
 
 Today’s weather for a location.
+
 - City, ZIP, or region
 - Optional temperature unit (F or C)
 
 ### `/fun weather7`
 
 7-day weather forecast.
+
 - City, ZIP, or region
 - Optional temperature unit (F or C)
 
@@ -104,6 +110,7 @@ List open pull requests.
 ### `/gh status`
 
 Show GitHub integration status.
+
 - Configuration
 - Polling state
 - Channels in use
@@ -119,12 +126,14 @@ Legacy shortcut to fetch a single pull request by number.
 ### `/summary`
 
 Summarize recent messages.
+
 - Local summary by default
 - LLM-based summary when enabled
 
 ### `/history`
 
 Send recent channel history via DM.
+
 - Falls back to file upload if content is long
 
 ### `/playback`
