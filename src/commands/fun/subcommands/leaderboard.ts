@@ -1,6 +1,6 @@
 // src/commands/fun/subcommands/leaderboard.ts
 
-import { MessageEmbed, type CommandInteraction, type User } from "discord.js";
+import { EmbedBuilder, type CommandInteraction, type User } from "discord.js";
 import { getFunUsageSnapshot } from "../../../services/fun/funUsageStore.js";
 import { logger } from "../../../utils/logger.js";
 
@@ -41,7 +41,7 @@ function formatInlineBreakdown(
 }
 
 async function safeFetchUser(
-  interaction: ChatInputCommandInteraction,
+  interaction: CommandInteraction,
   userId: string,
 ): Promise<User | null> {
   try {
@@ -53,7 +53,7 @@ async function safeFetchUser(
 }
 
 export async function run(
-  interaction: ChatInputCommandInteraction,
+  interaction: CommandInteraction,
   mode: LeaderboardMode,
 ): Promise<void> {
   const snapshot = await getFunUsageSnapshot();
