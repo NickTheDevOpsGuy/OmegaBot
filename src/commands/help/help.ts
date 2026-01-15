@@ -5,7 +5,7 @@ import {
   PermissionFlagsBits,
   type ChatInputCommandInteraction,
 } from "discord.js";
-import { buildHelpText } from "./helpText.js";
+import { buildHelpText, type HelpTopic } from "./helpText.js";
 import {
   extractCommandList,
   type CommandListItem,
@@ -14,30 +14,59 @@ import {
 /**
  * /help
  *
- * MVP goal:
- * - Give users a quick “what can this bot do?”
- * - Point admins to config commands
- * - Keep output short and readable
- *
- * Enhancement:
- * - If commands are loaded on the client, we also list them (grouped).
+ * Uses topics to keep output readable and under Discord limits.
  */
 export const data = new SlashCommandBuilder()
   .setName("help")
-  .setDescription("Show what OmegaBot can do and how to get started");
+  .setDescription("Show what OmegaBot can do and how to get started")
+  .addStringOption((o) =>
+    o
+      .setName("topic")
+      .setDescription("Choose a help topic")
+      .setRequired(false)
+      .addChoices(
+        { name: "Overview", value: "overview" },
+        { name: "Fun", value: "fun" },
+        { name: "GitHub", value: "github" },
+        { name: "Summary", value: "summary" },
+        { name: "Timezone", value: "timezone" },
+        { name: "Admin", value: "admin" },
+        { name: "Commands", value: "commands" },
+      ),
+  );
 
-export async function execute(interaction: ChatInputCommandInteraction) {
+export async function execute(
+  interaction: ChatInputCommandInteraction,
+): Promise<void> {
   const isAdmin =
     interaction.inGuild() &&
     Boolean(interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild));
 
-  // Try to extract a command list from the runtime-loaded command map.
-  // This is optional: if your loader uses a different shape, help still works.
   const commands: CommandListItem[] = extractCommandList(interaction.client);
 
+  const rawTopic = interaction.options.getString("topic") ?? "overview";
+
+  // Keep runtime safe: only allow known topics
+  const allowedTopics: HelpTopic[] = [
+    "overview",
+    "fun",
+    "github",
+    "summary",
+    "timezone",
+    "admin",
+    "commands",
+  ];
+
+  const topic: HelpTopic = (allowedTopics.includes(rawTopic as HelpTopic)
+    ? (rawTopic as HelpTopic)
+    : "overview");
+
+  // If someone requests admin help but isn't admin, still show the admin topic
+  // (it will explain they need Manage Server)
   const text = buildHelpText({
     isAdmin,
     commands,
+    topic,
   });
 
   await interaction.reply({
