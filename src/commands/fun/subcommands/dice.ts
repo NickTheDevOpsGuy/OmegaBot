@@ -1,5 +1,3 @@
-// src/commands/fun/subcommands/dice.ts
-
 import type { ChatInputCommandInteraction } from "discord.js";
 import { logger } from "../../../utils/logger.js";
 
@@ -9,54 +7,53 @@ import { logger } from "../../../utils/logger.js";
  */
 const D6_FACES = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
 
-/**
- * /fun dice
- *
- * IMPORTANT:
- * - NOT a slash command by itself
- * - Must NOT call reply() or deferReply()
- * - Parent command owns the interaction lifecycle
- */
 export async function run(interaction: ChatInputCommandInteraction): Promise<void> {
-  const sidesRaw = interaction.options.getInteger("sides") ?? 6;
-  const countRaw = interaction.options.getInteger("count") ?? 1;
+  const sides = interaction.options.getInteger("sides") ?? 6;
+  const count = interaction.options.getInteger("count") ?? 1;
 
-  // Clamp defensively (even though Discord option validation already exists)
-  const sides = clampInt(sidesRaw, 2, 100);
-  const count = clampInt(countRaw, 1, 10);
+  const safeSides = Math.min(Math.max(sides, 2), 100);
+  const safeCount = Math.min(Math.max(count, 1), 10);
 
   try {
-    await rollAnimation(interaction, sides);
+    await rollAnimation(interaction, safeSides);
 
     const rolls: number[] = [];
-    for (let i = 0; i < count; i += 1) {
-      rolls.push(randomInt(1, sides));
+    for (let i = 0; i < safeCount; i += 1) {
+      rolls.push(Math.floor(Math.random() * safeSides) + 1);
     }
 
     const total = rolls.reduce((a, b) => a + b, 0);
 
-    const renderedRolls =
-      sides === 6
-        ? rolls.map((r) => `${D6_FACES[r - 1]} (${r})`).join(", ")
-        : rolls.map((r) => `${r}`).join(", ");
+    const rollDisplay =
+      safeSides === 6
+        ? rolls.map((r) => D6_FACES[r - 1]).join(" ")
+        : rolls.join(", ");
 
-    // Keep output clean and consistent
-    // - 1 die: show single result
-    // - multiple dice: show list + total
-    const text =
-      count === 1
-        ? `You rolled: ${sides === 6 ? `${D6_FACES[rolls[0] - 1]} (${rolls[0]})` : `${rolls[0]} (d${sides})`}`
-        : `You rolled: ${renderedRolls}\nTotal: ${total}`;
+    const resultLines: string[] = [];
 
-    await interaction.editReply(text);
+    resultLines.push(`🎲 **Dice Roll${safeCount > 1 ? "s" : ""}**`);
+    resultLines.push(`Sides: d${safeSides}`);
+    resultLines.push(`Rolls: ${rollDisplay}`);
+
+    if (safeCount > 1) {
+      resultLines.push(`Total: **${total}**`);
+    }
+
+    await interaction.editReply(resultLines.join("\n"));
 
     logger.debug(
-      { userId: interaction.user.id, sides, count, rolls, total },
+      {
+        userId: interaction.user.id,
+        sides: safeSides,
+        count: safeCount,
+        rolls,
+        total,
+      },
       "[fun/dice] roll complete",
     );
   } catch (err) {
     logger.error({ err }, "[fun/dice] failed");
-    await interaction.editReply("The dice fell off the table. Try again.");
+    await interaction.editReply("🎲 The dice fell off the table. Try again.");
   }
 }
 
@@ -73,22 +70,14 @@ async function rollAnimation(
   for (let i = 0; i < frames; i += 1) {
     const frame =
       sides === 6
-        ? D6_FACES[randomInt(1, D6_FACES.length) - 1]
-        : String(randomInt(1, sides));
+        ? D6_FACES[Math.floor(Math.random() * D6_FACES.length)]
+        : Math.floor(Math.random() * sides) + 1;
 
-    await interaction.editReply(`Rolling... ${frame}`);
+    await interaction.editReply(`🎲 Rolling… ${frame}`);
     await sleep(120);
   }
 }
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function randomInt(minInclusive: number, maxInclusive: number): number {
-  return Math.floor(Math.random() * (maxInclusive - minInclusive + 1)) + minInclusive;
-}
-
-function clampInt(n: number, min: number, max: number): number {
-  return Math.min(Math.max(n, min), max);
 }

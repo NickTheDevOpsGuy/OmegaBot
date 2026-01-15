@@ -1,5 +1,3 @@
-// src/commands/fun/subcommands/coinflip.ts
-
 import type { ChatInputCommandInteraction } from "discord.js";
 import { logger } from "../../../utils/logger.js";
 
@@ -8,31 +6,29 @@ function sleep(ms: number): Promise<void> {
 }
 
 export async function run(interaction: ChatInputCommandInteraction): Promise<void> {
-  // Parent (fun.ts) owns deferReply()
+  const frames = ["|", "/", "-", "\\", "|", "/", "-", "\\"];
 
-  // Toss
-  await interaction.editReply("🪙 Flipping the coin...");
-  await sleep(300);
+  for (const f of frames) {
+    await interaction.editReply(`🪙 Flipping ${f}`);
+    await sleep(120);
+  }
 
-  // Airtime
-  await interaction.editReply("🪙 The coin is in the air");
-  await sleep(350);
-
-  // Suspense beat
-  await interaction.editReply("🪙 It lands...");
-  await sleep(300);
+  await interaction.editReply("🪙 Tossed…");
+  await sleep(250);
 
   const isHeads = Math.random() < 0.5;
 
-  const result = isHeads ? "🟡 **HEADS**" : "⚪ **TAILS**";
+  const result = isHeads
+    ? "🟡 **HEADS**"
+    : "⚪ **TAILS**";
 
-  await interaction.editReply(result);
+  await interaction.editReply(`🪙 ${result}`);
 
   logger.debug(
     {
       userId: interaction.user.id,
       result: isHeads ? "heads" : "tails",
     },
-    "[fun/coinflip] result sent",
+    "[fun/coinflip] result",
   );
 }
