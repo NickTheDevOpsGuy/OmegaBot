@@ -12,65 +12,35 @@ export type LeaderboardMode =
   | { kind: "commands"; limit: number }
   | { kind: "user"; userId: string };
 
-type PerUserByCommand = Record<string, Record<string, number>>;
+type PerCommandCounts = Record<string, number>;
+type PerUserByCommand = Record<string, PerCommandCounts>;
 
-function isFunCommandKey(value: string): value is FunCommandKey {
-  const allowed: ReadonlySet<string> = new Set([
-    "chucknorris",
-    "dadjoke",
-    "dice",
-    "coinflip",
-    "java",
-    "poll",
-    "weather",
-    "weather7",
-    "leaderboard",
-  ]);
-  return allowed.has(value);
+function toCount(n: unknown): number {
+  return typeof n === "number" && Number.isFinite(n) ? n : 0;
 }
 
-function formatCount(n: number): string {
-  return `${n}x`;
+function topCommandsFromMap(
+  perCmd: PerCommandCounts | undefined,
+  limit: number,
+): Array<{ command: string; count: number }> {
+  if (!perCmd) return [];
+
+  return Object.entries(perCmd)
+    .map(([command, raw]) => ({ command, count: toCount(raw) }))
+    .filter((x) => x.count > 0)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit);
 }
 
-function getPerCmd(
-  byUserByCommand: PerUserByCommand | undefined,
-  userId: string,
-): Record<FunCommandKey, number> {
-  const raw = (byUserByCommand ?? {})[userId] ?? {};
-  const out: Partial<Record<FunCommandKey, number>> = {};
-
-  for (const [k, v] of Object.entries(raw)) {
-    if (!isFunCommandKey(k)) continue;
-    if (typeof v !== "number" || !Number.isFinite(v) || v <= 0) continue;
-    out[k] = v;
-  }
-
-  return out as Record<FunCommandKey, number>;
-}
-
-function formatTopCommandsInline(
-  perCmd: Record<FunCommandKey, number>,
-  maxItems: number,
+function formatInlineBreakdown(
+  perCmd: PerCommandCounts | undefined,
+  limit: number,
 ): string {
-  const parts = (Object.entries(perCmd) as Array<[FunCommandKey, number]>)
-    .filter(([, n]) => typeof n === "number" && Number.isFinite(n) && n > 0)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, maxItems)
-    .map(([cmd, n]) => `${cmd} ${formatCount(n)}`);
+  const top = topCommandsFromMap(perCmd, limit);
+  if (!top.length) return "";
 
-  return parts.length ? parts.join(", ") : "";
-}
-
-function formatUserBreakdownLines(
-  perCmd: Record<FunCommandKey, number>,
-  maxItems: number,
-): string[] {
-  return (Object.entries(perCmd) as Array<[FunCommandKey, number]>)
-    .filter(([, n]) => typeof n === "number" && Number.isFinite(n) && n > 0)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, maxItems)
-    .map(([cmd, n]) => `• \`/fun ${cmd}\` ${formatCount(n)}`);
+  // Example: "leaderboard 10x, coinflip 4x, chucknorris 2x"
+  return top.map((x) => `${x.command} ${x.count}x`).join(", ");
 }
 
 async function safeFetchUser(
@@ -91,97 +61,101 @@ export async function run(
 ): Promise<void> {
   const snapshot = await getFunUsageSnapshot();
 
+  // Snapshot shapes can drift if a file is edited manually, so we defensive-cast.
+  const totalsByUser = (snapshot.totalsByUser ?? {}) as Record<string, unknown>;
+  const totalsByCommand = (snapshot.totalsByCommand ?? {}) as Record<string, unknown>;
+  const byUserByCommand = (snapshot.byUserByCommand ?? {}) as PerUserByCommand;
+
+  const anyUserUsage = Object.keys(totalsByUser).length > 0;
+  const anyCommandUsage = (Object.values(totalsByCommand) as unknown[]).some(
+    (n) => toCount(n) > 0,
+  );
+  const anyUsage = anyUserUsage || anyCommandUsage;
+
   const embed = new EmbedBuilder().setFooter({
     text: `Updated: ${snapshot.updatedAt}`,
   });
 
-  const totalsByUser = snapshot.totalsByUser ?? {};
-  const totalsByCommand = snapshot.totalsByCommand ?? {};
-  const byUserByCommand = snapshot.byUserByCommand ?? {};
-
-  const anyUsage =
-    Object.keys(totalsByUser).length > 0 ||
-    Object.values(totalsByCommand).some(
-      (n) => typeof n === "number" && Number.isFinite(n) && n > 0,
-    );
-
   if (!anyUsage) {
-    embed.setTitle("🎉 Fun Leaderboard");
+    embed.setTitle("Fun Leaderboard");
     embed.setDescription(
-      "No fun command usage recorded yet.\n\nTry running `/fun dadjoke` or `/fun coinflip` to get started.",
+      "No fun command usage recorded yet. Try `/fun dadjoke` to get started.",
     );
     await interaction.editReply({ embeds: [embed] });
     return;
   }
 
-  // Top commands
   if (mode.kind === "commands") {
-    const items = (Object.entries(totalsByCommand) as Array<[string, number]>)
-      .filter(([k, n]) => isFunCommandKey(k) && typeof n === "number" && n > 0)
-      .map(([k, n]) => [k as FunCommandKey, n] as const)
-      .sort((a, b) => b[1] - a[1])
+    const items = (Object.entries(totalsByCommand) as Array<[string, unknown]>)
+      .map(([cmd, raw]) => ({ cmd, count: toCount(raw) }))
+      .filter((x) => x.count > 0)
+      .sort((a, b) => b.count - a.count)
       .slice(0, mode.limit);
 
-    embed.setTitle("🎉 Fun Leaderboard: Top Commands");
+    embed.setTitle("Fun Leaderboard: Top Commands");
 
-    const lines = items.map(([cmd, count]) => `• \`/fun ${cmd}\` ${formatCount(count)}`);
-    embed.setDescription(lines.length ? lines.join("\n") : "No command usage yet.");
+    if (!items.length) {
+      embed.setDescription("No command usage yet.");
+      await interaction.editReply({ embeds: [embed] });
+      return;
+    }
 
+    // No numbering, no dashes
+    const lines = items.map((x) => `• \`/fun ${x.cmd}\` ${x.count}x`);
+    embed.setDescription(lines.join("\n"));
     await interaction.editReply({ embeds: [embed] });
     return;
   }
 
-  // Single-user view
   if (mode.kind === "user") {
-    const userId = mode.userId;
-    const total = totalsByUser[userId] ?? 0;
-    const perCmd = getPerCmd(byUserByCommand, userId);
+    const total = toCount(totalsByUser[mode.userId]);
+    const perCmd = byUserByCommand[mode.userId] ?? {};
 
-    const u = await safeFetchUser(interaction, userId);
-    const titleName = u?.username ?? `User ${userId}`;
+    const u = await safeFetchUser(interaction, mode.userId);
+    const displayName = u?.username ?? `User ${mode.userId}`;
 
-    embed.setTitle(`👤 Fun Usage: ${titleName}`);
+    embed.setTitle(`Fun Usage: ${displayName}`);
 
-    // Per your request: no avatar thumbnail in this view
-    // (keep it clean and consistent)
+    const top = topCommandsFromMap(perCmd, 25);
+    const commandLines = top.length
+      ? top.map((x) => `• \`/fun ${x.command}\` ${x.count}x`)
+      : ["• No per-command data yet."];
 
-    const lines: string[] = [];
-    lines.push(`Total: **${formatCount(total)}**`);
-
-    const breakdownLines = formatUserBreakdownLines(perCmd, 25);
-    if (breakdownLines.length) {
-      lines.push("");
-      lines.push(...breakdownLines);
-    } else {
-      lines.push("");
-      lines.push("No per-command breakdown yet. Run a few `/fun` commands!");
-    }
-
-    embed.setDescription(lines.join("\n"));
-
+    embed.setDescription([`Total uses: ${total}x`, "", ...commandLines].join("\n"));
     await interaction.editReply({ embeds: [embed] });
     return;
   }
 
   // Top users (default)
-  const userItems = Object.entries(totalsByUser)
-    .filter(([, n]) => typeof n === "number" && Number.isFinite(n) && n > 0)
-    .sort((a, b) => (b[1] as number) - (a[1] as number))
+  const userItems = (Object.entries(totalsByUser) as Array<[string, unknown]>)
+    .map(([userId, raw]) => ({ userId, total: toCount(raw) }))
+    .filter((x) => x.total > 0)
+    .sort((a, b) => b.total - a.total)
     .slice(0, mode.limit);
 
-  embed.setTitle("🏆 Fun Leaderboard: Top Users");
+  embed.setTitle("Fun Leaderboard: Top Users");
 
-  const lines = userItems.map(([userId, total]) => {
-    const perCmd = getPerCmd(byUserByCommand, userId);
-    const top = formatTopCommandsInline(perCmd, 3);
+  if (!userItems.length) {
+    embed.setDescription("No user usage yet.");
+    await interaction.editReply({ embeds: [embed] });
+    return;
+  }
 
-    // No numbers, no "—"
-    // Show exactly what you wanted: user X ran command Y this many times
-    const detail = top ? ` (${top})` : "";
-    return `• <@${userId}> ${formatCount(total)}${detail}`;
-  });
+  // Show “user X ran fun command Y this many times”
+  // No emojis, no numbering, no dash separators
+  const lines: string[] = [];
 
-  embed.setDescription(lines.length ? lines.join("\n") : "No user usage yet.");
+  for (const item of userItems) {
+    const perCmd = byUserByCommand[item.userId] ?? {};
+    const breakdown = formatInlineBreakdown(perCmd, 3);
 
+    if (breakdown) {
+      lines.push(`• <@${item.userId}> ${item.total}x (top: ${breakdown})`);
+    } else {
+      lines.push(`• <@${item.userId}> ${item.total}x`);
+    }
+  }
+
+  embed.setDescription(lines.join("\n"));
   await interaction.editReply({ embeds: [embed] });
 }
