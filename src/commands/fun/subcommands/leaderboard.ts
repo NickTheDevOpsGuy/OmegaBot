@@ -1,7 +1,10 @@
 // src/commands/fun/subcommands/leaderboard.ts
 
 import { EmbedBuilder, type ChatInputCommandInteraction, type User } from "discord.js";
-import { getFunUsageSnapshot, type FunCommandKey } from "../../../services/fun/funUsageStore.js";
+import {
+  getFunUsageSnapshot,
+  type FunCommandKey,
+} from "../../../services/fun/funUsageStore.js";
 import { logger } from "../../../utils/logger.js";
 
 export type LeaderboardMode =
