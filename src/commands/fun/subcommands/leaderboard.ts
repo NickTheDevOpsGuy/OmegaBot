@@ -1,6 +1,6 @@
 // src/commands/fun/subcommands/leaderboard.ts
 
-import { EmbedBuilder, type ChatInputCommandInteraction, type User } from "discord.js";
+import { MessageEmbed, type CommandInteraction, type User } from "discord.js";
 import { getFunUsageSnapshot } from "../../../services/fun/funUsageStore.js";
 import { logger } from "../../../utils/logger.js";
 
