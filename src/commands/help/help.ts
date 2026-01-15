@@ -35,9 +35,7 @@ export const data = new SlashCommandBuilder()
       ),
   );
 
-export async function execute(
-  interaction: ChatInputCommandInteraction,
-): Promise<void> {
+export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const isAdmin =
     interaction.inGuild() &&
     Boolean(interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild));
@@ -57,9 +55,9 @@ export async function execute(
     "commands",
   ];
 
-  const topic: HelpTopic = (allowedTopics.includes(rawTopic as HelpTopic)
+  const topic: HelpTopic = allowedTopics.includes(rawTopic as HelpTopic)
     ? (rawTopic as HelpTopic)
-    : "overview");
+    : "overview";
 
   // If someone requests admin help but isn't admin, still show the admin topic
   // (it will explain they need Manage Server)

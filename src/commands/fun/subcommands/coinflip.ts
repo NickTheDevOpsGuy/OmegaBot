@@ -24,9 +24,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
 
   const isHeads = Math.random() < 0.5;
 
-  const result = isHeads
-    ? "🟡 **HEADS**"
-    : "⚪ **TAILS**";
+  const result = isHeads ? "🟡 **HEADS**" : "⚪ **TAILS**";
 
   await interaction.editReply(result);
 
