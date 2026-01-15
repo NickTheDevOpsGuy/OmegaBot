@@ -144,6 +144,7 @@ function formatDaily(
     `${emoji} **${name}**`,
     `🌡️ ${temp}`,
     `☔ ${pop}%`,
+    "",
     details,
   ].join("\n");
 }
