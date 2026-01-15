@@ -1,10 +1,6 @@
 // src/commands/fun/subcommands/leaderboard.ts
 
-import {
-  EmbedBuilder,
-  type ChatInputCommandInteraction,
-  type User,
-} from "discord.js";
+import { EmbedBuilder, type ChatInputCommandInteraction, type User } from "discord.js";
 import { getFunUsageSnapshot } from "../../../services/fun/funUsageStore.js";
 import { logger } from "../../../utils/logger.js";
 
@@ -71,7 +67,8 @@ export async function run(
   const snapshot = await getFunUsageSnapshot();
 
   // Defensive casts (JSON file can drift)
-  const totalsByUserRaw = (snapshot as unknown as { totalsByUser?: unknown }).totalsByUser;
+  const totalsByUserRaw = (snapshot as unknown as { totalsByUser?: unknown })
+    .totalsByUser;
   const totalsByCommandRaw = (snapshot as unknown as { totalsByCommand?: unknown })
     .totalsByCommand;
   const byUserByCommandRaw = (snapshot as unknown as { byUserByCommand?: unknown })
@@ -86,13 +83,16 @@ export async function run(
     (n) => toCount(n) > 0,
   );
 
-  const updatedAt = (snapshot as unknown as { updatedAt?: string }).updatedAt ?? "unknown";
+  const updatedAt =
+    (snapshot as unknown as { updatedAt?: string }).updatedAt ?? "unknown";
 
   const embed = new EmbedBuilder().setFooter({ text: `Updated: ${updatedAt}` });
 
   if (!anyUserUsage && !anyCommandUsage) {
     embed.setTitle("Fun Leaderboard");
-    embed.setDescription("No fun command usage recorded yet. Try `/fun dadjoke` to get started.");
+    embed.setDescription(
+      "No fun command usage recorded yet. Try `/fun dadjoke` to get started.",
+    );
     await interaction.editReply({ embeds: [embed] });
     return;
   }
