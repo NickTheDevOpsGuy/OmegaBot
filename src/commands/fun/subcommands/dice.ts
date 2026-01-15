@@ -10,9 +10,7 @@ type DiceSpec = {
   source: "notation" | "options";
 };
 
-type ParseResult =
-  | { ok: true; spec: DiceSpec }
-  | { ok: false; message: string };
+type ParseResult = { ok: true; spec: DiceSpec } | { ok: false; message: string };
 
 const DEFAULT_COUNT = 1;
 const DEFAULT_SIDES = 6;
@@ -119,7 +117,9 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
         `**Roll:** \`${specText}\``,
         `**Result:** ${total}`,
         "",
-        spec.modifier !== 0 ? `**Dice sum:** ${sum} (modifier ${spec.modifier})` : `**Dice sum:** ${sum}`,
+        spec.modifier !== 0
+          ? `**Dice sum:** ${sum} (modifier ${spec.modifier})`
+          : `**Dice sum:** ${sum}`,
         `**Rolls:** ${rollsText}`,
       ].join("\n"),
     );

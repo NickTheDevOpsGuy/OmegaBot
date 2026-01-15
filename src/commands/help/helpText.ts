@@ -69,7 +69,9 @@ function buildOverviewHelp(args: { isAdmin: boolean }): string {
   lines.push("`/gh status`    Check GitHub integration status");
   lines.push("`/summary`      Summarize recent messages");
   lines.push("");
-  lines.push("If new commands don’t show up, an admin may need to run the register script.");
+  lines.push(
+    "If new commands don’t show up, an admin may need to run the register script.",
+  );
 
   return lines.join("\n");
 }
