@@ -15,41 +15,71 @@ export function buildHelpText(args: {
 
   const lines: string[] = [];
 
-  lines.push("**🤖 OmegaBot Help**");
+  lines.push("**OmegaBot Help**");
   lines.push("");
 
-  lines.push("**🚀 Start here**");
-  lines.push("- Try `/help` any time you forget what I can do");
+  lines.push("**Start here**");
+  lines.push("- Run `/help` any time you forget what I can do");
+  lines.push("- Tip: type `/fun` or `/gh` and pick a subcommand from the menu");
   lines.push("");
 
-  lines.push("**👋 Onboarding**");
-  lines.push("- Welcome messages are posted when someone joins");
+  lines.push("**Onboarding**");
+  lines.push("- Posts a welcome message when someone joins");
   lines.push("");
 
-  lines.push("**🎉 Fun**");
-  lines.push("- Use `/fun` to access lightweight, fun commands:");
-  lines.push("  - `/fun chucknorris`, `/fun dadjoke`, `/fun dice` 😄");
-  lines.push("  - `/fun weather`, `/fun weather7` 🌦️");
-  lines.push("  - `/fun leaderboard` 🏆 see who’s having the most fun");
-  lines.push("- Tip: type `/fun` and choose a subcommand from the menu");
+  lines.push("**Fun**");
+  lines.push("- `/fun chucknorris` — Chuck Norris facts (random, category, or search)");
+  lines.push("- `/fun dadjoke` — Random dad joke (or search)");
+  lines.push("- `/fun coinflip` — Heads or tails");
+  lines.push("- `/fun dice` — Roll dice (custom sides/count)");
+  lines.push("- `/fun poll` — Create a quick poll (2–4 options)");
+  lines.push("- `/fun weather` — Today’s weather for a location");
+  lines.push("- `/fun weather7` — 7-day forecast for a location");
+  lines.push(
+    "- `/fun leaderboard` — Usage stats (top users, top commands, or a single user)",
+  );
+  lines.push("");
+
+  lines.push("**GitHub**");
+  lines.push("- `/gh issue` — Fetch a GitHub issue by number");
+  lines.push("- `/gh issues` — List open GitHub issues");
+  lines.push("- `/gh prs` — List open pull requests");
+  lines.push(
+    "- `/gh status` — Show GitHub integration status (config, polling, channels)",
+  );
+  lines.push("- `/pr` — Fetch a single pull request by number (legacy shortcut)");
+  lines.push("");
+
+  lines.push("**Summary & History**");
+  lines.push("- `/summary` — Summarize recent messages (local or LLM mode)");
+  lines.push("- `/history` — DM recent channel history (file fallback if too long)");
+  lines.push("- `/playback` — Page through recent messages using buttons");
+  lines.push("- `/pagination` — Demo the reusable pagination helper");
+  lines.push("");
+
+  lines.push("**Timezone**");
+  lines.push("- `/timezone set` — Save your IANA timezone");
+  lines.push("- `/timezone show` — Display your current timezone");
+  lines.push("- `/timezone clear` — Remove your saved timezone");
   lines.push("");
 
   if (isAdmin) {
-    lines.push("**🛠️ Admin config** (Manage Server)");
+    lines.push("**Admin config** (Manage Server)");
     lines.push("- `/config welcome-channel set channel:#your-channel`");
     lines.push("- `/config welcome-channel clear`");
     lines.push("");
   } else {
-    lines.push("**🛠️ Admin config**");
+    lines.push("**Admin config**");
     lines.push("- Ask a server admin to run `/config welcome-channel set` if needed");
     lines.push("");
   }
 
   // Optional dynamic section: list known commands if we can extract them.
+  // This is useful as a "sanity list" even if it doesn't include subcommands.
   const pretty = formatCommandList(commands, { isAdmin });
 
   if (pretty.length) {
-    lines.push("**📚 Commands**");
+    lines.push("**Registered commands**");
     lines.push(...pretty);
     lines.push("");
   }

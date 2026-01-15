@@ -174,24 +174,6 @@ OmegaBot is online
 │   │   └── OmegaBot.yml
 │   └── pull_request_template.md
 ├── .husky
-│   ├── _
-│   │   ├── .gitignore
-│   │   ├── applypatch-msg
-│   │   ├── commit-msg
-│   │   ├── h
-│   │   ├── husky.sh
-│   │   ├── post-applypatch
-│   │   ├── post-checkout
-│   │   ├── post-commit
-│   │   ├── post-merge
-│   │   ├── post-rewrite
-│   │   ├── pre-applypatch
-│   │   ├── pre-auto-gc
-│   │   ├── pre-commit
-│   │   ├── pre-merge-commit
-│   │   ├── pre-push
-│   │   ├── pre-rebase
-│   │   └── prepare-commit-msg
 │   ├── pre-commit
 │   └── pre-push
 ├── assets
@@ -199,6 +181,7 @@ OmegaBot is online
 │   └── omegabot.png
 ├── data
 │   ├── faqs.json
+│   ├── fun-usage.json
 │   ├── github-assignees.json
 │   ├── guild-config.json
 │   ├── last-seen.json
@@ -231,6 +214,9 @@ OmegaBot is online
 │   │   │   │   ├── coinflip.ts
 │   │   │   │   ├── dadjoke.ts
 │   │   │   │   ├── dice.ts
+│   │   │   │   ├── java.ts
+│   │   │   │   ├── leaderboard.ts
+│   │   │   │   ├── poll.ts
 │   │   │   │   └── weather.ts
 │   │   │   └── fun.ts
 │   │   ├── general
@@ -273,6 +259,9 @@ OmegaBot is online
 │   │   │   ├── store.test.ts
 │   │   │   ├── store.ts
 │   │   │   └── types.ts
+│   │   ├── fun
+│   │   │   ├── funUsageStore.ts
+│   │   │   └── pollStore.ts
 │   │   ├── github
 │   │   │   ├── githubApi.ts
 │   │   │   ├── githubClient.ts
@@ -320,7 +309,6 @@ OmegaBot is online
 ├── package.json
 ├── README.md
 ├── tsconfig.json
-└── vitest.config.ts
 
 ```
 
