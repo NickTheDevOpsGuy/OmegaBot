@@ -20,10 +20,13 @@ function rollDie(sides: number): number {
 }
 
 function formatOneRoll(sides: number, roll: number): string {
-  if (sides === 6) {
+  // If the rolled value is between 1–6, show emoji + number
+  if (roll >= 1 && roll <= 6) {
     const face = D6_FACES[roll - 1] ?? "🎲";
     return `${face} (${roll})`;
   }
+
+  // Otherwise just show the number
   return `${roll}`;
 }
 
@@ -76,7 +79,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
     const display = rolls.map((r) => formatOneRoll(sides, r)).join(", ");
 
     const lines: string[] = [];
-    lines.push(`You rolled: ${display}`);
+    lines.push(`You rolled (d${sides}): ${display}`);
 
     if (count > 1) {
       lines.push(`Total: ${total}`);
