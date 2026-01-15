@@ -1,62 +1,203 @@
 // src/commands/fun/subcommands/poll.ts
 
-import type { ChatInputCommandInteraction, Message } from "discord.js";
+import {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  EmbedBuilder,
+  type ButtonInteraction,
+  type ChatInputCommandInteraction,
+} from "discord.js";
+import { logger } from "../../../utils/logger.js";
+import { createPoll, recordVote, type StoredPoll } from "../../../services/fun/pollStore.js";
 
-const REACTIONS: string[] = ["1️⃣", "2️⃣", "3️⃣", "4️⃣"];
-
-type PollArgs = {
-  question: string;
-  options: string[];
+type PollOption = {
+  label: string;
+  index: number;
 };
 
-function buildPollText(args: PollArgs): string {
-  const { question, options } = args;
+function buildPollEmbed(poll: StoredPoll): EmbedBuilder {
+  const totalVotes = poll.counts.reduce((acc: number, n: number) => acc + n, 0);
 
-  const lines: string[] = [];
-  lines.push(`📊 **${question}**`);
-  lines.push("");
+  const lines = poll.options.map((opt: string, idx: number) => {
+    const n = poll.counts[idx] ?? 0;
+    return `• **${opt}**: ${n}`;
+  });
 
-  for (let i = 0; i < options.length; i += 1) {
-    const emoji = REACTIONS[i] ?? "•";
-    lines.push(`${emoji} ${options[i]}`);
+  return new EmbedBuilder()
+    .setTitle("📊 Fun Poll")
+    .setDescription(
+      [
+        `**${poll.question}**`,
+        "",
+        ...lines,
+        "",
+        `Total votes: **${totalVotes}**`,
+      ].join("\n"),
+    )
+    .setFooter({ text: `Poll ID: ${poll.messageId}` });
+}
+
+function buildPollButtons(poll: StoredPoll, opts?: { disabled?: boolean }): ActionRowBuilder<ButtonBuilder>[] {
+  const disabled = opts?.disabled ?? false;
+
+  // Discord max 5 buttons per row. We have 2–4 options: one row is fine.
+  const row = new ActionRowBuilder<ButtonBuilder>();
+
+  for (let i = 0; i < poll.options.length; i += 1) {
+    const label = poll.options[i] ?? `Option ${i + 1}`;
+
+    row.addComponents(
+      new ButtonBuilder()
+        .setCustomId(`funpoll:${poll.messageId}:${i}`)
+        .setLabel(label.length > 80 ? `${label.slice(0, 77)}...` : label)
+        .setStyle(ButtonStyle.Secondary)
+        .setDisabled(disabled),
+    );
   }
 
-  lines.push("");
-  lines.push("_React below to vote._");
+  return [row];
+}
 
-  return lines.join("\n");
+function parseOptions(interaction: ChatInputCommandInteraction): PollOption[] {
+  const o1 = interaction.options.getString("option1", true).trim();
+  const o2 = interaction.options.getString("option2", true).trim();
+  const o3 = interaction.options.getString("option3")?.trim() ?? "";
+  const o4 = interaction.options.getString("option4")?.trim() ?? "";
+
+  const raw = [o1, o2, o3, o4].filter((s: string) => s.length > 0);
+
+  // Deduplicate exact duplicates (case-insensitive) to avoid confusion
+  const seen = new Set<string>();
+  const unique: string[] = [];
+  for (const s of raw) {
+    const key = s.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push(s);
+  }
+
+  // Enforce 2–4 options (after dedupe)
+  if (unique.length < 2) throw new Error("Poll must have at least 2 unique options.");
+  if (unique.length > 4) throw new Error("Poll can have at most 4 options.");
+
+  return unique.map((label: string, index: number) => ({ label, index }));
 }
 
 export async function run(interaction: ChatInputCommandInteraction): Promise<void> {
   const question = interaction.options.getString("question", true).trim();
 
-  // options are option1..option4
-  const opt1 = interaction.options.getString("option1", true).trim();
-  const opt2 = interaction.options.getString("option2", true).trim();
-  const opt3 = interaction.options.getString("option3")?.trim() ?? "";
-  const opt4 = interaction.options.getString("option4")?.trim() ?? "";
-
-  const options = [opt1, opt2, opt3, opt4].filter((s: string) => s.length > 0);
-
-  if (options.length < 2 || options.length > 4) {
-    await interaction.editReply("Poll requires 2–4 options.");
+  let opts: PollOption[];
+  try {
+    opts = parseOptions(interaction);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Invalid poll options.";
+    await interaction.editReply(msg);
     return;
   }
 
-  await interaction.editReply(buildPollText({ question, options }));
+  // Create a placeholder message first so we can use messageId as pollId.
+  const placeholder = new EmbedBuilder().setTitle("📊 Fun Poll").setDescription("Creating poll…");
+  await interaction.editReply({ embeds: [placeholder] });
 
-  // Add reactions to the sent message
-  const reply = (await interaction.fetchReply()) as Message;
+  const sent = await interaction.fetchReply();
+  const messageId = sent.id;
 
-  for (let i = 0; i < options.length; i += 1) {
-    const emoji = REACTIONS[i];
-    if (!emoji) continue;
+  const poll = await createPoll({
+    messageId,
+    channelId: sent.channelId,
+    guildId: sent.guildId ?? null,
+    creatorUserId: interaction.user.id,
+    question,
+    options: opts.map((o: PollOption) => o.label),
+  });
 
+  let latestPoll: StoredPoll = poll;
+
+  await interaction.editReply({
+    embeds: [buildPollEmbed(latestPoll)],
+    components: buildPollButtons(latestPoll),
+  });
+
+  // Collector is in-memory: if the bot restarts, existing polls won’t accept votes anymore.
+  const collector = sent.createMessageComponentCollector({
+    time: 1000 * 60 * 60 * 24, // 24h
+  });
+
+  collector.on("collect", async (btn: ButtonInteraction) => {
     try {
-      await reply.react(emoji);
-    } catch {
-      // If bot can't add reactions, don't fail the command.
-      // The poll message is still usable.
+      if (!btn.customId.startsWith("funpoll:")) return;
+
+      const parts = btn.customId.split(":");
+      // funpoll:<messageId>:<idx>
+      const pollId = parts[1] ?? "";
+      const idxStr = parts[2] ?? "";
+      const optionIndex = Number(idxStr);
+
+      if (pollId !== messageId) return;
+
+      if (
+        !Number.isFinite(optionIndex) ||
+        optionIndex < 0 ||
+        optionIndex >= latestPoll.options.length
+      ) {
+        await btn.reply({ content: "Invalid poll option.", ephemeral: true });
+        return;
+      }
+
+      const result = await recordVote({
+        messageId: pollId,
+        userId: btn.user.id,
+        optionIndex,
+      });
+
+      if (result.kind === "alreadyVoted") {
+        await btn.reply({
+          content: `You already voted: **${
+            latestPoll.options[result.previousOptionIndex] ?? "Unknown"
+          }**`,
+          ephemeral: true,
+        });
+        return;
+      }
+
+      if (result.kind === "notFound") {
+        await btn.reply({ content: "Poll not found (maybe it expired).", ephemeral: true });
+        return;
+      }
+
+      // Updated poll snapshot
+      latestPoll = result.poll;
+
+      await btn.deferUpdate(); // avoid “interaction failed” and extra message spam
+      await interaction.editReply({
+        embeds: [buildPollEmbed(latestPoll)],
+        components: buildPollButtons(latestPoll),
+      });
+    } catch (err) {
+      logger.warn({ err }, "[fun/poll] vote handling failed");
+      try {
+        if (!btn.replied && !btn.deferred) {
+          await btn.reply({
+            content: "Something went wrong recording that vote.",
+            ephemeral: true,
+          });
+        }
+      } catch {
+        // ignore
+      }
     }
-  }
+  });
+
+  collector.on("end", async () => {
+    // Disable buttons when done
+    try {
+      await interaction.editReply({
+        embeds: [buildPollEmbed(latestPoll)],
+        components: buildPollButtons(latestPoll, { disabled: true }),
+      });
+    } catch (err) {
+      logger.debug({ err }, "[fun/poll] failed to disable buttons on end");
+    }
+  });
 }
