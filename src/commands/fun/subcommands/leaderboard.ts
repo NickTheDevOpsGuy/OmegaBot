@@ -96,24 +96,32 @@ export async function run(
   const snapshot = await getFunUsageSnapshot();
 
   // Defensive casts (JSON file can drift)
-  const totalsByUserRaw = (snapshot as unknown as { totalsByUser?: unknown }).totalsByUser;
-  const totalsByCommandRaw = (snapshot as unknown as { totalsByCommand?: unknown }).totalsByCommand;
-  const byUserByCommandRaw = (snapshot as unknown as { byUserByCommand?: unknown }).byUserByCommand;
+  const totalsByUserRaw = (snapshot as unknown as { totalsByUser?: unknown })
+    .totalsByUser;
+  const totalsByCommandRaw = (snapshot as unknown as { totalsByCommand?: unknown })
+    .totalsByCommand;
+  const byUserByCommandRaw = (snapshot as unknown as { byUserByCommand?: unknown })
+    .byUserByCommand;
 
   const totalsByUser = (totalsByUserRaw ?? {}) as Record<string, unknown>;
   const totalsByCommand = (totalsByCommandRaw ?? {}) as Record<string, unknown>;
   const byUserByCommand = (byUserByCommandRaw ?? {}) as ByUserByCommand;
 
   const anyUserUsage = Object.keys(totalsByUser).length > 0;
-  const anyCommandUsage = (Object.values(totalsByCommand) as unknown[]).some((n) => toCount(n) > 0);
+  const anyCommandUsage = (Object.values(totalsByCommand) as unknown[]).some(
+    (n) => toCount(n) > 0,
+  );
 
-  const updatedAt = (snapshot as unknown as { updatedAt?: string }).updatedAt ?? "unknown";
+  const updatedAt =
+    (snapshot as unknown as { updatedAt?: string }).updatedAt ?? "unknown";
 
   const embed = new EmbedBuilder().setFooter({ text: `Updated: ${updatedAt}` });
 
   if (!anyUserUsage && !anyCommandUsage) {
     embed.setTitle("Fun Leaderboard");
-    embed.setDescription("No fun command usage recorded yet. Try `/fun dadjoke` to get started.");
+    embed.setDescription(
+      "No fun command usage recorded yet. Try `/fun dadjoke` to get started.",
+    );
     await interaction.editReply({ embeds: [embed] });
     return;
   }
