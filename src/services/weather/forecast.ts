@@ -50,6 +50,11 @@ type WeatherApiResponse = {
   };
 };
 
+// Safe item type (because forecast + forecastday are optional)
+type ForecastDay = NonNullable<
+  NonNullable<WeatherApiResponse["forecast"]>["forecastday"]
+>[number];
+
 export type WeatherNow = {
   temp: string;
   feelsLike?: string;
@@ -69,7 +74,7 @@ export type WeatherDay = {
 };
 
 export type WeatherBundle = {
-  placeLabel: string; // "Sharon, MA 02067"
+  placeLabel: string;
   tzId?: string;
   localTime?: string;
   now?: WeatherNow;
@@ -79,9 +84,7 @@ export type WeatherBundle = {
 function requireWeatherApiKey(): string {
   const key = process.env.WEATHERAPI_KEY?.trim();
   if (!key) {
-    throw new Error(
-      "Missing WEATHERAPI_KEY. Set it in .env (WEATHERAPI_KEY=...).",
-    );
+    throw new Error("Missing WEATHERAPI_KEY. Set it in .env (WEATHERAPI_KEY=...).");
   }
   return key;
 }
@@ -104,12 +107,14 @@ function pickTemp(unit: TempUnit, f?: number, c?: number): string | null {
   return typeof f === "number" && Number.isFinite(f) ? `${Math.round(f)}°F` : null;
 }
 
-function popFromDay(d: WeatherApiResponse["forecast"] extends infer F ? F : never, idx: number): string | null {
-  return null;
-}
-
-function formatWind(unit: TempUnit, dir?: string, mph?: number, kph?: number): string | null {
+function formatWind(
+  unit: TempUnit,
+  dir?: string,
+  mph?: number,
+  kph?: number,
+): string | null {
   const d = dir?.trim();
+
   if (unit === "c") {
     if (typeof kph === "number" && Number.isFinite(kph)) {
       return d ? `${d} ${Math.round(kph)} kph` : `${Math.round(kph)} kph`;
@@ -120,6 +125,7 @@ function formatWind(unit: TempUnit, dir?: string, mph?: number, kph?: number): s
   if (typeof mph === "number" && Number.isFinite(mph)) {
     return d ? `${d} ${Math.round(mph)} mph` : `${Math.round(mph)} mph`;
   }
+
   return null;
 }
 
@@ -134,11 +140,7 @@ function buildPlaceLabel(loc: WeatherApiResponse["location"] | undefined): strin
   return country ? country : "Unknown location";
 }
 
-function estimatePop(day: WeatherApiResponse["forecast"] extends infer F ? F : never): string | null {
-  return null;
-}
-
-function dailyPopString(day: WeatherApiResponse["forecast"] extends infer F ? F : never, item: WeatherApiResponse["forecast"]["forecastday"][number] | undefined): string | null {
+function dailyPopString(item: ForecastDay | undefined): string | null {
   if (!item?.day) return null;
 
   const rain = item.day.daily_chance_of_rain;
@@ -147,10 +149,11 @@ function dailyPopString(day: WeatherApiResponse["forecast"] extends infer F ? F 
   const r = typeof rain === "number" && Number.isFinite(rain) ? rain : null;
   const s = typeof snow === "number" && Number.isFinite(snow) ? snow : null;
 
-  const best = [r, s].filter((x) => x !== null).sort((a, b) => (b as number) - (a as number))[0] as number | undefined;
-  if (typeof best === "number") return `${Math.round(best)}%`;
+  const best = [r, s]
+    .filter((x) => x !== null)
+    .sort((a, b) => (b as number) - (a as number))[0] as number | undefined;
 
-  return null;
+  return typeof best === "number" ? `${Math.round(best)}%` : null;
 }
 
 /**
@@ -187,10 +190,11 @@ export async function fetchWeatherBundle(args: {
 
   const text = await res.text();
   let data: unknown = null;
+
   try {
     data = JSON.parse(text) as unknown;
   } catch {
-    // leave as null
+    // If JSON parse fails, data stays null.
   }
 
   if (!res.ok) {
@@ -203,7 +207,7 @@ export async function fetchWeatherBundle(args: {
       throw new Error(`WeatherAPI rejected the location. ${msg}`);
     }
     if (res.status === 429) {
-      throw new Error(`WeatherAPI rate limit hit. Try again in a bit.`);
+      throw new Error("WeatherAPI rate limit hit. Try again in a bit.");
     }
 
     throw new Error(`WeatherAPI error (${res.status}): ${msg}`);
@@ -219,49 +223,48 @@ export async function fetchWeatherBundle(args: {
   const feels = pickTemp(args.unit, parsed.current?.feelslike_f, parsed.current?.feelslike_c);
   const cond = parsed.current?.condition?.text?.trim() ?? "Unknown";
 
-  const now: WeatherNow | undefined =
-    nowTemp
-      ? {
-          temp: nowTemp,
-          feelsLike: feels ? `${feels}` : undefined,
-          condition: cond,
-          asOf: parsed.current?.last_updated,
-          humidity:
-            typeof parsed.current?.humidity === "number"
-              ? `${parsed.current.humidity}%`
-              : undefined,
-          wind: formatWind(
+  const now: WeatherNow | undefined = nowTemp
+    ? {
+        temp: nowTemp,
+        feelsLike: feels ?? undefined,
+        condition: cond,
+        asOf: parsed.current?.last_updated,
+        humidity:
+          typeof parsed.current?.humidity === "number"
+            ? `${parsed.current.humidity}%`
+            : undefined,
+        wind:
+          formatWind(
             args.unit,
             parsed.current?.wind_dir,
             parsed.current?.wind_mph,
             parsed.current?.wind_kph,
           ) ?? undefined,
-        }
-      : undefined;
+      }
+    : undefined;
 
   const fd = parsed.forecast?.forecastday ?? [];
   const days: WeatherDay[] = [];
 
   for (let i = 0; i < fd.length; i += 1) {
     const item = fd[i];
-    const label = i === 0 ? "Today" : (item.date ?? `Day ${i + 1}`);
+    const label = i === 0 ? "Today" : (item?.date ?? `Day ${i + 1}`);
 
-    const max = pickTemp(args.unit, item.day?.maxtemp_f, item.day?.maxtemp_c);
-    const min = pickTemp(args.unit, item.day?.mintemp_f, item.day?.mintemp_c);
+    const max = pickTemp(args.unit, item?.day?.maxtemp_f, item?.day?.maxtemp_c);
+    const min = pickTemp(args.unit, item?.day?.mintemp_f, item?.day?.mintemp_c);
 
-    const temp =
-      max && min ? `${min} to ${max}` : max ?? min ?? "N/A";
+    const temp = max && min ? `${min} to ${max}` : (max ?? min ?? "N/A");
 
-    const condition = item.day?.condition?.text?.trim() ?? "Forecast unavailable";
-    const pop = dailyPopString(parsed.forecast as any, item) ?? undefined;
+    const condition = item?.day?.condition?.text?.trim() ?? "Forecast unavailable";
+    const pop = dailyPopString(item) ?? undefined;
 
     days.push({
       label,
       temp,
       pop,
       condition,
-      sunrise: item.astro?.sunrise,
-      sunset: item.astro?.sunset,
+      sunrise: item?.astro?.sunrise,
+      sunset: item?.astro?.sunset,
     });
   }
 

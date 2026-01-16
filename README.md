@@ -235,8 +235,10 @@ OmegaBot is online
 │   │   │   └── pagination.ts
 │   │   ├── playback
 │   │   │   └── playback.ts
-│   │   └── summary
-│   │       └── summary.ts
+│   │   ├── summary
+│   │   │   └── summary.ts
+│   │   └── timezone
+│   │       └── timezone.ts
 │   ├── config
 │   │   └── env.ts
 │   ├── services
@@ -261,6 +263,7 @@ OmegaBot is online
 │   │   │   ├── store.ts
 │   │   │   └── types.ts
 │   │   ├── fun
+│   │   │   ├── coinStore.ts
 │   │   │   ├── funUsageStore.ts
 │   │   │   └── pollStore.ts
 │   │   ├── github
@@ -282,14 +285,12 @@ OmegaBot is online
 │   │   │   ├── formatTimestamp.ts
 │   │   │   └── validateTimezone.ts
 │   │   ├── timezone
-│   │   │   ├── timezone.ts
 │   │   │   └── timezoneStore.ts
 │   │   ├── transcript
 │   │   │   ├── buildTranscript.ts
 │   │   │   └── defaults.ts
 │   │   ├── weather
 │   │   │   ├── forecast.ts
-│   │   │   ├── geocode.ts
 │   │   │   └── types.ts
 │   │   └── welcome
 │   │       ├── welcomeHandler.ts
