@@ -79,10 +79,16 @@ export const data = new SlashCommandBuilder()
       .setName("convert")
       .setDescription("Convert a time from your timezone to another zone")
       .addStringOption((o) =>
-        o.setName("time").setDescription('Time like "7:30pm" or "19:30"').setRequired(true),
+        o
+          .setName("time")
+          .setDescription('Time like "7:30pm" or "19:30"')
+          .setRequired(true),
       )
       .addStringOption((o) =>
-        o.setName("to").setDescription("Target zone (IANA or alias like PST)").setRequired(true),
+        o
+          .setName("to")
+          .setDescription("Target zone (IANA or alias like PST)")
+          .setRequired(true),
       )
       .addStringOption((o) =>
         o
@@ -290,7 +296,9 @@ async function handleClear(interaction: ChatInputCommandInteraction): Promise<vo
   const guildId = interaction.inGuild() ? interaction.guildId : null;
 
   const ok = await clearUserTimezone({ userId: interaction.user.id, guildId, scope });
-  await interaction.editReply(ok ? "Cleared your saved timezone." : "No saved timezone to clear.");
+  await interaction.editReply(
+    ok ? "Cleared your saved timezone." : "No saved timezone to clear.",
+  );
 }
 
 async function handleCompare(interaction: ChatInputCommandInteraction): Promise<void> {
