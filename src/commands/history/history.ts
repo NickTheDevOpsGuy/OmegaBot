@@ -95,7 +95,8 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 
 function readApiErrorMessage(data: unknown): string | null {
   const root = isRecord(data) ? data : null;
-  const err = root && isRecord(root.error) ? (root.error as WeatherApiError["error"]) : null;
+  const err =
+    root && isRecord(root.error) ? (root.error as WeatherApiError["error"]) : null;
   const msg = err && typeof err.message === "string" ? err.message : null;
   return msg ?? null;
 }
@@ -199,7 +200,9 @@ export async function fetchWeatherBundle(args: {
     const msg = readApiErrorMessage(data) ?? res.statusText ?? "Unknown error";
 
     if (res.status === 401 || res.status === 403) {
-      throw new Error(`WeatherAPI auth error (${res.status}). Check WEATHERAPI_KEY. ${msg}`);
+      throw new Error(
+        `WeatherAPI auth error (${res.status}). Check WEATHERAPI_KEY. ${msg}`,
+      );
     }
     if (res.status === 400) {
       throw new Error(`WeatherAPI rejected the location. ${msg}`);
@@ -218,7 +221,11 @@ export async function fetchWeatherBundle(args: {
   const localTime = parsed.location?.localtime;
 
   const nowTemp = pickTemp(args.unit, parsed.current?.temp_f, parsed.current?.temp_c);
-  const feels = pickTemp(args.unit, parsed.current?.feelslike_f, parsed.current?.feelslike_c);
+  const feels = pickTemp(
+    args.unit,
+    parsed.current?.feelslike_f,
+    parsed.current?.feelslike_c,
+  );
   const cond = parsed.current?.condition?.text?.trim() ?? "Unknown";
 
   const now: WeatherNow | undefined = nowTemp
@@ -228,7 +235,9 @@ export async function fetchWeatherBundle(args: {
         condition: cond,
         asOf: parsed.current?.last_updated,
         humidity:
-          typeof parsed.current?.humidity === "number" ? `${parsed.current.humidity}%` : undefined,
+          typeof parsed.current?.humidity === "number"
+            ? `${parsed.current.humidity}%`
+            : undefined,
         wind:
           formatWind(
             args.unit,
