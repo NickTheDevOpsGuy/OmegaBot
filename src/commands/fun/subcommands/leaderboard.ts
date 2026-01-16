@@ -43,9 +43,38 @@ function formatPerCmdInline(perCmd: PerCommandCounts | undefined, limit: number)
 
 function formatPerCmdLines(perCmd: PerCommandCounts | undefined): string[] {
   const top = topFromPerCmd(perCmd, 50);
-  if (!top.length) return ["• No per-command data yet."];
+  if (!top.length) return ["No per-command data yet."];
 
-  return top.map((x) => `• \`/fun ${x.command}\` ${x.count}x`);
+  // Keep per-command breakdown easy to scan
+  return top.map((x) => `/fun ${x.command} ${x.count}x`);
+}
+
+function rankLabel(idx: number): string {
+  // 0-based idx
+  const medals = ["🥇", "🥈", "🥉"];
+  if (idx < medals.length) return medals[idx];
+
+  // 4th+ as emoji digits when possible; fallback to plain number.
+  const n = idx + 1;
+  const digitEmoji: Record<string, string> = {
+    "0": "0️⃣",
+    "1": "1️⃣",
+    "2": "2️⃣",
+    "3": "3️⃣",
+    "4": "4️⃣",
+    "5": "5️⃣",
+    "6": "6️⃣",
+    "7": "7️⃣",
+    "8": "8️⃣",
+    "9": "9️⃣",
+  };
+
+  const s = String(n);
+  const allDigits = [...s].every((c) => c >= "0" && c <= "9");
+  if (!allDigits) return `${n}.`;
+
+  // Works great up through 9. For 10+ it becomes "1️⃣0️⃣" which is still readable.
+  return [...s].map((c) => digitEmoji[c] ?? c).join("");
 }
 
 async function safeFetchUser(
@@ -67,32 +96,24 @@ export async function run(
   const snapshot = await getFunUsageSnapshot();
 
   // Defensive casts (JSON file can drift)
-  const totalsByUserRaw = (snapshot as unknown as { totalsByUser?: unknown })
-    .totalsByUser;
-  const totalsByCommandRaw = (snapshot as unknown as { totalsByCommand?: unknown })
-    .totalsByCommand;
-  const byUserByCommandRaw = (snapshot as unknown as { byUserByCommand?: unknown })
-    .byUserByCommand;
+  const totalsByUserRaw = (snapshot as unknown as { totalsByUser?: unknown }).totalsByUser;
+  const totalsByCommandRaw = (snapshot as unknown as { totalsByCommand?: unknown }).totalsByCommand;
+  const byUserByCommandRaw = (snapshot as unknown as { byUserByCommand?: unknown }).byUserByCommand;
 
   const totalsByUser = (totalsByUserRaw ?? {}) as Record<string, unknown>;
   const totalsByCommand = (totalsByCommandRaw ?? {}) as Record<string, unknown>;
   const byUserByCommand = (byUserByCommandRaw ?? {}) as ByUserByCommand;
 
   const anyUserUsage = Object.keys(totalsByUser).length > 0;
-  const anyCommandUsage = (Object.values(totalsByCommand) as unknown[]).some(
-    (n) => toCount(n) > 0,
-  );
+  const anyCommandUsage = (Object.values(totalsByCommand) as unknown[]).some((n) => toCount(n) > 0);
 
-  const updatedAt =
-    (snapshot as unknown as { updatedAt?: string }).updatedAt ?? "unknown";
+  const updatedAt = (snapshot as unknown as { updatedAt?: string }).updatedAt ?? "unknown";
 
   const embed = new EmbedBuilder().setFooter({ text: `Updated: ${updatedAt}` });
 
   if (!anyUserUsage && !anyCommandUsage) {
     embed.setTitle("Fun Leaderboard");
-    embed.setDescription(
-      "No fun command usage recorded yet. Try `/fun dadjoke` to get started.",
-    );
+    embed.setDescription("No fun command usage recorded yet. Try `/fun dadjoke` to get started.");
     await interaction.editReply({ embeds: [embed] });
     return;
   }
@@ -115,8 +136,9 @@ export async function run(
       return;
     }
 
-    // No emojis, no numbering, no dash separators
-    embed.setDescription(items.map((x) => `• \`/fun ${x.cmd}\` ${x.count}x`).join("\n"));
+    // Emoji ranks, no bullets, no dashes
+    const lines = items.map((x, idx) => `${rankLabel(idx)} /fun ${x.cmd} ${x.count}x`);
+    embed.setDescription(lines.join("\n"));
     await interaction.editReply({ embeds: [embed] });
     return;
   }
@@ -140,11 +162,11 @@ export async function run(
     if (avatar) embed.setThumbnail(avatar);
 
     const top1 = topFromPerCmd(perCmd, 1)[0] ?? null;
-    const topLine = top1 ? `Top command: \`/fun ${top1.command}\` ${top1.count}x` : "";
+    const topLine = top1 ? `Top command: /fun ${top1.command} ${top1.count}x` : "";
 
     const lines = formatPerCmdLines(perCmd);
 
-    // No left emojis, no numbering, no dash separators
+    // Keep this clean, but still readable
     embed.setDescription(
       [
         `User: <@${userId}>`,
@@ -177,18 +199,20 @@ export async function run(
     return;
   }
 
-  // “user X ran command Y this many times”
-  // No emojis, no numbering, no dash separators
+  // Emoji ranks + “user X ran command Y this many times”
+  // No bullets, no dash separators
   const out: string[] = [];
 
-  for (const item of userItems) {
+  for (let idx = 0; idx < userItems.length; idx += 1) {
+    const item = userItems[idx]!;
     const perCmd = byUserByCommand[item.userId] ?? {};
     const breakdown = formatPerCmdInline(perCmd, 3);
 
+    const prefix = rankLabel(idx);
     if (breakdown) {
-      out.push(`• <@${item.userId}> ${item.total}x (${breakdown})`);
+      out.push(`${prefix} <@${item.userId}> ${item.total}x (${breakdown})`);
     } else {
-      out.push(`• <@${item.userId}> ${item.total}x`);
+      out.push(`${prefix} <@${item.userId}> ${item.total}x`);
     }
   }
 
