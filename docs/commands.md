@@ -57,10 +57,12 @@ Modes:
 Dad jokes.
 
 Options:
+
 - query (optional) — Search jokes by keyword
 - ephemeral (optional) — Show result only to you
 
 Modes:
+
 - Random joke
 - Search results
 
@@ -134,6 +136,7 @@ Options:
 Show a 7- day weather forecast.
 
 Options:
+
 - location — City, ZIP, or region
 - unit (optional) — Temperature unit (F or C)
 - ephemeral (optional) — Show result only to you
@@ -181,6 +184,7 @@ Commands for summarizing and reviewing recent messages.
 Timezone
 
 Commands for managing user timezones.
+
 - `/timezone set`
   - Save your IANA timezone (example: America/New_York)
 - `/timezone show`

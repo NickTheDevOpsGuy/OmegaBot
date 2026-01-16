@@ -40,7 +40,11 @@ function emptyStore(): TimezoneStoreFileV1 {
   };
 }
 
-function makeKey(args: { guildId: string | null; userId: string; scope: "guild" | "global" }): string {
+function makeKey(args: {
+  guildId: string | null;
+  userId: string;
+  scope: "guild" | "global";
+}): string {
   if (args.scope === "guild") {
     return `${args.guildId ?? "noguild"}:${args.userId}`;
   }

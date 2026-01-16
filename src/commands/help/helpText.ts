@@ -87,7 +87,9 @@ function buildFunHelp(): string {
   lines.push("**Help: Fun**");
   lines.push("");
   lines.push("All fun commands live under `/fun`.");
-  lines.push("Most fun commands support `ephemeral:true` to only show the result to you.");
+  lines.push(
+    "Most fun commands support `ephemeral:true` to only show the result to you.",
+  );
   lines.push("");
 
   lines.push("**Chuck Norris**");
@@ -196,8 +198,12 @@ function buildTimezoneHelp(): string {
 
   lines.push("**Help: Timezone**");
   lines.push("");
-  lines.push("Save your timezone once, then compare times with other users or locations.");
-  lines.push("We show both the IANA timezone and an offset like UTC-05:00 when possible.");
+  lines.push(
+    "Save your timezone once, then compare times with other users or locations.",
+  );
+  lines.push(
+    "We show both the IANA timezone and an offset like UTC-05:00 when possible.",
+  );
   lines.push("");
 
   lines.push("**Commands**");

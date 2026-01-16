@@ -1,17 +1,11 @@
 // src/commands/timezone/timezone.ts
 
-import {
-  SlashCommandBuilder,
-  PermissionFlagsBits,
-  type ChatInputCommandInteraction,
-  type User,
-} from "discord.js";
+import { SlashCommandBuilder, type ChatInputCommandInteraction } from "discord.js";
 import { logger } from "../../utils/logger.js";
 import {
   clearUserTimezone,
   getUserTimezone,
   setUserTimezone,
-  type StoredTimezone,
 } from "../../services/timezone/timezoneStore.js";
 
 export const data = new SlashCommandBuilder()
@@ -69,10 +63,7 @@ export const data = new SlashCommandBuilder()
       .setName("compare")
       .setDescription("Compare your time with another user")
       .addUserOption((o) =>
-        o
-          .setName("user")
-          .setDescription("User to compare with")
-          .setRequired(true),
+        o.setName("user").setDescription("User to compare with").setRequired(true),
       )
       .addBooleanOption((o) =>
         o
@@ -88,16 +79,10 @@ export const data = new SlashCommandBuilder()
       .setName("convert")
       .setDescription("Convert a time from your timezone to another zone")
       .addStringOption((o) =>
-        o
-          .setName("time")
-          .setDescription('Time like "7:30pm" or "19:30"')
-          .setRequired(true),
+        o.setName("time").setDescription('Time like "7:30pm" or "19:30"').setRequired(true),
       )
       .addStringOption((o) =>
-        o
-          .setName("to")
-          .setDescription("Target zone (IANA or alias like PST)")
-          .setRequired(true),
+        o.setName("to").setDescription("Target zone (IANA or alias like PST)").setRequired(true),
       )
       .addStringOption((o) =>
         o
@@ -112,8 +97,6 @@ export const data = new SlashCommandBuilder()
           .setRequired(false),
       ),
   )
-
-  // Optional: lock down admin-only diagnostics later if you want.
   .setDMPermission(true);
 
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -155,7 +138,6 @@ const ALIAS_TO_IANA: Record<string, { tz: string; label: string }> = {
 
 function isValidIanaZone(tz: string): boolean {
   try {
-    // Throws RangeError on invalid tz
     new Intl.DateTimeFormat("en-US", { timeZone: tz }).format(new Date());
     return true;
   } catch {
@@ -168,9 +150,9 @@ function normalizeZoneInput(raw: string): { tz: string; label?: string } | null 
   if (!v) return null;
 
   const key = v.toLowerCase();
-  if (ALIAS_TO_IANA[key]) return { tz: ALIAS_TO_IANA[key].tz, label: ALIAS_TO_IANA[key].label };
+  const hit = ALIAS_TO_IANA[key];
+  if (hit) return { tz: hit.tz, label: hit.label };
 
-  // Accept IANA zones directly
   if (isValidIanaZone(v)) return { tz: v };
 
   return null;
@@ -185,26 +167,13 @@ function formatLocalTime(date: Date, tz: string): string {
   }).format(date);
 }
 
-function formatShortDateTime(date: Date, tz: string): string {
-  return new Intl.DateTimeFormat("en-US", {
-    timeZone: tz,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
-}
-
 function utcOffsetMinutes(date: Date, tz: string): number {
-  // Prefer shortOffset (Node 18+ usually supports this)
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: tz,
     timeZoneName: "shortOffset" as unknown as "short",
   }).formatToParts(date);
 
   const name = parts.find((p) => p.type === "timeZoneName")?.value ?? "UTC+0";
-  // Examples: "UTC-05:00" or "GMT-5"
   const m = name.match(/([+-])\s*(\d{1,2})(?::(\d{2}))?$/);
   if (!m) return 0;
 
@@ -243,7 +212,11 @@ function scopeFromBool(guildFlag: boolean | null | undefined): "guild" | "global
   return guildFlag ? "guild" : "global";
 }
 
-async function getTzOrNull(interaction: ChatInputCommandInteraction, userId: string, scope: "guild" | "global") {
+async function getTzOrNull(
+  interaction: ChatInputCommandInteraction,
+  userId: string,
+  scope: "guild" | "global",
+) {
   const guildId = interaction.inGuild() ? interaction.guildId : null;
   return getUserTimezone({ userId, guildId, scope });
 }
@@ -278,9 +251,9 @@ async function handleSet(interaction: ChatInputCommandInteraction): Promise<void
     [
       "Saved your timezone.",
       "",
-      `Zone: ${saved.timezone}${saved.label ? ` (${saved.label})` : ""}",
-      `Now: ${local} • ${offset}",
-      `Scope: ${scope === "guild" ? "this server" : "global"}",
+      `Zone: ${saved.timezone}${saved.label ? ` (${saved.label})` : ""}`,
+      `Now: ${local} • ${offset}`,
+      `Scope: ${scope === "guild" ? "this server" : "global"}`,
     ].join("\n"),
   );
 }
@@ -304,9 +277,9 @@ async function handleShow(interaction: ChatInputCommandInteraction): Promise<voi
   await interaction.editReply(
     [
       "Your timezone:",
-      `Zone: ${tz.timezone}${tz.label ? ` (${tz.label})` : ""}",
-      `Now: ${local} • ${offset}",
-      `Scope: ${scope === "guild" ? "this server" : "global"}",
+      `Zone: ${tz.timezone}${tz.label ? ` (${tz.label})` : ""}`,
+      `Now: ${local} • ${offset}`,
+      `Scope: ${scope === "guild" ? "this server" : "global"}`,
     ].join("\n"),
   );
 }
@@ -339,7 +312,7 @@ async function handleCompare(interaction: ChatInputCommandInteraction): Promise<
 
   if (!b) {
     await interaction.editReply(
-      `That user has no timezone saved. Ask them to run \`/timezone set\` first.`,
+      "That user has no timezone saved. Ask them to run `/timezone set` first.",
     );
     return;
   }
@@ -357,10 +330,10 @@ async function handleCompare(interaction: ChatInputCommandInteraction): Promise<
     [
       "Timezone compare:",
       "",
-      `${interaction.user.username}: ${aNow} (${a.timezone}) • ${aOff}",
-      `${target.username}: ${bNow} (${b.timezone}) • ${bOff}",
+      `${interaction.user.username}: ${aNow} (${a.timezone}) • ${aOff}`,
+      `${target.username}: ${bNow} (${b.timezone}) • ${bOff}`,
       "",
-      `${target.username} is ${rel}.",
+      `${target.username} is ${rel}.`,
     ].join("\n"),
   );
 }
@@ -369,7 +342,6 @@ function parseTimeString(raw: string): { hours: number; minutes: number } | null
   const s = raw.trim().toLowerCase();
   if (!s) return null;
 
-  // Match "19:30" or "7:30pm" or "7pm"
   const m = s.match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/i);
   if (!m) return null;
 
@@ -400,12 +372,6 @@ function formatTimeForZone(date: Date, tz: string): string {
 }
 
 function guessDateInZone(now: Date, tz: string, h: number, m: number): Date {
-  // Build a Date that *represents* the intended wall clock time in tz.
-  // We do this by:
-  // 1) Getting today's Y-M-D in that timezone
-  // 2) Constructing an ISO-like string in that tz
-  // 3) Converting to an approximate UTC date by shifting with tz offset
-
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: tz,
     year: "numeric",
@@ -417,10 +383,10 @@ function guessDateInZone(now: Date, tz: string, h: number, m: number): Date {
   const mo = parts.find((p) => p.type === "month")?.value ?? "01";
   const d = parts.find((p) => p.type === "day")?.value ?? "01";
 
-  // Start as if it's UTC
-  const assumedUtc = new Date(`${y}-${mo}-${d}T${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00.000Z`);
+  const assumedUtc = new Date(
+    `${y}-${mo}-${d}T${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00.000Z`,
+  );
 
-  // Convert that "wall" time to a real UTC instant by subtracting the zone offset.
   const offMin = utcOffsetMinutes(assumedUtc, tz);
   return new Date(assumedUtc.getTime() - offMin * 60_000);
 }
@@ -487,10 +453,10 @@ async function handleConvert(interaction: ChatInputCommandInteraction): Promise<
     [
       "Time conversion:",
       "",
-      `From: ${fromTime} (${fromTz}${fromLabel ? `, ${fromLabel}` : ""}) • ${fromOff}",
-      `To:   ${toTime} (${toNorm.tz}${toNorm.label ? `, ${toNorm.label}` : ""}) • ${toOff}",
+      `From: ${fromTime} (${fromTz}${fromLabel ? `, ${fromLabel}` : ""}) • ${fromOff}`,
+      `To:   ${toTime} (${toNorm.tz}${toNorm.label ? `, ${toNorm.label}` : ""}) • ${toOff}`,
       "",
-      `That is ${rel}.",
+      `That is ${rel}.`,
     ].join("\n"),
   );
 }

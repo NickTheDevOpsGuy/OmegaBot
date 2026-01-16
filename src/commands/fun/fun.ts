@@ -25,10 +25,7 @@ import { run as runJava } from "./subcommands/java.js";
 import { run as runLeaderboard } from "./subcommands/leaderboard.js";
 import type { LeaderboardMode } from "./subcommands/leaderboard.js";
 
-import {
-  recordFunUsage,
-  type FunCommandKey,
-} from "../../services/fun/funUsageStore.js";
+import { recordFunUsage, type FunCommandKey } from "../../services/fun/funUsageStore.js";
 
 function parseTempUnit(raw: string | null): TempUnit {
   return raw?.toLowerCase() === "c" ? "c" : "f";
@@ -264,9 +261,7 @@ async function maybeRecordUsage(
   }
 }
 
-export async function execute(
-  interaction: ChatInputCommandInteraction,
-): Promise<void> {
+export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const sub = interaction.options.getSubcommand(true);
 
   // Only some subcommands have the "ephemeral" option (poll does not).
@@ -275,9 +270,7 @@ export async function execute(
     ? (interaction.options.getBoolean("ephemeral") ?? false)
     : false;
 
-  await interaction.deferReply(
-    ephemeral ? { flags: MessageFlags.Ephemeral } : undefined,
-  );
+  await interaction.deferReply(ephemeral ? { flags: MessageFlags.Ephemeral } : undefined);
 
   try {
     if (sub === "chucknorris") {

@@ -60,9 +60,13 @@ export async function run(
       const hum = bundle.now.humidity ? ` • Humidity: ${bundle.now.humidity}` : "";
       const feels = bundle.now.feelsLike ? ` • Feels like: ${bundle.now.feelsLike}` : "";
 
-      nowBlock.push(`${nowEmoji} Now: **${bundle.now.temp}** • ${bundle.now.condition}${feels}${wind}${hum}`);
+      nowBlock.push(
+        `${nowEmoji} Now: **${bundle.now.temp}** • ${bundle.now.condition}${feels}${wind}${hum}`,
+      );
       if (bundle.now.asOf) {
-        nowBlock.push(`As of: ${bundle.now.asOf}${bundle.tzId ? ` (${bundle.tzId})` : ""}`);
+        nowBlock.push(
+          `As of: ${bundle.now.asOf}${bundle.tzId ? ` (${bundle.tzId})` : ""}`,
+        );
       }
     }
 
