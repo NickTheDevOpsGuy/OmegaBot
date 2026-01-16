@@ -12,10 +12,12 @@ export type WeatherMode =
   | { kind: "daily"; location: string; unit: TempUnit }
   | { kind: "7day"; location: string; unit: TempUnit };
 
-/**
- * A resolved geographic point returned from geocoding.
- * This is what forecast fetchers consume.
- */
+/* -------------------------------------------------------------------------- */
+/* Legacy (NWS)                                                               */
+/* Kept intentionally so old code references do not break during transition.  */
+/* Not used by the WeatherAPI.com path.                                       */
+/* -------------------------------------------------------------------------- */
+
 export type WeatherPoint = {
   lat: number;
   lon: number;
@@ -29,10 +31,6 @@ export type WeatherPoint = {
   forecastUrl: string;
 };
 
-/**
- * Minimal NWS forecast response shape we actually use.
- * https://api.weather.gov/gridpoints/{office}/{gridX},{gridY}/forecast
- */
 export type NwsForecastResponse = {
   properties?: {
     periods?: Array<{

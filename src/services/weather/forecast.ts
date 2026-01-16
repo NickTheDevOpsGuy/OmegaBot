@@ -1,191 +1,274 @@
 // src/services/weather/forecast.ts
 
 import { logger } from "../../utils/logger.js";
-import type { TempUnit, WeatherPoint } from "./types.js";
+import type { TempUnit } from "./types.js";
 
-/**
- * NWS forecast response shape (trimmed to what we use).
- * Docs: https://www.weather.gov/documentation/services-web-api
- */
-export type NwsForecastResponse = {
-  properties?: {
-    periods?: NwsPeriod[];
+type WeatherApiError = {
+  error?: {
+    code?: number;
+    message?: string;
   };
 };
 
-export type NwsPeriod = {
-  name?: string; // "Tonight", "Friday", etc.
-  startTime?: string;
-  endTime?: string;
-  isDaytime?: boolean;
-  temperature?: number;
-  temperatureUnit?: "F" | "C";
-  windSpeed?: string; // "5 to 10 mph"
-  windDirection?: string; // "NW"
-  shortForecast?: string; // "Partly Cloudy"
-  detailedForecast?: string;
-  probabilityOfPrecipitation?: {
-    unitCode?: string;
-    value?: number | null; // percent as number, can be null
+type WeatherApiResponse = {
+  location?: {
+    name?: string;
+    region?: string;
+    country?: string;
+    tz_id?: string;
+    localtime?: string; // "2026-01-16 10:18"
   };
-  relativeHumidity?: {
-    value?: number | null;
+  current?: {
+    last_updated?: string; // "2026-01-16 10:15"
+    temp_f?: number;
+    temp_c?: number;
+    condition?: { text?: string };
+    wind_mph?: number;
+    wind_kph?: number;
+    wind_dir?: string;
+    humidity?: number;
+    feelslike_f?: number;
+    feelslike_c?: number;
+  };
+  forecast?: {
+    forecastday?: Array<{
+      date?: string; // "2026-01-16"
+      day?: {
+        maxtemp_f?: number;
+        maxtemp_c?: number;
+        mintemp_f?: number;
+        mintemp_c?: number;
+        daily_chance_of_rain?: number;
+        daily_chance_of_snow?: number;
+        condition?: { text?: string };
+      };
+      astro?: {
+        sunrise?: string;
+        sunset?: string;
+      };
+    }>;
   };
 };
+
+export type WeatherNow = {
+  temp: string;
+  feelsLike?: string;
+  condition: string;
+  asOf?: string;
+  humidity?: string;
+  wind?: string;
+};
+
+export type WeatherDay = {
+  label: string;
+  temp: string;
+  pop?: string;
+  condition: string;
+  sunrise?: string;
+  sunset?: string;
+};
+
+export type WeatherBundle = {
+  placeLabel: string; // "Sharon, MA 02067"
+  tzId?: string;
+  localTime?: string;
+  now?: WeatherNow;
+  days: WeatherDay[];
+};
+
+function requireWeatherApiKey(): string {
+  const key = process.env.WEATHERAPI_KEY?.trim();
+  if (!key) {
+    throw new Error(
+      "Missing WEATHERAPI_KEY. Set it in .env (WEATHERAPI_KEY=...).",
+    );
+  }
+  return key;
+}
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null;
 }
 
+function readApiErrorMessage(data: unknown): string | null {
+  const root = isRecord(data) ? data : null;
+  const err = root && isRecord(root.error) ? root.error : null;
+  const msg = err && typeof err.message === "string" ? err.message : null;
+  return msg ?? null;
+}
+
+function pickTemp(unit: TempUnit, f?: number, c?: number): string | null {
+  if (unit === "c") {
+    return typeof c === "number" && Number.isFinite(c) ? `${Math.round(c)}°C` : null;
+  }
+  return typeof f === "number" && Number.isFinite(f) ? `${Math.round(f)}°F` : null;
+}
+
+function popFromDay(d: WeatherApiResponse["forecast"] extends infer F ? F : never, idx: number): string | null {
+  return null;
+}
+
+function formatWind(unit: TempUnit, dir?: string, mph?: number, kph?: number): string | null {
+  const d = dir?.trim();
+  if (unit === "c") {
+    if (typeof kph === "number" && Number.isFinite(kph)) {
+      return d ? `${d} ${Math.round(kph)} kph` : `${Math.round(kph)} kph`;
+    }
+    return null;
+  }
+
+  if (typeof mph === "number" && Number.isFinite(mph)) {
+    return d ? `${d} ${Math.round(mph)} mph` : `${Math.round(mph)} mph`;
+  }
+  return null;
+}
+
+function buildPlaceLabel(loc: WeatherApiResponse["location"] | undefined): string {
+  const name = loc?.name?.trim();
+  const region = loc?.region?.trim();
+  const country = loc?.country?.trim();
+
+  const bits = [name, region].filter(Boolean);
+  if (bits.length) return bits.join(", ");
+
+  return country ? country : "Unknown location";
+}
+
+function estimatePop(day: WeatherApiResponse["forecast"] extends infer F ? F : never): string | null {
+  return null;
+}
+
+function dailyPopString(day: WeatherApiResponse["forecast"] extends infer F ? F : never, item: WeatherApiResponse["forecast"]["forecastday"][number] | undefined): string | null {
+  if (!item?.day) return null;
+
+  const rain = item.day.daily_chance_of_rain;
+  const snow = item.day.daily_chance_of_snow;
+
+  const r = typeof rain === "number" && Number.isFinite(rain) ? rain : null;
+  const s = typeof snow === "number" && Number.isFinite(snow) ? snow : null;
+
+  const best = [r, s].filter((x) => x !== null).sort((a, b) => (b as number) - (a as number))[0] as number | undefined;
+  if (typeof best === "number") return `${Math.round(best)}%`;
+
+  return null;
+}
+
 /**
- * Fetch forecast for a resolved weather point.
- * Expects point.forecastUrl to be a valid NWS forecast endpoint.
+ * Fetch current + forecast (and astro) from WeatherAPI.com
+ * Uses /forecast.json which includes current + forecast days.
  */
-export async function fetchForecast(point: WeatherPoint): Promise<NwsForecastResponse> {
-  const res = await fetch(point.forecastUrl, {
+export async function fetchWeatherBundle(args: {
+  location: string;
+  unit: TempUnit;
+  days: number; // 1..10 (WeatherAPI plan dependent)
+}): Promise<WeatherBundle> {
+  const key = requireWeatherApiKey();
+
+  const q = args.location.trim();
+  if (!q) {
+    throw new Error("Location cannot be empty.");
+  }
+
+  const safeDays = Math.max(1, Math.min(args.days, 10));
+
+  const url =
+    `https://api.weatherapi.com/v1/forecast.json` +
+    `?key=${encodeURIComponent(key)}` +
+    `&q=${encodeURIComponent(q)}` +
+    `&days=${encodeURIComponent(String(safeDays))}` +
+    `&aqi=no&alerts=no`;
+
+  const res = await fetch(url, {
     headers: {
-      Accept: "application/geo+json, application/json",
+      Accept: "application/json",
       "User-Agent": "OmegaBot",
     },
   });
 
+  const text = await res.text();
+  let data: unknown = null;
+  try {
+    data = JSON.parse(text) as unknown;
+  } catch {
+    // leave as null
+  }
+
   if (!res.ok) {
-    throw new Error(`NWS forecast error: ${res.status} ${res.statusText}`);
+    const msg = readApiErrorMessage(data) ?? res.statusText ?? "Unknown error";
+
+    if (res.status === 401 || res.status === 403) {
+      throw new Error(`WeatherAPI auth error (${res.status}). Check WEATHERAPI_KEY. ${msg}`);
+    }
+    if (res.status === 400) {
+      throw new Error(`WeatherAPI rejected the location. ${msg}`);
+    }
+    if (res.status === 429) {
+      throw new Error(`WeatherAPI rate limit hit. Try again in a bit.`);
+    }
+
+    throw new Error(`WeatherAPI error (${res.status}): ${msg}`);
   }
 
-  const data = (await res.json()) as unknown;
+  const parsed = (data ?? {}) as WeatherApiResponse;
 
-  // Light validation so we fail with a useful message (not "cannot read 0")
-  const root = isRecord(data) ? data : null;
-  const props = root && isRecord(root.properties) ? root.properties : null;
-  const periods = props?.periods;
+  const placeLabel = buildPlaceLabel(parsed.location);
+  const tzId = parsed.location?.tz_id;
+  const localTime = parsed.location?.localtime;
 
-  if (!Array.isArray(periods)) {
-    logger.warn(
-      { label: point.label, keys: root ? Object.keys(root) : [] },
-      "[weather] forecast missing properties.periods",
-    );
+  const nowTemp = pickTemp(args.unit, parsed.current?.temp_f, parsed.current?.temp_c);
+  const feels = pickTemp(args.unit, parsed.current?.feelslike_f, parsed.current?.feelslike_c);
+  const cond = parsed.current?.condition?.text?.trim() ?? "Unknown";
+
+  const now: WeatherNow | undefined =
+    nowTemp
+      ? {
+          temp: nowTemp,
+          feelsLike: feels ? `${feels}` : undefined,
+          condition: cond,
+          asOf: parsed.current?.last_updated,
+          humidity:
+            typeof parsed.current?.humidity === "number"
+              ? `${parsed.current.humidity}%`
+              : undefined,
+          wind: formatWind(
+            args.unit,
+            parsed.current?.wind_dir,
+            parsed.current?.wind_mph,
+            parsed.current?.wind_kph,
+          ) ?? undefined,
+        }
+      : undefined;
+
+  const fd = parsed.forecast?.forecastday ?? [];
+  const days: WeatherDay[] = [];
+
+  for (let i = 0; i < fd.length; i += 1) {
+    const item = fd[i];
+    const label = i === 0 ? "Today" : (item.date ?? `Day ${i + 1}`);
+
+    const max = pickTemp(args.unit, item.day?.maxtemp_f, item.day?.maxtemp_c);
+    const min = pickTemp(args.unit, item.day?.mintemp_f, item.day?.mintemp_c);
+
+    const temp =
+      max && min ? `${min} to ${max}` : max ?? min ?? "N/A";
+
+    const condition = item.day?.condition?.text?.trim() ?? "Forecast unavailable";
+    const pop = dailyPopString(parsed.forecast as any, item) ?? undefined;
+
+    days.push({
+      label,
+      temp,
+      pop,
+      condition,
+      sunrise: item.astro?.sunrise,
+      sunset: item.astro?.sunset,
+    });
   }
 
-  return data as NwsForecastResponse;
-}
+  logger.debug(
+    { q, placeLabel, tzId, localTime, days: days.length },
+    "[weather] weather bundle fetched",
+  );
 
-/**
- * Format a single “daily” style forecast (first available period).
- * This is used for /fun weather daily.
- */
-export function formatDaily(
-  label: string,
-  forecast: NwsForecastResponse,
-  unit: TempUnit,
-): string {
-  const periods = forecast?.properties?.periods;
-
-  if (!Array.isArray(periods) || periods.length === 0) {
-    return `🌦️ ${label}\nNo forecast periods returned. Try another location or try again later.`;
-  }
-
-  const p = periods[0];
-
-  const name = p.name ?? "Forecast";
-  const short = p.shortForecast ?? "Weather data available";
-  const temp = formatTemp(p.temperature, p.temperatureUnit, unit);
-  const wind = formatWind(p.windDirection, p.windSpeed);
-  const pop = formatPop(p.probabilityOfPrecipitation?.value);
-
-  return [
-    `🌦️ **${label}**`,
-    `🗓️ ${name}`,
-    `📋 ${short}`,
-    temp ? `🌡️ ${temp}` : null,
-    wind ? `💨 ${wind}` : null,
-    pop ? `☔ ${pop}` : null,
-  ]
-    .filter(Boolean)
-    .join("\n");
-}
-
-/**
- * Format a simple 7-day style forecast (first 7-ish periods).
- * This is used for /fun weather 7day.
- */
-export function format7Day(
-  label: string,
-  forecast: NwsForecastResponse,
-  unit: TempUnit,
-): string {
-  const periods = forecast?.properties?.periods;
-
-  if (!Array.isArray(periods) || periods.length === 0) {
-    return `🌦️ ${label}\nNo forecast periods returned. Try another location or try again later.`;
-  }
-
-  const take = periods.slice(0, 7);
-
-  const lines = take.map((p) => {
-    const name = p.name ?? "Forecast";
-    const short = p.shortForecast ?? "Weather";
-    const temp = formatTemp(p.temperature, p.temperatureUnit, unit);
-    const pop = formatPop(p.probabilityOfPrecipitation?.value);
-
-    const bits = [
-      `• **${name}**: ${short}`,
-      temp ? `(${temp})` : null,
-      pop ? `☔ ${pop}` : null,
-    ].filter(Boolean);
-
-    return bits.join(" ");
-  });
-
-  return [`🌦️ **${label}**`, ...lines].join("\n");
-}
-
-/* -------------------------------------------------------------------------- */
-/* Helpers                                                                    */
-/* -------------------------------------------------------------------------- */
-
-function formatTemp(
-  temp?: number,
-  tempUnit?: "F" | "C",
-  desired?: TempUnit,
-): string | null {
-  if (typeof temp !== "number" || !Number.isFinite(temp)) return null;
-
-  // If API tells us the unit, convert if needed.
-  if (tempUnit === "F" && desired === "c") {
-    return `${fToC(temp)}°C`;
-  }
-  if (tempUnit === "C" && desired === "f") {
-    return `${cToF(temp)}°F`;
-  }
-
-  // Otherwise, display as-is with best guess.
-  const shownUnit = tempUnit ?? (desired === "c" ? "C" : "F");
-  return `${Math.round(temp)}°${shownUnit}`;
-}
-
-function formatWind(dir?: string, speed?: string): string | null {
-  const d = dir?.trim();
-  const s = speed?.trim();
-  if (!d && !s) return null;
-  if (d && s) return `${d} ${s}`;
-  return d ?? s ?? null;
-}
-
-/**
- * Probability of precipitation.
- * That "4%" you saw is usually "probabilityOfPrecipitation.value".
- */
-function formatPop(value?: number | null): string | null {
-  if (value === null || value === undefined) return null;
-  if (typeof value !== "number" || !Number.isFinite(value)) return null;
-  return `${Math.round(value)}% chance`;
-}
-
-function fToC(f: number): number {
-  return Math.round(((f - 32) * 5) / 9);
-}
-
-function cToF(c: number): number {
-  return Math.round((c * 9) / 5 + 32);
+  return { placeLabel, tzId, localTime, now, days };
 }

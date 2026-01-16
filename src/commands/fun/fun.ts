@@ -25,7 +25,10 @@ import { run as runJava } from "./subcommands/java.js";
 import { run as runLeaderboard } from "./subcommands/leaderboard.js";
 import type { LeaderboardMode } from "./subcommands/leaderboard.js";
 
-import { recordFunUsage, type FunCommandKey } from "../../services/fun/funUsageStore.js";
+import {
+  recordFunUsage,
+  type FunCommandKey,
+} from "../../services/fun/funUsageStore.js";
 
 function parseTempUnit(raw: string | null): TempUnit {
   return raw?.toLowerCase() === "c" ? "c" : "f";
@@ -151,7 +154,7 @@ export const data = new SlashCommandBuilder()
   .addSubcommand((s) =>
     s
       .setName("weather")
-      .setDescription("Today’s weather for a location")
+      .setDescription("Weather for a location (includes current conditions)")
       .addStringOption((o) =>
         o
           .setName("location")
@@ -177,7 +180,7 @@ export const data = new SlashCommandBuilder()
   .addSubcommand((s) =>
     s
       .setName("weather7")
-      .setDescription("7-day forecast for a location")
+      .setDescription("7-day forecast (includes current conditions)")
       .addStringOption((o) =>
         o
           .setName("location")
@@ -257,12 +260,13 @@ async function maybeRecordUsage(
   try {
     await recordFunUsage({ userId: interaction.user.id, command: key });
   } catch (err) {
-    // Do not fail the command if usage tracking fails
     logger.warn({ err, sub }, "[fun] failed to record usage");
   }
 }
 
-export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
+export async function execute(
+  interaction: ChatInputCommandInteraction,
+): Promise<void> {
   const sub = interaction.options.getSubcommand(true);
 
   // Only some subcommands have the "ephemeral" option (poll does not).
@@ -271,8 +275,9 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     ? (interaction.options.getBoolean("ephemeral") ?? false)
     : false;
 
-  // Parent command owns the interaction lifecycle
-  await interaction.deferReply(ephemeral ? { flags: MessageFlags.Ephemeral } : undefined);
+  await interaction.deferReply(
+    ephemeral ? { flags: MessageFlags.Ephemeral } : undefined,
+  );
 
   try {
     if (sub === "chucknorris") {
@@ -291,9 +296,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     }
 
     if (sub === "dadjoke") {
-      // NOTE: option name is "query" (not "search")
       const query = interaction.options.getString("query")?.trim() ?? "";
-
       const mode: DadJokeMode = query ? { kind: "search", query } : { kind: "random" };
 
       await runDadJoke(interaction, mode);
