@@ -26,7 +26,12 @@ type DadJokeSearchResponse = {
 
 export type DadJokeMode = { kind: "random" } | { kind: "search"; query: string };
 
-type DadJokeErrorCode = "NO_RESULTS" | "RATE_LIMIT" | "UPSTREAM" | "TIMEOUT" | "BAD_SHAPE";
+type DadJokeErrorCode =
+  | "NO_RESULTS"
+  | "RATE_LIMIT"
+  | "UPSTREAM"
+  | "TIMEOUT"
+  | "BAD_SHAPE";
 
 class DadJokeError extends Error {
   public code: DadJokeErrorCode;
@@ -72,7 +77,9 @@ export async function run(
       }
 
       if (err.code === "RATE_LIMIT") {
-        await interaction.editReply("Too many requests right now. Try again in a minute.");
+        await interaction.editReply(
+          "Too many requests right now. Try again in a minute.",
+        );
         return;
       }
 
@@ -124,7 +131,10 @@ async function fetchWithTimeout(url: string): Promise<Response> {
     return await fetch(url, { headers: baseHeaders(), signal: controller.signal });
   } catch (err) {
     if (err instanceof Error && err.name === "AbortError") {
-      throw new DadJokeError("TIMEOUT", `Dad Joke API timed out after ${FETCH_TIMEOUT_MS}ms`);
+      throw new DadJokeError(
+        "TIMEOUT",
+        `Dad Joke API timed out after ${FETCH_TIMEOUT_MS}ms`,
+      );
     }
     throw err;
   } finally {
@@ -138,7 +148,10 @@ function mapHttpError(res: Response): never {
   }
 
   // Treat any non-OK as upstream trouble for the user, but keep details in logs via error message.
-  throw new DadJokeError("UPSTREAM", `Dad Joke API error: ${res.status} ${res.statusText}`);
+  throw new DadJokeError(
+    "UPSTREAM",
+    `Dad Joke API error: ${res.status} ${res.statusText}`,
+  );
 }
 
 /**
@@ -160,7 +173,10 @@ async function fetchRandom(): Promise<string> {
   }
 
   if (!data?.joke || typeof data.joke !== "string") {
-    throw new DadJokeError("BAD_SHAPE", "Dad Joke API returned an unexpected response shape");
+    throw new DadJokeError(
+      "BAD_SHAPE",
+      "Dad Joke API returned an unexpected response shape",
+    );
   }
 
   return data.joke.trim();
@@ -192,7 +208,10 @@ async function fetchSearch(query: string): Promise<string> {
 
   const pick = results[Math.floor(Math.random() * results.length)];
   if (!pick?.joke || typeof pick.joke !== "string") {
-    throw new DadJokeError("BAD_SHAPE", "Dad Joke API returned an unexpected response shape");
+    throw new DadJokeError(
+      "BAD_SHAPE",
+      "Dad Joke API returned an unexpected response shape",
+    );
   }
 
   return pick.joke.trim();
