@@ -69,8 +69,10 @@ function buildOverviewHelp(args: { isAdmin: boolean }): string {
   lines.push("**Quick picks**");
   lines.push("`/fun dadjoke`     Random dad joke");
   lines.push("`/fun poll`        Create a quick poll");
+  lines.push("`/fun weather`     Weather for a location");
   lines.push("`/gh status`       Check GitHub integration status");
   lines.push("`/summary`         Summarize recent messages");
+  lines.push("`/timezone show`   Show your saved timezone");
   lines.push("");
   lines.push(
     "If new commands don’t show up, an admin may need to run the register script.",
@@ -85,20 +87,77 @@ function buildFunHelp(): string {
   lines.push("**Help: Fun**");
   lines.push("");
   lines.push("All fun commands live under `/fun`.");
+  lines.push("Most fun commands support `ephemeral:true` to only show the result to you.");
   lines.push("");
-  lines.push("`/fun chucknorris`  Chuck Norris facts (random, category, or search)");
-  lines.push("`/fun dadjoke`      Dad jokes (random or search)");
-  lines.push("`/fun coinflip`     Heads or tails");
-  lines.push("`/fun dice`         Roll dice (custom sides and count)");
-  lines.push("`/fun poll`         Quick poll (2–4 options, one vote per user)");
-  lines.push("`/fun weather`      Today’s weather for a location");
-  lines.push("`/fun weather7`     7-day forecast for a location");
+
+  lines.push("**Chuck Norris**");
+  lines.push("`/fun chucknorris`");
+  lines.push("Examples");
+  lines.push("`/fun chucknorris`");
+  lines.push("`/fun chucknorris category:dev`");
+  lines.push("`/fun chucknorris query:roundhouse`");
+  lines.push("`/fun chucknorris query:docker ephemeral:true`");
   lines.push("");
-  lines.push("Leaderboard views");
-  lines.push("`/fun leaderboard`                          Top users");
-  lines.push("`/fun leaderboard view:commands`            Top commands");
-  lines.push("`/fun leaderboard view:user`                Your per-command breakdown");
-  lines.push("`/fun leaderboard view:user user:@Someone`  That user’s breakdown");
+
+  lines.push("**Dad Joke**");
+  lines.push("`/fun dadjoke`");
+  lines.push("Examples");
+  lines.push("`/fun dadjoke`");
+  lines.push("`/fun dadjoke query:coffee`");
+  lines.push("`/fun dadjoke query:kubernetes ephemeral:true`");
+  lines.push("");
+
+  lines.push("**Coin Flip**");
+  lines.push("`/fun coinflip`");
+  lines.push("Examples");
+  lines.push("`/fun coinflip`");
+  lines.push("`/fun coinflip ephemeral:true`");
+  lines.push("");
+
+  lines.push("**Dice**");
+  lines.push("`/fun dice`");
+  lines.push("Options");
+  lines.push("`sides`  2–100 (default 6)");
+  lines.push("`count`  1–10  (default 1)");
+  lines.push("Examples");
+  lines.push("`/fun dice`");
+  lines.push("`/fun dice sides:20`");
+  lines.push("`/fun dice sides:6 count:10`");
+  lines.push("");
+
+  lines.push("**Poll**");
+  lines.push("`/fun poll`");
+  lines.push("Notes");
+  lines.push("2–4 options");
+  lines.push("One vote per user");
+  lines.push("Examples");
+  lines.push("`/fun poll question:Best pizza? option1:NY option2:Chicago`");
+  lines.push("`/fun poll question:Tonight? option1:R6 option2:Netflix option3:Gym`");
+  lines.push("");
+
+  lines.push("**Weather**");
+  lines.push("`/fun weather`      Current conditions + today");
+  lines.push("`/fun weather7`     Current conditions + 7-day forecast");
+  lines.push("Options");
+  lines.push("`location`  required");
+  lines.push("`unit`      f or c (default f)");
+  lines.push("Examples");
+  lines.push("`/fun weather location:Sharon, MA`");
+  lines.push("`/fun weather location:Boston, MA unit:c`");
+  lines.push("`/fun weather7 location:02110`");
+  lines.push("");
+
+  lines.push("**Leaderboard**");
+  lines.push("`/fun leaderboard`");
+  lines.push("Options");
+  lines.push("`view`   users | commands | user (default users)");
+  lines.push("`user`   only used when view:user (defaults to you)");
+  lines.push("`limit`  1–25 (default 10)");
+  lines.push("Examples");
+  lines.push("`/fun leaderboard`");
+  lines.push("`/fun leaderboard view:commands limit:10`");
+  lines.push("`/fun leaderboard view:user`");
+  lines.push("`/fun leaderboard view:user user:@Someone`");
 
   return lines.join("\n");
 }
@@ -137,9 +196,26 @@ function buildTimezoneHelp(): string {
 
   lines.push("**Help: Timezone**");
   lines.push("");
-  lines.push("`/timezone set`    Save your IANA timezone (example: America/New_York)");
-  lines.push("`/timezone show`   Display your current timezone");
-  lines.push("`/timezone clear`  Remove your saved timezone");
+  lines.push("Save your timezone once, then compare times with other users or locations.");
+  lines.push("We show both the IANA timezone and an offset like UTC-05:00 when possible.");
+  lines.push("");
+
+  lines.push("**Commands**");
+  lines.push("`/timezone set`      Save your IANA timezone");
+  lines.push("`/timezone show`     Display your current saved timezone");
+  lines.push("`/timezone clear`    Remove your saved timezone");
+  lines.push("`/timezone now`      Show the current time in a timezone or location");
+  lines.push("`/timezone convert`  Convert a time from one timezone to another");
+  lines.push("`/timezone compare`  Compare your time with another user (if both set)");
+  lines.push("");
+
+  lines.push("**Examples**");
+  lines.push("`/timezone set tz:America/New_York`");
+  lines.push("`/timezone show`");
+  lines.push("`/timezone now tz:America/Los_Angeles`");
+  lines.push("`/timezone now location:02110`");
+  lines.push("`/timezone convert time:14:30 from:America/New_York to:America/Chicago`");
+  lines.push("`/timezone compare user:@Someone`");
 
   return lines.join("\n");
 }

@@ -1,103 +1,140 @@
-//src/services/timezone/timezoneStore.ts
-import fs from "fs";
-import path from "path";
+// src/services/timezone/timezoneStore.ts
+
+import { promises as fs } from "node:fs";
+import path from "node:path";
 import { logger } from "../../utils/logger.js";
 
-type TimezoneStore = Record<string, string>;
+export type StoredTimezone = {
+  version: 1;
+  userId: string;
+  guildId: string | null; // optional scoping; null means global
+  timezone: string; // IANA zone, ex: America/New_York
+  label?: string; // optional display label, ex: "EST" (never used for math)
+  createdAt: string;
+  updatedAt: string;
+};
 
-/**
- * Store file lives inside the repo folder when running locally.
- * If you deploy later, you will likely want to switch this to a real DB or KV store.
- */
+type TimezoneStoreFileV1 = {
+  version: 1;
+  updatedAt: string;
+  // Keyed by "guildId:userId" if guild-scoped, otherwise "global:userId"
+  zones: Record<string, StoredTimezone>;
+};
+
 const DATA_DIR = path.join(process.cwd(), "data");
 const STORE_PATH = path.join(DATA_DIR, "timezones.json");
 
-function ensureStoreFile(): void {
+function nowIso(): string {
+  return new Date().toISOString();
+}
+
+async function ensureDataDir(): Promise<void> {
+  await fs.mkdir(DATA_DIR, { recursive: true });
+}
+
+function emptyStore(): TimezoneStoreFileV1 {
+  return {
+    version: 1,
+    updatedAt: nowIso(),
+    zones: {},
+  };
+}
+
+function makeKey(args: { guildId: string | null; userId: string; scope: "guild" | "global" }): string {
+  if (args.scope === "guild") {
+    return `${args.guildId ?? "noguild"}:${args.userId}`;
+  }
+  return `global:${args.userId}`;
+}
+
+async function loadStore(): Promise<TimezoneStoreFileV1> {
   try {
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
-    }
+    const raw = await fs.readFile(STORE_PATH, "utf8");
+    const parsed = JSON.parse(raw) as Partial<TimezoneStoreFileV1> | null;
 
-    if (!fs.existsSync(STORE_PATH)) {
-      fs.writeFileSync(STORE_PATH, JSON.stringify({}, null, 2), "utf8");
-      logger.info("Created timezone store file");
-    }
-  } catch (err) {
-    logger.error({ err }, "Failed to initialize timezone store");
-    throw err;
+    if (!parsed || typeof parsed !== "object") return emptyStore();
+    if (parsed.version !== 1) return emptyStore();
+
+    const zones = parsed.zones && typeof parsed.zones === "object" ? parsed.zones : {};
+
+    return {
+      version: 1,
+      updatedAt: typeof parsed.updatedAt === "string" ? parsed.updatedAt : nowIso(),
+      zones: zones as Record<string, StoredTimezone>,
+    };
+  } catch {
+    return emptyStore();
   }
 }
 
-function loadStore(): TimezoneStore {
-  ensureStoreFile();
+async function saveStore(store: TimezoneStoreFileV1): Promise<void> {
+  await ensureDataDir();
+  await fs.writeFile(STORE_PATH, JSON.stringify(store, null, 2), "utf8");
+}
+
+export async function setUserTimezone(args: {
+  userId: string;
+  guildId: string | null;
+  scope: "guild" | "global";
+  timezone: string;
+  label?: string;
+}): Promise<StoredTimezone> {
+  const store = await loadStore();
+  const key = makeKey({ guildId: args.guildId, userId: args.userId, scope: args.scope });
+
+  const existing = store.zones[key];
+  const createdAt = existing?.createdAt ?? nowIso();
+
+  const tz: StoredTimezone = {
+    version: 1,
+    userId: args.userId,
+    guildId: args.scope === "guild" ? args.guildId : null,
+    timezone: args.timezone,
+    label: args.label,
+    createdAt,
+    updatedAt: nowIso(),
+  };
+
+  store.zones[key] = tz;
+  store.updatedAt = nowIso();
 
   try {
-    const raw = fs.readFileSync(STORE_PATH, "utf8");
-    const parsed = JSON.parse(raw) as unknown;
-
-    if (parsed && typeof parsed === "object") {
-      return parsed as TimezoneStore;
-    }
-
-    logger.warn("Timezone store contained invalid data shape, resetting");
-    return {};
+    await saveStore(store);
   } catch (err) {
-    logger.error({ err }, "Failed to load timezone store, using empty fallback");
-    return {};
+    logger.error({ err }, "[timezoneStore] failed to save");
   }
+
+  return tz;
 }
 
-function saveStore(store: TimezoneStore): void {
-  ensureStoreFile();
+export async function getUserTimezone(args: {
+  userId: string;
+  guildId: string | null;
+  scope: "guild" | "global";
+}): Promise<StoredTimezone | null> {
+  const store = await loadStore();
+  const key = makeKey({ guildId: args.guildId, userId: args.userId, scope: args.scope });
+  return store.zones[key] ?? null;
+}
+
+export async function clearUserTimezone(args: {
+  userId: string;
+  guildId: string | null;
+  scope: "guild" | "global";
+}): Promise<boolean> {
+  const store = await loadStore();
+  const key = makeKey({ guildId: args.guildId, userId: args.userId, scope: args.scope });
+
+  if (!store.zones[key]) return false;
+
+  delete store.zones[key];
+  store.updatedAt = nowIso();
 
   try {
-    fs.writeFileSync(STORE_PATH, JSON.stringify(store, null, 2), "utf8");
+    await saveStore(store);
   } catch (err) {
-    logger.error({ err }, "Failed to save timezone store");
-    throw err;
+    logger.error({ err }, "[timezoneStore] failed to save after clear");
   }
-}
 
-/**
- * Validate an IANA timezone string (ex: "America/New_York").
- * We do not guess. If it is invalid, throw.
- */
-export function assertValidTimeZone(tz: string): void {
-  // Intl throws RangeError for invalid timeZone
-  new Intl.DateTimeFormat("en-US", { timeZone: tz }).format(new Date());
-}
-
-/**
- * Return the saved IANA timezone for a user, or null if not set.
- */
-export function getUserTimezone(userId: string): string | null {
-  const store = loadStore();
-  return store[userId] ?? null;
-}
-
-/**
- * Save the user's IANA timezone.
- */
-export function setUserTimezone(userId: string, tz: string): void {
-  assertValidTimeZone(tz);
-
-  const store = loadStore();
-  store[userId] = tz;
-
-  saveStore(store);
-
-  logger.info({ userId, tz }, "User timezone saved");
-}
-
-/**
- * Remove any saved timezone for the user.
- */
-export function clearUserTimezone(userId: string): void {
-  const store = loadStore();
-
-  if (store[userId] !== undefined) {
-    delete store[userId];
-    saveStore(store);
-    logger.info({ userId }, "User timezone cleared");
-  }
+  return true;
 }

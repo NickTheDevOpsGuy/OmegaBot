@@ -29,19 +29,20 @@ OmegaBot is a modular Discord bot designed to support development projects with 
 
 ## Current features
 
-- Modular slash-command system (auto-loaded from `dist/commands`)
-- Centralized interaction routing with safe error handling
+- Modular slash-command system with auto-loading from `dist/commands`
+- Centralized interaction routing with consistent, safe error handling
 - Structured logging (pino)
 - Welcome and onboarding flows triggered on member join (`guildMemberAdd`)
 - Optional auto-role assignment for new members (`DISCORD_AUTO_ROLE_ID`)
-- GitHub integration with polling-based automation
+- GitHub integration with polling-based automation, including:
   - Health/status checks
   - Issue and PR lookups
   - New PR announcements
   - Issue and PR assignee change announcements
   - Issue and PR closed announcements
-- Configuration and feature gating via environment variables (optional features run only when configured)
+- Configuration and feature gating via environment variables (optional features run only when enabled)
 - Per-guild configuration backed by persistent storage and admin slash commands
+- **Timezone support** — Save your timezone, view it later, and compare times across locations or users
 
 ### Core commands
 
