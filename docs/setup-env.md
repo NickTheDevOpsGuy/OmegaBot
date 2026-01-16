@@ -83,6 +83,7 @@ GITHUB_REPO=repo-name
 ```
 
 Recommended permissions:
+
 - Contents: Read
 - Issues: Read
 - Pull Requests: Read
