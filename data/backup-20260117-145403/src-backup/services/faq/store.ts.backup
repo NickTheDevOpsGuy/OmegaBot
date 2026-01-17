@@ -1,0 +1,57 @@
+// src/services/faq/store.ts
+import { getDb } from "../database/db.js";
+import type { FaqEntry } from "./types.js";
+
+export function loadStore(): Record<string, FaqEntry> {
+  const db = getDb();
+  const stmt = db.prepare("SELECT * FROM faqs");
+  const rows = stmt.all() as any[];
+  
+  const entries: Record<string, FaqEntry> = {};
+  for (const row of rows) {
+    entries[row.key] = {
+      key: row.key,
+      title: row.title || "",
+      body: row.answer,
+      tags: row.tags ? JSON.parse(row.tags) : [],
+      createdAt: new Date(row.created_at).toISOString(),
+      updatedAt: new Date(row.updated_at).toISOString(),
+      usageCount: row.usage_count || 0,
+      createdBy: row.created_by || "unknown",
+      updatedBy: row.updated_by || "unknown",
+    };
+  }
+  
+  return entries;
+}
+
+export function saveStore(entries: Record<string, FaqEntry>): void {
+  const db = getDb();
+  
+  db.transaction(() => {
+    db.prepare("DELETE FROM faqs").run();
+    
+    const stmt = db.prepare(`
+      INSERT INTO faqs (key, answer, title, tags, created_at, updated_at, usage_count, created_by, updated_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    
+    for (const faq of Object.values(entries)) {
+      stmt.run(
+        faq.key,
+        faq.body,
+        faq.title,
+        JSON.stringify(faq.tags || []),
+        new Date(faq.createdAt).getTime(),
+        new Date(faq.updatedAt).getTime(),
+        faq.usageCount || 0,
+        faq.createdBy || "unknown",
+        faq.updatedBy || "unknown"
+      );
+    }
+  })();
+}
+
+export function ensureStoreFile(): void {
+  // No-op for SQLite
+}

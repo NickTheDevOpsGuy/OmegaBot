@@ -1,0 +1,48 @@
+// src/services/discord/safeReply.ts
+//
+// Safe reply helper for Discord interactions.
+//
+// Goal:
+// - Avoid "Interaction already replied" and "Unknown interaction" pitfalls
+// - Let callers write one consistent "respond" call
+//
+// Behavior:
+// - If interaction already has a reply or was deferred, use editReply(content)
+// - Otherwise use reply({ content, flags? })
+//
+// Notes:
+// - Discord does not allow setting Ephemeral on editReply.
+//   So we only apply ephemeral flags on the initial reply.
+
+import {
+  MessageFlags,
+  type InteractionReplyOptions,
+  type RepliableInteraction,
+} from "discord.js";
+
+export type SafeReplyOptions = {
+  content: string;
+  ephemeral?: boolean;
+};
+
+function toReplyOptions(opts: SafeReplyOptions): InteractionReplyOptions {
+  if (opts.ephemeral) {
+    return { content: opts.content, flags: MessageFlags.Ephemeral };
+  }
+  return { content: opts.content };
+}
+
+/**
+ * Safely respond to an interaction exactly once.
+ */
+export async function safeReply(
+  interaction: RepliableInteraction,
+  opts: SafeReplyOptions,
+): Promise<void> {
+  if (interaction.replied || interaction.deferred) {
+    await interaction.editReply(opts.content);
+    return;
+  }
+
+  await interaction.reply(toReplyOptions(opts));
+}
