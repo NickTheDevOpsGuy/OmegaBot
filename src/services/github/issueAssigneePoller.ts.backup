@@ -282,11 +282,9 @@ export async function pollIssueAssigneesOnce(args: PollArgs): Promise<void> {
   }
 
   // Announce assignee changes
-  const issueNotifications = notifications.filter((n) => n.kind === "Issue");
-
-  for (const n of issueNotifications) {
+  for (const n of notifications) {
     const parts: string[] = [];
-    parts.push(`Issue # assignees updated`);
+    parts.push(`**${n.kind} #${n.number}** assignees updated`);
     parts.push(n.title);
     parts.push(n.url);
 
@@ -309,11 +307,9 @@ export async function pollIssueAssigneesOnce(args: PollArgs): Promise<void> {
   }
 
   // Announce closures (issues + PRs)
-  const closedIssues = closedNotifications.filter((c) => c.kind === "Issue");
-
-  for (const c of closedIssues) {
+  for (const c of closedNotifications) {
     const parts: string[] = [];
-    parts.push(`Issue # closed`);
+    parts.push(`**${c.kind} #${c.number}** is no longer open`);
     parts.push(c.title);
     parts.push(c.url);
     parts.push("(Closed/merged/etc — detected via polling)");
