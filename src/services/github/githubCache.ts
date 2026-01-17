@@ -7,7 +7,7 @@ const CACHE_TTL = 300; // 5 minutes
 
 export async function cachedGitHubRequest<T>(
   key: string,
-  fetcher: () => Promise<T>
+  fetcher: () => Promise<T>,
 ): Promise<T> {
   const cached = cache.get(key);
   if (cached !== null) {
@@ -16,10 +16,10 @@ export async function cachedGitHubRequest<T>(
   }
 
   logger.debug({ key }, "GitHub cache MISS");
-  
+
   const data = await fetcher();
   cache.set(key, data, CACHE_TTL);
-  
+
   return data;
 }
 

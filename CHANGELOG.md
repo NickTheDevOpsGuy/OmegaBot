@@ -24,7 +24,6 @@
 - Enhanced error handling in FAQ subcommands
 - Better type safety across permission checks
 
-
 ## Unreleased
 
 - Added

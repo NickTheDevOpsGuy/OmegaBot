@@ -97,7 +97,7 @@ export async function getIssue(
   number: number,
 ): Promise<GitHubIssue> {
   const cacheKey = `issue:${owner}/${repo}/${number}`;
-  
+
   return cachedGitHubRequest(cacheKey, async () => {
     try {
       return await githubRequest<GitHubIssue>(issuePath(owner, repo, number));
@@ -125,7 +125,7 @@ export async function getPullRequest(
   number: number,
 ): Promise<GitHubPullRequest> {
   const cacheKey = `pr:${owner}/${repo}/${number}`;
-  
+
   return cachedGitHubRequest(cacheKey, async () => {
     try {
       return await githubRequest<GitHubPullRequest>(prPath(owner, repo, number));
@@ -179,10 +179,12 @@ export async function listIssues(
   const limit = options?.limit ?? 30;
   const labels = options?.labels?.join(",") ?? "";
   const cacheKey = `issues:${owner}/${repo}:${state}:${limit}:${labels}`;
-  
+
   return cachedGitHubRequest(cacheKey, async () => {
     try {
-      const data = await githubRequest<GitHubIssue[]>(listIssuesPath(owner, repo, options));
+      const data = await githubRequest<GitHubIssue[]>(
+        listIssuesPath(owner, repo, options),
+      );
 
       return data
         .filter((i) => !i.pull_request)
@@ -220,7 +222,7 @@ export async function listPullRequests(
   const state = options?.state ?? "open";
   const limit = options?.limit ?? 20;
   const cacheKey = `prs:${owner}/${repo}:${state}:${limit}`;
-  
+
   return cachedGitHubRequest(cacheKey, async () => {
     try {
       const data = await githubRequest<GitHubPullRequest[]>(
