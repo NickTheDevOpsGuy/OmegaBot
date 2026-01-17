@@ -16,7 +16,9 @@ export const data = new SlashCommandBuilder()
   .addSubcommand((s) =>
     s
       .setName("set")
-      .setDescription("Save your timezone (IANA like America/New_York or short name like ET)")
+      .setDescription(
+        "Save your timezone (IANA like America/New_York or short name like ET)",
+      )
       .addStringOption((o) =>
         o
           .setName("zone")
@@ -87,7 +89,9 @@ export const data = new SlashCommandBuilder()
       .addStringOption((o) =>
         o
           .setName("to")
-          .setDescription('Target zone (examples: "US Pacific", "PT", "America/Los_Angeles")')
+          .setDescription(
+            'Target zone (examples: "US Pacific", "PT", "America/Los_Angeles")',
+          )
           .setRequired(true),
       )
       .addStringOption((o) =>
@@ -201,9 +205,11 @@ function normalizeZoneInput(raw: string): { tz: string; label?: string } | null 
 
   // Allow a couple shorthand friendly variants people type
   if (key === "eastern" || key === "east") return { tz: "America/New_York", label: "ET" };
-  if (key === "central" || key === "midwest") return { tz: "America/Chicago", label: "CT" };
+  if (key === "central" || key === "midwest")
+    return { tz: "America/Chicago", label: "CT" };
   if (key === "mountain") return { tz: "America/Denver", label: "MT" };
-  if (key === "pacific" || key === "west") return { tz: "America/Los_Angeles", label: "PT" };
+  if (key === "pacific" || key === "west")
+    return { tz: "America/Los_Angeles", label: "PT" };
 
   // Abbreviations: "ET", "PST", etc.
   const alias = ALIAS_TO_IANA[key.replace(/\./g, "")];
@@ -336,9 +342,7 @@ async function handleShow(interaction: ChatInputCommandInteraction): Promise<voi
 
   const tz = await getTzOrNull(interaction, interaction.user.id, scope);
   if (!tz) {
-    await interaction.editReply(
-      ["No timezone saved yet.", "", shortHint()].join("\n"),
-    );
+    await interaction.editReply(["No timezone saved yet.", "", shortHint()].join("\n"));
     return;
   }
 
@@ -362,7 +366,9 @@ async function handleClear(interaction: ChatInputCommandInteraction): Promise<vo
   const guildId = interaction.inGuild() ? interaction.guildId : null;
 
   const ok = await clearUserTimezone({ userId: interaction.user.id, guildId, scope });
-  await interaction.editReply(ok ? "Cleared your saved timezone." : "No saved timezone to clear.");
+  await interaction.editReply(
+    ok ? "Cleared your saved timezone." : "No saved timezone to clear.",
+  );
 }
 
 async function handleCompare(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -377,7 +383,9 @@ async function handleCompare(interaction: ChatInputCommandInteraction): Promise<
 
   if (!a) {
     await interaction.editReply(
-      ["You have no timezone saved.", "Run `/timezone set` first.", "", shortHint()].join("\n"),
+      ["You have no timezone saved.", "Run `/timezone set` first.", "", shortHint()].join(
+        "\n",
+      ),
     );
     return;
   }
