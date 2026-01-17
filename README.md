@@ -6,7 +6,8 @@
   <img src="https://img.shields.io/github/last-commit/NickTheDevOpsGuy/OmegaBot">
   <img src="https://img.shields.io/github/license/NickTheDevOpsGuy/OmegaBot">
   <img src="https://img.shields.io/badge/node-18+-blue">
-  <img src="https://img.shields.io/badge/made%20with-JavaScript-yellow">
+  <img src="https://img.shields.io/badge/discord.js-v14-blue">
+  <img src="https://img.shields.io/badge/made%20with-TypeScript-blue">
 </p>
 
 # OmegaBot
@@ -42,7 +43,7 @@ OmegaBot is a modular Discord bot designed to support development projects with 
   - Issue and PR closed announcements
 - Configuration and feature gating via environment variables (optional features run only when enabled)
 - Per-guild configuration backed by persistent storage and admin slash commands
-- **Timezone support** — Save your timezone, view it later, and compare times across locations or users
+- **Timezone support** – Save your timezone, view it later, and compare times across locations or users
 
 ### Core commands
 
@@ -69,13 +70,13 @@ OmegaBot is a modular Discord bot designed to support development projects with 
 
 All fun commands are available under `/fun`:
 
-- `/fun chucknorris` — Chuck Norris facts (random, category, or search)
-- `/fun dadjoke` — Random or searched dad jokes
-- `/fun coinflip` — Heads or tails
-- `/fun dice` — Custom dice rolls
-- `/fun weather` — Daily weather
-- `/fun weather7` — 7-day forecast
-- `/fun leaderboard` — Track fun command usage and top users
+- `/fun chucknorris` – Chuck Norris facts (random, category, or search)
+- `/fun dadjoke` – Random or searched dad jokes
+- `/fun coinflip` – Heads or tails
+- `/fun dice` – Custom dice rolls
+- `/fun weather` – Daily weather
+- `/fun weather7` – 7-day forecast
+- `/fun leaderboard` – Track fun command usage and top users
 
 ## Planned features
 
@@ -88,7 +89,7 @@ All fun commands are available under `/fun`:
 
 ## Documentation
 
-- 🤖 [Discord Bot Setup Guide](docs/discord-bot-setup.md)
+- 🤖 [Discord Bot Setup Guide](docs/setup-discord.md)
 - 📘 [Command Reference](docs/commands.md)
 - ❓ [FAQ Storage Design](docs/faq.md)
 - 🧠 [Transcript & Summary Design](docs/transcripts.md)
@@ -107,7 +108,7 @@ All fun commands are available under `/fun`:
 ### Setup
 
 > Need help creating a Discord bot and token?  
-> See the [Discord Bot Setup Guide](docs/discord-bot-setup.md).
+> See the [Discord Bot Setup Guide](docs/setup-discord.md).
 
 1. Clone the repository:
 
@@ -132,7 +133,7 @@ npm install
 npm run register
 ```
 
-Command registration mode
+**Command registration mode**
 
 OmegaBot supports two registration modes:
 
@@ -142,7 +143,14 @@ OmegaBot supports two registration modes:
 - Global registration
   If DISCORD_GUILD_ID is not set, commands are registered globally and may take up to 1 hour to appear.
 
-5. Run the bot locally:
+5. Build and run the bot:
+
+```bash
+npm run build
+npm start
+```
+
+For development with auto-reload:
 
 ```bash
 npm run dev
@@ -156,10 +164,29 @@ OmegaBot is online
 
 ---
 
+## Technical Stack
+
+- **Runtime**: Node.js 18+
+- **Language**: TypeScript 5.x
+- **Discord Library**: discord.js v14
+- **Logging**: pino
+- **Code Quality**: ESLint, Prettier
+- **Git Hooks**: Husky
+
+### Discord.js v14 Features
+
+OmegaBot uses discord.js v14 which includes:
+- Improved TypeScript support
+- Better slash command handling
+- Enhanced permission system
+- Modern Discord API features
+
+---
+
 ## Project Structure
 
 <details>
-<summary>📁 Click to expand file structure</summary>
+<summary>🗂 Click to expand file structure</summary>
 
 ```
 .
@@ -310,7 +337,7 @@ OmegaBot is online
 ├── package-lock.json
 ├── package.json
 ├── README.md
-├── tsconfig.json
+└── tsconfig.json
 
 ```
 
