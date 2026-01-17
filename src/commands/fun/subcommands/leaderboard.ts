@@ -160,10 +160,14 @@ export async function run(
 
     const user = await safeFetchUser(interaction, userId);
     const name = user?.username ?? `User ${userId}`;
+
+    // Better resolution avatar
+    // - request a larger size (1024 or 2048 is plenty)
+    // - force png for consistency
     const avatar =
       user?.displayAvatarURL({
         extension: "png",
-        size: 512,
+        size: 2048,
       }) ?? null;
 
     embed.setTitle(`Fun Usage: ${name}`);
