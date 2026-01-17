@@ -282,7 +282,7 @@ export async function pollIssueAssigneesOnce(args: PollArgs): Promise<void> {
   }
 
   // Announce assignee changes
-  const issueNotifications = notifications.filter(n => n.kind === "Issue");
+  const issueNotifications = notifications.filter((n) => n.kind === "Issue");
 
   for (const n of issueNotifications) {
     const parts: string[] = [];
@@ -309,7 +309,7 @@ export async function pollIssueAssigneesOnce(args: PollArgs): Promise<void> {
   }
 
   // Announce closures (issues + PRs)
-  const closedIssues = closedNotifications.filter(c => c.kind === "Issue");
+  const closedIssues = closedNotifications.filter((c) => c.kind === "Issue");
 
   for (const c of closedIssues) {
     const parts: string[] = [];

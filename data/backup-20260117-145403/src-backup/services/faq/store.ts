@@ -6,7 +6,7 @@ export function loadStore(): FaqStoreV1 {
   const db = getDb();
   const stmt = db.prepare("SELECT * FROM faqs");
   const rows = stmt.all() as any[];
-  
+
   const entries: Record<string, FaqEntry> = {};
   for (const row of rows) {
     entries[row.key] = {
@@ -21,7 +21,7 @@ export function loadStore(): FaqStoreV1 {
       updatedBy: row.updated_by || "unknown",
     };
   }
-  
+
   return {
     version: 1,
     entries,
@@ -30,15 +30,15 @@ export function loadStore(): FaqStoreV1 {
 
 export function saveStore(store: FaqStoreV1): void {
   const db = getDb();
-  
+
   db.transaction(() => {
     db.prepare("DELETE FROM faqs").run();
-    
+
     const stmt = db.prepare(`
       INSERT INTO faqs (key, title, body, tags, answer, created_at, updated_at, usage_count, created_by, updated_by)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
-    
+
     for (const faq of Object.values(store.entries)) {
       const answer = faq.title ? `**${faq.title}**\n\n${faq.body}` : faq.body;
       stmt.run(
@@ -51,7 +51,7 @@ export function saveStore(store: FaqStoreV1): void {
         new Date(faq.updatedAt).getTime(),
         faq.usageCount || 0,
         faq.createdBy || "unknown",
-        faq.updatedBy || "unknown"
+        faq.updatedBy || "unknown",
       );
     }
   })();
