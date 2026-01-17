@@ -16,11 +16,11 @@ export const data = new SlashCommandBuilder()
   .addSubcommand((s) =>
     s
       .setName("set")
-      .setDescription("Save your timezone (IANA like America/New_York or alias like EST)")
+      .setDescription("Save your timezone (IANA like America/New_York or short name like ET)")
       .addStringOption((o) =>
         o
           .setName("zone")
-          .setDescription("IANA zone (America/New_York) or alias (EST, CST, PST)")
+          .setDescription('Examples: "US Eastern", "ET", "America/New_York"')
           .setRequired(true),
       )
       .addBooleanOption((o) =>
@@ -87,7 +87,7 @@ export const data = new SlashCommandBuilder()
       .addStringOption((o) =>
         o
           .setName("to")
-          .setDescription("Target zone (IANA or alias like PST)")
+          .setDescription('Target zone (examples: "US Pacific", "PT", "America/Los_Angeles")')
           .setRequired(true),
       )
       .addStringOption((o) =>
@@ -108,7 +108,6 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const sub = interaction.options.getSubcommand(true);
 
-  // Most timezone ops should be ephemeral to avoid channel noise.
   await interaction.deferReply({ ephemeral: true });
 
   try {
@@ -126,20 +125,54 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 }
 
 /* -------------------------------------------------------------------------- */
-/*                               IMPLEMENTATION                               */
+/* Timezone input normalization                                                */
 /* -------------------------------------------------------------------------- */
 
-const ALIAS_TO_IANA: Record<string, { tz: string; label: string }> = {
-  est: { tz: "America/New_York", label: "EST" },
-  edt: { tz: "America/New_York", label: "EDT" },
-  cst: { tz: "America/Chicago", label: "CST" },
-  cdt: { tz: "America/Chicago", label: "CDT" },
-  mst: { tz: "America/Denver", label: "MST" },
-  mdt: { tz: "America/Denver", label: "MDT" },
-  pst: { tz: "America/Los_Angeles", label: "PST" },
-  pdt: { tz: "America/Los_Angeles", label: "PDT" },
-  gmt: { tz: "Etc/UTC", label: "GMT" },
+/**
+ * Small curated set of friendly names -> IANA zones.
+ * This avoids exposing the full IANA list while covering common needs.
+ */
+const COMMON_TIMEZONES: Array<{ name: string; tz: string; label?: string }> = [
+  { name: "US Eastern", tz: "America/New_York", label: "ET" },
+  { name: "US Central", tz: "America/Chicago", label: "CT" },
+  { name: "US Mountain", tz: "America/Denver", label: "MT" },
+  { name: "US Pacific", tz: "America/Los_Angeles", label: "PT" },
+
+  { name: "UTC", tz: "Etc/UTC", label: "UTC" },
+
+  { name: "UK", tz: "Europe/London" },
+  { name: "Central Europe", tz: "Europe/Berlin" },
+
+  { name: "India", tz: "Asia/Kolkata" },
+  { name: "Japan", tz: "Asia/Tokyo" },
+  { name: "Australia East", tz: "Australia/Sydney" },
+];
+
+/**
+ * Common abbreviations people actually type.
+ * Note: abbreviations are ambiguous globally, but this is a pragmatic bot UX choice.
+ */
+const ALIAS_TO_IANA: Record<string, { tz: string; label?: string }> = {
+  // US / common
+  et: { tz: "America/New_York", label: "ET" },
+  est: { tz: "America/New_York", label: "ET" },
+  edt: { tz: "America/New_York", label: "ET" },
+
+  ct: { tz: "America/Chicago", label: "CT" },
+  cst: { tz: "America/Chicago", label: "CT" },
+  cdt: { tz: "America/Chicago", label: "CT" },
+
+  mt: { tz: "America/Denver", label: "MT" },
+  mst: { tz: "America/Denver", label: "MT" },
+  mdt: { tz: "America/Denver", label: "MT" },
+
+  pt: { tz: "America/Los_Angeles", label: "PT" },
+  pst: { tz: "America/Los_Angeles", label: "PT" },
+  pdt: { tz: "America/Los_Angeles", label: "PT" },
+
+  // UTC-ish
   utc: { tz: "Etc/UTC", label: "UTC" },
+  gmt: { tz: "Etc/UTC", label: "UTC" },
 };
 
 function isValidIanaZone(tz: string): boolean {
@@ -151,14 +184,32 @@ function isValidIanaZone(tz: string): boolean {
   }
 }
 
+function normalizeKey(s: string): string {
+  return s.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
 function normalizeZoneInput(raw: string): { tz: string; label?: string } | null {
   const v = raw.trim();
   if (!v) return null;
 
-  const key = v.toLowerCase();
-  const hit = ALIAS_TO_IANA[key];
-  if (hit) return { tz: hit.tz, label: hit.label };
+  const key = normalizeKey(v);
 
+  // Friendly names: "us eastern", "central europe", etc.
+  for (const z of COMMON_TIMEZONES) {
+    if (normalizeKey(z.name) === key) return { tz: z.tz, label: z.label };
+  }
+
+  // Allow a couple shorthand friendly variants people type
+  if (key === "eastern" || key === "east") return { tz: "America/New_York", label: "ET" };
+  if (key === "central" || key === "midwest") return { tz: "America/Chicago", label: "CT" };
+  if (key === "mountain") return { tz: "America/Denver", label: "MT" };
+  if (key === "pacific" || key === "west") return { tz: "America/Los_Angeles", label: "PT" };
+
+  // Abbreviations: "ET", "PST", etc.
+  const alias = ALIAS_TO_IANA[key.replace(/\./g, "")];
+  if (alias) return { tz: alias.tz, label: alias.label };
+
+  // Power user path: accept IANA directly
   if (isValidIanaZone(v)) return { tz: v };
 
   return null;
@@ -227,6 +278,21 @@ async function getTzOrNull(
   return getUserTimezone({ userId, guildId, scope });
 }
 
+function shortHint(): string {
+  return [
+    "Examples:",
+    '`/timezone set zone:"US Eastern"`',
+    "`/timezone set zone:ET`",
+    "`/timezone set zone:America/New_York`",
+    "",
+    "Common zones: US Eastern, US Central, US Mountain, US Pacific, UTC, UK, Central Europe, India, Japan, Australia East",
+  ].join("\n");
+}
+
+/* -------------------------------------------------------------------------- */
+/* Handlers                                                                    */
+/* -------------------------------------------------------------------------- */
+
 async function handleSet(interaction: ChatInputCommandInteraction): Promise<void> {
   const raw = interaction.options.getString("zone", true);
   const guildFlag = interaction.options.getBoolean("guild") ?? false;
@@ -235,7 +301,7 @@ async function handleSet(interaction: ChatInputCommandInteraction): Promise<void
   const normalized = normalizeZoneInput(raw);
   if (!normalized) {
     await interaction.editReply(
-      "I could not understand that timezone. Use an IANA zone like `America/New_York` or an alias like `EST`, `CST`, `PST`.",
+      ["I could not understand that timezone.", "", shortHint()].join("\n"),
     );
     return;
   }
@@ -258,7 +324,7 @@ async function handleSet(interaction: ChatInputCommandInteraction): Promise<void
       "Saved your timezone.",
       "",
       `Zone: ${saved.timezone}${saved.label ? ` (${saved.label})` : ""}`,
-      `Now: ${local} • ${offset}`,
+      `Now: ${local} | ${offset}`,
       `Scope: ${scope === "guild" ? "this server" : "global"}`,
     ].join("\n"),
   );
@@ -271,7 +337,7 @@ async function handleShow(interaction: ChatInputCommandInteraction): Promise<voi
   const tz = await getTzOrNull(interaction, interaction.user.id, scope);
   if (!tz) {
     await interaction.editReply(
-      "No timezone saved yet. Use `/timezone set zone:America/New_York` (or `EST`, `CST`, `PST`).",
+      ["No timezone saved yet.", "", shortHint()].join("\n"),
     );
     return;
   }
@@ -284,7 +350,7 @@ async function handleShow(interaction: ChatInputCommandInteraction): Promise<voi
     [
       "Your timezone:",
       `Zone: ${tz.timezone}${tz.label ? ` (${tz.label})` : ""}`,
-      `Now: ${local} • ${offset}`,
+      `Now: ${local} | ${offset}`,
       `Scope: ${scope === "guild" ? "this server" : "global"}`,
     ].join("\n"),
   );
@@ -296,9 +362,7 @@ async function handleClear(interaction: ChatInputCommandInteraction): Promise<vo
   const guildId = interaction.inGuild() ? interaction.guildId : null;
 
   const ok = await clearUserTimezone({ userId: interaction.user.id, guildId, scope });
-  await interaction.editReply(
-    ok ? "Cleared your saved timezone." : "No saved timezone to clear.",
-  );
+  await interaction.editReply(ok ? "Cleared your saved timezone." : "No saved timezone to clear.");
 }
 
 async function handleCompare(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -313,7 +377,7 @@ async function handleCompare(interaction: ChatInputCommandInteraction): Promise<
 
   if (!a) {
     await interaction.editReply(
-      "You have no timezone saved. Set it with `/timezone set zone:America/New_York` first.",
+      ["You have no timezone saved.", "Run `/timezone set` first.", "", shortHint()].join("\n"),
     );
     return;
   }
@@ -338,8 +402,8 @@ async function handleCompare(interaction: ChatInputCommandInteraction): Promise<
     [
       "Timezone compare:",
       "",
-      `${interaction.user.username}: ${aNow} (${a.timezone}) • ${aOff}`,
-      `${target.username}: ${bNow} (${b.timezone}) • ${bOff}`,
+      `${interaction.user.username}: ${aNow} (${a.timezone}) | ${aOff}`,
+      `${target.username}: ${bNow} (${b.timezone}) | ${bOff}`,
       "",
       `${target.username} is ${rel}.`,
     ].join("\n"),
@@ -350,6 +414,7 @@ function parseTimeString(raw: string): { hours: number; minutes: number } | null
   const s = raw.trim().toLowerCase();
   if (!s) return null;
 
+  // Match "19:30" or "7:30pm" or "7pm"
   const m = s.match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/i);
   if (!m) return null;
 
@@ -409,7 +474,7 @@ async function handleConvert(interaction: ChatInputCommandInteraction): Promise<
   const toNorm = normalizeZoneInput(rawTo);
   if (!toNorm) {
     await interaction.editReply(
-      "I could not understand the **to** timezone. Use an IANA zone like `America/Los_Angeles` or `PST`.",
+      ["I could not understand the **to** timezone.", "", shortHint()].join("\n"),
     );
     return;
   }
@@ -421,7 +486,7 @@ async function handleConvert(interaction: ChatInputCommandInteraction): Promise<
     const fromNorm = normalizeZoneInput(rawFrom);
     if (!fromNorm) {
       await interaction.editReply(
-        "I could not understand the **from** timezone. Use an IANA zone like `America/New_York` or `EST`.",
+        ["I could not understand the **from** timezone.", "", shortHint()].join("\n"),
       );
       return;
     }
@@ -461,8 +526,8 @@ async function handleConvert(interaction: ChatInputCommandInteraction): Promise<
     [
       "Time conversion:",
       "",
-      `From: ${fromTime} (${fromTz}${fromLabel ? `, ${fromLabel}` : ""}) • ${fromOff}`,
-      `To:   ${toTime} (${toNorm.tz}${toNorm.label ? `, ${toNorm.label}` : ""}) • ${toOff}`,
+      `From: ${fromTime} (${fromTz}${fromLabel ? `, ${fromLabel}` : ""}) | ${fromOff}`,
+      `To:   ${toTime} (${toNorm.tz}${toNorm.label ? `, ${toNorm.label}` : ""}) | ${toOff}`,
       "",
       `That is ${rel}.`,
     ].join("\n"),
