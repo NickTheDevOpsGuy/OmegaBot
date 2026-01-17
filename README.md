@@ -223,7 +223,6 @@ OmegaBot uses discord.js v14 which includes:
 ├── .gitignore
 ├── .husky
 │   └── pre-push
-├── install-sqlite-simple.sh
 ├── LICENSE
 ├── package.json
 ├── package-lock.json
