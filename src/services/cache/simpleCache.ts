@@ -22,24 +22,30 @@ export class SimpleCache<T> {
     const entry = this.cache.get(key);
 
     if (!entry) {
+      logger.debug({ key }, "Cache miss");
       this.misses++;
       return null;
     }
 
     if (Date.now() > entry.expiresAt) {
+      logger.debug({ key }, "Cache expired");
       this.cache.delete(key);
       this.misses++;
       return null;
     }
 
+    logger.debug({ key }, "Cache hit");
     this.hits++;
     return entry.value;
   }
 
   clear(): void {
+    const size = this.cache.size;
     this.cache.clear();
     this.hits = 0;
     this.misses = 0;
+
+    logger.info({ cleared: size }, "Cache cleared");
   }
 
   getStats() {
