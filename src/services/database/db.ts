@@ -11,7 +11,7 @@ export function initDatabase(): Database.Database {
 
   const databasePath = process.env.DATABASE_PATH || "data/omegabot.db";
   const dbDir = path.dirname(databasePath);
-  
+
   if (!fs.existsSync(dbDir)) {
     fs.mkdirSync(dbDir, { recursive: true });
   }
