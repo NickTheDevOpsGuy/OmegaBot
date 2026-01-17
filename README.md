@@ -209,6 +209,7 @@ OmegaBot uses discord.js v14 which includes:
 ├── .env
 ├── .env.example
 ├── eslint.config.ts
+├── fix-pr-noise-simple.sh
 ├── .github
 │   ├── ISSUE_TEMPLATE
 │   │   ├── bug.yml
@@ -283,7 +284,6 @@ OmegaBot uses discord.js v14 which includes:
 │   │   │   ├── guildConfigStore.ts
 │   │   │   ├── index.ts
 │   │   │   └── types.ts
-│   │   ├── database
 │   │   ├── discord
 │   │   │   ├── commandLoader.ts
 │   │   │   ├── commandMeta.ts
@@ -310,6 +310,7 @@ OmegaBot uses discord.js v14 which includes:
 │   │   │   ├── githubClient.ts
 │   │   │   ├── githubErrorMessage.ts
 │   │   │   ├── issueAssigneePoller.ts
+│   │   │   ├── issueAssigneePoller.ts.backup
 │   │   │   ├── lastSeenStore.ts
 │   │   │   ├── prFormatter.ts
 │   │   │   ├── prPoller.ts
