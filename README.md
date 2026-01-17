@@ -190,29 +190,13 @@ OmegaBot uses discord.js v14 which includes:
 
 ```
 .
-├── .github
-│   ├── ISSUE_TEMPLATE
-│   │   ├── bug.yml
-│   │   ├── config.yml
-│   │   ├── documentation.yml
-│   │   ├── enhancement_refactor.yml
-│   │   ├── feature_request.yml
-│   │   └── question_discussion.yml
-│   ├── workflows
-│   │   └── OmegaBot.yml
-│   └── pull_request_template.md
-├── .husky
-│   ├── pre-commit
-│   └── pre-push
 ├── assets
 │   ├── banner.png
 │   └── omegabot.png
+├── CHANGELOG.md
+├── CONTRIBUTORS.md
 ├── data
-│   ├── faqs.json
 │   ├── fun-usage.json
-│   ├── github-assignees.json
-│   ├── guild-config.json
-│   ├── last-seen.json
 │   └── timezones.json
 ├── docs
 │   ├── commands.md
@@ -221,32 +205,56 @@ OmegaBot uses discord.js v14 which includes:
 │   ├── setup-discord.md
 │   ├── setup-env.md
 │   └── transcripts.md
+├── .env
+├── .env.example
+├── eslint.config.ts
+├── .github
+│   ├── ISSUE_TEMPLATE
+│   │   ├── bug.yml
+│   │   ├── config.yml
+│   │   ├── documentation.yml
+│   │   ├── enhancement_refactor.yml
+│   │   ├── feature_request.yml
+│   │   └── question_discussion.yml
+│   ├── pull_request_template.md
+│   └── workflows
+│       └── OmegaBot.yml
+├── .gitignore
+├── .husky
+│   ├── pre-commit
+│   └── pre-push
+├── LICENSE
+├── package.json
+├── .prettierignore
+├── .prettierrc.yml
+├── README.md
 ├── scripts
 │   └── precheck.sh
 ├── src
+│   ├── bot.ts
 │   ├── commands
 │   │   ├── changelog
 │   │   │   └── changelog.ts
 │   │   ├── config
 │   │   │   └── config.ts
 │   │   ├── faq
-│   │   │   ├── subcommands
-│   │   │   │   ├── add.ts
-│   │   │   │   ├── get.ts
-│   │   │   │   ├── list.ts
-│   │   │   │   └── remove.ts
-│   │   │   └── faq.ts
+│   │   │   ├── faq.ts
+│   │   │   └── subcommands
+│   │   │       ├── add.ts
+│   │   │       ├── get.ts
+│   │   │       ├── list.ts
+│   │   │       └── remove.ts
 │   │   ├── fun
-│   │   │   ├── subcommands
-│   │   │   │   ├── chucknorris.ts
-│   │   │   │   ├── coinflip.ts
-│   │   │   │   ├── dadjoke.ts
-│   │   │   │   ├── dice.ts
-│   │   │   │   ├── java.ts
-│   │   │   │   ├── leaderboard.ts
-│   │   │   │   ├── poll.ts
-│   │   │   │   └── weather.ts
-│   │   │   └── fun.ts
+│   │   │   ├── fun.ts
+│   │   │   └── subcommands
+│   │   │       ├── chucknorris.ts
+│   │   │       ├── coinflip.ts
+│   │   │       ├── dadjoke.ts
+│   │   │       ├── dice.ts
+│   │   │       ├── java.ts
+│   │   │       ├── leaderboard.ts
+│   │   │       ├── poll.ts
+│   │   │       └── weather.ts
 │   │   ├── general
 │   │   │   └── ping.ts
 │   │   ├── github
@@ -254,8 +262,8 @@ OmegaBot uses discord.js v14 which includes:
 │   │   │   ├── pr.ts
 │   │   │   └── status.ts
 │   │   ├── help
-│   │   │   ├── help.ts
-│   │   │   └── helpText.ts
+│   │   │   ├── helpText.ts
+│   │   │   └── help.ts
 │   │   ├── history
 │   │   │   └── history.ts
 │   │   ├── pagination
@@ -268,11 +276,13 @@ OmegaBot uses discord.js v14 which includes:
 │   │       └── timezone.ts
 │   ├── config
 │   │   └── env.ts
+│   ├── registerCommands.ts
 │   ├── services
 │   │   ├── config
 │   │   │   ├── guildConfigStore.ts
 │   │   │   ├── index.ts
 │   │   │   └── types.ts
+│   │   ├── database
 │   │   ├── discord
 │   │   │   ├── commandLoader.ts
 │   │   │   ├── commandMeta.ts
@@ -281,12 +291,13 @@ OmegaBot uses discord.js v14 which includes:
 │   │   │   ├── interactionHandler.ts
 │   │   │   └── safeReply.ts
 │   │   ├── faq
-│   │   │   ├── _shared.ts
 │   │   │   ├── faqService.ts
 │   │   │   ├── permissions.ts
 │   │   │   ├── services.test.ts
 │   │   │   ├── services.ts
+│   │   │   ├── _shared.ts
 │   │   │   ├── store.test.ts
+│   │   │   ├── store.test.ts.disabled
 │   │   │   ├── store.ts
 │   │   │   └── types.ts
 │   │   ├── fun
@@ -302,6 +313,7 @@ OmegaBot uses discord.js v14 which includes:
 │   │   │   ├── prFormatter.ts
 │   │   │   ├── prPoller.ts
 │   │   │   └── types.ts
+│   │   ├── permissions
 │   │   ├── roles
 │   │   │   └── autoRoleHandler.ts
 │   │   ├── summary
@@ -322,22 +334,10 @@ OmegaBot uses discord.js v14 which includes:
 │   │   └── welcome
 │   │       ├── welcomeHandler.ts
 │   │       └── welcomeMessage.ts
-│   ├── utils
-│   │   └── logger.ts
-│   ├── bot.ts
-│   └── registerCommands.ts
-├── .env.example
-├── .gitignore
-├── .prettierignore
-├── .prettierrc.yml
-├── CHANGELOG.md
-├── CONTRIBUTORS.md
-├── eslint.config.ts
-├── LICENSE
-├── package-lock.json
-├── package.json
-├── README.md
-└── tsconfig.json
+│   └── utils
+│       └── logger.ts
+├── tsconfig.json
+└── vitest.config.ts
 
 ```
 

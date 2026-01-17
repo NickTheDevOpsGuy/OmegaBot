@@ -167,6 +167,7 @@ if (interaction.inGuild()) {
 ### Manual Testing
 
 When testing commands:
+
 - Test both success and error paths
 - Test with missing permissions
 - Test with invalid inputs
