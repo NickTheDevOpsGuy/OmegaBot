@@ -35,7 +35,7 @@ OmegaBot is a modular Discord bot designed to support development projects with 
 - Structured logging (pino)
 - Welcome and onboarding flows triggered on member join (`guildMemberAdd`)
 - Optional auto-role assignment for new members (`DISCORD_AUTO_ROLE_ID`)
-- GitHub integration with polling-based automation, including:
+- GitHub integration with now caching calls instead of polling, including:
   - Health/status checks
   - Issue and PR lookups
   - New PR announcements
@@ -209,7 +209,6 @@ OmegaBot uses discord.js v14 which includes:
 ├── .env
 ├── .env.example
 ├── eslint.config.ts
-├── fix-pr-noise-simple.sh
 ├── .github
 │   ├── ISSUE_TEMPLATE
 │   │   ├── bug.yml
@@ -221,12 +220,14 @@ OmegaBot uses discord.js v14 which includes:
 │   ├── pull_request_template.md
 │   └── workflows
 │       └── OmegaBot.yml
+├── github-caching-complete.sh
 ├── .gitignore
 ├── .husky
 │   ├── pre-commit
 │   └── pre-push
 ├── LICENSE
 ├── package.json
+├── package-lock.json
 ├── .prettierignore
 ├── .prettierrc.yml
 ├── README.md
@@ -280,6 +281,8 @@ OmegaBot uses discord.js v14 which includes:
 │   │   └── env.ts
 │   ├── registerCommands.ts
 │   ├── services
+│   │   ├── cache
+│   │   │   └── simpleCache.ts
 │   │   ├── config
 │   │   │   ├── guildConfigStore.ts
 │   │   │   ├── index.ts
@@ -307,6 +310,8 @@ OmegaBot uses discord.js v14 which includes:
 │   │   │   └── pollStore.ts
 │   │   ├── github
 │   │   │   ├── githubApi.ts
+│   │   │   ├── githubApi.ts.backup
+│   │   │   ├── githubCache.ts
 │   │   │   ├── githubClient.ts
 │   │   │   ├── githubErrorMessage.ts
 │   │   │   ├── issueAssigneePoller.ts
