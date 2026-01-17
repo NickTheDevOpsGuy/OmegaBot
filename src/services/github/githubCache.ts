@@ -2,7 +2,7 @@
 import { SimpleCache } from "../cache/simpleCache.js";
 import { logger } from "../../utils/logger.js";
 
-const cache = new SimpleCache<any>();
+const cache = new SimpleCache<unknown>();
 const CACHE_TTL = 300; // 5 minutes
 
 export async function cachedGitHubRequest<T>(
