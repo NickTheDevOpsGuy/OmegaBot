@@ -44,6 +44,7 @@ OmegaBot is a modular Discord bot designed to support development projects with 
 - Configuration and feature gating via environment variables (optional features run only when enabled)
 - Per-guild configuration backed by persistent storage and admin slash commands
 - **Timezone support** – Save your timezone, view it later, and compare times across locations or users
+- Now all storage uses SQLite for slash commands!
 
 ### Core commands
 
@@ -197,8 +198,7 @@ OmegaBot uses discord.js v14 which includes:
 ├── CHANGELOG.md
 ├── CONTRIBUTORS.md
 ├── data
-│   ├── fun-usage.json
-│   └── timezones.json
+│   └── omegabot.db
 ├── docs
 │   ├── commands.md
 │   ├── dev-notes.md
@@ -220,11 +220,10 @@ OmegaBot uses discord.js v14 which includes:
 │   ├── pull_request_template.md
 │   └── workflows
 │       └── OmegaBot.yml
-├── github-caching-complete.sh
 ├── .gitignore
 ├── .husky
-│   ├── pre-commit
 │   └── pre-push
+├── install-sqlite-simple.sh
 ├── LICENSE
 ├── package.json
 ├── package-lock.json
@@ -287,6 +286,8 @@ OmegaBot uses discord.js v14 which includes:
 │   │   │   ├── guildConfigStore.ts
 │   │   │   ├── index.ts
 │   │   │   └── types.ts
+│   │   ├── database
+│   │   │   └── db.ts
 │   │   ├── discord
 │   │   │   ├── commandLoader.ts
 │   │   │   ├── commandMeta.ts

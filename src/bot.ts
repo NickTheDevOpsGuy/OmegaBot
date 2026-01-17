@@ -1,4 +1,5 @@
 // src/bot.ts
+import { initDatabase, closeDatabase } from "./services/database/db.js";
 
 import { Client, GatewayIntentBits } from "discord.js";
 import { loadCommands, type CommandClient } from "./services/discord/commandLoader.js";
@@ -110,6 +111,15 @@ client.once("clientReady", () => {
 /**
  * Start the bot.
  */
+initDatabase();
+logger.info("Database initialized");
+
+process.on("SIGINT", () => {
+  logger.info("Shutting down...");
+  closeDatabase();
+  process.exit(0);
+});
+
 void client.login(env.token);
 
 /**
