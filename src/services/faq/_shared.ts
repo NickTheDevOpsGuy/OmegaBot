@@ -45,7 +45,7 @@ export async function guardFaqAction(
   const perm = canFaqAction(interaction, action);
   if (perm.ok) return true;
 
-  await interaction.editReply(`❌ ${perm.reason}`);
+  await interaction.editReply(`❌ ${"reason" in perm ? perm.reason : "Access denied"}`);
   return false;
 }
 

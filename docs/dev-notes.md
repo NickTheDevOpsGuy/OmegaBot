@@ -13,6 +13,59 @@ This document captures design decisions, conventions, and architectural guidelin
 
 ---
 
+## Discord.js v14 Migration
+
+### Key Changes from v13 to v14
+
+**Intent System:**
+
+- v13: `Intents.FLAGS.GUILDS`
+- v14: `GatewayIntentBits.Guilds`
+
+**Interaction Types:**
+
+- v13: `CommandInteraction`
+- v14: `ChatInputCommandInteraction`
+
+**Message Flags:**
+
+- v13: `ephemeral: true`
+- v14: `flags: MessageFlags.Ephemeral`
+
+**Permissions:**
+
+- v13: `Permissions.FLAGS`
+- v14: `PermissionFlagsBits`
+
+**Builders:**
+
+- v13: `MessageActionRow`
+- v14: `ActionRowBuilder`
+
+### Type Narrowing Best Practices
+
+When checking guild context:
+
+```typescript
+// ✅ Good - use type assertion after check
+if (!interaction.inGuild()) {
+  await (interaction as ChatInputCommandInteraction).editReply("Guild only");
+  return;
+}
+// Now TypeScript knows we're in a guild
+```
+
+When checking permission results:
+
+```typescript
+// ✅ Good - check property existence
+if ("reason" in result && !result.ok) {
+  await interaction.editReply(result.reason);
+}
+```
+
+---
+
 ## Logging
 
 OmegaBot uses a centralized logger for structured logs.
@@ -69,7 +122,61 @@ This allows:
 
 ---
 
+## TypeScript Best Practices
+
+### Strict Type Checking
+
+OmegaBot uses TypeScript's strict mode for better type safety:
+
+```typescript
+// tsconfig.json
+{
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitAny": true
+  }
+}
+```
+
+### Discord.js Type Narrowing
+
+Always narrow interaction types before accessing specific properties:
+
+```typescript
+// Check if it's a chat command
+if (interaction.isChatInputCommand()) {
+  // Safe to use chat command methods
+}
+
+// Check if in guild
+if (interaction.inGuild()) {
+  // Safe to access guild-specific properties
+}
+```
+
+---
+
+## Testing
+
+### Unit Tests
+
+- FAQ service has comprehensive unit tests
+- Run tests with: `npm test`
+- Tests use vitest framework
+
+### Manual Testing
+
+When testing commands:
+- Test both success and error paths
+- Test with missing permissions
+- Test with invalid inputs
+- Test DM vs guild contexts
+
+---
+
 ## Future Improvements
 
 - Replace file stores with a database
 - Add metrics and observability
+- Implement comprehensive integration tests
+- Add automated Discord.js version compatibility checks
