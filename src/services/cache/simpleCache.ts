@@ -20,7 +20,7 @@ export class SimpleCache<T> {
 
   get(key: string): T | null {
     const entry = this.cache.get(key);
-    
+
     if (!entry) {
       this.misses++;
       return null;
