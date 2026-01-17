@@ -36,3 +36,18 @@ Thumbs.db
 
 # Runtime data
 *.json
+
+# Cache files (ADDED)
+.eslintcache
+*.cache
+
+# Coverage reports (ADDED)
+coverage/
+.nyc_output/
+
+# Temporary files (ADDED)
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
