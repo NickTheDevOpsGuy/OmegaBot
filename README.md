@@ -176,6 +176,7 @@ OmegaBot is online
 ### Discord.js v14 Features
 
 OmegaBot uses discord.js v14 which includes:
+
 - Improved TypeScript support
 - Better slash command handling
 - Enhanced permission system

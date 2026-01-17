@@ -28,7 +28,9 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
     // Permissions only make sense in a guild context
     if (!interaction.inGuild()) {
       // Type assertion needed due to TypeScript narrowing issue
-      await (interaction as ChatInputCommandInteraction).editReply("❌ `/faq remove` can only be used in a server.");
+      await (interaction as ChatInputCommandInteraction).editReply(
+        "❌ `/faq remove` can only be used in a server.",
+      );
       return;
     }
 
