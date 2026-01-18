@@ -15,6 +15,6 @@
     "strictNullChecks": false,
     "useUnknownInCatchVariables": false
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "dist/unregisterCommands.js"],
   "exclude": ["node_modules", "dist"]
 }
