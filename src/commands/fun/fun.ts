@@ -7,9 +7,6 @@ import {
 } from "discord.js";
 import { logger } from "../../utils/logger.js";
 
-import { run as runChuckNorris } from "./subcommands/chucknorris.js";
-import type { ChuckNorrisMode } from "./subcommands/chucknorris.js";
-
 import { run as runDice } from "./subcommands/dice.js";
 
 import { run as runWeather } from "./subcommands/weather.js";
@@ -17,10 +14,11 @@ import type { TempUnit, WeatherMode } from "../../services/weather/types.js";
 
 import { run as runCoinflip } from "./subcommands/coinflip.js";
 import { run as runPoll } from "./subcommands/poll.js";
-import { run as runJava } from "./subcommands/java.js";
 
 import { run as runLeaderboard } from "./subcommands/leaderboard.js";
 import type { LeaderboardMode } from "./subcommands/leaderboard.js";
+
+import { handleJoke, buildJokeSubcommands } from "./subcommands/joke/index.js";
 
 import { recordFunUsage, type FunCommandKey } from "../../services/fun/funUsageStore.js";
 
@@ -32,24 +30,8 @@ export const data = new SlashCommandBuilder()
   .setName("fun")
   .setDescription("Fun commands")
 
-  // /fun chucknorris
-  .addSubcommand((s) =>
-    s
-      .setName("chucknorris")
-      .setDescription("Chuck Norris facts (random, category, or search)")
-      .addStringOption((o) =>
-        o.setName("category").setDescription("Category (optional)").setRequired(false),
-      )
-      .addStringOption((o) =>
-        o.setName("query").setDescription("Search term (optional)").setRequired(false),
-      )
-      .addBooleanOption((o) =>
-        o
-          .setName("ephemeral")
-          .setDescription("Only show the result to you")
-          .setRequired(false),
-      ),
-  )
+  // /fun joke
+  .addSubcommandGroup(buildJokeSubcommands)
 
   // /fun dice
   .addSubcommand((s) =>
@@ -85,19 +67,6 @@ export const data = new SlashCommandBuilder()
     s
       .setName("coinflip")
       .setDescription("Flip a coin")
-      .addBooleanOption((o) =>
-        o
-          .setName("ephemeral")
-          .setDescription("Only show the result to you")
-          .setRequired(false),
-      ),
-  )
-
-  // /fun java
-  .addSubcommand((s) =>
-    s
-      .setName("java")
-      .setDescription("Random Java jokes ☕")
       .addBooleanOption((o) =>
         o
           .setName("ephemeral")
@@ -214,15 +183,13 @@ export const data = new SlashCommandBuilder()
 
 function funKeyFromSub(sub: string): FunCommandKey | null {
   const allowed: Record<string, FunCommandKey> = {
-    chucknorris: "chucknorris",
-    dadjoke: "dadjoke",
     dice: "dice",
     coinflip: "coinflip",
-    java: "java",
     poll: "poll",
     weather: "weather",
     weather7: "weather7",
     leaderboard: "leaderboard",
+    joke: "joke",
   };
 
   return allowed[sub] ?? null;
@@ -245,8 +212,8 @@ async function maybeRecordUsage(
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const sub = interaction.options.getSubcommand(true);
 
-  // Only some subcommands have the "ephemeral" option (poll does not).
-  const supportsEphemeral = sub !== "poll";
+  // Only some subcommands have the "ephemeral" option (poll and joke do not).
+  const supportsEphemeral = sub !== "poll" && sub !== "joke";
   const ephemeral = supportsEphemeral
     ? (interaction.options.getBoolean("ephemeral") ?? false)
     : false;
@@ -254,17 +221,8 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
   await interaction.deferReply(ephemeral ? { flags: MessageFlags.Ephemeral } : undefined);
 
   try {
-    if (sub === "chucknorris") {
-      const category = interaction.options.getString("category")?.trim();
-      const query = interaction.options.getString("query")?.trim();
-
-      const mode: ChuckNorrisMode = query
-        ? { kind: "search", query }
-        : category
-          ? { kind: "category", category }
-          : { kind: "random" };
-
-      await runChuckNorris(interaction, mode);
+    if (sub === "joke") {
+      await handleJoke(interaction);
       await maybeRecordUsage(interaction, sub);
       return;
     }
@@ -277,12 +235,6 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
     if (sub === "coinflip") {
       await runCoinflip(interaction);
-      await maybeRecordUsage(interaction, sub);
-      return;
-    }
-
-    if (sub === "java") {
-      await runJava(interaction);
       await maybeRecordUsage(interaction, sub);
       return;
     }
