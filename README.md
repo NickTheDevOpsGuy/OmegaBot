@@ -244,24 +244,6 @@ OmegaBot uses discord.js v14 which includes:
 │       └── OmegaBot.yml
 ├── .gitignore
 ├── .husky
-│   ├── _
-│   │   ├── applypatch-msg
-│   │   ├── commit-msg
-│   │   ├── .gitignore
-│   │   ├── h
-│   │   ├── husky.sh
-│   │   ├── post-applypatch
-│   │   ├── post-checkout
-│   │   ├── post-commit
-│   │   ├── post-merge
-│   │   ├── post-rewrite
-│   │   ├── pre-applypatch
-│   │   ├── pre-auto-gc
-│   │   ├── pre-commit
-│   │   ├── pre-merge-commit
-│   │   ├── prepare-commit-msg
-│   │   ├── pre-push
-│   │   └── pre-rebase
 │   ├── pre-commit
 │   └── pre-push
 ├── LICENSE
@@ -289,10 +271,8 @@ OmegaBot uses discord.js v14 which includes:
 │   │   ├── fun
 │   │   │   ├── fun.ts
 │   │   │   └── subcommands
-│   │   │       ├── chucknorris.ts
 │   │   │       ├── coinflip.ts
 │   │   │       ├── dice.ts
-│   │   │       ├── java.ts
 │   │   │       ├── joke
 │   │   │       │   ├── add.ts
 │   │   │       │   ├── index.ts
