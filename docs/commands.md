@@ -87,43 +87,6 @@ Fetch a single pull request by number.
 
 Entertainment and engagement commands. All fun commands track usage for leaderboards.
 
-### `/fun chucknorris`
-
-Get Chuck Norris facts.
-
-**Options:**
-
-- `category` (optional) — Fetch from a specific category
-- `query` (optional) — Search facts by keyword
-- `ephemeral` (optional) — Show result only to you
-
-**Modes:**
-
-- Random fact (no options)
-- Category-based fact
-- Keyword search
-
-**Use case:** Lighten the mood with absurd humor.
-
----
-
-### `/fun dadjoke`
-
-Get dad jokes.
-
-**Options:**
-
-- `query` (optional) — Search jokes by keyword
-- `ephemeral` (optional) — Show result only to you
-
-**Modes:**
-
-- Random joke (no query)
-- Search results (with query)
-
-**Use case:** Classic groan-worthy humor.
-
----
 
 ### `/fun joke`
 
