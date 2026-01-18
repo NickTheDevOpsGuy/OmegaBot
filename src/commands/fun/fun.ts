@@ -189,7 +189,7 @@ function funKeyFromSub(sub: string): FunCommandKey | null {
     weather: "weather",
     weather7: "weather7",
     leaderboard: "leaderboard",
-    joke: "joke",
+    // Note: joke subcommands (random, add, remove, list) all count as "joke"
   };
 
   return allowed[sub] ?? null;
@@ -210,10 +210,33 @@ async function maybeRecordUsage(
 }
 
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
+  // Check if we're in a subcommand group first
+  const group = interaction.options.getSubcommandGroup();
   const sub = interaction.options.getSubcommand(true);
 
-  // Only some subcommands have the "ephemeral" option (poll and joke do not).
-  const supportsEphemeral = sub !== "poll" && sub !== "joke";
+  // Handle subcommand groups
+  if (group === "joke") {
+    // Don't defer here - let the joke handler manage its own replies
+    try {
+      await handleJoke(interaction);
+      // Record usage as "joke" regardless of which subcommand
+      await recordFunUsage({ userId: interaction.user.id, command: "joke" });
+    } catch (err) {
+      logger.error({ err, sub, group }, "[fun] joke subcommand failed");
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply({
+          content: "Something went wrong. Try again in a bit.",
+          ephemeral: true,
+        });
+      } else {
+        await interaction.editReply("Something went wrong. Try again in a bit.");
+      }
+    }
+    return;
+  }
+
+  // Regular subcommands (not in a group)
+  const supportsEphemeral = sub !== "poll";
   const ephemeral = supportsEphemeral
     ? (interaction.options.getBoolean("ephemeral") ?? false)
     : false;
@@ -221,12 +244,6 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
   await interaction.deferReply(ephemeral ? { flags: MessageFlags.Ephemeral } : undefined);
 
   try {
-    if (sub === "joke") {
-      await handleJoke(interaction);
-      await maybeRecordUsage(interaction, sub);
-      return;
-    }
-
     if (sub === "dice") {
       await runDice(interaction);
       await maybeRecordUsage(interaction, sub);
