@@ -69,7 +69,9 @@ export const data = new SlashCommandBuilder()
 
   // Bot stats subcommands
   .addSubcommand((sub) =>
-    sub.setName("stats").setDescription("Show bot statistics (uptime, database, commands)"),
+    sub
+      .setName("stats")
+      .setDescription("Show bot statistics (uptime, database, commands)"),
   )
   .addSubcommand((sub) =>
     sub.setName("health").setDescription("Check bot and service health"),
@@ -137,7 +139,11 @@ function looksRetryable(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err);
   const low = msg.toLowerCase();
   // common sqlite transient errors
-  return low.includes("sqlite_busy") || low.includes("database is locked") || low.includes("busy");
+  return (
+    low.includes("sqlite_busy") ||
+    low.includes("database is locked") ||
+    low.includes("busy")
+  );
 }
 
 async function withRetry<T>(
@@ -252,7 +258,8 @@ async function checkModeratorRole(
 
   if (interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) return true;
   if (interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) return true;
-  if (interaction.memberPermissions?.has(PermissionFlagsBits.ModerateMembers)) return true;
+  if (interaction.memberPermissions?.has(PermissionFlagsBits.ModerateMembers))
+    return true;
 
   try {
     const db = getDb();
@@ -484,12 +491,16 @@ async function handleStats(interaction: ChatInputCommandInteraction): Promise<vo
     const db = getDb();
 
     jokeCount = await withRetry("stats:jokesCount", () => {
-      const row = db.prepare("SELECT COUNT(*) as count FROM jokes").get() as { count: number };
+      const row = db.prepare("SELECT COUNT(*) as count FROM jokes").get() as {
+        count: number;
+      };
       return row.count;
     });
 
     coinFlipCount = await withRetry("stats:coinFlipCount", () => {
-      const row = db.prepare("SELECT COUNT(*) as count FROM coin_flips").get() as { count: number };
+      const row = db.prepare("SELECT COUNT(*) as count FROM coin_flips").get() as {
+        count: number;
+      };
       return row.count;
     });
   } catch (err) {
@@ -497,7 +508,9 @@ async function handleStats(interaction: ChatInputCommandInteraction): Promise<vo
   }
 
   try {
-    const funUsage = await withRetry("stats:funUsageSnapshot", () => getFunUsageSnapshot());
+    const funUsage = await withRetry("stats:funUsageSnapshot", () =>
+      getFunUsageSnapshot(),
+    );
     const totals = (funUsage?.totalsByCommand ?? {}) as Record<string, number>;
     totalCommands = Object.values(totals).reduce(
       (sum, count) => sum + (Number.isFinite(count) ? count : 0),
@@ -529,7 +542,11 @@ async function handleStats(interaction: ChatInputCommandInteraction): Promise<vo
         },
         { name: "Memory", value: `${memUsedMB}MB / ${memTotalMB}MB`, inline: true },
         { name: "Total Commands", value: String(totalCommands), inline: true },
-        { name: "Jokes", value: jokeCount === null ? "N/A" : String(jokeCount), inline: true },
+        {
+          name: "Jokes",
+          value: jokeCount === null ? "N/A" : String(jokeCount),
+          inline: true,
+        },
         {
           name: "Coin Flips",
           value: coinFlipCount === null ? "N/A" : String(coinFlipCount),
@@ -544,7 +561,10 @@ async function handleStats(interaction: ChatInputCommandInteraction): Promise<vo
     logger.info({ userId: interaction.user.id }, "[admin] viewed stats");
   } catch (err) {
     logger.error({ err }, "[admin] stats reply failed");
-    await safeReply(interaction, { content: "❌ Failed to get statistics", ephemeral: true });
+    await safeReply(interaction, {
+      content: "❌ Failed to get statistics",
+      ephemeral: true,
+    });
   }
 }
 
@@ -608,6 +628,9 @@ async function handleHealth(interaction: ChatInputCommandInteraction): Promise<v
     logger.info({ userId: interaction.user.id }, "[admin] viewed health");
   } catch (error) {
     logger.error({ error }, "[admin] health check failed");
-    await safeReply(interaction, { content: "❌ Failed to run health check", ephemeral: true });
+    await safeReply(interaction, {
+      content: "❌ Failed to run health check",
+      ephemeral: true,
+    });
   }
 }
