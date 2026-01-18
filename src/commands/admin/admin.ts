@@ -1,5 +1,7 @@
+// src/commands/admin/admin.ts
 import {
   SlashCommandBuilder,
+  EmbedBuilder,
   PermissionFlagsBits,
   type ChatInputCommandInteraction,
   type GuildMember,
@@ -7,15 +9,14 @@ import {
 } from "discord.js";
 import { logger } from "../../utils/logger.js";
 import { getDb } from "../../services/database/db.js";
+import { getFunUsageSnapshot } from "../../services/fun/funUsageStore.js";
+import { EmbedColors } from "../../utils/colors.js";
 
-/**
- * /admin
- *
- * Role-based moderation commands: timeout, kick, ban
- */
 export const data = new SlashCommandBuilder()
   .setName("admin")
-  .setDescription("Moderation commands (role-based)")
+  .setDescription("Admin and moderation commands")
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+  // Moderation subcommands
   .addSubcommand((sub) =>
     sub
       .setName("timeout")
@@ -23,14 +24,13 @@ export const data = new SlashCommandBuilder()
       .addUserOption((opt) =>
         opt.setName("user").setDescription("User to timeout").setRequired(true),
       )
-      .addIntegerOption(
-        (opt) =>
-          opt
-            .setName("duration")
-            .setDescription("Duration in minutes")
-            .setRequired(true)
-            .setMinValue(1)
-            .setMaxValue(40320), // 28 days max
+      .addIntegerOption((opt) =>
+        opt
+          .setName("duration")
+          .setDescription("Duration in minutes")
+          .setRequired(true)
+          .setMinValue(1)
+          .setMaxValue(40320),
       )
       .addStringOption((opt) =>
         opt.setName("reason").setDescription("Reason for timeout").setRequired(false),
@@ -66,11 +66,34 @@ export const data = new SlashCommandBuilder()
           .setMaxValue(7),
       ),
   )
-  .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild);
+  // Bot stats subcommands
+  .addSubcommand((sub) =>
+    sub
+      .setName("stats")
+      .setDescription("Show bot statistics (uptime, database, commands)"),
+  )
+  .addSubcommand((sub) =>
+    sub.setName("health").setDescription("Check bot and service health"),
+  );
 
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
+  const subcommand = interaction.options.getSubcommand();
+
+  // Handle stats and health (no moderation check needed)
+  if (subcommand === "stats") {
+    await interaction.deferReply();
+    await handleStats(interaction);
+    return;
+  }
+
+  if (subcommand === "health") {
+    await interaction.deferReply();
+    await handleHealth(interaction);
+    return;
+  }
+
+  // For moderation commands, check permissions
   try {
-    // Must be in a guild
     if (!interaction.inGuild()) {
       await interaction.reply({
         content: "This command can only be used in a server.",
@@ -79,7 +102,6 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       return;
     }
 
-    // Check if user has the required role
     const hasPermission = await checkModeratorRole(interaction);
     if (!hasPermission) {
       await interaction.reply({
@@ -90,8 +112,6 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       });
       return;
     }
-
-    const subcommand = interaction.options.getSubcommand();
 
     switch (subcommand) {
       case "timeout":
@@ -128,9 +148,6 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
   }
 }
 
-/**
- * Check if user has moderator role
- */
 async function checkModeratorRole(
   interaction: ChatInputCommandInteraction,
 ): Promise<boolean> {
@@ -138,7 +155,6 @@ async function checkModeratorRole(
     return false;
   }
 
-  // Admins always have permission
   if (interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
     return true;
   }
@@ -147,20 +163,17 @@ async function checkModeratorRole(
     const db = getDb();
     const guildId = interaction.guildId!;
 
-    // Check for moderator roles in database
     const roles = db
       .prepare(`SELECT role_id FROM moderator_roles WHERE guild_id = ?`)
       .all(guildId) as Array<{ role_id: string }>;
 
     if (roles.length === 0) {
-      // No moderator roles configured - only admins can use
       return false;
     }
 
     const member = interaction.member as GuildMember;
     const memberRoles = member.roles.cache;
 
-    // Check if user has any of the moderator roles
     return roles.some((r) => memberRoles.has(r.role_id));
   } catch (err) {
     logger.error({ err }, "[admin] failed to check moderator role");
@@ -168,9 +181,6 @@ async function checkModeratorRole(
   }
 }
 
-/**
- * Handle timeout subcommand
- */
 async function handleTimeout(interaction: ChatInputCommandInteraction): Promise<void> {
   const targetUser = interaction.options.getUser("user", true);
   const duration = interaction.options.getInteger("duration", true);
@@ -187,7 +197,6 @@ async function handleTimeout(interaction: ChatInputCommandInteraction): Promise<
   try {
     const member = await interaction.guild.members.fetch(targetUser.id);
 
-    // Can't timeout bots or self
     if (member.user.bot) {
       await interaction.reply({
         content: "❌ Cannot timeout bots.",
@@ -204,7 +213,6 @@ async function handleTimeout(interaction: ChatInputCommandInteraction): Promise<
       return;
     }
 
-    // Check role hierarchy
     const executor = interaction.member as GuildMember;
     if (member.roles.highest.position >= executor.roles.highest.position) {
       await interaction.reply({
@@ -214,7 +222,6 @@ async function handleTimeout(interaction: ChatInputCommandInteraction): Promise<
       return;
     }
 
-    // Apply timeout
     const durationMs = duration * 60 * 1000;
     await member.timeout(durationMs, reason);
 
@@ -223,12 +230,7 @@ async function handleTimeout(interaction: ChatInputCommandInteraction): Promise<
     });
 
     logger.info(
-      {
-        moderator: interaction.user.tag,
-        target: targetUser.tag,
-        duration,
-        reason,
-      },
+      { moderator: interaction.user.tag, target: targetUser.tag, duration, reason },
       "[admin] User timed out",
     );
   } catch (err) {
@@ -240,9 +242,6 @@ async function handleTimeout(interaction: ChatInputCommandInteraction): Promise<
   }
 }
 
-/**
- * Handle kick subcommand
- */
 async function handleKick(interaction: ChatInputCommandInteraction): Promise<void> {
   const targetUser = interaction.options.getUser("user", true);
   const reason = interaction.options.getString("reason") ?? "No reason provided";
@@ -258,7 +257,6 @@ async function handleKick(interaction: ChatInputCommandInteraction): Promise<voi
   try {
     const member = await interaction.guild.members.fetch(targetUser.id);
 
-    // Can't kick bots or self
     if (member.user.bot) {
       await interaction.reply({
         content: "❌ Cannot kick bots.",
@@ -275,7 +273,6 @@ async function handleKick(interaction: ChatInputCommandInteraction): Promise<voi
       return;
     }
 
-    // Check role hierarchy
     const executor = interaction.member as GuildMember;
     if (member.roles.highest.position >= executor.roles.highest.position) {
       await interaction.reply({
@@ -285,7 +282,6 @@ async function handleKick(interaction: ChatInputCommandInteraction): Promise<voi
       return;
     }
 
-    // Check if member is kickable
     if (!member.kickable) {
       await interaction.reply({
         content: "❌ I don't have permission to kick this user.",
@@ -294,7 +290,6 @@ async function handleKick(interaction: ChatInputCommandInteraction): Promise<voi
       return;
     }
 
-    // Kick user
     await member.kick(reason);
 
     await interaction.reply({
@@ -302,11 +297,7 @@ async function handleKick(interaction: ChatInputCommandInteraction): Promise<voi
     });
 
     logger.info(
-      {
-        moderator: interaction.user.tag,
-        target: targetUser.tag,
-        reason,
-      },
+      { moderator: interaction.user.tag, target: targetUser.tag, reason },
       "[admin] User kicked",
     );
   } catch (err) {
@@ -318,9 +309,6 @@ async function handleKick(interaction: ChatInputCommandInteraction): Promise<voi
   }
 }
 
-/**
- * Handle ban subcommand
- */
 async function handleBan(interaction: ChatInputCommandInteraction): Promise<void> {
   const targetUser = interaction.options.getUser("user", true);
   const reason = interaction.options.getString("reason") ?? "No reason provided";
@@ -337,7 +325,6 @@ async function handleBan(interaction: ChatInputCommandInteraction): Promise<void
   try {
     const member = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
 
-    // Can't ban self
     if (targetUser.id === interaction.user.id) {
       await interaction.reply({
         content: "❌ You cannot ban yourself.",
@@ -346,7 +333,6 @@ async function handleBan(interaction: ChatInputCommandInteraction): Promise<void
       return;
     }
 
-    // Check role hierarchy if member is in server
     if (member) {
       if (member.user.bot) {
         await interaction.reply({
@@ -374,7 +360,6 @@ async function handleBan(interaction: ChatInputCommandInteraction): Promise<void
       }
     }
 
-    // Ban user
     await interaction.guild.members.ban(targetUser.id, {
       reason,
       deleteMessageSeconds: deleteDays * 24 * 60 * 60,
@@ -385,12 +370,7 @@ async function handleBan(interaction: ChatInputCommandInteraction): Promise<void
     });
 
     logger.info(
-      {
-        moderator: interaction.user.tag,
-        target: targetUser.tag,
-        reason,
-        deleteDays,
-      },
+      { moderator: interaction.user.tag, target: targetUser.tag, reason, deleteDays },
       "[admin] User banned",
     );
   } catch (err) {
@@ -399,5 +379,150 @@ async function handleBan(interaction: ChatInputCommandInteraction): Promise<void
       content: "❌ Failed to ban user. Check my permissions and role position.",
       flags: MessageFlags.Ephemeral,
     });
+  }
+}
+
+async function handleStats(interaction: ChatInputCommandInteraction): Promise<void> {
+  try {
+    const db = getDb();
+
+    const jokeCount = db.prepare("SELECT COUNT(*) as count FROM jokes").get() as {
+      count: number;
+    };
+
+    const coinFlipCount = db
+      .prepare("SELECT COUNT(*) as count FROM coin_flips")
+      .get() as { count: number };
+
+    const funUsage = await getFunUsageSnapshot();
+    const totalCommands = Object.values(funUsage.totalsByCommand).reduce(
+      (sum, count) => sum + count,
+      0
+    );
+
+    const uptimeSeconds = process.uptime();
+    const uptimeDays = Math.floor(uptimeSeconds / 86400);
+    const uptimeHours = Math.floor((uptimeSeconds % 86400) / 3600);
+    const uptimeMinutes = Math.floor((uptimeSeconds % 3600) / 60);
+
+    const memUsage = process.memoryUsage();
+    const memUsedMB = Math.round(memUsage.heapUsed / 1024 / 1024);
+    const memTotalMB = Math.round(memUsage.heapTotal / 1024 / 1024);
+
+    const embed = new EmbedBuilder()
+      .setTitle("🤖 Bot Statistics")
+      .setColor(EmbedColors.Info)
+      .addFields(
+        {
+          name: "⏱️ Uptime",
+          value: `${uptimeDays}d ${uptimeHours}h ${uptimeMinutes}m`,
+          inline: true,
+        },
+        {
+          name: "💾 Memory",
+          value: `${memUsedMB}MB / ${memTotalMB}MB`,
+          inline: true,
+        },
+        {
+          name: "📊 Total Commands",
+          value: totalCommands.toString(),
+          inline: true,
+        },
+        {
+          name: "🎭 Jokes",
+          value: jokeCount.count.toString(),
+          inline: true,
+        },
+        {
+          name: "🪙 Coin Flips",
+          value: coinFlipCount.count.toString(),
+          inline: true,
+        },
+        {
+          name: "👥 Unique Users",
+          value: Object.keys(funUsage.totalsByUser).length.toString(),
+          inline: true,
+        }
+      )
+      .setFooter({ text: `Node ${process.version}` })
+      .setTimestamp();
+
+    await interaction.editReply({ embeds: [embed] });
+
+    logger.info({ userId: interaction.user.id }, "[admin] Viewed bot statistics");
+  } catch (error) {
+    logger.error({ error }, "[admin] stats failed");
+    await interaction.editReply("❌ Failed to get statistics");
+  }
+}
+
+async function handleHealth(interaction: ChatInputCommandInteraction): Promise<void> {
+  try {
+    const checks: { name: string; status: string; details?: string }[] = [];
+
+    try {
+      const db = getDb();
+      db.prepare("SELECT 1").get();
+      checks.push({ name: "Database", status: "✅ Healthy" });
+    } catch (error) {
+      checks.push({
+        name: "Database",
+        status: "❌ Error",
+        details: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+
+    const requiredEnvVars = [
+      "DISCORD_TOKEN",
+      "DISCORD_APP_ID",
+      "GITHUB_TOKEN",
+      "GITHUB_OWNER",
+      "GITHUB_REPO",
+    ];
+
+    const missingVars = requiredEnvVars.filter((v) => !process.env[v]);
+    if (missingVars.length === 0) {
+      checks.push({ name: "Environment", status: "✅ All vars set" });
+    } else {
+      checks.push({
+        name: "Environment",
+        status: "⚠️ Missing vars",
+        details: missingVars.join(", "),
+      });
+    }
+
+    const optionalKeys = [
+      { name: "Anthropic API", key: "ANTHROPIC_API_KEY" },
+      { name: "Weather API", key: "WEATHERAPI_KEY" },
+    ];
+
+    optionalKeys.forEach(({ name, key }) => {
+      if (process.env[key]) {
+        checks.push({ name, status: "✅ Configured" });
+      } else {
+        checks.push({ name, status: "⚠️ Not configured" });
+      }
+    });
+
+    const embed = new EmbedBuilder()
+      .setTitle("🏥 Health Check")
+      .setColor(EmbedColors.Info)
+      .setDescription(
+        checks
+          .map((c) =>
+            c.details
+              ? `**${c.name}:** ${c.status}\n  ${c.details}`
+              : `**${c.name}:** ${c.status}`
+          )
+          .join("\n\n")
+      )
+      .setTimestamp();
+
+    await interaction.editReply({ embeds: [embed] });
+
+    logger.info({ userId: interaction.user.id }, "[admin] Viewed health check");
+  } catch (error) {
+    logger.error({ error }, "[admin] health check failed");
+    await interaction.editReply("❌ Failed to run health check");
   }
 }
