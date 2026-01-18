@@ -2,6 +2,22 @@
 import type { ChatInputCommandInteraction } from "discord.js";
 import { getRandomJoke, type JokeCategory } from "../../../../services/joke/jokeStore.js";
 
+const categoryEmoji: Record<JokeCategory, string> = {
+  boomer: "👴",
+  genx: "🎸",
+  millennial: "📱",
+  genz: "🔥",
+  genalpha: "🧒",
+  random: "🎲",
+  tech: "💻",
+  dark: "🌑",
+  wholesome: "🌈",
+  anti: "🤷",
+  puns: "🎭",
+  observational: "🔍",
+  dad: "👨",
+};
+
 export async function handleJokeRandom(
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
@@ -19,18 +35,11 @@ export async function handleJokeRandom(
     return;
   }
 
-  const categoryEmoji = {
-    boomer: "👴",
-    genx: "🎸",
-    millennial: "📱",
-    genz: "🔥",
-    genalpha: "🧒",
-    random: "🎲",
-  };
+  const emoji = categoryEmoji[joke.category] || "🎭";
 
   await interaction.reply({
     content: [
-      `${categoryEmoji[joke.category]} **${joke.category.toUpperCase()} JOKE** ${categoryEmoji[joke.category]}`,
+      `${emoji} **${joke.category.toUpperCase()} JOKE** ${emoji}`,
       "",
       joke.joke_text,
       "",

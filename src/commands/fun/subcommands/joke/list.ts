@@ -6,6 +6,22 @@ import {
   type JokeCategory,
 } from "../../../../services/joke/jokeStore.js";
 
+const categoryEmoji: Record<JokeCategory, string> = {
+  boomer: "👴",
+  genx: "🎸",
+  millennial: "📱",
+  genz: "🔥",
+  genalpha: "🧒",
+  random: "🎲",
+  tech: "💻",
+  dark: "🌑",
+  wholesome: "🌈",
+  anti: "🤷",
+  puns: "🎭",
+  observational: "🔍",
+  dad: "👨",
+};
+
 export async function handleJokeList(
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
@@ -25,21 +41,27 @@ export async function handleJokeList(
   }
 
   const embed = new EmbedBuilder()
-    .setTitle(category ? `${category.toUpperCase()} Jokes` : "All Jokes")
+    .setTitle(
+      category
+        ? `${categoryEmoji[category]} ${category.toUpperCase()} Jokes`
+        : "🎭 All Jokes"
+    )
     .setDescription(
       jokes
-        .map(
-          (j) =>
-            `**#${j.id}** [${j.category}] - ${j.joke_text.substring(0, 60)}${j.joke_text.length > 60 ? "..." : ""} (${j.usage_count} uses)`,
-        )
-        .join("\n"),
+        .map((j) => {
+          const emoji = categoryEmoji[j.category] || "🎭";
+          const preview = j.joke_text.substring(0, 60);
+          const truncated = j.joke_text.length > 60 ? "..." : "";
+          return `${emoji} **#${j.id}** ${preview}${truncated}\n_${j.category} • ${j.usage_count} uses_`;
+        })
+        .join("\n\n"),
     )
     .setFooter({
       text: category
         ? `Showing ${jokes.length} of ${stats.byCategory[category] || 0} ${category} jokes`
         : `Showing ${jokes.length} of ${stats.total} total jokes`,
     })
-    .setColor(0x00ae86);
+    .setColor(0xffd700); // Gold color for fun commands
 
   await interaction.reply({ embeds: [embed], ephemeral: true });
 }
