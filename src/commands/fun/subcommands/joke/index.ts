@@ -68,6 +68,7 @@ export function buildJokeSubcommands(
 export async function handleJoke(
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
+  // For subcommand groups, we need to get the subcommand differently
   const subcommand = interaction.options.getSubcommand();
 
   switch (subcommand) {
