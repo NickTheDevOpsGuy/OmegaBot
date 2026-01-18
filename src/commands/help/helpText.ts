@@ -153,9 +153,7 @@ function buildCommandsHelp(args: {
   isAdmin: boolean;
   commands: CommandListItem[];
 }): string {
-  const visible = args.commands.filter(
-    (c) => (args.isAdmin ? true : !c.adminOnly),
-  );
+  const visible = args.commands.filter((c) => (args.isAdmin ? true : !c.adminOnly));
 
   if (!visible.length) {
     return [
