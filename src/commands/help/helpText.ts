@@ -71,7 +71,7 @@ function buildOverviewHelp(args: { isAdmin: boolean }): string {
     "`/gh status`       Check GitHub integration status",
     "`/summary`         Summarize recent messages",
     "",
-    "If new commands don’t show up, an admin may need to run the register script.",
+    "If new commands don't show up, an admin may need to run the register script.",
   ].join("\n");
 }
 
@@ -87,7 +87,7 @@ function buildFunHelp(): string {
     "`/fun dice`          Roll dice",
     "`/fun coinflip`      Flip a coin",
     "`/fun poll`          Create a poll",
-    "`/fun weather`       Today’s weather",
+    "`/fun weather`       Today's weather",
     "`/fun weather7`      7-day forecast",
     "`/fun leaderboard`  Show fun usage stats",
   ].join("\n");
@@ -142,10 +142,17 @@ function buildAdminHelp(args: { isAdmin: boolean }): string {
   return [
     "**Help: Admin**",
     "",
-    "`/config welcome-channel set`",
-    "`/config welcome-channel clear`",
+    "**Server Configuration**",
+    "`/config welcome-channel set`    Set welcome channel",
+    "`/config welcome-channel clear`  Remove welcome channel",
+    "",
+    "**Role-Based Moderation**",
+    "`/admin timeout`   Timeout a user (requires role)",
+    "`/admin kick`      Kick a user (requires role)",
+    "`/admin ban`       Ban a user (requires role)",
     "",
     "You need Manage Server permissions to run these.",
+    "Moderation commands require specific roles set by server config.",
   ].join("\n");
 }
 
