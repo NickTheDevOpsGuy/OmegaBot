@@ -1,3 +1,4 @@
+import { MessageFlags } from "discord.js";
 import {
   SlashCommandBuilder,
   PermissionFlagsBits,
@@ -83,7 +84,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
     await interaction.reply({
       content: text,
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
   } catch (err) {
     logger.error(
@@ -96,7 +97,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       if (!interaction.replied && !interaction.deferred) {
         await interaction.reply({
           content: "Help failed unexpectedly. Please try again later.",
-          ephemeral: true,
+          flags: MessageFlags.Ephemeral,
         });
       }
     } catch (replyErr) {

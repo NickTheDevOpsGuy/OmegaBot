@@ -468,7 +468,6 @@ Search FAQ entries by keyword.
 
 ## Notes
 
-- **Ephemeral Options:** Many commands support `ephemeral: true` to show results only to you
 - **Usage Tracking:** Fun commands automatically track usage for leaderboards
 - **Permissions:** Some commands require specific roles (check server configuration)
 - **API Keys:** Weather and LLM features require API keys in `.env`

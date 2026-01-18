@@ -27,6 +27,7 @@ build/
 
 # OS junk
 Thumbs.db
+Claude.dmg
 
 # TypeScript (if added later)
 *.tsbuildinfo
