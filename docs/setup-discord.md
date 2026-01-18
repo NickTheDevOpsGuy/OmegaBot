@@ -90,7 +90,7 @@ Old invites do not update permissions.
   [Applications](https://discord.com/developers/applications)
 
 - Bot Permissions Reference
-  https://discord.com/developers/docs/topics/permissions
+  [Permissions](https://discord.com/developers/docs/topics/permissions)
 
 - OAuth2 Scopes
-  https://discord.com/developers/docs/topics/oauth2
+  [OAuth](https://discord.com/developers/docs/topics/oauth2)
