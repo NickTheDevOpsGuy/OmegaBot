@@ -92,15 +92,6 @@ function buildFunHelp(): string {
   );
   lines.push("");
 
-  lines.push("**Chuck Norris**");
-  lines.push("`/fun chucknorris`");
-  lines.push("Examples");
-  lines.push("`/fun chucknorris`");
-  lines.push("`/fun chucknorris category:dev`");
-  lines.push("`/fun chucknorris query:roundhouse`");
-  lines.push("`/fun chucknorris query:docker ephemeral:true`");
-  lines.push("");
-
   lines.push("**Joke (Community)**");
   lines.push("`/fun joke`     User-submitted jokes with 13 categories");
   lines.push("Subcommands");
