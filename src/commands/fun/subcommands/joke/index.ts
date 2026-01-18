@@ -1,8 +1,5 @@
 // src/commands/fun/subcommands/joke/index.ts
-import {
-  SlashCommandSubcommandBuilder,
-  SlashCommandSubcommandGroupBuilder,
-} from "discord.js";
+import { SlashCommandSubcommandBuilder, SlashCommandSubcommandGroupBuilder } from "discord.js";
 import type { ChatInputCommandInteraction } from "discord.js";
 import { JOKE_CATEGORIES } from "../../../../services/joke/jokeStore.js";
 import { handleJokeRandom } from "./random.js";
@@ -10,9 +7,7 @@ import { handleJokeAdd } from "./add.js";
 import { handleJokeRemove } from "./remove.js";
 import { handleJokeList } from "./list.js";
 
-export function buildJokeSubcommands(
-  subcommandGroup: SlashCommandSubcommandGroupBuilder,
-) {
+export function buildJokeSubcommands(subcommandGroup: SlashCommandSubcommandGroupBuilder) {
   return subcommandGroup
     .setName("joke")
     .setDescription("User-submitted jokes by generation")
