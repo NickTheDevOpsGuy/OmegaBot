@@ -34,9 +34,7 @@ export const data = new SlashCommandBuilder()
       ),
   );
 
-export async function execute(
-  interaction: ChatInputCommandInteraction,
-): Promise<void> {
+export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   try {
     const isAdmin =
       interaction.inGuild() &&
@@ -46,10 +44,7 @@ export async function execute(
     try {
       commands = extractCommandList(interaction.client);
     } catch (err) {
-      logger.error(
-        { err },
-        "[help] failed to extract command list",
-      );
+      logger.error({ err }, "[help] failed to extract command list");
       commands = [];
     }
 
@@ -77,10 +72,7 @@ export async function execute(
         topic,
       });
     } catch (err) {
-      logger.error(
-        { err, topic },
-        "[help] buildHelpText failed",
-      );
+      logger.error({ err, topic }, "[help] buildHelpText failed");
 
       text =
         "**Help is temporarily unavailable**\n\n" +
@@ -103,16 +95,12 @@ export async function execute(
     try {
       if (!interaction.replied && !interaction.deferred) {
         await interaction.reply({
-          content:
-            "Help failed unexpectedly. Please try again later.",
+          content: "Help failed unexpectedly. Please try again later.",
           ephemeral: true,
         });
       }
     } catch (replyErr) {
-      logger.error(
-        { err: replyErr },
-        "[help] failed to send fallback reply",
-      );
+      logger.error({ err: replyErr }, "[help] failed to send fallback reply");
     }
   }
 }
