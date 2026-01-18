@@ -67,7 +67,7 @@ function buildOverviewHelp(args: { isAdmin: boolean }): string {
   );
   lines.push("");
   lines.push("**Quick picks**");
-  lines.push("`/fun dadjoke`     Random dad joke");
+  lines.push("`/fun joke random` Community jokes across 13 categories");
   lines.push("`/fun poll`        Create a quick poll");
   lines.push("`/fun weather`     Weather for a location");
   lines.push("`/gh status`       Check GitHub integration status");
@@ -75,7 +75,7 @@ function buildOverviewHelp(args: { isAdmin: boolean }): string {
   lines.push("`/timezone show`   Show your saved timezone");
   lines.push("");
   lines.push(
-    "If new commands don’t show up, an admin may need to run the register script.",
+    "If new commands don't show up, an admin may need to run the register script.",
   );
 
   return lines.join("\n");
@@ -101,19 +101,39 @@ function buildFunHelp(): string {
   lines.push("`/fun chucknorris query:docker ephemeral:true`");
   lines.push("");
 
-  lines.push("**Dad Joke**");
-  lines.push("`/fun dadjoke`");
+  lines.push("**Joke (Community)**");
+  lines.push("`/fun joke`     User-submitted jokes with 13 categories");
+  lines.push("Subcommands");
+  lines.push("`/fun joke random`       Get a random joke");
+  lines.push("`/fun joke add`          Add a new joke to the database");
+  lines.push("`/fun joke list`         Browse recent jokes");
+  lines.push("`/fun joke remove`       Remove a joke (moderators only)");
+  lines.push("Categories");
+  lines.push("boomer, genx, millennial, genz, genalpha, random, tech, dark, wholesome, anti, puns, observational, dad");
   lines.push("Examples");
-  lines.push("`/fun dadjoke`");
-  lines.push("`/fun dadjoke query:coffee`");
-  lines.push("`/fun dadjoke query:kubernetes ephemeral:true`");
+  lines.push("`/fun joke random`");
+  lines.push("`/fun joke random category:genz`");
+  lines.push("`/fun joke random category:tech`");
+  lines.push("`/fun joke add text:Why did... category:millennial`");
+  lines.push("`/fun joke list category:dad`");
   lines.push("");
 
   lines.push("**Coin Flip**");
-  lines.push("`/fun coinflip`");
+  lines.push("`/fun coinflip`     Flip a coin (results tracked for stats)");
   lines.push("Examples");
   lines.push("`/fun coinflip`");
   lines.push("`/fun coinflip ephemeral:true`");
+  lines.push("");
+
+  lines.push("**Coin Stats**");
+  lines.push("`/fun coinstats`    View coin flip statistics and leaderboards");
+  lines.push("Options");
+  lines.push("`user`         Check another user's stats");
+  lines.push("`leaderboard`  Show top flippers (true/false)");
+  lines.push("Examples");
+  lines.push("`/fun coinstats`");
+  lines.push("`/fun coinstats user:@Someone`");
+  lines.push("`/fun coinstats leaderboard:true`");
   lines.push("");
 
   lines.push("**Dice**");
