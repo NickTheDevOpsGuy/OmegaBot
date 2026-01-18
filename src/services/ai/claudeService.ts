@@ -67,15 +67,15 @@ export async function callClaude(
  * Summarize GitHub commit history
  */
 export async function summarizeCommitHistory(commits: string): Promise<string> {
-  const systemPrompt = \`You are a helpful assistant that summarizes git commit history. 
+  const systemPrompt = `You are a helpful assistant that summarizes git commit history. 
 Be concise and focus on the most important changes. 
-Group related commits together and highlight breaking changes or major features.\`;
+Group related commits together and highlight breaking changes or major features.`;
 
-  const prompt = \`Summarize the following commit history. Focus on major changes, features, and fixes:
+  const prompt = `Summarize the following commit history. Focus on major changes, features, and fixes:
 
 \${commits}
 
-Provide a clear, organized summary in bullet points.\`;
+Provide a clear, organized summary in bullet points.`;
 
   return callClaude(prompt, {
     systemPrompt,
@@ -92,10 +92,10 @@ export async function summarizeDiscussion(
   body: string,
   comments: string
 ): Promise<string> {
-  const systemPrompt = \`You are a helpful assistant that summarizes GitHub discussions. 
-Be objective and highlight key decisions, concerns, and action items.\`;
+  const systemPrompt = `You are a helpful assistant that summarizes GitHub discussions. 
+Be objective and highlight key decisions, concerns, and action items.`;
 
-  const prompt = \`Summarize this GitHub discussion:
+  const prompt = `Summarize this GitHub discussion:
 
 **Title:** \${title}
 
@@ -109,7 +109,7 @@ Provide a concise summary covering:
 1. Main topic/purpose
 2. Key points discussed
 3. Decisions made (if any)
-4. Action items or next steps\`;
+4. Action items or next steps`;
 
   return callClaude(prompt, {
     systemPrompt,
