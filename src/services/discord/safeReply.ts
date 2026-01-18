@@ -1,48 +1,49 @@
 // src/services/discord/safeReply.ts
-//
-// Safe reply helper for Discord interactions.
-//
-// Goal:
-// - Avoid "Interaction already replied" and "Unknown interaction" pitfalls
-// - Let callers write one consistent "respond" call
-//
-// Behavior:
-// - If interaction already has a reply or was deferred, use editReply(content)
-// - Otherwise use reply({ content, flags? })
-//
-// Notes:
-// - Discord does not allow setting Ephemeral on editReply.
-//   So we only apply ephemeral flags on the initial reply.
-
-import {
+import type {
+  ChatInputCommandInteraction,
+  InteractionEditReplyOptions,
+  InteractionReplyOptions,
   MessageFlags,
-  type InteractionReplyOptions,
-  type RepliableInteraction,
 } from "discord.js";
 
-export type SafeReplyOptions = {
+export interface SafeReplyOptions {
   content: string;
+  flags?: MessageFlags;
   ephemeral?: boolean;
-};
-
-function toReplyOptions(opts: SafeReplyOptions): InteractionReplyOptions {
-  if (opts.ephemeral) {
-    return { content: opts.content, flags: MessageFlags.Ephemeral };
-  }
-  return { content: opts.content };
 }
 
 /**
- * Safely respond to an interaction exactly once.
+ * Safely reply to an interaction, handling already-replied cases.
  */
 export async function safeReply(
-  interaction: RepliableInteraction,
-  opts: SafeReplyOptions,
+  interaction: ChatInputCommandInteraction,
+  options: SafeReplyOptions,
 ): Promise<void> {
-  if (interaction.replied || interaction.deferred) {
-    await interaction.editReply(opts.content);
-    return;
+  const replyOptions: InteractionReplyOptions = {
+    content: options.content,
+  };
+
+  // Add flags or ephemeral - prefer flags
+  if (options.flags !== undefined) {
+    replyOptions.flags = options.flags as number; // Cast to number for bitfield
+  } else if (options.ephemeral) {
+    replyOptions.ephemeral = options.ephemeral;
   }
 
-  await interaction.reply(toReplyOptions(opts));
+  try {
+    if (interaction.replied || interaction.deferred) {
+      const editOptions: InteractionEditReplyOptions = {
+        content: options.content,
+      };
+      await interaction.editReply(editOptions);
+    } else {
+      await interaction.reply(replyOptions);
+    }
+  } catch (error) {
+    try {
+      await interaction.followUp(replyOptions);
+    } catch {
+      // Give up
+    }
+  }
 }

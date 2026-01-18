@@ -1,6 +1,10 @@
 // src/commands/github/status.ts
 
-import { SlashCommandBuilder, type ChatInputCommandInteraction } from "discord.js";
+import {
+  MessageFlags,
+  SlashCommandBuilder,
+  type ChatInputCommandInteraction,
+} from "discord.js";
 import { env } from "../../config/env.js";
 import { logger } from "../../utils/logger.js";
 
@@ -36,7 +40,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     lines.push(`Enabled: ${env.githubAssigneePollingEnabled ? "yes" : "no"}`);
     lines.push(`Channel: ${env.githubAssigneeAnnounceChannelId ?? "(unset)"}`);
 
-    await interaction.reply({ content: lines.join("\n"), ephemeral: true });
+    await interaction.reply({ content: lines.join("\n"), flags: MessageFlags.Ephemeral });
   } catch (err) {
     logger.error({ err }, "[/status] failed");
 
@@ -45,7 +49,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     if (interaction.deferred || interaction.replied) {
       await interaction.editReply({ content: msg });
     } else {
-      await interaction.reply({ content: msg, ephemeral: true });
+      await interaction.reply({ content: msg, flags: MessageFlags.Ephemeral });
     }
   }
 }

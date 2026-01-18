@@ -226,7 +226,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       if (!interaction.replied && !interaction.deferred) {
         await interaction.reply({
           content: "Something went wrong. Try again in a bit.",
-          ephemeral: true,
+          flags: MessageFlags.Ephemeral,
         });
       } else {
         await interaction.editReply("Something went wrong. Try again in a bit.");

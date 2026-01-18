@@ -214,23 +214,6 @@ OmegaBot uses discord.js v14 which includes:
 
 ```
 .
-├── assets
-│   ├── banner.png
-│   └── omegabot.png
-├── CHANGELOG.md
-├── CONTRIBUTORS.md
-├── data
-│   └── omegabot.db
-├── docs
-│   ├── commands.md
-│   ├── dev-notes.md
-│   ├── faq.md
-│   ├── setup-discord.md
-│   ├── setup-env.md
-│   └── transcripts.md
-├── .env
-├── .env.example
-├── eslint.config.ts
 ├── .github
 │   ├── ISSUE_TEMPLATE
 │   │   ├── bug.yml
@@ -239,49 +222,76 @@ OmegaBot uses discord.js v14 which includes:
 │   │   ├── enhancement_refactor.yml
 │   │   ├── feature_request.yml
 │   │   └── question_discussion.yml
-│   ├── pull_request_template.md
-│   └── workflows
-│       └── OmegaBot.yml
-├── .gitignore
+│   ├── workflows
+│   │   └── OmegaBot.yml
+│   └── pull_request_template.md
 ├── .husky
+│   ├── _
+│   │   ├── .gitignore
+│   │   ├── applypatch-msg
+│   │   ├── commit-msg
+│   │   ├── h
+│   │   ├── husky.sh
+│   │   ├── post-applypatch
+│   │   ├── post-checkout
+│   │   ├── post-commit
+│   │   ├── post-merge
+│   │   ├── post-rewrite
+│   │   ├── pre-applypatch
+│   │   ├── pre-auto-gc
+│   │   ├── pre-commit
+│   │   ├── pre-merge-commit
+│   │   ├── pre-push
+│   │   ├── pre-rebase
+│   │   └── prepare-commit-msg
 │   ├── pre-commit
 │   └── pre-push
-├── LICENSE
-├── package.json
-├── package-lock.json
-├── .prettierignore
-├── .prettierrc.yml
-├── README.md
+├── assets
+│   ├── banner.png
+│   └── omegabot.png
+├── data
+│   ├── faqs.json
+│   ├── fun-usage.json
+│   ├── github-assignees.json
+│   ├── guild-config.json
+│   ├── last-seen.json
+│   └── omegabot.db
+├── docs
+│   ├── commands.md
+│   ├── dev-notes.md
+│   ├── faq.md
+│   ├── setup-discord.md
+│   ├── setup-env.md
+│   └── transcripts.md
 ├── scripts
 │   └── precheck.sh
 ├── src
-│   ├── bot.ts
 │   ├── commands
 │   │   ├── changelog
 │   │   │   └── changelog.ts
 │   │   ├── config
 │   │   │   └── config.ts
 │   │   ├── faq
-│   │   │   ├── faq.ts
-│   │   │   └── subcommands
-│   │   │       ├── add.ts
-│   │   │       ├── get.ts
-│   │   │       ├── list.ts
-│   │   │       └── remove.ts
+│   │   │   ├── subcommands
+│   │   │   │   ├── add.ts
+│   │   │   │   ├── get.ts
+│   │   │   │   ├── list.ts
+│   │   │   │   └── remove.ts
+│   │   │   └── faq.ts
 │   │   ├── fun
-│   │   │   ├── fun.ts
-│   │   │   └── subcommands
-│   │   │       ├── coinflip.ts
-│   │   │       ├── dice.ts
-│   │   │       ├── joke
-│   │   │       │   ├── add.ts
-│   │   │       │   ├── index.ts
-│   │   │       │   ├── list.ts
-│   │   │       │   ├── random.ts
-│   │   │       │   └── remove.ts
-│   │   │       ├── leaderboard.ts
-│   │   │       ├── poll.ts
-│   │   │       └── weather.ts
+│   │   │   ├── subcommands
+│   │   │   │   ├── joke
+│   │   │   │   │   ├── add.ts
+│   │   │   │   │   ├── index.ts
+│   │   │   │   │   ├── list.ts
+│   │   │   │   │   ├── random.ts
+│   │   │   │   │   └── remove.ts
+│   │   │   │   ├── coinflip.ts
+│   │   │   │   ├── dice.ts
+│   │   │   │   ├── leaderboard.ts
+│   │   │   │   ├── poll.ts
+│   │   │   │   └── weather.ts
+│   │   │   └── fun.ts
 │   │   ├── general
 │   │   │   └── ping.ts
 │   │   ├── github
@@ -289,8 +299,8 @@ OmegaBot uses discord.js v14 which includes:
 │   │   │   ├── pr.ts
 │   │   │   └── status.ts
 │   │   ├── help
-│   │   │   ├── helpText.ts
-│   │   │   └── help.ts
+│   │   │   ├── help.ts
+│   │   │   └── helpText.ts
 │   │   ├── history
 │   │   │   └── history.ts
 │   │   ├── pagination
@@ -303,7 +313,6 @@ OmegaBot uses discord.js v14 which includes:
 │   │       └── timezone.ts
 │   ├── config
 │   │   └── env.ts
-│   ├── registerCommands.ts
 │   ├── services
 │   │   ├── cache
 │   │   │   └── simpleCache.ts
@@ -322,11 +331,11 @@ OmegaBot uses discord.js v14 which includes:
 │   │   │   ├── interactionHandler.ts
 │   │   │   └── safeReply.ts
 │   │   ├── faq
+│   │   │   ├── _shared.ts
 │   │   │   ├── faqService.ts
 │   │   │   ├── permissions.ts
 │   │   │   ├── services.test.ts
 │   │   │   ├── services.ts
-│   │   │   ├── _shared.ts
 │   │   │   ├── store.test.ts
 │   │   │   ├── store.test.ts.disabled
 │   │   │   ├── store.ts
@@ -349,7 +358,6 @@ OmegaBot uses discord.js v14 which includes:
 │   │   │   └── types.ts
 │   │   ├── joke
 │   │   │   └── jokeStore.ts
-│   │   ├── permissions
 │   │   ├── roles
 │   │   │   └── autoRoleHandler.ts
 │   │   ├── summary
@@ -370,8 +378,23 @@ OmegaBot uses discord.js v14 which includes:
 │   │   └── welcome
 │   │       ├── welcomeHandler.ts
 │   │       └── welcomeMessage.ts
-│   └── utils
-│       └── logger.ts
+│   ├── utils
+│   │   ├── colors.ts
+│   │   ├── interactions.ts
+│   │   └── logger.ts
+│   ├── bot.ts
+│   └── registerCommands.ts
+├── .env.example
+├── .gitignore
+├── .prettierignore
+├── .prettierrc.yml
+├── CHANGELOG.md
+├── CONTRIBUTORS.md
+├── eslint.config.ts
+├── LICENSE
+├── package-lock.json
+├── package.json
+├── README.md
 ├── tsconfig.json
 └── vitest.config.ts
 
