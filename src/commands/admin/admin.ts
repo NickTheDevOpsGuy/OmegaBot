@@ -120,7 +120,9 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     // Always defer so we never hit the 3s interaction timeout.
     // Stats/Health can be non-ephemeral if you prefer, but ephemeral keeps channels clean.
     const ephemeral = subcommand !== "stats" && subcommand !== "health";
-    await interaction.deferReply({ flags: ephemeral ? MessageFlags.Ephemeral : undefined });
+    await interaction.deferReply({
+      flags: ephemeral ? MessageFlags.Ephemeral : undefined,
+    });
 
     // Stats + health do not need mod role checks
     if (subcommand === "stats") {
@@ -191,13 +193,16 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 /* Permission check                                                            */
 /* -------------------------------------------------------------------------- */
 
-async function checkModeratorRole(interaction: ChatInputCommandInteraction): Promise<boolean> {
+async function checkModeratorRole(
+  interaction: ChatInputCommandInteraction,
+): Promise<boolean> {
   if (!interaction.inGuild() || !interaction.member) return false;
 
   // Admins/mods should be allowed even if DB roles aren't configured yet.
   if (interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) return true;
   if (interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) return true;
-  if (interaction.memberPermissions?.has(PermissionFlagsBits.ModerateMembers)) return true;
+  if (interaction.memberPermissions?.has(PermissionFlagsBits.ModerateMembers))
+    return true;
 
   try {
     const db = getDb();
@@ -240,11 +245,17 @@ async function handleTimeout(interaction: ChatInputCommandInteraction): Promise<
     const member = await interaction.guild.members.fetch(targetUser.id);
 
     if (member.user.bot) {
-      await safeReply(interaction, { content: "❌ Cannot timeout bots.", flags: MessageFlags.Ephemeral });
+      await safeReply(interaction, {
+        content: "❌ Cannot timeout bots.",
+        flags: MessageFlags.Ephemeral,
+      });
       return;
     }
     if (member.id === interaction.user.id) {
-      await safeReply(interaction, { content: "❌ You cannot timeout yourself.", flags: MessageFlags.Ephemeral });
+      await safeReply(interaction, {
+        content: "❌ You cannot timeout yourself.",
+        flags: MessageFlags.Ephemeral,
+      });
       return;
     }
 
@@ -270,7 +281,10 @@ async function handleTimeout(interaction: ChatInputCommandInteraction): Promise<
     );
   } catch (err) {
     logger.error({ err, targetUser: targetUser.id }, "[admin] timeout failed");
-    await safeReply(interaction, { content: userFacingError(err), flags: MessageFlags.Ephemeral });
+    await safeReply(interaction, {
+      content: userFacingError(err),
+      flags: MessageFlags.Ephemeral,
+    });
   }
 }
 
@@ -290,11 +304,17 @@ async function handleKick(interaction: ChatInputCommandInteraction): Promise<voi
     const member = await interaction.guild.members.fetch(targetUser.id);
 
     if (member.user.bot) {
-      await safeReply(interaction, { content: "❌ Cannot kick bots.", flags: MessageFlags.Ephemeral });
+      await safeReply(interaction, {
+        content: "❌ Cannot kick bots.",
+        flags: MessageFlags.Ephemeral,
+      });
       return;
     }
     if (member.id === interaction.user.id) {
-      await safeReply(interaction, { content: "❌ You cannot kick yourself.", flags: MessageFlags.Ephemeral });
+      await safeReply(interaction, {
+        content: "❌ You cannot kick yourself.",
+        flags: MessageFlags.Ephemeral,
+      });
       return;
     }
 
@@ -309,7 +329,8 @@ async function handleKick(interaction: ChatInputCommandInteraction): Promise<voi
 
     if (!member.kickable) {
       await safeReply(interaction, {
-        content: "❌ I don't have permission to kick this user. Check my role position and Kick Members permission.",
+        content:
+          "❌ I don't have permission to kick this user. Check my role position and Kick Members permission.",
         flags: MessageFlags.Ephemeral,
       });
       return;
@@ -317,7 +338,9 @@ async function handleKick(interaction: ChatInputCommandInteraction): Promise<voi
 
     await member.kick(reason);
 
-    await safeReply(interaction, { content: `✅ ${targetUser.tag} has been kicked.\nReason: ${reason}` });
+    await safeReply(interaction, {
+      content: `✅ ${targetUser.tag} has been kicked.\nReason: ${reason}`,
+    });
 
     logger.info(
       { moderator: interaction.user.tag, target: targetUser.tag, reason },
@@ -325,7 +348,10 @@ async function handleKick(interaction: ChatInputCommandInteraction): Promise<voi
     );
   } catch (err) {
     logger.error({ err, targetUser: targetUser.id }, "[admin] kick failed");
-    await safeReply(interaction, { content: userFacingError(err), flags: MessageFlags.Ephemeral });
+    await safeReply(interaction, {
+      content: userFacingError(err),
+      flags: MessageFlags.Ephemeral,
+    });
   }
 }
 
@@ -346,13 +372,19 @@ async function handleBan(interaction: ChatInputCommandInteraction): Promise<void
     const member = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
 
     if (targetUser.id === interaction.user.id) {
-      await safeReply(interaction, { content: "❌ You cannot ban yourself.", flags: MessageFlags.Ephemeral });
+      await safeReply(interaction, {
+        content: "❌ You cannot ban yourself.",
+        flags: MessageFlags.Ephemeral,
+      });
       return;
     }
 
     if (member) {
       if (member.user.bot) {
-        await safeReply(interaction, { content: "❌ Cannot ban bots.", flags: MessageFlags.Ephemeral });
+        await safeReply(interaction, {
+          content: "❌ Cannot ban bots.",
+          flags: MessageFlags.Ephemeral,
+        });
         return;
       }
 
@@ -367,7 +399,8 @@ async function handleBan(interaction: ChatInputCommandInteraction): Promise<void
 
       if (!member.bannable) {
         await safeReply(interaction, {
-          content: "❌ I don't have permission to ban this user. Check my role position and Ban Members permission.",
+          content:
+            "❌ I don't have permission to ban this user. Check my role position and Ban Members permission.",
           flags: MessageFlags.Ephemeral,
         });
         return;
@@ -391,7 +424,10 @@ async function handleBan(interaction: ChatInputCommandInteraction): Promise<void
     );
   } catch (err) {
     logger.error({ err, targetUser: targetUser.id }, "[admin] ban failed");
-    await safeReply(interaction, { content: userFacingError(err), flags: MessageFlags.Ephemeral });
+    await safeReply(interaction, {
+      content: userFacingError(err),
+      flags: MessageFlags.Ephemeral,
+    });
   }
 }
 
@@ -403,12 +439,19 @@ async function handleStats(interaction: ChatInputCommandInteraction): Promise<vo
   try {
     const db = getDb();
 
-    const jokeCount = db.prepare("SELECT COUNT(*) as count FROM jokes").get() as { count: number };
-    const coinFlipCount = db.prepare("SELECT COUNT(*) as count FROM coin_flips").get() as { count: number };
+    const jokeCount = db.prepare("SELECT COUNT(*) as count FROM jokes").get() as {
+      count: number;
+    };
+    const coinFlipCount = db
+      .prepare("SELECT COUNT(*) as count FROM coin_flips")
+      .get() as { count: number };
 
     const funUsage = await getFunUsageSnapshot();
     const totals = (funUsage?.totalsByCommand ?? {}) as Record<string, number>;
-    const totalCommands = Object.values(totals).reduce((sum, count) => sum + (Number.isFinite(count) ? count : 0), 0);
+    const totalCommands = Object.values(totals).reduce(
+      (sum, count) => sum + (Number.isFinite(count) ? count : 0),
+      0,
+    );
 
     const uptimeSeconds = process.uptime();
     const uptimeDays = Math.floor(uptimeSeconds / 86400);
@@ -423,12 +466,20 @@ async function handleStats(interaction: ChatInputCommandInteraction): Promise<vo
       .setTitle("Bot Statistics")
       .setColor(EmbedColors.Info)
       .addFields(
-        { name: "Uptime", value: `${uptimeDays}d ${uptimeHours}h ${uptimeMinutes}m`, inline: true },
+        {
+          name: "Uptime",
+          value: `${uptimeDays}d ${uptimeHours}h ${uptimeMinutes}m`,
+          inline: true,
+        },
         { name: "Memory", value: `${memUsedMB}MB / ${memTotalMB}MB`, inline: true },
         { name: "Total Commands", value: totalCommands.toString(), inline: true },
         { name: "Jokes", value: jokeCount.count.toString(), inline: true },
         { name: "Coin Flips", value: coinFlipCount.count.toString(), inline: true },
-        { name: "Unique Users", value: Object.keys(funUsage.totalsByUser ?? {}).length.toString(), inline: true },
+        {
+          name: "Unique Users",
+          value: Object.keys(funUsage.totalsByUser ?? {}).length.toString(),
+          inline: true,
+        },
       )
       .setFooter({ text: `Node ${process.version}` })
       .setTimestamp();
@@ -438,7 +489,10 @@ async function handleStats(interaction: ChatInputCommandInteraction): Promise<vo
     logger.info({ userId: interaction.user.id }, "[admin] viewed stats");
   } catch (error) {
     logger.error({ error }, "[admin] stats failed");
-    await safeReply(interaction, { content: "❌ Failed to get statistics", flags: MessageFlags.Ephemeral });
+    await safeReply(interaction, {
+      content: "❌ Failed to get statistics",
+      flags: MessageFlags.Ephemeral,
+    });
   }
 }
 
@@ -464,7 +518,11 @@ async function handleHealth(interaction: ChatInputCommandInteraction): Promise<v
     if (missingVars.length === 0) {
       checks.push({ name: "Environment", status: "✅ Required vars set" });
     } else {
-      checks.push({ name: "Environment", status: "⚠️ Missing vars", details: missingVars.join(", ") });
+      checks.push({
+        name: "Environment",
+        status: "⚠️ Missing vars",
+        details: missingVars.join(", "),
+      });
     }
 
     const optionalKeys = [
@@ -474,7 +532,10 @@ async function handleHealth(interaction: ChatInputCommandInteraction): Promise<v
     ];
 
     for (const { name, key } of optionalKeys) {
-      checks.push({ name, status: process.env[key] ? "✅ Configured" : "⚠️ Not configured" });
+      checks.push({
+        name,
+        status: process.env[key] ? "✅ Configured" : "⚠️ Not configured",
+      });
     }
 
     const embed = new EmbedBuilder()
@@ -483,7 +544,9 @@ async function handleHealth(interaction: ChatInputCommandInteraction): Promise<v
       .setDescription(
         checks
           .map((c) =>
-            c.details ? `**${c.name}:** ${c.status}\n${c.details}` : `**${c.name}:** ${c.status}`,
+            c.details
+              ? `**${c.name}:** ${c.status}\n${c.details}`
+              : `**${c.name}:** ${c.status}`,
           )
           .join("\n\n"),
       )
@@ -494,6 +557,9 @@ async function handleHealth(interaction: ChatInputCommandInteraction): Promise<v
     logger.info({ userId: interaction.user.id }, "[admin] viewed health");
   } catch (error) {
     logger.error({ error }, "[admin] health check failed");
-    await safeReply(interaction, { content: "❌ Failed to run health check", flags: MessageFlags.Ephemeral });
+    await safeReply(interaction, {
+      content: "❌ Failed to run health check",
+      flags: MessageFlags.Ephemeral,
+    });
   }
 }

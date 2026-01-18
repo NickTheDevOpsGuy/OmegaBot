@@ -64,6 +64,7 @@ OmegaBot supports moderator roles stored in SQLite.
 
 Admins must configure these roles using the config command.
 Only users with:
+
 - Administrator permission, OR
 - A configured moderator role
 
@@ -74,6 +75,7 @@ can run moderation commands.
 ## Re-inviting the Bot
 
 You MUST re-invite the bot if you change:
+
 - Permissions
 - Scopes
 - Installation type
@@ -92,4 +94,3 @@ Old invites do not update permissions.
 
 - OAuth2 Scopes
   https://discord.com/developers/docs/topics/oauth2
-
