@@ -1,3 +1,4 @@
+import { MessageFlags } from "discord.js";
 // src/commands/fun/subcommands/joke/remove.ts
 import type { ChatInputCommandInteraction } from "discord.js";
 import { removeJoke, getJoke } from "../../../../services/joke/jokeStore.js";
@@ -11,7 +12,7 @@ export async function handleJokeRemove(
   if (!interaction.inGuild() || !interaction.member) {
     await interaction.reply({
       content: "This command can only be used in a server.",
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
@@ -23,7 +24,7 @@ export async function handleJokeRemove(
   if (typeof member === "string") {
     await interaction.reply({
       content: "Could not verify your permissions.",
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
@@ -38,7 +39,7 @@ export async function handleJokeRemove(
   if (!hasModRole) {
     await interaction.reply({
       content: "❌ Only joke moderators can remove jokes.",
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
@@ -48,7 +49,7 @@ export async function handleJokeRemove(
   if (!joke) {
     await interaction.reply({
       content: `Joke #${jokeId} not found.`,
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
@@ -63,12 +64,12 @@ export async function handleJokeRemove(
         `Category: ${joke.category}`,
         `Text: ${joke.joke_text.substring(0, 100)}${joke.joke_text.length > 100 ? "..." : ""}`,
       ].join("\n"),
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
   } else {
     await interaction.reply({
       content: `Failed to remove joke #${jokeId}.`,
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
   }
 }

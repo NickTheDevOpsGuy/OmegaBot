@@ -1,3 +1,4 @@
+import { MessageFlags } from "discord.js";
 // src/services/discord/interactionHandler.ts
 //
 // Central interaction router for Discord.
@@ -69,7 +70,7 @@ export async function handleInteraction(
 
     await safeReply(interaction, {
       content: "Command not found.",
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
@@ -98,7 +99,7 @@ export async function handleInteraction(
 
     await safeReply(interaction, {
       content: "Something went wrong while running this command.",
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
   }
 }

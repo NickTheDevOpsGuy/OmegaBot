@@ -1,3 +1,4 @@
+import { MessageFlags } from "discord.js";
 // src/commands/fun/subcommands/poll.ts
 
 import {
@@ -146,7 +147,10 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
         optionIndex < 0 ||
         optionIndex >= latestPoll.options.length
       ) {
-        await btn.reply({ content: "Invalid poll option.", ephemeral: true });
+        await btn.reply({
+          content: "Invalid poll option.",
+          flags: MessageFlags.Ephemeral,
+        });
         return;
       }
 
@@ -161,7 +165,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
           content: `You already voted: **${
             latestPoll.options[result.previousOptionIndex] ?? "Unknown"
           }**`,
-          ephemeral: true,
+          flags: MessageFlags.Ephemeral,
         });
         return;
       }
@@ -169,7 +173,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       if (result.kind === "notFound") {
         await btn.reply({
           content: "Poll not found (maybe it expired).",
-          ephemeral: true,
+          flags: MessageFlags.Ephemeral,
         });
         return;
       }
@@ -188,7 +192,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
         if (!btn.replied && !btn.deferred) {
           await btn.reply({
             content: "Something went wrong recording that vote.",
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         }
       } catch {

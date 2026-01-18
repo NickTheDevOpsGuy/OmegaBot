@@ -1,5 +1,5 @@
 // src/commands/fun/subcommands/joke/list.ts
-import { EmbedBuilder, type ChatInputCommandInteraction } from "discord.js";
+import { MessageFlags, EmbedBuilder, type ChatInputCommandInteraction } from "discord.js";
 import {
   listJokes,
   getJokeStats,
@@ -35,7 +35,7 @@ export async function handleJokeList(
       content: category
         ? `No jokes in the ${category} category yet.`
         : "No jokes added yet. Be the first with `/fun joke add`!",
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
@@ -63,5 +63,5 @@ export async function handleJokeList(
     })
     .setColor(0xffd700); // Gold color for fun commands
 
-  await interaction.reply({ embeds: [embed], ephemeral: true });
+  await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
 }

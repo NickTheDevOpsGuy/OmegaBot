@@ -1,3 +1,4 @@
+import { MessageFlags } from "discord.js";
 // src/commands/config/config.ts
 
 import {
@@ -53,7 +54,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   if (!interaction.guildId) {
     await interaction.reply({
       content: "This command can only be used in a server (not in DMs).",
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
@@ -62,7 +63,10 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   const sub = interaction.options.getSubcommand();
 
   if (group !== "welcome-channel") {
-    await interaction.reply({ content: "Unknown config group.", ephemeral: true });
+    await interaction.reply({
+      content: "Unknown config group.",
+      flags: MessageFlags.Ephemeral,
+    });
     return;
   }
 
@@ -73,7 +77,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     if (channel.type !== ChannelType.GuildText) {
       await interaction.reply({
         content: "Please choose a normal text channel (not a thread or DM).",
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
       return;
     }
@@ -90,7 +94,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
     await interaction.reply({
       content: `✅ Welcome messages will be posted in <#${updated.welcomeChannelId}>.`,
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
@@ -103,7 +107,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       await interaction.reply({
         content:
           "Welcome channel is already not set. I will use the system channel or first text channel as a fallback.",
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
       return;
     }
@@ -118,7 +122,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     await interaction.reply({
       content:
         "✅ Cleared the welcome channel. I will use the system channel or first text channel as a fallback.",
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
   }
 }

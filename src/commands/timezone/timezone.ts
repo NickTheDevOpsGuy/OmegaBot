@@ -1,6 +1,10 @@
 // src/commands/timezone/timezone.ts
 
-import { SlashCommandBuilder, type ChatInputCommandInteraction } from "discord.js";
+import {
+  MessageFlags,
+  SlashCommandBuilder,
+  type ChatInputCommandInteraction,
+} from "discord.js";
 import { logger } from "../../utils/logger.js";
 import {
   clearUserTimezone,
@@ -112,7 +116,7 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const sub = interaction.options.getSubcommand(true);
 
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   try {
     if (sub === "set") return await handleSet(interaction);
