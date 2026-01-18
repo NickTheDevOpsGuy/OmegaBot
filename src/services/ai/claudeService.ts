@@ -17,7 +17,7 @@ export interface ClaudeOptions {
  */
 export async function callClaude(
   prompt: string,
-  options: ClaudeOptions = {}
+  options: ClaudeOptions = {},
 ): Promise<string> {
   const {
     systemPrompt = "You are a helpful assistant.",
@@ -43,7 +43,7 @@ export async function callClaude(
 
     // Extract text from response
     const textContent = message.content.find((block) => block.type === "text");
-    
+
     if (!textContent || textContent.type !== "text") {
       throw new Error("No text content in Claude response");
     }
@@ -53,7 +53,7 @@ export async function callClaude(
         inputTokens: message.usage.input_tokens,
         outputTokens: message.usage.output_tokens,
       },
-      "Claude API call successful"
+      "Claude API call successful",
     );
 
     return textContent.text;
@@ -90,7 +90,7 @@ Provide a clear, organized summary in bullet points.`;
 export async function summarizeDiscussion(
   title: string,
   body: string,
-  comments: string
+  comments: string,
 ): Promise<string> {
   const systemPrompt = `You are a helpful assistant that summarizes GitHub discussions. 
 Be objective and highlight key decisions, concerns, and action items.`;

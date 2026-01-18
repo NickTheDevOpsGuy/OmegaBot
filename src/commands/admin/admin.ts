@@ -17,15 +17,13 @@ export const data = new SlashCommandBuilder()
   .addSubcommand((sub) =>
     sub
       .setName("stats")
-      .setDescription("Show bot statistics (uptime, database, commands)")
+      .setDescription("Show bot statistics (uptime, database, commands)"),
   )
   .addSubcommand((sub) =>
-    sub.setName("health").setDescription("Check bot and service health")
+    sub.setName("health").setDescription("Check bot and service health"),
   );
 
-export async function execute(
-  interaction: ChatInputCommandInteraction
-): Promise<void> {
+export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const subcommand = interaction.options.getSubcommand();
 
   await interaction.deferReply();
@@ -44,9 +42,7 @@ export async function execute(
   }
 }
 
-async function handleStats(
-  interaction: ChatInputCommandInteraction
-): Promise<void> {
+async function handleStats(interaction: ChatInputCommandInteraction): Promise<void> {
   const db = getDb();
 
   // Get database stats
@@ -54,15 +50,15 @@ async function handleStats(
     count: number;
   };
 
-  const coinFlipCount = db
-    .prepare("SELECT COUNT(*) as count FROM coin_flips")
-    .get() as { count: number };
+  const coinFlipCount = db.prepare("SELECT COUNT(*) as count FROM coin_flips").get() as {
+    count: number;
+  };
 
   // Get fun command usage
   const funUsage = await getFunUsageSnapshot();
   const totalCommands = Object.values(funUsage.totalsByCommand).reduce(
     (sum, count) => sum + count,
-    0
+    0,
   );
 
   // Calculate uptime
@@ -109,22 +105,17 @@ async function handleStats(
         name: "👥 Unique Users",
         value: Object.keys(funUsage.totalsByUser).length.toString(),
         inline: true,
-      }
+      },
     )
     .setFooter({ text: `Node \${process.version}` })
     .setTimestamp();
 
   await interaction.editReply({ embeds: [embed] });
 
-  logger.info(
-    { userId: interaction.user.id },
-    "Admin viewed bot statistics"
-  );
+  logger.info({ userId: interaction.user.id }, "Admin viewed bot statistics");
 }
 
-async function handleHealth(
-  interaction: ChatInputCommandInteraction
-): Promise<void> {
+async function handleHealth(interaction: ChatInputCommandInteraction): Promise<void> {
   const checks: { name: string; status: string; details?: string }[] = [];
 
   // Check database
@@ -182,9 +173,9 @@ async function handleHealth(
         .map((c) =>
           c.details
             ? `**\${c.name}:** \${c.status}\\n  \${c.details}`
-            : `**\${c.name}:** \${c.status}`
+            : `**\${c.name}:** \${c.status}`,
         )
-        .join("\\n\\n")
+        .join("\\n\\n"),
     )
     .setTimestamp();
 
