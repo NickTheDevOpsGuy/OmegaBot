@@ -109,7 +109,9 @@ function buildFunHelp(): string {
   lines.push("`/fun joke list`         Browse recent jokes");
   lines.push("`/fun joke remove`       Remove a joke (moderators only)");
   lines.push("Categories");
-  lines.push("boomer, genx, millennial, genz, genalpha, random, tech, dark, wholesome, anti, puns, observational, dad");
+  lines.push(
+    "boomer, genx, millennial, genz, genalpha, random, tech, dark, wholesome, anti, puns, observational, dad",
+  );
   lines.push("Examples");
   lines.push("`/fun joke random`");
   lines.push("`/fun joke random category:genz`");

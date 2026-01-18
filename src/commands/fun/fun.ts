@@ -10,7 +10,6 @@ import { logger } from "../../utils/logger.js";
 import { run as runChuckNorris } from "./subcommands/chucknorris.js";
 import type { ChuckNorrisMode } from "./subcommands/chucknorris.js";
 
-
 import { run as runDice } from "./subcommands/dice.js";
 
 import { run as runWeather } from "./subcommands/weather.js";

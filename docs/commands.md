@@ -7,6 +7,7 @@ Complete documentation for all OmegaBot slash commands, including subcommands an
 ## General
 
 ### `/ping`
+
 Verify the bot is online and measure latency.
 
 **Use case:** Quick health check to see if the bot is responsive.
@@ -18,9 +19,11 @@ Verify the bot is online and measure latency.
 Commands for interacting with GitHub repositories. Requires GitHub integration to be configured.
 
 ### `/gh issue <number>`
+
 Fetch a GitHub issue by number.
 
 **Options:**
+
 - `number` (required) — Issue number to look up
 
 **Use case:** Get issue details instantly without opening a browser.
@@ -28,9 +31,11 @@ Fetch a GitHub issue by number.
 ---
 
 ### `/gh issues`
+
 List open GitHub issues.
 
 **Options:**
+
 - `state` (optional) — Filter by state (open, closed, all)
 - `limit` (optional) — Number of issues to show (default: 10, max: 50)
 
@@ -39,9 +44,11 @@ List open GitHub issues.
 ---
 
 ### `/gh prs`
+
 List open pull requests.
 
 **Options:**
+
 - `state` (optional) — Filter by state (open, closed, all)
 - `limit` (optional) — Number of PRs to show (default: 10, max: 50)
 
@@ -50,9 +57,11 @@ List open pull requests.
 ---
 
 ### `/gh status`
+
 Show GitHub integration status and configuration.
 
 **Displays:**
+
 - Repository configuration
 - Polling status
 - Announcement channel bindings
@@ -63,9 +72,11 @@ Show GitHub integration status and configuration.
 ---
 
 ### `/pr <number>`
+
 Fetch a single pull request by number.
 
 **Options:**
+
 - `number` (required) — PR number to look up
 
 **Note:** Legacy shortcut for `/gh pr`. Consider using `/gh` commands instead.
@@ -77,14 +88,17 @@ Fetch a single pull request by number.
 Entertainment and engagement commands. All fun commands track usage for leaderboards.
 
 ### `/fun chucknorris`
+
 Get Chuck Norris facts.
 
 **Options:**
+
 - `category` (optional) — Fetch from a specific category
 - `query` (optional) — Search facts by keyword
 - `ephemeral` (optional) — Show result only to you
 
 **Modes:**
+
 - Random fact (no options)
 - Category-based fact
 - Keyword search
@@ -94,13 +108,16 @@ Get Chuck Norris facts.
 ---
 
 ### `/fun dadjoke`
+
 Get dad jokes.
 
 **Options:**
+
 - `query` (optional) — Search jokes by keyword
 - `ephemeral` (optional) — Show result only to you
 
 **Modes:**
+
 - Random joke (no query)
 - Search results (with query)
 
@@ -109,12 +126,15 @@ Get dad jokes.
 ---
 
 ### `/fun joke`
+
 Community-submitted jokes organized by generation.
 
 #### `/fun joke random [category]`
+
 Get a random joke from the database.
 
 **Options:**
+
 - `category` (optional) — Filter by generation: boomer, genx, millennial, genz, genalpha, random
 
 **Use case:** Brighten your day with community humor.
@@ -122,9 +142,11 @@ Get a random joke from the database.
 ---
 
 #### `/fun joke add <text> <category>`
+
 Add a new joke to the database.
 
 **Options:**
+
 - `text` (required) — The joke text (max 1000 characters)
 - `category` (required) — Generation category: boomer, genx, millennial, genz, genalpha, random
 
@@ -133,9 +155,11 @@ Add a new joke to the database.
 ---
 
 #### `/fun joke remove <id>`
+
 Remove a joke from the database (moderators only).
 
 **Options:**
+
 - `id` (required) — Joke ID to remove
 
 **Permissions:** Requires Joke Moderator role (configured in `.env`)
@@ -145,9 +169,11 @@ Remove a joke from the database (moderators only).
 ---
 
 #### `/fun joke list [category]`
+
 Browse recent jokes.
 
 **Options:**
+
 - `category` (optional) — Filter by generation
 
 **Displays:** Last 10 jokes with ID, category, and usage count.
@@ -157,9 +183,11 @@ Browse recent jokes.
 ---
 
 ### `/fun coinflip`
+
 Flip a coin with animation.
 
 **Options:**
+
 - `ephemeral` (optional) — Show result only to you
 
 **Output:** Heads or tails (result is tracked for stats)
@@ -169,13 +197,16 @@ Flip a coin with animation.
 ---
 
 ### `/fun coinstats [user] [leaderboard]`
+
 View coin flip statistics.
 
 **Options:**
+
 - `user` (optional) — Check another user's stats
 - `leaderboard` (optional) — Show top flippers (true/false)
 
 **Displays:**
+
 - Personal stats: Heads vs. tails count and percentages
 - Leaderboard: Top 10 users by total flips
 - User avatar and formatted results
@@ -185,14 +216,17 @@ View coin flip statistics.
 ---
 
 ### `/fun dice [sides] [count]`
+
 Roll dice with optional animation.
 
 **Options:**
+
 - `sides` (optional, default: 6) — Number of sides per die (2–100)
 - `count` (optional, default: 1) — Number of dice to roll (1–10)
 - `ephemeral` (optional) — Show result only to you
 
 **Behavior:**
+
 - d6 rolls display dice face emojis
 - Multiple dice show individual results and total
 
@@ -201,9 +235,11 @@ Roll dice with optional animation.
 ---
 
 ### `/fun poll <question> <option1> <option2> [option3] [option4]`
+
 Create a quick poll.
 
 **Options:**
+
 - `question` (required) — Poll question
 - `option1` (required) — First option
 - `option2` (required) — Second option
@@ -211,6 +247,7 @@ Create a quick poll.
 - `option4` (optional) — Fourth option
 
 **Behavior:**
+
 - 2–4 options supported
 - One vote per user
 - Poll automatically closes after timeout
@@ -220,14 +257,17 @@ Create a quick poll.
 ---
 
 ### `/fun weather <location> [unit]`
+
 Show current weather for a location.
 
 **Options:**
+
 - `location` (required) — City, ZIP code, or region
 - `unit` (optional) — Temperature unit (F or C)
 - `ephemeral` (optional) — Show result only to you
 
 **Displays:**
+
 - Current temperature and feels-like
 - Weather conditions
 - Sunrise/sunset times
@@ -237,9 +277,11 @@ Show current weather for a location.
 ---
 
 ### `/fun weather7 <location> [unit]`
+
 Show 7-day weather forecast.
 
 **Options:**
+
 - `location` (required) — City, ZIP code, or region
 - `unit` (optional) — Temperature unit (F or C)
 - `ephemeral` (optional) — Show result only to you
@@ -251,9 +293,11 @@ Show 7-day weather forecast.
 ---
 
 ### `/fun leaderboard [view] [user] [limit]`
+
 View fun command usage statistics.
 
 **Options:**
+
 - `view` (optional) — Display mode:
   - `users` — Top users (default)
   - `commands` — Top fun commands
@@ -262,6 +306,7 @@ View fun command usage statistics.
 - `limit` (optional) — Number of results (default: 10, max: 25)
 
 **Views:**
+
 - **Top users:** Shows most active users with avatar and per-command highlights
 - **Top commands:** Commands ranked by usage count
 - **Single-user:** Detailed breakdown of one user's activity
@@ -275,12 +320,15 @@ View fun command usage statistics.
 Commands for reviewing and summarizing recent messages.
 
 ### `/summary [count]`
+
 Summarize recent messages in the channel.
 
 **Options:**
+
 - `count` (optional) — Number of messages to summarize (default: 50, max: 100)
 
 **Modes:**
+
 - `local` — Fast heuristic summaries (always available)
 - `llm` — High-quality AI summaries (requires OpenAI API key)
 
@@ -291,12 +339,15 @@ Summarize recent messages in the channel.
 ---
 
 ### `/history [count]`
+
 Get recent channel history via DM.
 
 **Options:**
+
 - `count` (optional) — Number of messages to retrieve (default: 50, max: 100)
 
 **Behavior:**
+
 - Sends messages via DM
 - Falls back to file upload if content is too long
 
@@ -305,9 +356,11 @@ Get recent channel history via DM.
 ---
 
 ### `/playback [count]`
+
 Page through recent messages using interactive buttons.
 
 **Options:**
+
 - `count` (optional) — Number of messages to page through
 
 **Controls:** Next/Previous buttons for navigation
@@ -317,6 +370,7 @@ Page through recent messages using interactive buttons.
 ---
 
 ### `/pagination`
+
 Demo the reusable pagination helper.
 
 **Purpose:** Testing/demonstration command for the pagination system.
@@ -328,9 +382,11 @@ Demo the reusable pagination helper.
 Commands for managing user timezones. Useful for coordinating across time zones.
 
 ### `/timezone save <timezone>`
+
 Save your IANA timezone.
 
 **Options:**
+
 - `timezone` (required) — IANA timezone identifier (e.g., `America/New_York`)
 
 **Use case:** Let others know your local time for better coordination.
@@ -338,9 +394,11 @@ Save your IANA timezone.
 ---
 
 ### `/timezone show [user]`
+
 Display saved timezone.
 
 **Options:**
+
 - `user` (optional) — Check another user's timezone
 
 **Displays:** Timezone and current local time.
@@ -350,6 +408,7 @@ Display saved timezone.
 ---
 
 ### `/timezone clear`
+
 Remove your saved timezone from the database.
 
 **Use case:** Stop sharing your timezone information.
@@ -357,9 +416,11 @@ Remove your saved timezone from the database.
 ---
 
 ### `/timezone compare <user>`
+
 Compare your timezone with another user's.
 
 **Options:**
+
 - `user` (required) — User to compare with
 
 **Displays:** Time difference between timezones.
@@ -373,9 +434,11 @@ Compare your timezone with another user's.
 Build and maintain a server knowledge base. All FAQ entries track usage count.
 
 ### `/faq get <key>`
+
 Retrieve a FAQ entry.
 
 **Options:**
+
 - `key` (required) — FAQ key/identifier
 
 **Use case:** Quick answers to common questions.
@@ -383,9 +446,11 @@ Retrieve a FAQ entry.
 ---
 
 ### `/faq add`
+
 Create a new FAQ entry.
 
 **Interactive form:**
+
 - Key (unique identifier)
 - Title
 - Body content
@@ -398,9 +463,11 @@ Create a new FAQ entry.
 ---
 
 ### `/faq list [tag]`
+
 Browse available FAQs.
 
 **Options:**
+
 - `tag` (optional) — Filter by tag
 
 **Displays:** All FAQs with keys, titles, and usage counts.
@@ -410,9 +477,11 @@ Browse available FAQs.
 ---
 
 ### `/faq remove <key>`
+
 Delete a FAQ entry.
 
 **Options:**
+
 - `key` (required) — FAQ key to remove
 
 **Permissions:** Moderators only
@@ -422,9 +491,11 @@ Delete a FAQ entry.
 ---
 
 ### `/faq search <query>`
+
 Search FAQ entries by keyword.
 
 **Options:**
+
 - `query` (required) — Search term
 
 **Searches:** Titles, bodies, and tags
