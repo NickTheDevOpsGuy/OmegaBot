@@ -13,7 +13,7 @@ export type JokeCategory =
   | "wholesome"
   | "anti"
   | "puns"
-  | "oberservational"
+  | "observational"
   | "dad";
 
 export const JOKE_CATEGORIES: JokeCategory[] = [
@@ -28,7 +28,7 @@ export const JOKE_CATEGORIES: JokeCategory[] = [
   "wholesome",
   "anti",
   "puns",
-  "oberservational",
+  "observational",
   "dad",
 ];
 
@@ -67,7 +67,7 @@ export function getRandomJoke(category?: JokeCategory): Joke | null {
   const db = getDb();
 
   let query = "SELECT * FROM jokes";
-  const params: any[] = [];
+  const params: (string | number)[] = [];
 
   if (category && category !== "random") {
     query += " WHERE category = ?";
@@ -103,7 +103,7 @@ export function listJokes(category?: JokeCategory, limit: number = 50): Joke[] {
   const db = getDb();
 
   let query = "SELECT * FROM jokes";
-  const params: any[] = [];
+  const params: (string | number)[] = [];
 
   if (category && category !== "random") {
     query += " WHERE category = ?";
