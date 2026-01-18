@@ -87,7 +87,7 @@ Old invites do not update permissions.
 ## Helpful Links
 
 - Discord Developer Portal
-  https://discord.com/developers/applications
+  [Applications](https://discord.com/developers/applications)
 
 - Bot Permissions Reference
   https://discord.com/developers/docs/topics/permissions
