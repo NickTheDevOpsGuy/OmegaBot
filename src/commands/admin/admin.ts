@@ -21,58 +21,41 @@ export const data = new SlashCommandBuilder()
       .setName("timeout")
       .setDescription("Timeout a user")
       .addUserOption((opt) =>
-        opt
-          .setName("user")
-          .setDescription("User to timeout")
-          .setRequired(true)
+        opt.setName("user").setDescription("User to timeout").setRequired(true),
       )
-      .addIntegerOption((opt) =>
-        opt
-          .setName("duration")
-          .setDescription("Duration in minutes")
-          .setRequired(true)
-          .setMinValue(1)
-          .setMaxValue(40320) // 28 days max
+      .addIntegerOption(
+        (opt) =>
+          opt
+            .setName("duration")
+            .setDescription("Duration in minutes")
+            .setRequired(true)
+            .setMinValue(1)
+            .setMaxValue(40320), // 28 days max
       )
       .addStringOption((opt) =>
-        opt
-          .setName("reason")
-          .setDescription("Reason for timeout")
-          .setRequired(false)
-      )
+        opt.setName("reason").setDescription("Reason for timeout").setRequired(false),
+      ),
   )
   .addSubcommand((sub) =>
     sub
       .setName("kick")
       .setDescription("Kick a user from the server")
       .addUserOption((opt) =>
-        opt
-          .setName("user")
-          .setDescription("User to kick")
-          .setRequired(true)
+        opt.setName("user").setDescription("User to kick").setRequired(true),
       )
       .addStringOption((opt) =>
-        opt
-          .setName("reason")
-          .setDescription("Reason for kick")
-          .setRequired(false)
-      )
+        opt.setName("reason").setDescription("Reason for kick").setRequired(false),
+      ),
   )
   .addSubcommand((sub) =>
     sub
       .setName("ban")
       .setDescription("Ban a user from the server")
       .addUserOption((opt) =>
-        opt
-          .setName("user")
-          .setDescription("User to ban")
-          .setRequired(true)
+        opt.setName("user").setDescription("User to ban").setRequired(true),
       )
       .addStringOption((opt) =>
-        opt
-          .setName("reason")
-          .setDescription("Reason for ban")
-          .setRequired(false)
+        opt.setName("reason").setDescription("Reason for ban").setRequired(false),
       )
       .addIntegerOption((opt) =>
         opt
@@ -80,8 +63,8 @@ export const data = new SlashCommandBuilder()
           .setDescription("Days of messages to delete (0-7)")
           .setRequired(false)
           .setMinValue(0)
-          .setMaxValue(7)
-      )
+          .setMaxValue(7),
+      ),
   )
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild);
 
@@ -100,7 +83,8 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     const hasPermission = await checkModeratorRole(interaction);
     if (!hasPermission) {
       await interaction.reply({
-        content: "❌ You don't have permission to use moderation commands.\n" +
+        content:
+          "❌ You don't have permission to use moderation commands.\n" +
           "Ask an admin to set up moderator roles with `/config moderator-role`.",
         flags: MessageFlags.Ephemeral,
       });
@@ -128,7 +112,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
   } catch (err) {
     logger.error(
       { err, command: "admin", userId: interaction.user.id },
-      "[admin] command failed"
+      "[admin] command failed",
     );
 
     try {
@@ -147,7 +131,9 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 /**
  * Check if user has moderator role
  */
-async function checkModeratorRole(interaction: ChatInputCommandInteraction): Promise<boolean> {
+async function checkModeratorRole(
+  interaction: ChatInputCommandInteraction,
+): Promise<boolean> {
   if (!interaction.inGuild() || !interaction.member) {
     return false;
   }
@@ -163,9 +149,7 @@ async function checkModeratorRole(interaction: ChatInputCommandInteraction): Pro
 
     // Check for moderator roles in database
     const roles = db
-      .prepare(
-        `SELECT role_id FROM moderator_roles WHERE guild_id = ?`
-      )
+      .prepare(`SELECT role_id FROM moderator_roles WHERE guild_id = ?`)
       .all(guildId) as Array<{ role_id: string }>;
 
     if (roles.length === 0) {
@@ -245,7 +229,7 @@ async function handleTimeout(interaction: ChatInputCommandInteraction): Promise<
         duration,
         reason,
       },
-      "[admin] User timed out"
+      "[admin] User timed out",
     );
   } catch (err) {
     logger.error({ err, targetUser: targetUser.id }, "[admin] timeout failed");
@@ -323,7 +307,7 @@ async function handleKick(interaction: ChatInputCommandInteraction): Promise<voi
         target: targetUser.tag,
         reason,
       },
-      "[admin] User kicked"
+      "[admin] User kicked",
     );
   } catch (err) {
     logger.error({ err, targetUser: targetUser.id }, "[admin] kick failed");
@@ -407,7 +391,7 @@ async function handleBan(interaction: ChatInputCommandInteraction): Promise<void
         reason,
         deleteDays,
       },
-      "[admin] User banned"
+      "[admin] User banned",
     );
   } catch (err) {
     logger.error({ err, targetUser: targetUser.id }, "[admin] ban failed");
