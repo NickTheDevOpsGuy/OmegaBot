@@ -73,7 +73,7 @@ Group related commits together and highlight breaking changes or major features.
 
   const prompt = `Summarize the following commit history. Focus on major changes, features, and fixes:
 
-\${commits}
+${commits}
 
 Provide a clear, organized summary in bullet points.`;
 
@@ -97,13 +97,13 @@ Be objective and highlight key decisions, concerns, and action items.`;
 
   const prompt = `Summarize this GitHub discussion:
 
-**Title:** \${title}
+**Title:** ${title}
 
 **Description:**
-\${body}
+${body}
 
 **Comments:**
-\${comments}
+${comments}
 
 Provide a concise summary covering:
 1. Main topic/purpose

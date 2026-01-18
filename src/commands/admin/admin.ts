@@ -78,12 +78,12 @@ async function handleStats(interaction: ChatInputCommandInteraction): Promise<vo
     .addFields(
       {
         name: "⏱️ Uptime",
-        value: `\${uptimeDays}d \${uptimeHours}h \${uptimeMinutes}m`,
+        value: `${uptimeDays}d ${uptimeHours}h ${uptimeMinutes}m`,
         inline: true,
       },
       {
         name: "💾 Memory",
-        value: `\${memUsedMB}MB / \${memTotalMB}MB`,
+        value: `${memUsedMB}MB / ${memTotalMB}MB`,
         inline: true,
       },
       {
@@ -107,7 +107,7 @@ async function handleStats(interaction: ChatInputCommandInteraction): Promise<vo
         inline: true,
       },
     )
-    .setFooter({ text: `Node \${process.version}` })
+    .setFooter({ text: `Node ${process.version}` })
     .setTimestamp();
 
   await interaction.editReply({ embeds: [embed] });
@@ -172,10 +172,10 @@ async function handleHealth(interaction: ChatInputCommandInteraction): Promise<v
       checks
         .map((c) =>
           c.details
-            ? `**\${c.name}:** \${c.status}\\n  \${c.details}`
-            : `**\${c.name}:** \${c.status}`,
+            ? `**${c.name}:** ${c.status}\n  ${c.details}`
+            : `**${c.name}:** ${c.status}`,
         )
-        .join("\\n\\n"),
+        .join("\n\n"),
     )
     .setTimestamp();
 
