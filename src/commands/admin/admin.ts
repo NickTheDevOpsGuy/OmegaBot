@@ -77,9 +77,13 @@ export const data = new SlashCommandBuilder()
   )
   // Bot stats subcommands
   .addSubcommand((sub) =>
-    sub.setName("stats").setDescription("Show bot statistics (uptime, database, commands)"),
+    sub
+      .setName("stats")
+      .setDescription("Show bot statistics (uptime, database, commands)"),
   )
-  .addSubcommand((sub) => sub.setName("health").setDescription("Check bot and service health"))
+  .addSubcommand((sub) =>
+    sub.setName("health").setDescription("Check bot and service health"),
+  )
   .setDMPermission(true);
 
 async function safeEphemeralMessage(
@@ -114,7 +118,9 @@ function isModeratorOrManager(interaction: ChatInputCommandInteraction): boolean
   return Boolean(interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild));
 }
 
-async function checkModeratorRole(interaction: ChatInputCommandInteraction): Promise<boolean> {
+async function checkModeratorRole(
+  interaction: ChatInputCommandInteraction,
+): Promise<boolean> {
   // Hard guard
   if (!interaction.inGuild() || !interaction.guildId || !interaction.member) return false;
 
@@ -133,7 +139,10 @@ async function checkModeratorRole(interaction: ChatInputCommandInteraction): Pro
     const memberRoles = member.roles.cache;
     return roles.some((r) => memberRoles.has(r.role_id));
   } catch (err) {
-    logger.error({ err, guildId: interaction.guildId }, "[admin] failed to check moderator role");
+    logger.error(
+      { err, guildId: interaction.guildId },
+      "[admin] failed to check moderator role",
+    );
     return false;
   }
 }
@@ -157,7 +166,10 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         { err, command: "admin", subcommand, userId: interaction.user.id },
         "[admin] stats/health failed",
       );
-      await safeEphemeralMessage(interaction, "Something went wrong. Please try again later.");
+      await safeEphemeralMessage(
+        interaction,
+        "Something went wrong. Please try again later.",
+      );
       return;
     }
   }
@@ -200,10 +212,19 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     }
   } catch (err) {
     logger.error(
-      { err, command: "admin", subcommand, userId: interaction.user.id, guildId: interaction.guildId },
+      {
+        err,
+        command: "admin",
+        subcommand,
+        userId: interaction.user.id,
+        guildId: interaction.guildId,
+      },
       "[admin] moderation command failed",
     );
-    await safeEphemeralMessage(interaction, "Something went wrong. Please try again later.");
+    await safeEphemeralMessage(
+      interaction,
+      "Something went wrong. Please try again later.",
+    );
   }
 }
 
@@ -232,7 +253,10 @@ async function handleTimeout(interaction: ChatInputCommandInteraction): Promise<
 
     const executor = interaction.member as GuildMember;
     if (member.roles.highest.position >= executor.roles.highest.position) {
-      await safeEphemeralMessage(interaction, "You cannot timeout someone with an equal or higher role.");
+      await safeEphemeralMessage(
+        interaction,
+        "You cannot timeout someone with an equal or higher role.",
+      );
       return;
     }
 
@@ -244,7 +268,13 @@ async function handleTimeout(interaction: ChatInputCommandInteraction): Promise<
     );
 
     logger.info(
-      { moderator: interaction.user.tag, target: targetUser.tag, duration, reason, guildId: interaction.guildId },
+      {
+        moderator: interaction.user.tag,
+        target: targetUser.tag,
+        duration,
+        reason,
+        guildId: interaction.guildId,
+      },
       "[admin] user timed out",
     );
   } catch (err) {
@@ -252,7 +282,10 @@ async function handleTimeout(interaction: ChatInputCommandInteraction): Promise<
       { err, targetUser: targetUser.id, guildId: interaction.guildId },
       "[admin] timeout failed",
     );
-    await safeEphemeralMessage(interaction, "Failed to timeout user. Check my permissions and role position.");
+    await safeEphemeralMessage(
+      interaction,
+      "Failed to timeout user. Check my permissions and role position.",
+    );
   }
 }
 
@@ -280,12 +313,18 @@ async function handleKick(interaction: ChatInputCommandInteraction): Promise<voi
 
     const executor = interaction.member as GuildMember;
     if (member.roles.highest.position >= executor.roles.highest.position) {
-      await safeEphemeralMessage(interaction, "You cannot kick someone with an equal or higher role.");
+      await safeEphemeralMessage(
+        interaction,
+        "You cannot kick someone with an equal or higher role.",
+      );
       return;
     }
 
     if (!member.kickable) {
-      await safeEphemeralMessage(interaction, "I do not have permission to kick this user.");
+      await safeEphemeralMessage(
+        interaction,
+        "I do not have permission to kick this user.",
+      );
       return;
     }
 
@@ -294,12 +333,23 @@ async function handleKick(interaction: ChatInputCommandInteraction): Promise<voi
     await interaction.editReply(`Kicked **${targetUser.tag}**.\nReason: ${reason}`);
 
     logger.info(
-      { moderator: interaction.user.tag, target: targetUser.tag, reason, guildId: interaction.guildId },
+      {
+        moderator: interaction.user.tag,
+        target: targetUser.tag,
+        reason,
+        guildId: interaction.guildId,
+      },
       "[admin] user kicked",
     );
   } catch (err) {
-    logger.error({ err, targetUser: targetUser.id, guildId: interaction.guildId }, "[admin] kick failed");
-    await safeEphemeralMessage(interaction, "Failed to kick user. Check my permissions and role position.");
+    logger.error(
+      { err, targetUser: targetUser.id, guildId: interaction.guildId },
+      "[admin] kick failed",
+    );
+    await safeEphemeralMessage(
+      interaction,
+      "Failed to kick user. Check my permissions and role position.",
+    );
   }
 }
 
@@ -329,12 +379,18 @@ async function handleBan(interaction: ChatInputCommandInteraction): Promise<void
 
       const executor = interaction.member as GuildMember;
       if (member.roles.highest.position >= executor.roles.highest.position) {
-        await safeEphemeralMessage(interaction, "You cannot ban someone with an equal or higher role.");
+        await safeEphemeralMessage(
+          interaction,
+          "You cannot ban someone with an equal or higher role.",
+        );
         return;
       }
 
       if (!member.bannable) {
-        await safeEphemeralMessage(interaction, "I do not have permission to ban this user.");
+        await safeEphemeralMessage(
+          interaction,
+          "I do not have permission to ban this user.",
+        );
         return;
       }
     }
@@ -344,16 +400,31 @@ async function handleBan(interaction: ChatInputCommandInteraction): Promise<void
       deleteMessageSeconds: deleteDays * 24 * 60 * 60,
     });
 
-    const deletedText = deleteDays > 0 ? `\nMessages deleted: last ${deleteDays} day(s)` : "";
-    await interaction.editReply(`Banned **${targetUser.tag}**.\nReason: ${reason}${deletedText}`);
+    const deletedText =
+      deleteDays > 0 ? `\nMessages deleted: last ${deleteDays} day(s)` : "";
+    await interaction.editReply(
+      `Banned **${targetUser.tag}**.\nReason: ${reason}${deletedText}`,
+    );
 
     logger.info(
-      { moderator: interaction.user.tag, target: targetUser.tag, reason, deleteDays, guildId: interaction.guildId },
+      {
+        moderator: interaction.user.tag,
+        target: targetUser.tag,
+        reason,
+        deleteDays,
+        guildId: interaction.guildId,
+      },
       "[admin] user banned",
     );
   } catch (err) {
-    logger.error({ err, targetUser: targetUser.id, guildId: interaction.guildId }, "[admin] ban failed");
-    await safeEphemeralMessage(interaction, "Failed to ban user. Check my permissions and role position.");
+    logger.error(
+      { err, targetUser: targetUser.id, guildId: interaction.guildId },
+      "[admin] ban failed",
+    );
+    await safeEphemeralMessage(
+      interaction,
+      "Failed to ban user. Check my permissions and role position.",
+    );
   }
 }
 
@@ -361,13 +432,20 @@ async function handleStats(interaction: ChatInputCommandInteraction): Promise<vo
   try {
     const db = getDb();
 
-    const jokeCount = db.prepare("SELECT COUNT(*) as count FROM jokes").get() as { count: number };
-    const coinFlipCount = db.prepare("SELECT COUNT(*) as count FROM coin_flips").get() as { count: number };
+    const jokeCount = db.prepare("SELECT COUNT(*) as count FROM jokes").get() as {
+      count: number;
+    };
+    const coinFlipCount = db
+      .prepare("SELECT COUNT(*) as count FROM coin_flips")
+      .get() as { count: number };
 
     const funUsage = await getFunUsageSnapshot();
 
     const totalsByCommand = (funUsage?.totalsByCommand ?? {}) as Record<string, number>;
-    const totalCommands = Object.values(totalsByCommand).reduce((sum, count) => sum + (count ?? 0), 0);
+    const totalCommands = Object.values(totalsByCommand).reduce(
+      (sum, count) => sum + (count ?? 0),
+      0,
+    );
 
     const uptimeSeconds = process.uptime();
     const uptimeDays = Math.floor(uptimeSeconds / 86400);
@@ -382,12 +460,20 @@ async function handleStats(interaction: ChatInputCommandInteraction): Promise<vo
       .setTitle("Bot Statistics")
       .setColor(EmbedColors.Info)
       .addFields(
-        { name: "Uptime", value: `${uptimeDays}d ${uptimeHours}h ${uptimeMinutes}m`, inline: true },
+        {
+          name: "Uptime",
+          value: `${uptimeDays}d ${uptimeHours}h ${uptimeMinutes}m`,
+          inline: true,
+        },
         { name: "Memory", value: `${memUsedMB}MB / ${memTotalMB}MB`, inline: true },
         { name: "Total Commands", value: totalCommands.toString(), inline: true },
         { name: "Jokes", value: jokeCount.count.toString(), inline: true },
         { name: "Coin Flips", value: coinFlipCount.count.toString(), inline: true },
-        { name: "Unique Users", value: Object.keys(funUsage?.totalsByUser ?? {}).length.toString(), inline: true },
+        {
+          name: "Unique Users",
+          value: Object.keys(funUsage?.totalsByUser ?? {}).length.toString(),
+          inline: true,
+        },
       )
       .setFooter({ text: `Node ${process.version}` })
       .setTimestamp();
@@ -423,7 +509,11 @@ async function handleHealth(interaction: ChatInputCommandInteraction): Promise<v
     if (missingRequired.length === 0) {
       checks.push({ name: "Required env", status: "All set" });
     } else {
-      checks.push({ name: "Required env", status: "Missing", details: missingRequired.join(", ") });
+      checks.push({
+        name: "Required env",
+        status: "Missing",
+        details: missingRequired.join(", "),
+      });
     }
 
     const optionalEnv = [
@@ -444,7 +534,11 @@ async function handleHealth(interaction: ChatInputCommandInteraction): Promise<v
       .setColor(EmbedColors.Info)
       .setDescription(
         checks
-          .map((c) => (c.details ? `**${c.name}:** ${c.status}\n${c.details}` : `**${c.name}:** ${c.status}`))
+          .map((c) =>
+            c.details
+              ? `**${c.name}:** ${c.status}\n${c.details}`
+              : `**${c.name}:** ${c.status}`,
+          )
           .join("\n\n"),
       )
       .setTimestamp();
