@@ -10,8 +10,6 @@ import { logger } from "../../utils/logger.js";
 import { run as runChuckNorris } from "./subcommands/chucknorris.js";
 import type { ChuckNorrisMode } from "./subcommands/chucknorris.js";
 
-import { run as runDadJoke } from "./subcommands/dadjoke.js";
-import type { DadJokeMode } from "./subcommands/dadjoke.js";
 
 import { run as runDice } from "./subcommands/dice.js";
 
@@ -43,22 +41,6 @@ export const data = new SlashCommandBuilder()
       .addStringOption((o) =>
         o.setName("category").setDescription("Category (optional)").setRequired(false),
       )
-      .addStringOption((o) =>
-        o.setName("query").setDescription("Search term (optional)").setRequired(false),
-      )
-      .addBooleanOption((o) =>
-        o
-          .setName("ephemeral")
-          .setDescription("Only show the result to you")
-          .setRequired(false),
-      ),
-  )
-
-  // /fun dadjoke
-  .addSubcommand((s) =>
-    s
-      .setName("dadjoke")
-      .setDescription("Random dad joke (or search)")
       .addStringOption((o) =>
         o.setName("query").setDescription("Search term (optional)").setRequired(false),
       )
@@ -284,15 +266,6 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
           : { kind: "random" };
 
       await runChuckNorris(interaction, mode);
-      await maybeRecordUsage(interaction, sub);
-      return;
-    }
-
-    if (sub === "dadjoke") {
-      const query = interaction.options.getString("query")?.trim() ?? "";
-      const mode: DadJokeMode = query ? { kind: "search", query } : { kind: "random" };
-
-      await runDadJoke(interaction, mode);
       await maybeRecordUsage(interaction, sub);
       return;
     }
