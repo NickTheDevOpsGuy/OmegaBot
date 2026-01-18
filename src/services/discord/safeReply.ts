@@ -1,10 +1,11 @@
 // src/services/discord/safeReply.ts
-import type {
-  ChatInputCommandInteraction,
+import type { 
+  ChatInputCommandInteraction, 
   InteractionEditReplyOptions,
   InteractionReplyOptions,
-  MessageFlags,
+  MessageFlags
 } from "discord.js";
+import { logger } from "../../utils/logger.js";
 
 export interface SafeReplyOptions {
   content: string;
@@ -25,7 +26,7 @@ export async function safeReply(
 
   // Add flags or ephemeral - prefer flags
   if (options.flags !== undefined) {
-    replyOptions.flags = options.flags as number; // Cast to number for bitfield
+    replyOptions.flags = options.flags as number;  // Cast to number for bitfield
   } else if (options.ephemeral) {
     replyOptions.ephemeral = options.ephemeral;
   }
@@ -40,10 +41,12 @@ export async function safeReply(
       await interaction.reply(replyOptions);
     }
   } catch (error) {
+    logger.warn({ error, commandName: interaction.commandName }, "Failed to reply to interaction, trying followUp");
+    // If reply fails, try followUp as last resort
     try {
       await interaction.followUp(replyOptions);
-    } catch {
-      // Give up
+    } catch (followUpError) {
+      logger.error({ error: followUpError, commandName: interaction.commandName }, "Failed to followUp on interaction - interaction may be expired");
     }
   }
 }
