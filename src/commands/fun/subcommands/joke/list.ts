@@ -44,7 +44,7 @@ export async function handleJokeList(
     .setTitle(
       category
         ? `${categoryEmoji[category]} ${category.toUpperCase()} Jokes`
-        : "🎭 All Jokes"
+        : "🎭 All Jokes",
     )
     .setDescription(
       jokes
