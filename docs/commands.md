@@ -14,6 +14,49 @@ Verify the bot is online and measure latency.
 
 ---
 
+## Admin Commands
+
+**Permissions:** Requires Administrator permission in Discord.
+
+Server administration and monitoring commands for bot owners and admins.
+
+### `/admin stats`
+
+Show comprehensive bot statistics.
+
+**Displays:**
+
+- **Uptime:** Days, hours, minutes since last restart
+- **Memory:** Current memory usage (heap used/total)
+- **Total Commands:** All fun command executions
+- **Database Stats:** Joke count, coin flip count
+- **Unique Users:** Number of users who've used fun commands
+- **Node Version:** Current Node.js runtime version
+
+**Use case:** Monitor bot health and usage at a glance.
+
+---
+
+### `/admin health`
+
+Run health checks on bot services and configuration.
+
+**Checks:**
+
+- **Database:** SQLite connection and query execution
+- **Environment Variables:** Required Discord/GitHub tokens
+- **API Keys:** Optional service availability (Anthropic, Weather)
+
+**Statuses:**
+
+- ✅ Healthy/Configured
+- ⚠️ Missing/Not configured
+- ❌ Error (with details)
+
+**Use case:** Troubleshoot bot issues and verify configuration.
+
+---
+
 ## GitHub Integration
 
 Commands for interacting with GitHub repositories. Requires GitHub integration to be configured.
@@ -97,7 +140,7 @@ Get a random joke from the database.
 
 **Options:**
 
-- `category` (optional) — Filter by generation: boomer, genx, millennial, genz, genalpha, random
+- `category` (optional) — Filter by category: boomer, genx, millennial, genz, genalpha, random, tech, dark, wholesome, anti, puns, observational, dad
 
 **Use case:** Brighten your day with community humor.
 
@@ -110,7 +153,7 @@ Add a new joke to the database.
 **Options:**
 
 - `text` (required) — The joke text (max 1000 characters)
-- `category` (required) — Generation category: boomer, genx, millennial, genz, genalpha, random
+- `category` (required) — Category: boomer, genx, millennial, genz, genalpha, random, tech, dark, wholesome, anti, puns, observational, dad
 
 **Use case:** Share your favorite jokes with the server.
 
@@ -136,7 +179,7 @@ Browse recent jokes.
 
 **Options:**
 
-- `category` (optional) — Filter by generation
+- `category` (optional) — Filter by category
 
 **Displays:** Last 10 jokes with ID, category, and usage count.
 
@@ -471,7 +514,8 @@ Search FAQ entries by keyword.
 - **Ephemeral Options:** Many commands support `ephemeral: true` to show results only to you
 - **Usage Tracking:** Fun commands automatically track usage for leaderboards
 - **Permissions:** Some commands require specific roles (check server configuration)
-- **API Keys:** Weather and LLM features require API keys in `.env`
+- **API Keys:** Weather and AI features require API keys in `.env`
 - **GitHub Integration:** GitHub commands require repository configuration
+- **Admin Commands:** Only users with Administrator permission can use `/admin` commands
 
 For configuration details, see `.env.example` in the repository.

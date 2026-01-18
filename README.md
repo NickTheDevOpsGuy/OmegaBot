@@ -18,7 +18,7 @@ OmegaBot is a modular Discord bot designed to support development projects with 
 
 ## Table of Contents
 
-- [Features](#features)
+- [Core Features](#core-features)
 - [Documentation](#documentation)
 - [Getting Started](#getting-started)
 - [Project Structure](#project-structure)
@@ -28,24 +28,32 @@ OmegaBot is a modular Discord bot designed to support development projects with 
 
 ---
 
-## Current features
+## Core Features
 
-- Modular slash-command system with auto-loading from `dist/commands`
-- Centralized interaction routing with consistent, safe error handling
-- Structured logging (pino)
-- Welcome and onboarding flows triggered on member join (`guildMemberAdd`)
-- Optional auto-role assignment for new members (`DISCORD_AUTO_ROLE_ID`)
-- GitHub integration with 5-minute API caching (80-90% reduction in API calls), including:
-  - Health/status checks
-  - Issue and PR lookups
-  - New PR announcements
-  - Issue assignee change announcements (Issues only, PRs filtered for reduced noise)
-  - Issue closed announcements
-  - Smart notification filtering (only Issues trigger activity updates)
-- Configuration and feature gating via environment variables (optional features run only when enabled)
-- Per-guild configuration backed by persistent storage and admin slash commands
-- **Timezone support** – Save your timezone, view it later, and compare times across locations or users
-- **SQLite-backed storage** – Persistent data for FAQs, jokes, fun stats, timezones, and GitHub state
+**Discord Integration:**
+
+- Modular slash-command system with auto-loading
+- Welcome messages and auto-role assignment for new members
+- Structured logging (pino) and safe error handling
+
+**GitHub Integration:**
+
+- Issue and PR lookups with smart caching (80-90% fewer API calls)
+- Automated announcements for PRs, issue activity, and closures
+- Health checks and status monitoring
+
+**Community Features:**
+
+- User-submitted jokes with 13 categories and moderation
+- Coin flips, dice rolls, weather, and polls
+- FAQ system for server knowledge base
+- Timezone management for coordination across time zones
+
+**Data & Configuration:**
+
+- SQLite database for persistent storage
+- Environment-based configuration with feature gating
+- Per-guild settings via admin commands
 
 ### Core commands
 
@@ -226,24 +234,6 @@ OmegaBot uses discord.js v14 which includes:
 │   │   └── OmegaBot.yml
 │   └── pull_request_template.md
 ├── .husky
-│   ├── _
-│   │   ├── .gitignore
-│   │   ├── applypatch-msg
-│   │   ├── commit-msg
-│   │   ├── h
-│   │   ├── husky.sh
-│   │   ├── post-applypatch
-│   │   ├── post-checkout
-│   │   ├── post-commit
-│   │   ├── post-merge
-│   │   ├── post-rewrite
-│   │   ├── pre-applypatch
-│   │   ├── pre-auto-gc
-│   │   ├── pre-commit
-│   │   ├── pre-merge-commit
-│   │   ├── pre-push
-│   │   ├── pre-rebase
-│   │   └── prepare-commit-msg
 │   ├── pre-commit
 │   └── pre-push
 ├── assets
@@ -257,6 +247,7 @@ OmegaBot uses discord.js v14 which includes:
 │   ├── last-seen.json
 │   └── omegabot.db
 ├── docs
+│   ├── Claude.dmg
 │   ├── commands.md
 │   ├── dev-notes.md
 │   ├── faq.md
@@ -267,6 +258,8 @@ OmegaBot uses discord.js v14 which includes:
 │   └── precheck.sh
 ├── src
 │   ├── commands
+│   │   ├── admin
+│   │   │   └── admin.ts
 │   │   ├── changelog
 │   │   │   └── changelog.ts
 │   │   ├── config
@@ -314,6 +307,8 @@ OmegaBot uses discord.js v14 which includes:
 │   ├── config
 │   │   └── env.ts
 │   ├── services
+│   │   ├── ai
+│   │   │   └── claudeService.ts
 │   │   ├── cache
 │   │   │   └── simpleCache.ts
 │   │   ├── config
@@ -391,6 +386,7 @@ OmegaBot uses discord.js v14 which includes:
 ├── CHANGELOG.md
 ├── CONTRIBUTORS.md
 ├── eslint.config.ts
+├── install-claude-admin.sh
 ├── LICENSE
 ├── package-lock.json
 ├── package.json
