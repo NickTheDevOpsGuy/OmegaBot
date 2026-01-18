@@ -1,30 +1,21 @@
 // src/commands/admin/admin.ts
-
 import {
   SlashCommandBuilder,
   EmbedBuilder,
   PermissionFlagsBits,
   type ChatInputCommandInteraction,
   type GuildMember,
-  MessageFlags,
 } from "discord.js";
 import { logger } from "../../utils/logger.js";
 import { getDb } from "../../services/database/db.js";
 import { getFunUsageSnapshot } from "../../services/fun/funUsageStore.js";
 import { EmbedColors } from "../../utils/colors.js";
 
-/**
- * NOTE
- * This file intentionally centralizes reply behavior:
- * - We deferReply once per execution path
- * - We prefer editReply after deferring
- * - We fall back to reply if not deferred/replied
- */
-
 export const data = new SlashCommandBuilder()
   .setName("admin")
   .setDescription("Admin and moderation commands")
   .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+
   // Moderation subcommands
   .addSubcommand((sub) =>
     sub
@@ -75,6 +66,7 @@ export const data = new SlashCommandBuilder()
           .setMaxValue(7),
       ),
   )
+
   // Bot stats subcommands
   .addSubcommand((sub) =>
     sub
@@ -86,112 +78,100 @@ export const data = new SlashCommandBuilder()
   )
   .setDMPermission(true);
 
-async function safeEphemeralMessage(
+/* -------------------------------------------------------------------------- */
+/* Reply helpers                                                              */
+/* -------------------------------------------------------------------------- */
+
+type ReplyPayload = {
+  content?: string;
+  embeds?: EmbedBuilder[];
+  ephemeral?: boolean;
+};
+
+async function safeReply(
   interaction: ChatInputCommandInteraction,
-  content: string,
+  payload: ReplyPayload,
 ): Promise<void> {
   try {
     if (interaction.deferred || interaction.replied) {
-      await interaction.editReply({ content });
+      // editReply cannot set ephemeral or flags
+      const { content, embeds } = payload;
+      await interaction.editReply({ content, embeds });
       return;
     }
-    await interaction.reply({ content, flags: MessageFlags.Ephemeral });
+
+    await interaction.reply({
+      content: payload.content,
+      embeds: payload.embeds,
+      ephemeral: payload.ephemeral ?? true,
+    });
   } catch (err) {
-    logger.error({ err }, "[admin] failed to send safe reply");
+    logger.error({ err }, "[admin] failed to reply/editReply");
   }
 }
 
-async function ensureDeferred(
-  interaction: ChatInputCommandInteraction,
-  ephemeral: boolean,
-): Promise<void> {
-  if (interaction.deferred || interaction.replied) return;
+function userFacingError(err: unknown): string {
+  const msg = err instanceof Error ? err.message : "Unknown error";
+  const low = msg.toLowerCase();
 
-  // discord.js supports either { ephemeral: true } or flags
-  // Using flags keeps compatibility with the rest of this repo style.
-  await interaction.deferReply({
-    flags: ephemeral ? MessageFlags.Ephemeral : undefined,
-  });
-}
-
-function isModeratorOrManager(interaction: ChatInputCommandInteraction): boolean {
-  return Boolean(interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild));
-}
-
-async function checkModeratorRole(
-  interaction: ChatInputCommandInteraction,
-): Promise<boolean> {
-  // Hard guard
-  if (!interaction.inGuild() || !interaction.guildId || !interaction.member) return false;
-
-  // Manage Guild always allowed
-  if (isModeratorOrManager(interaction)) return true;
-
-  try {
-    const db = getDb();
-    const roles = db
-      .prepare(`SELECT role_id FROM moderator_roles WHERE guild_id = ?`)
-      .all(interaction.guildId) as Array<{ role_id: string }>;
-
-    if (!roles.length) return false;
-
-    const member = interaction.member as GuildMember;
-    const memberRoles = member.roles.cache;
-    return roles.some((r) => memberRoles.has(r.role_id));
-  } catch (err) {
-    logger.error(
-      { err, guildId: interaction.guildId },
-      "[admin] failed to check moderator role",
+  if (low.includes("missing permissions")) {
+    return (
+      "❌ I am missing required permissions.\n" +
+      "Check my role permissions, and make sure my role is above the target user's role."
     );
-    return false;
   }
+
+  if (low.includes("unknown interaction")) {
+    return "❌ That took too long and Discord expired the command. Try again.";
+  }
+
+  return "❌ Command failed. Check my permissions and role position.";
 }
+
+/* -------------------------------------------------------------------------- */
+/* Execute                                                                    */
+/* -------------------------------------------------------------------------- */
 
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
-  const subcommand = interaction.options.getSubcommand();
-
-  // Route 1: stats and health can run anywhere
-  if (subcommand === "stats" || subcommand === "health") {
-    await ensureDeferred(interaction, false);
-
-    try {
-      if (subcommand === "stats") {
-        await handleStats(interaction);
-      } else {
-        await handleHealth(interaction);
-      }
-      return;
-    } catch (err) {
-      logger.error(
-        { err, command: "admin", subcommand, userId: interaction.user.id },
-        "[admin] stats/health failed",
-      );
-      await safeEphemeralMessage(
-        interaction,
-        "Something went wrong. Please try again later.",
-      );
-      return;
-    }
-  }
-
-  // Route 2: moderation commands must be in guild
-  if (!interaction.inGuild() || !interaction.guildId) {
-    await safeEphemeralMessage(interaction, "This command can only be used in a server.");
-    return;
-  }
-
-  // Moderation commands should be ephemeral to reduce channel noise
-  await ensureDeferred(interaction, true);
+  const subcommand = interaction.options.getSubcommand(true);
 
   try {
+    // Always defer so we never hit the 3s interaction timeout.
+    // Moderation defaults to ephemeral to keep channels clean.
+    const ephemeral = subcommand !== "stats" && subcommand !== "health";
+    await interaction.deferReply({ ephemeral });
+
+    // Stats + health do not need mod role checks
+    if (subcommand === "stats") {
+      await handleStats(interaction);
+      return;
+    }
+    if (subcommand === "health") {
+      await handleHealth(interaction);
+      return;
+    }
+
+    // Moderation must be in a guild
+    if (!interaction.inGuild()) {
+      await safeReply(interaction, {
+        content: "This command can only be used in a server.",
+        ephemeral: true,
+      });
+      return;
+    }
+
     const hasPermission = await checkModeratorRole(interaction);
     if (!hasPermission) {
-      await safeEphemeralMessage(
-        interaction,
-        [
-          "You do not have permission to use moderation commands.",
+      await safeReply(interaction, {
+        content:
+          "❌ You don't have permission to use moderation commands.\n" +
           "Ask an admin to set up moderator roles with `/config moderator-role`.",
-        ].join("\n"),
+        ephemeral: true,
+      });
+
+      logger.info(
+        { userId: interaction.user.id, guildId: interaction.guildId, subcommand },
+        "[admin] moderation blocked, missing permission",
       );
       return;
     }
@@ -207,26 +187,60 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         await handleBan(interaction);
         return;
       default:
-        await safeEphemeralMessage(interaction, "Unknown subcommand.");
+        await safeReply(interaction, { content: "Unknown subcommand.", ephemeral: true });
         return;
     }
   } catch (err) {
     logger.error(
-      {
-        err,
-        command: "admin",
-        subcommand,
-        userId: interaction.user.id,
-        guildId: interaction.guildId,
-      },
-      "[admin] moderation command failed",
+      { err, command: "admin", userId: interaction.user.id, subcommand },
+      "[admin] command failed",
     );
-    await safeEphemeralMessage(
-      interaction,
-      "Something went wrong. Please try again later.",
-    );
+
+    await safeReply(interaction, {
+      content: "Something went wrong. Please try again later.",
+      ephemeral: true,
+    });
   }
 }
+
+/* -------------------------------------------------------------------------- */
+/* Permission check                                                           */
+/* -------------------------------------------------------------------------- */
+
+async function checkModeratorRole(
+  interaction: ChatInputCommandInteraction,
+): Promise<boolean> {
+  if (!interaction.inGuild() || !interaction.member) return false;
+
+  // Allow built-in Discord perms first
+  if (interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) return true;
+  if (interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) return true;
+  if (interaction.memberPermissions?.has(PermissionFlagsBits.ModerateMembers))
+    return true;
+
+  try {
+    const db = getDb();
+    const guildId = interaction.guildId!;
+
+    const roles = db
+      .prepare(`SELECT role_id FROM moderator_roles WHERE guild_id = ?`)
+      .all(guildId) as Array<{ role_id: string }>;
+
+    if (!roles.length) return false;
+
+    const member = interaction.member as GuildMember;
+    const memberRoles = member.roles.cache;
+
+    return roles.some((r) => memberRoles.has(r.role_id));
+  } catch (err) {
+    logger.error({ err }, "[admin] failed to check moderator role");
+    return false;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Moderation handlers                                                        */
+/* -------------------------------------------------------------------------- */
 
 async function handleTimeout(interaction: ChatInputCommandInteraction): Promise<void> {
   const targetUser = interaction.options.getUser("user", true);
@@ -234,7 +248,10 @@ async function handleTimeout(interaction: ChatInputCommandInteraction): Promise<
   const reason = interaction.options.getString("reason") ?? "No reason provided";
 
   if (!interaction.guild) {
-    await safeEphemeralMessage(interaction, "This command can only be used in a server.");
+    await safeReply(interaction, {
+      content: "This command can only be used in a server.",
+      ephemeral: true,
+    });
     return;
   }
 
@@ -242,50 +259,44 @@ async function handleTimeout(interaction: ChatInputCommandInteraction): Promise<
     const member = await interaction.guild.members.fetch(targetUser.id);
 
     if (member.user.bot) {
-      await safeEphemeralMessage(interaction, "Cannot timeout bots.");
+      await safeReply(interaction, {
+        content: "❌ Cannot timeout bots.",
+        ephemeral: true,
+      });
       return;
     }
-
     if (member.id === interaction.user.id) {
-      await safeEphemeralMessage(interaction, "You cannot timeout yourself.");
+      await safeReply(interaction, {
+        content: "❌ You cannot timeout yourself.",
+        ephemeral: true,
+      });
       return;
     }
 
     const executor = interaction.member as GuildMember;
     if (member.roles.highest.position >= executor.roles.highest.position) {
-      await safeEphemeralMessage(
-        interaction,
-        "You cannot timeout someone with an equal or higher role.",
-      );
+      await safeReply(interaction, {
+        content: "❌ You cannot timeout someone with an equal or higher role.",
+        ephemeral: true,
+      });
       return;
     }
 
     const durationMs = duration * 60 * 1000;
     await member.timeout(durationMs, reason);
 
-    await interaction.editReply(
-      `Timed out **${targetUser.tag}** for **${duration}** minute(s).\nReason: ${reason}`,
-    );
+    await safeReply(interaction, {
+      content: `✅ ${targetUser.tag} has been timed out for ${duration} minute(s).\nReason: ${reason}`,
+      ephemeral: false,
+    });
 
     logger.info(
-      {
-        moderator: interaction.user.tag,
-        target: targetUser.tag,
-        duration,
-        reason,
-        guildId: interaction.guildId,
-      },
+      { moderator: interaction.user.tag, target: targetUser.tag, duration, reason },
       "[admin] user timed out",
     );
   } catch (err) {
-    logger.error(
-      { err, targetUser: targetUser.id, guildId: interaction.guildId },
-      "[admin] timeout failed",
-    );
-    await safeEphemeralMessage(
-      interaction,
-      "Failed to timeout user. Check my permissions and role position.",
-    );
+    logger.error({ err, targetUser: targetUser.id }, "[admin] timeout failed");
+    await safeReply(interaction, { content: userFacingError(err), ephemeral: true });
   }
 }
 
@@ -294,7 +305,10 @@ async function handleKick(interaction: ChatInputCommandInteraction): Promise<voi
   const reason = interaction.options.getString("reason") ?? "No reason provided";
 
   if (!interaction.guild) {
-    await safeEphemeralMessage(interaction, "This command can only be used in a server.");
+    await safeReply(interaction, {
+      content: "This command can only be used in a server.",
+      ephemeral: true,
+    });
     return;
   }
 
@@ -302,54 +316,49 @@ async function handleKick(interaction: ChatInputCommandInteraction): Promise<voi
     const member = await interaction.guild.members.fetch(targetUser.id);
 
     if (member.user.bot) {
-      await safeEphemeralMessage(interaction, "Cannot kick bots.");
+      await safeReply(interaction, { content: "❌ Cannot kick bots.", ephemeral: true });
       return;
     }
-
     if (member.id === interaction.user.id) {
-      await safeEphemeralMessage(interaction, "You cannot kick yourself.");
+      await safeReply(interaction, {
+        content: "❌ You cannot kick yourself.",
+        ephemeral: true,
+      });
       return;
     }
 
     const executor = interaction.member as GuildMember;
     if (member.roles.highest.position >= executor.roles.highest.position) {
-      await safeEphemeralMessage(
-        interaction,
-        "You cannot kick someone with an equal or higher role.",
-      );
+      await safeReply(interaction, {
+        content: "❌ You cannot kick someone with an equal or higher role.",
+        ephemeral: true,
+      });
       return;
     }
 
     if (!member.kickable) {
-      await safeEphemeralMessage(
-        interaction,
-        "I do not have permission to kick this user.",
-      );
+      await safeReply(interaction, {
+        content:
+          "❌ I don't have permission to kick this user.\nCheck my role position and Kick Members permission.",
+        ephemeral: true,
+      });
       return;
     }
 
     await member.kick(reason);
 
-    await interaction.editReply(`Kicked **${targetUser.tag}**.\nReason: ${reason}`);
+    await safeReply(interaction, {
+      content: `✅ ${targetUser.tag} has been kicked.\nReason: ${reason}`,
+      ephemeral: false,
+    });
 
     logger.info(
-      {
-        moderator: interaction.user.tag,
-        target: targetUser.tag,
-        reason,
-        guildId: interaction.guildId,
-      },
+      { moderator: interaction.user.tag, target: targetUser.tag, reason },
       "[admin] user kicked",
     );
   } catch (err) {
-    logger.error(
-      { err, targetUser: targetUser.id, guildId: interaction.guildId },
-      "[admin] kick failed",
-    );
-    await safeEphemeralMessage(
-      interaction,
-      "Failed to kick user. Check my permissions and role position.",
-    );
+    logger.error({ err, targetUser: targetUser.id }, "[admin] kick failed");
+    await safeReply(interaction, { content: userFacingError(err), ephemeral: true });
   }
 }
 
@@ -359,38 +368,45 @@ async function handleBan(interaction: ChatInputCommandInteraction): Promise<void
   const deleteDays = interaction.options.getInteger("delete_days") ?? 0;
 
   if (!interaction.guild) {
-    await safeEphemeralMessage(interaction, "This command can only be used in a server.");
+    await safeReply(interaction, {
+      content: "This command can only be used in a server.",
+      ephemeral: true,
+    });
     return;
   }
 
   try {
+    const member = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
+
     if (targetUser.id === interaction.user.id) {
-      await safeEphemeralMessage(interaction, "You cannot ban yourself.");
+      await safeReply(interaction, {
+        content: "❌ You cannot ban yourself.",
+        ephemeral: true,
+      });
       return;
     }
 
-    const member = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
-
     if (member) {
       if (member.user.bot) {
-        await safeEphemeralMessage(interaction, "Cannot ban bots.");
+        await safeReply(interaction, { content: "❌ Cannot ban bots.", ephemeral: true });
         return;
       }
 
       const executor = interaction.member as GuildMember;
       if (member.roles.highest.position >= executor.roles.highest.position) {
-        await safeEphemeralMessage(
-          interaction,
-          "You cannot ban someone with an equal or higher role.",
-        );
+        await safeReply(interaction, {
+          content: "❌ You cannot ban someone with an equal or higher role.",
+          ephemeral: true,
+        });
         return;
       }
 
       if (!member.bannable) {
-        await safeEphemeralMessage(
-          interaction,
-          "I do not have permission to ban this user.",
-        );
+        await safeReply(interaction, {
+          content:
+            "❌ I don't have permission to ban this user.\nCheck my role position and Ban Members permission.",
+          ephemeral: true,
+        });
         return;
       }
     }
@@ -400,33 +416,26 @@ async function handleBan(interaction: ChatInputCommandInteraction): Promise<void
       deleteMessageSeconds: deleteDays * 24 * 60 * 60,
     });
 
-    const deletedText =
-      deleteDays > 0 ? `\nMessages deleted: last ${deleteDays} day(s)` : "";
-    await interaction.editReply(
-      `Banned **${targetUser.tag}**.\nReason: ${reason}${deletedText}`,
-    );
+    await safeReply(interaction, {
+      content:
+        `✅ ${targetUser.tag} has been banned.\nReason: ${reason}` +
+        (deleteDays > 0 ? `\nMessages deleted: last ${deleteDays} day(s)` : ""),
+      ephemeral: false,
+    });
 
     logger.info(
-      {
-        moderator: interaction.user.tag,
-        target: targetUser.tag,
-        reason,
-        deleteDays,
-        guildId: interaction.guildId,
-      },
+      { moderator: interaction.user.tag, target: targetUser.tag, reason, deleteDays },
       "[admin] user banned",
     );
   } catch (err) {
-    logger.error(
-      { err, targetUser: targetUser.id, guildId: interaction.guildId },
-      "[admin] ban failed",
-    );
-    await safeEphemeralMessage(
-      interaction,
-      "Failed to ban user. Check my permissions and role position.",
-    );
+    logger.error({ err, targetUser: targetUser.id }, "[admin] ban failed");
+    await safeReply(interaction, { content: userFacingError(err), ephemeral: true });
   }
 }
+
+/* -------------------------------------------------------------------------- */
+/* Stats + Health                                                             */
+/* -------------------------------------------------------------------------- */
 
 async function handleStats(interaction: ChatInputCommandInteraction): Promise<void> {
   try {
@@ -435,15 +444,15 @@ async function handleStats(interaction: ChatInputCommandInteraction): Promise<vo
     const jokeCount = db.prepare("SELECT COUNT(*) as count FROM jokes").get() as {
       count: number;
     };
+
     const coinFlipCount = db
       .prepare("SELECT COUNT(*) as count FROM coin_flips")
       .get() as { count: number };
 
     const funUsage = await getFunUsageSnapshot();
-
-    const totalsByCommand = (funUsage?.totalsByCommand ?? {}) as Record<string, number>;
-    const totalCommands = Object.values(totalsByCommand).reduce(
-      (sum, count) => sum + (count ?? 0),
+    const totals = (funUsage?.totalsByCommand ?? {}) as Record<string, number>;
+    const totalCommands = Object.values(totals).reduce(
+      (sum, count) => sum + (Number.isFinite(count) ? count : 0),
       0,
     );
 
@@ -478,12 +487,14 @@ async function handleStats(interaction: ChatInputCommandInteraction): Promise<vo
       .setFooter({ text: `Node ${process.version}` })
       .setTimestamp();
 
-    await interaction.editReply({ embeds: [embed] });
-
-    logger.info({ userId: interaction.user.id }, "[admin] viewed bot statistics");
+    await safeReply(interaction, { embeds: [embed], ephemeral: false });
+    logger.info({ userId: interaction.user.id }, "[admin] viewed stats");
   } catch (error) {
     logger.error({ error }, "[admin] stats failed");
-    await safeEphemeralMessage(interaction, "Failed to get statistics.");
+    await safeReply(interaction, {
+      content: "❌ Failed to get statistics",
+      ephemeral: true,
+    });
   }
 }
 
@@ -494,38 +505,38 @@ async function handleHealth(interaction: ChatInputCommandInteraction): Promise<v
     try {
       const db = getDb();
       db.prepare("SELECT 1").get();
-      checks.push({ name: "Database", status: "Healthy" });
+      checks.push({ name: "Database", status: "✅ Healthy" });
     } catch (error) {
       checks.push({
         name: "Database",
-        status: "Error",
+        status: "❌ Error",
         details: error instanceof Error ? error.message : "Unknown error",
       });
     }
 
-    const requiredEnvVars = ["DISCORD_TOKEN", "DISCORD_APP_ID", "DISCORD_GUILD_ID"];
-    const missingRequired = requiredEnvVars.filter((v) => !process.env[v]?.trim());
+    const requiredEnvVars = ["DISCORD_TOKEN", "DISCORD_APP_ID"];
+    const missingVars = requiredEnvVars.filter((v) => !process.env[v]);
 
-    if (missingRequired.length === 0) {
-      checks.push({ name: "Required env", status: "All set" });
+    if (missingVars.length === 0) {
+      checks.push({ name: "Environment", status: "✅ Required vars set" });
     } else {
       checks.push({
-        name: "Required env",
-        status: "Missing",
-        details: missingRequired.join(", "),
+        name: "Environment",
+        status: "⚠️ Missing vars",
+        details: missingVars.join(", "),
       });
     }
 
-    const optionalEnv = [
+    const optionalKeys = [
       { name: "OpenAI", key: "OPENAI_API_KEY" },
       { name: "GitHub", key: "GITHUB_TOKEN" },
-      { name: "WeatherAPI", key: "WEATHERAPI_KEY" },
+      { name: "Weather API", key: "WEATHERAPI_KEY" },
     ];
 
-    for (const item of optionalEnv) {
+    for (const { name, key } of optionalKeys) {
       checks.push({
-        name: item.name,
-        status: process.env[item.key]?.trim() ? "Configured" : "Not configured",
+        name,
+        status: process.env[key] ? "✅ Configured" : "⚠️ Not configured",
       });
     }
 
@@ -543,11 +554,13 @@ async function handleHealth(interaction: ChatInputCommandInteraction): Promise<v
       )
       .setTimestamp();
 
-    await interaction.editReply({ embeds: [embed] });
-
-    logger.info({ userId: interaction.user.id }, "[admin] viewed health check");
+    await safeReply(interaction, { embeds: [embed], ephemeral: false });
+    logger.info({ userId: interaction.user.id }, "[admin] viewed health");
   } catch (error) {
     logger.error({ error }, "[admin] health check failed");
-    await safeEphemeralMessage(interaction, "Failed to run health check.");
+    await safeReply(interaction, {
+      content: "❌ Failed to run health check",
+      ephemeral: true,
+    });
   }
 }
