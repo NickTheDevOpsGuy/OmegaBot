@@ -397,7 +397,7 @@ async function handleStats(interaction: ChatInputCommandInteraction): Promise<vo
     const funUsage = await getFunUsageSnapshot();
     const totalCommands = Object.values(funUsage.totalsByCommand).reduce(
       (sum, count) => sum + count,
-      0
+      0,
     );
 
     const uptimeSeconds = process.uptime();
@@ -442,7 +442,7 @@ async function handleStats(interaction: ChatInputCommandInteraction): Promise<vo
           name: "👥 Unique Users",
           value: Object.keys(funUsage.totalsByUser).length.toString(),
           inline: true,
-        }
+        },
       )
       .setFooter({ text: `Node ${process.version}` })
       .setTimestamp();
@@ -512,9 +512,9 @@ async function handleHealth(interaction: ChatInputCommandInteraction): Promise<v
           .map((c) =>
             c.details
               ? `**${c.name}:** ${c.status}\n  ${c.details}`
-              : `**${c.name}:** ${c.status}`
+              : `**${c.name}:** ${c.status}`,
           )
-          .join("\n\n")
+          .join("\n\n"),
       )
       .setTimestamp();
 
