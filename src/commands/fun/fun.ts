@@ -18,7 +18,6 @@ import { run as runPoll } from "./subcommands/poll.js";
 import { run as runLeaderboard } from "./subcommands/leaderboard.js";
 import type { LeaderboardMode } from "./subcommands/leaderboard.js";
 
-
 import { handleJoke, buildJokeSubcommands } from "./subcommands/joke/index.js";
 
 import { recordFunUsage, type FunCommandKey } from "../../services/fun/funUsageStore.js";

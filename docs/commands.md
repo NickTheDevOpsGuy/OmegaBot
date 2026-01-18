@@ -87,7 +87,6 @@ Fetch a single pull request by number.
 
 Entertainment and engagement commands. All fun commands track usage for leaderboards.
 
-
 ### `/fun joke`
 
 Community-submitted jokes organized by generation.
