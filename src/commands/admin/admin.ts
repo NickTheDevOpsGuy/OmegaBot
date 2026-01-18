@@ -69,9 +69,7 @@ export const data = new SlashCommandBuilder()
 
   // Bot stats subcommands
   .addSubcommand((sub) =>
-    sub
-      .setName("stats")
-      .setDescription("Show bot statistics (uptime, database, commands)"),
+    sub.setName("stats").setDescription("Show bot statistics (uptime, database, commands)"),
   )
   .addSubcommand((sub) =>
     sub.setName("health").setDescription("Check bot and service health"),
@@ -94,7 +92,6 @@ async function safeReply(
 ): Promise<void> {
   try {
     if (interaction.deferred || interaction.replied) {
-      // editReply cannot set ephemeral or flags
       const { content, embeds } = payload;
       await interaction.editReply({ content, embeds });
       return;
@@ -129,6 +126,51 @@ function userFacingError(err: unknown): string {
 }
 
 /* -------------------------------------------------------------------------- */
+/* Retry helpers (cuts down flakiness)                                        */
+/* -------------------------------------------------------------------------- */
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+function looksRetryable(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  const low = msg.toLowerCase();
+  // common sqlite transient errors
+  return low.includes("sqlite_busy") || low.includes("database is locked") || low.includes("busy");
+}
+
+async function withRetry<T>(
+  label: string,
+  fn: () => T | Promise<T>,
+  attempts = 3,
+  baseDelayMs = 75,
+): Promise<T> {
+  let lastErr: unknown = null;
+
+  for (let i = 0; i < attempts; i += 1) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+
+      const retryable = looksRetryable(err);
+      logger.warn(
+        { err, label, attempt: i + 1, attempts, retryable },
+        "[admin] operation failed",
+      );
+
+      if (!retryable || i === attempts - 1) break;
+
+      // small backoff
+      await sleep(baseDelayMs * (i + 1));
+    }
+  }
+
+  throw lastErr instanceof Error ? lastErr : new Error(String(lastErr));
+}
+
+/* -------------------------------------------------------------------------- */
 /* Execute                                                                    */
 /* -------------------------------------------------------------------------- */
 
@@ -136,12 +178,9 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
   const subcommand = interaction.options.getSubcommand(true);
 
   try {
-    // Always defer so we never hit the 3s interaction timeout.
-    // Moderation defaults to ephemeral to keep channels clean.
     const ephemeral = subcommand !== "stats" && subcommand !== "health";
     await interaction.deferReply({ ephemeral });
 
-    // Stats + health do not need mod role checks
     if (subcommand === "stats") {
       await handleStats(interaction);
       return;
@@ -151,7 +190,6 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       return;
     }
 
-    // Moderation must be in a guild
     if (!interaction.inGuild()) {
       await safeReply(interaction, {
         content: "This command can only be used in a server.",
@@ -212,11 +250,9 @@ async function checkModeratorRole(
 ): Promise<boolean> {
   if (!interaction.inGuild() || !interaction.member) return false;
 
-  // Allow built-in Discord perms first
   if (interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) return true;
   if (interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) return true;
-  if (interaction.memberPermissions?.has(PermissionFlagsBits.ModerateMembers))
-    return true;
+  if (interaction.memberPermissions?.has(PermissionFlagsBits.ModerateMembers)) return true;
 
   try {
     const db = getDb();
@@ -438,24 +474,41 @@ async function handleBan(interaction: ChatInputCommandInteraction): Promise<void
 /* -------------------------------------------------------------------------- */
 
 async function handleStats(interaction: ChatInputCommandInteraction): Promise<void> {
+  // Goal: do not hard-fail if one piece flakes, show N/A and log the real error
+  let jokeCount: number | null = null;
+  let coinFlipCount: number | null = null;
+  let totalCommands = 0;
+  let uniqueUsers = 0;
+
   try {
     const db = getDb();
 
-    const jokeCount = db.prepare("SELECT COUNT(*) as count FROM jokes").get() as {
-      count: number;
-    };
+    jokeCount = await withRetry("stats:jokesCount", () => {
+      const row = db.prepare("SELECT COUNT(*) as count FROM jokes").get() as { count: number };
+      return row.count;
+    });
 
-    const coinFlipCount = db
-      .prepare("SELECT COUNT(*) as count FROM coin_flips")
-      .get() as { count: number };
+    coinFlipCount = await withRetry("stats:coinFlipCount", () => {
+      const row = db.prepare("SELECT COUNT(*) as count FROM coin_flips").get() as { count: number };
+      return row.count;
+    });
+  } catch (err) {
+    logger.error({ err }, "[admin] stats DB counts failed");
+  }
 
-    const funUsage = await getFunUsageSnapshot();
+  try {
+    const funUsage = await withRetry("stats:funUsageSnapshot", () => getFunUsageSnapshot());
     const totals = (funUsage?.totalsByCommand ?? {}) as Record<string, number>;
-    const totalCommands = Object.values(totals).reduce(
+    totalCommands = Object.values(totals).reduce(
       (sum, count) => sum + (Number.isFinite(count) ? count : 0),
       0,
     );
+    uniqueUsers = Object.keys(funUsage?.totalsByUser ?? {}).length;
+  } catch (err) {
+    logger.error({ err }, "[admin] stats fun usage failed");
+  }
 
+  try {
     const uptimeSeconds = process.uptime();
     const uptimeDays = Math.floor(uptimeSeconds / 86400);
     const uptimeHours = Math.floor((uptimeSeconds % 86400) / 3600);
@@ -475,26 +528,23 @@ async function handleStats(interaction: ChatInputCommandInteraction): Promise<vo
           inline: true,
         },
         { name: "Memory", value: `${memUsedMB}MB / ${memTotalMB}MB`, inline: true },
-        { name: "Total Commands", value: totalCommands.toString(), inline: true },
-        { name: "Jokes", value: jokeCount.count.toString(), inline: true },
-        { name: "Coin Flips", value: coinFlipCount.count.toString(), inline: true },
+        { name: "Total Commands", value: String(totalCommands), inline: true },
+        { name: "Jokes", value: jokeCount === null ? "N/A" : String(jokeCount), inline: true },
         {
-          name: "Unique Users",
-          value: Object.keys(funUsage?.totalsByUser ?? {}).length.toString(),
+          name: "Coin Flips",
+          value: coinFlipCount === null ? "N/A" : String(coinFlipCount),
           inline: true,
         },
+        { name: "Unique Users", value: String(uniqueUsers), inline: true },
       )
       .setFooter({ text: `Node ${process.version}` })
       .setTimestamp();
 
     await safeReply(interaction, { embeds: [embed], ephemeral: false });
     logger.info({ userId: interaction.user.id }, "[admin] viewed stats");
-  } catch (error) {
-    logger.error({ error }, "[admin] stats failed");
-    await safeReply(interaction, {
-      content: "❌ Failed to get statistics",
-      ephemeral: true,
-    });
+  } catch (err) {
+    logger.error({ err }, "[admin] stats reply failed");
+    await safeReply(interaction, { content: "❌ Failed to get statistics", ephemeral: true });
   }
 }
 
@@ -528,7 +578,7 @@ async function handleHealth(interaction: ChatInputCommandInteraction): Promise<v
     }
 
     const optionalKeys = [
-      { name: "OpenAI", key: "OPENAI_API_KEY" },
+      { name: "Anthropic (Claude)", key: "ANTHROPIC_API_KEY" },
       { name: "GitHub", key: "GITHUB_TOKEN" },
       { name: "Weather API", key: "WEATHERAPI_KEY" },
     ];
@@ -558,9 +608,6 @@ async function handleHealth(interaction: ChatInputCommandInteraction): Promise<v
     logger.info({ userId: interaction.user.id }, "[admin] viewed health");
   } catch (error) {
     logger.error({ error }, "[admin] health check failed");
-    await safeReply(interaction, {
-      content: "❌ Failed to run health check",
-      ephemeral: true,
-    });
+    await safeReply(interaction, { content: "❌ Failed to run health check", ephemeral: true });
   }
 }
