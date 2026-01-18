@@ -27,7 +27,7 @@ build/
 
 # OS junk
 Thumbs.db
-Claude.dmg
+
 
 # TypeScript (if added later)
 *.tsbuildinfo
@@ -52,3 +52,8 @@ coverage/
 *.swp
 *.swo
 *~
+
+# SQLite databases (ADDED)
+data/*.db
+data/*.db-wal
+data/*.db-shm
