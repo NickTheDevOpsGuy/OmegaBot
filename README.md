@@ -56,3 +56,10 @@ see [CONTRIBUTORS.md](./CONTRIBUTORS.md) or join the Discord.
 
 This project is licensed under the MIT License.  
 See the [LICENSE](./LICENSE) file for full details.
+
+---
+
+## Contributing
+
+Want to help build OmegaBot?  
+See [CONTRIBUTORS.md](./CONTRIBUTORS.md) or open a PR.
