@@ -99,3 +99,15 @@ GITHUB_ASSIGNEE_ANNOUNCE_CHANNEL_ID=channel-id
 ```
 
 If no channels are configured, GitHub announcements are disabled.
+
+### Jokes Discord Role (Optional)
+
+Recommended setup:
+
+1. Create a "Joke Moderator" role in your Discord server
+2. Assign it to trusted members
+3. Add the role ID here
+
+```env
+JOKE_MODERATOR_ROLE_ID=
+```
