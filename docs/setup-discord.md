@@ -11,6 +11,7 @@ When inviting the bot, you **must** include:
 
 - bot
 - applications.commands
+- Use Slash Commands
 
 If you change scopes later, you must re-invite the bot.
 
