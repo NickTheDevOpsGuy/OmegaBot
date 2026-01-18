@@ -5,7 +5,6 @@ import {
   PermissionFlagsBits,
   type ChatInputCommandInteraction,
   type GuildMember,
-  MessageFlags,
 } from "discord.js";
 import { logger } from "../../utils/logger.js";
 import { getDb } from "../../services/database/db.js";
@@ -16,6 +15,7 @@ export const data = new SlashCommandBuilder()
   .setName("admin")
   .setDescription("Admin and moderation commands")
   .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+
   // Moderation subcommands
   .addSubcommand((sub) =>
     sub
@@ -66,6 +66,7 @@ export const data = new SlashCommandBuilder()
           .setMaxValue(7),
       ),
   )
+
   // Bot stats subcommands
   .addSubcommand((sub) =>
     sub
@@ -81,16 +82,29 @@ export const data = new SlashCommandBuilder()
 /* Reply helpers                                                              */
 /* -------------------------------------------------------------------------- */
 
+type ReplyPayload = {
+  content?: string;
+  embeds?: EmbedBuilder[];
+  ephemeral?: boolean;
+};
+
 async function safeReply(
   interaction: ChatInputCommandInteraction,
-  payload: { content?: string; embeds?: EmbedBuilder[]; flags?: MessageFlags },
+  payload: ReplyPayload,
 ): Promise<void> {
   try {
     if (interaction.deferred || interaction.replied) {
-      await interaction.editReply(payload);
+      // editReply cannot set ephemeral or flags
+      const { content, embeds } = payload;
+      await interaction.editReply({ content, embeds });
       return;
     }
-    await interaction.reply(payload);
+
+    await interaction.reply({
+      content: payload.content,
+      embeds: payload.embeds,
+      ephemeral: payload.ephemeral ?? true,
+    });
   } catch (err) {
     logger.error({ err }, "[admin] failed to reply/editReply");
   }
@@ -98,19 +112,24 @@ async function safeReply(
 
 function userFacingError(err: unknown): string {
   const msg = err instanceof Error ? err.message : "Unknown error";
+  const low = msg.toLowerCase();
 
-  // Common Discord permission failure messages are not super friendly
-  if (msg.toLowerCase().includes("missing permissions")) {
-    return "❌ I am missing required permissions. Check my role permissions, and that my role is above the target user.";
+  if (low.includes("missing permissions")) {
+    return (
+      "❌ I am missing required permissions.\n" +
+      "Check my role permissions, and make sure my role is above the target user's role."
+    );
   }
-  if (msg.toLowerCase().includes("unknown interaction")) {
+
+  if (low.includes("unknown interaction")) {
     return "❌ That took too long and Discord expired the command. Try again.";
   }
+
   return "❌ Command failed. Check my permissions and role position.";
 }
 
 /* -------------------------------------------------------------------------- */
-/* Execute                                                                     */
+/* Execute                                                                    */
 /* -------------------------------------------------------------------------- */
 
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -118,11 +137,9 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
   try {
     // Always defer so we never hit the 3s interaction timeout.
-    // Stats/Health can be non-ephemeral if you prefer, but ephemeral keeps channels clean.
+    // Moderation defaults to ephemeral to keep channels clean.
     const ephemeral = subcommand !== "stats" && subcommand !== "health";
-    await interaction.deferReply({
-      flags: ephemeral ? MessageFlags.Ephemeral : undefined,
-    });
+    await interaction.deferReply({ ephemeral });
 
     // Stats + health do not need mod role checks
     if (subcommand === "stats") {
@@ -138,7 +155,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     if (!interaction.inGuild()) {
       await safeReply(interaction, {
         content: "This command can only be used in a server.",
-        flags: MessageFlags.Ephemeral,
+        ephemeral: true,
       });
       return;
     }
@@ -149,7 +166,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         content:
           "❌ You don't have permission to use moderation commands.\n" +
           "Ask an admin to set up moderator roles with `/config moderator-role`.",
-        flags: MessageFlags.Ephemeral,
+        ephemeral: true,
       });
 
       logger.info(
@@ -170,10 +187,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         await handleBan(interaction);
         return;
       default:
-        await safeReply(interaction, {
-          content: "Unknown subcommand.",
-          flags: MessageFlags.Ephemeral,
-        });
+        await safeReply(interaction, { content: "Unknown subcommand.", ephemeral: true });
         return;
     }
   } catch (err) {
@@ -184,13 +198,13 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
     await safeReply(interaction, {
       content: "Something went wrong. Please try again later.",
-      flags: MessageFlags.Ephemeral,
+      ephemeral: true,
     });
   }
 }
 
 /* -------------------------------------------------------------------------- */
-/* Permission check                                                            */
+/* Permission check                                                           */
 /* -------------------------------------------------------------------------- */
 
 async function checkModeratorRole(
@@ -198,7 +212,7 @@ async function checkModeratorRole(
 ): Promise<boolean> {
   if (!interaction.inGuild() || !interaction.member) return false;
 
-  // Admins/mods should be allowed even if DB roles aren't configured yet.
+  // Allow built-in Discord perms first
   if (interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) return true;
   if (interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) return true;
   if (interaction.memberPermissions?.has(PermissionFlagsBits.ModerateMembers))
@@ -225,7 +239,7 @@ async function checkModeratorRole(
 }
 
 /* -------------------------------------------------------------------------- */
-/* Moderation handlers                                                         */
+/* Moderation handlers                                                        */
 /* -------------------------------------------------------------------------- */
 
 async function handleTimeout(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -236,7 +250,7 @@ async function handleTimeout(interaction: ChatInputCommandInteraction): Promise<
   if (!interaction.guild) {
     await safeReply(interaction, {
       content: "This command can only be used in a server.",
-      flags: MessageFlags.Ephemeral,
+      ephemeral: true,
     });
     return;
   }
@@ -247,14 +261,14 @@ async function handleTimeout(interaction: ChatInputCommandInteraction): Promise<
     if (member.user.bot) {
       await safeReply(interaction, {
         content: "❌ Cannot timeout bots.",
-        flags: MessageFlags.Ephemeral,
+        ephemeral: true,
       });
       return;
     }
     if (member.id === interaction.user.id) {
       await safeReply(interaction, {
         content: "❌ You cannot timeout yourself.",
-        flags: MessageFlags.Ephemeral,
+        ephemeral: true,
       });
       return;
     }
@@ -263,7 +277,7 @@ async function handleTimeout(interaction: ChatInputCommandInteraction): Promise<
     if (member.roles.highest.position >= executor.roles.highest.position) {
       await safeReply(interaction, {
         content: "❌ You cannot timeout someone with an equal or higher role.",
-        flags: MessageFlags.Ephemeral,
+        ephemeral: true,
       });
       return;
     }
@@ -273,6 +287,7 @@ async function handleTimeout(interaction: ChatInputCommandInteraction): Promise<
 
     await safeReply(interaction, {
       content: `✅ ${targetUser.tag} has been timed out for ${duration} minute(s).\nReason: ${reason}`,
+      ephemeral: false,
     });
 
     logger.info(
@@ -281,10 +296,7 @@ async function handleTimeout(interaction: ChatInputCommandInteraction): Promise<
     );
   } catch (err) {
     logger.error({ err, targetUser: targetUser.id }, "[admin] timeout failed");
-    await safeReply(interaction, {
-      content: userFacingError(err),
-      flags: MessageFlags.Ephemeral,
-    });
+    await safeReply(interaction, { content: userFacingError(err), ephemeral: true });
   }
 }
 
@@ -295,7 +307,7 @@ async function handleKick(interaction: ChatInputCommandInteraction): Promise<voi
   if (!interaction.guild) {
     await safeReply(interaction, {
       content: "This command can only be used in a server.",
-      flags: MessageFlags.Ephemeral,
+      ephemeral: true,
     });
     return;
   }
@@ -304,16 +316,13 @@ async function handleKick(interaction: ChatInputCommandInteraction): Promise<voi
     const member = await interaction.guild.members.fetch(targetUser.id);
 
     if (member.user.bot) {
-      await safeReply(interaction, {
-        content: "❌ Cannot kick bots.",
-        flags: MessageFlags.Ephemeral,
-      });
+      await safeReply(interaction, { content: "❌ Cannot kick bots.", ephemeral: true });
       return;
     }
     if (member.id === interaction.user.id) {
       await safeReply(interaction, {
         content: "❌ You cannot kick yourself.",
-        flags: MessageFlags.Ephemeral,
+        ephemeral: true,
       });
       return;
     }
@@ -322,7 +331,7 @@ async function handleKick(interaction: ChatInputCommandInteraction): Promise<voi
     if (member.roles.highest.position >= executor.roles.highest.position) {
       await safeReply(interaction, {
         content: "❌ You cannot kick someone with an equal or higher role.",
-        flags: MessageFlags.Ephemeral,
+        ephemeral: true,
       });
       return;
     }
@@ -330,8 +339,8 @@ async function handleKick(interaction: ChatInputCommandInteraction): Promise<voi
     if (!member.kickable) {
       await safeReply(interaction, {
         content:
-          "❌ I don't have permission to kick this user. Check my role position and Kick Members permission.",
-        flags: MessageFlags.Ephemeral,
+          "❌ I don't have permission to kick this user.\nCheck my role position and Kick Members permission.",
+        ephemeral: true,
       });
       return;
     }
@@ -340,6 +349,7 @@ async function handleKick(interaction: ChatInputCommandInteraction): Promise<voi
 
     await safeReply(interaction, {
       content: `✅ ${targetUser.tag} has been kicked.\nReason: ${reason}`,
+      ephemeral: false,
     });
 
     logger.info(
@@ -348,10 +358,7 @@ async function handleKick(interaction: ChatInputCommandInteraction): Promise<voi
     );
   } catch (err) {
     logger.error({ err, targetUser: targetUser.id }, "[admin] kick failed");
-    await safeReply(interaction, {
-      content: userFacingError(err),
-      flags: MessageFlags.Ephemeral,
-    });
+    await safeReply(interaction, { content: userFacingError(err), ephemeral: true });
   }
 }
 
@@ -363,7 +370,7 @@ async function handleBan(interaction: ChatInputCommandInteraction): Promise<void
   if (!interaction.guild) {
     await safeReply(interaction, {
       content: "This command can only be used in a server.",
-      flags: MessageFlags.Ephemeral,
+      ephemeral: true,
     });
     return;
   }
@@ -374,17 +381,14 @@ async function handleBan(interaction: ChatInputCommandInteraction): Promise<void
     if (targetUser.id === interaction.user.id) {
       await safeReply(interaction, {
         content: "❌ You cannot ban yourself.",
-        flags: MessageFlags.Ephemeral,
+        ephemeral: true,
       });
       return;
     }
 
     if (member) {
       if (member.user.bot) {
-        await safeReply(interaction, {
-          content: "❌ Cannot ban bots.",
-          flags: MessageFlags.Ephemeral,
-        });
+        await safeReply(interaction, { content: "❌ Cannot ban bots.", ephemeral: true });
         return;
       }
 
@@ -392,7 +396,7 @@ async function handleBan(interaction: ChatInputCommandInteraction): Promise<void
       if (member.roles.highest.position >= executor.roles.highest.position) {
         await safeReply(interaction, {
           content: "❌ You cannot ban someone with an equal or higher role.",
-          flags: MessageFlags.Ephemeral,
+          ephemeral: true,
         });
         return;
       }
@@ -400,8 +404,8 @@ async function handleBan(interaction: ChatInputCommandInteraction): Promise<void
       if (!member.bannable) {
         await safeReply(interaction, {
           content:
-            "❌ I don't have permission to ban this user. Check my role position and Ban Members permission.",
-          flags: MessageFlags.Ephemeral,
+            "❌ I don't have permission to ban this user.\nCheck my role position and Ban Members permission.",
+          ephemeral: true,
         });
         return;
       }
@@ -416,6 +420,7 @@ async function handleBan(interaction: ChatInputCommandInteraction): Promise<void
       content:
         `✅ ${targetUser.tag} has been banned.\nReason: ${reason}` +
         (deleteDays > 0 ? `\nMessages deleted: last ${deleteDays} day(s)` : ""),
+      ephemeral: false,
     });
 
     logger.info(
@@ -424,15 +429,12 @@ async function handleBan(interaction: ChatInputCommandInteraction): Promise<void
     );
   } catch (err) {
     logger.error({ err, targetUser: targetUser.id }, "[admin] ban failed");
-    await safeReply(interaction, {
-      content: userFacingError(err),
-      flags: MessageFlags.Ephemeral,
-    });
+    await safeReply(interaction, { content: userFacingError(err), ephemeral: true });
   }
 }
 
 /* -------------------------------------------------------------------------- */
-/* Stats + Health                                                              */
+/* Stats + Health                                                             */
 /* -------------------------------------------------------------------------- */
 
 async function handleStats(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -442,6 +444,7 @@ async function handleStats(interaction: ChatInputCommandInteraction): Promise<vo
     const jokeCount = db.prepare("SELECT COUNT(*) as count FROM jokes").get() as {
       count: number;
     };
+
     const coinFlipCount = db
       .prepare("SELECT COUNT(*) as count FROM coin_flips")
       .get() as { count: number };
@@ -477,21 +480,20 @@ async function handleStats(interaction: ChatInputCommandInteraction): Promise<vo
         { name: "Coin Flips", value: coinFlipCount.count.toString(), inline: true },
         {
           name: "Unique Users",
-          value: Object.keys(funUsage.totalsByUser ?? {}).length.toString(),
+          value: Object.keys(funUsage?.totalsByUser ?? {}).length.toString(),
           inline: true,
         },
       )
       .setFooter({ text: `Node ${process.version}` })
       .setTimestamp();
 
-    await safeReply(interaction, { embeds: [embed] });
-
+    await safeReply(interaction, { embeds: [embed], ephemeral: false });
     logger.info({ userId: interaction.user.id }, "[admin] viewed stats");
   } catch (error) {
     logger.error({ error }, "[admin] stats failed");
     await safeReply(interaction, {
       content: "❌ Failed to get statistics",
-      flags: MessageFlags.Ephemeral,
+      ephemeral: true,
     });
   }
 }
@@ -552,14 +554,13 @@ async function handleHealth(interaction: ChatInputCommandInteraction): Promise<v
       )
       .setTimestamp();
 
-    await safeReply(interaction, { embeds: [embed] });
-
+    await safeReply(interaction, { embeds: [embed], ephemeral: false });
     logger.info({ userId: interaction.user.id }, "[admin] viewed health");
   } catch (error) {
     logger.error({ error }, "[admin] health check failed");
     await safeReply(interaction, {
       content: "❌ Failed to run health check",
-      flags: MessageFlags.Ephemeral,
+      ephemeral: true,
     });
   }
 }
