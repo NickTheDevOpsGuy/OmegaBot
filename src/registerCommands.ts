@@ -1,51 +1,116 @@
 // src/registerCommands.ts
+
 import fs from "fs";
 import path from "path";
-import { REST, Routes } from "discord.js";
+import { pathToFileURL } from "url";
+import { REST, Routes, SlashCommandBuilder } from "discord.js";
+import { env } from "./config/env.js";
 import { logger } from "./utils/logger.js";
 
-const commands: any[] = [];
-
-const commandsPath = path.join(process.cwd(), "dist", "commands");
+/**
+ * Shape every slash command module must export.
+ * This matches commandLoader.ts exactly.
+ */
+type SlashCommandModule = {
+  data: SlashCommandBuilder;
+};
 
 /**
- * Recursively walk a directory and return all file paths
+ * Recursively walk a directory and return all files.
  */
-function walk(dir: string): string[] {
-  return fs.readdirSync(dir).flatMap((file) => {
-    const fullPath = path.join(dir, file);
-    return fs.statSync(fullPath).isDirectory()
-      ? walk(fullPath)
-      : [fullPath];
-  });
+function walkFiles(dir: string): string[] {
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  const files: string[] = [];
+
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...walkFiles(fullPath));
+    } else {
+      files.push(fullPath);
+    }
+  }
+
+  return files;
 }
 
-for (const file of walk(commandsPath)) {
-  if (!file.endsWith(".js")) continue;
+async function registerCommands(): Promise<void> {
+  const rest = new REST({ version: "10" }).setToken(env.token);
 
-  const command = await import(file);
-  if (!command?.data) continue;
+  const commandsPath = path.join(process.cwd(), "dist", "commands");
 
-  commands.push(command.data.toJSON());
-  logger.info(
-    { command: command.data.name, file },
-    "[register] command loaded",
+  if (!fs.existsSync(commandsPath)) {
+    throw new Error(
+      `dist/commands not found. Did you forget to run "npm run build"?`,
+    );
+  }
+
+  const commandFiles = walkFiles(commandsPath).filter(
+    (file) => file.endsWith(".js") && !file.endsWith(".d.ts"),
   );
-}
 
-const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN!);
+  const commands: ReturnType<SlashCommandBuilder["toJSON"]>[] = [];
 
-(async () => {
-  try {
-    logger.info(`[register] registering ${commands.length} commands`);
+  for (const file of commandFiles) {
+    const relFile = path.relative(commandsPath, file).replaceAll("\\", "/");
 
+    try {
+      const moduleUrl = pathToFileURL(file).href;
+      const imported = (await import(moduleUrl)) as Partial<SlashCommandModule>;
+
+      if (!imported.data) {
+        logger.debug(
+          { file: relFile },
+          "Skipping non-command module (missing data)",
+        );
+        continue;
+      }
+
+      commands.push(imported.data.toJSON());
+      logger.info({ command: imported.data.name }, "Prepared command for registration");
+    } catch (err) {
+      logger.warn(
+        { err, file: relFile },
+        "Failed to load command for registration",
+      );
+    }
+  }
+
+  if (commands.length === 0) {
+    logger.warn("No commands found to register");
+    return;
+  }
+
+  logger.info(
+    { count: commands.length },
+    "Registering application (/) commands",
+  );
+
+  if (env.guildId) {
+    // Guild-scoped (fast refresh, dev-friendly)
     await rest.put(
-      Routes.applicationCommands(process.env.DISCORD_APP_ID!),
+      Routes.applicationGuildCommands(env.appId, env.guildId),
       { body: commands },
     );
 
-    logger.info("[register] commands registered successfully");
-  } catch (error) {
-    logger.error({ error }, "[register] failed to register commands");
+    logger.info(
+      { guildId: env.guildId, count: commands.length },
+      "Guild commands registered",
+    );
+  } else {
+    // Global (can take up to 1 hour to propagate)
+    await rest.put(Routes.applicationCommands(env.appId), {
+      body: commands,
+    });
+
+    logger.info(
+      { count: commands.length },
+      "Global commands registered",
+    );
   }
-})();
+}
+
+registerCommands().catch((err) => {
+  logger.error({ err }, "Command registration failed");
+  process.exit(1);
+});
