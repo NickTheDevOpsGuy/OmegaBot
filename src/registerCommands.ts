@@ -40,9 +40,7 @@ async function registerCommands(): Promise<void> {
   const commandsPath = path.join(process.cwd(), "dist", "commands");
 
   if (!fs.existsSync(commandsPath)) {
-    throw new Error(
-      `dist/commands not found. Did you forget to run "npm run build"?`,
-    );
+    throw new Error(`dist/commands not found. Did you forget to run "npm run build"?`);
   }
 
   const commandFiles = walkFiles(commandsPath).filter(
@@ -59,20 +57,14 @@ async function registerCommands(): Promise<void> {
       const imported = (await import(moduleUrl)) as Partial<SlashCommandModule>;
 
       if (!imported.data) {
-        logger.debug(
-          { file: relFile },
-          "Skipping non-command module (missing data)",
-        );
+        logger.debug({ file: relFile }, "Skipping non-command module (missing data)");
         continue;
       }
 
       commands.push(imported.data.toJSON());
       logger.info({ command: imported.data.name }, "Prepared command for registration");
     } catch (err) {
-      logger.warn(
-        { err, file: relFile },
-        "Failed to load command for registration",
-      );
+      logger.warn({ err, file: relFile }, "Failed to load command for registration");
     }
   }
 
@@ -81,17 +73,13 @@ async function registerCommands(): Promise<void> {
     return;
   }
 
-  logger.info(
-    { count: commands.length },
-    "Registering application (/) commands",
-  );
+  logger.info({ count: commands.length }, "Registering application (/) commands");
 
   if (env.guildId) {
     // Guild-scoped (fast refresh, dev-friendly)
-    await rest.put(
-      Routes.applicationGuildCommands(env.appId, env.guildId),
-      { body: commands },
-    );
+    await rest.put(Routes.applicationGuildCommands(env.appId, env.guildId), {
+      body: commands,
+    });
 
     logger.info(
       { guildId: env.guildId, count: commands.length },
@@ -103,10 +91,7 @@ async function registerCommands(): Promise<void> {
       body: commands,
     });
 
-    logger.info(
-      { count: commands.length },
-      "Global commands registered",
-    );
+    logger.info({ count: commands.length }, "Global commands registered");
   }
 }
 

@@ -1,4 +1,3 @@
-// src/commands/history/history.ts
 import {
   SlashCommandBuilder,
   type ChatInputCommandInteraction,
@@ -18,70 +17,100 @@ export const data = new SlashCommandBuilder()
       .setMaxValue(100),
   );
 
+function formatMessageLine(args: {
+  createdAt: Date;
+  authorTag: string;
+  content: string;
+  attachmentCount: number;
+  hasEmbeds: boolean;
+}): string {
+  const ts = args.createdAt.toLocaleString();
+  const extra: string[] = [];
+
+  if (args.attachmentCount > 0) extra.push(`${args.attachmentCount} attachment(s)`);
+  if (args.hasEmbeds) extra.push("embed(s)");
+
+  const suffix = extra.length ? ` [${extra.join(", ")}]` : "";
+  return `[${ts}] ${args.authorTag}: ${args.content}${suffix}`;
+}
+
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   await interaction.deferReply({ ephemeral: true });
 
   const count = interaction.options.getInteger("count") ?? 50;
 
   try {
-    // Fetch messages from the channel
-    const messages = await interaction.channel?.messages.fetch({ limit: count });
+    if (!interaction.channel || !interaction.channel.isTextBased()) {
+      await interaction.editReply(
+        "This channel does not support reading message history.",
+      );
+      return;
+    }
 
-    if (!messages || messages.size === 0) {
+    const messages = await interaction.channel.messages.fetch({ limit: count });
+
+    if (messages.size === 0) {
       await interaction.editReply("No messages found in this channel.");
       return;
     }
 
-    // Format messages in chronological order (oldest first)
     const formatted = Array.from(messages.values())
       .reverse()
       .map((msg) => {
-        const timestamp = msg.createdAt.toLocaleString();
-        const author = msg.author.tag;
-        const content = msg.content || "[No text content]";
-        return `[${timestamp}] ${author}: ${content}`;
+        const content = msg.content?.trim() ? msg.content : "[No text content]";
+        return formatMessageLine({
+          createdAt: msg.createdAt,
+          authorTag: msg.author.tag,
+          content,
+          attachmentCount: msg.attachments.size,
+          hasEmbeds: msg.embeds.length > 0,
+        });
       })
-      .join("\n\n");
+      .join("\n");
 
-    // Try to send via DM
+    const header = `Message History (${messages.size} messages from #${
+      "name" in interaction.channel && interaction.channel.name
+        ? interaction.channel.name
+        : "channel"
+    })`;
+
     try {
       const user = interaction.user;
 
-      // If content is small enough, send directly
-      if (formatted.length < 1900) {
-        await user.send({
-          content: `**Message History** (${messages.size} messages from #${interaction.channel?.name || "channel"})\n\n${formatted}`,
-        });
-        await interaction.editReply(`✅ Sent ${messages.size} messages to your DMs!`);
-      } else {
-        // Content too long - send as file
-        const buffer = Buffer.from(formatted, "utf-8");
-        const attachment = new AttachmentBuilder(buffer, {
-          name: `history-${Date.now()}.txt`,
-        });
-
-        await user.send({
-          content: `**Message History** (${messages.size} messages from #${interaction.channel?.name || "channel"})`,
-          files: [attachment],
-        });
-
-        await interaction.editReply(
-          `✅ Sent ${messages.size} messages to your DMs as a file!`,
-        );
+      // If it's short enough, send directly
+      const asText = `**${header}**\n\n${formatted}`;
+      if (asText.length <= 1900) {
+        await user.send({ content: asText });
+        await interaction.editReply(`✅ Sent ${messages.size} messages to your DMs.`);
+        return;
       }
+
+      // Otherwise send as a file
+      const buffer = Buffer.from(`${header}\n\n${formatted}`, "utf-8");
+      const attachment = new AttachmentBuilder(buffer, {
+        name: `history-${Date.now()}.txt`,
+      });
+
+      await user.send({
+        content: `**${header}** (sent as a file)`,
+        files: [attachment],
+      });
+
+      await interaction.editReply(
+        `✅ Sent ${messages.size} messages to your DMs as a file.`,
+      );
     } catch (dmError) {
-      // User has DMs disabled
       logger.warn(
-        { userId: interaction.user.id, error: dmError },
-        "[history] Could not send DM",
+        { userId: interaction.user.id, err: dmError },
+        "[history] could not send DM",
       );
 
       await interaction.editReply(
-        "❌ I couldn't send you a DM. Please enable DMs from server members and try again.",
+        "❌ I couldn't DM you. Enable DMs from server members and try again.",
       );
     }
   } catch (error) {
-    logger.error({ error, count }, "[history] Command failed");
+    logger.error({ error, count }, "[history] command failed");
     await interaction.editReply("❌ Failed to fetch message history. Please try again.");
   }
 }

@@ -1,10 +1,13 @@
 // src/services/github/issueAssigneePoller.ts
 
 import type { Client } from "discord.js";
-import { promises as fs } from "node:fs";
-import path from "node:path";
 import { env } from "../../config/env.js";
 import { logger } from "../../utils/logger.js";
+import {
+  loadGithubAssigneeState,
+  saveGithubAssigneeState,
+  type TrackedItem,
+} from "./issueAssigneePollerState.js";
 
 type PollArgs = {
   client: Client;
@@ -24,27 +27,6 @@ type GitHubIssueItem = {
   pull_request?: unknown;
 };
 
-type TrackedItem = {
-  kind: "PR" | "Issue";
-  title: string;
-  url: string;
-  assignees: string[];
-};
-
-type StateFile = {
-  /**
-   * Back-compat:
-   * Older state files might only have assigneesByNumber.
-   * We’ll load them and upgrade in-memory automatically.
-   */
-  assigneesByNumber?: Record<string, string[]>;
-  itemsByNumber?: Record<string, TrackedItem>;
-  initializedAt: string;
-};
-
-const DATA_DIR = path.join(process.cwd(), "data");
-const STATE_PATH = path.join(DATA_DIR, "github-assignees.json");
-
 function uniqSorted(list: string[]): string[] {
   return Array.from(new Set(list.map((s) => s.trim()).filter(Boolean))).sort((a, b) =>
     a.localeCompare(b),
@@ -59,35 +41,6 @@ function diff(prev: string[], next: string[]) {
   const removed = prev.filter((x) => !nextSet.has(x));
 
   return { added, removed, changed: added.length > 0 || removed.length > 0 };
-}
-
-async function ensureDataDir(): Promise<void> {
-  await fs.mkdir(DATA_DIR, { recursive: true });
-}
-
-async function loadState(): Promise<StateFile | null> {
-  try {
-    const raw = await fs.readFile(STATE_PATH, "utf8");
-    const parsed = JSON.parse(raw) as StateFile;
-    if (!parsed || typeof parsed !== "object") return null;
-
-    // We accept either the old shape (assigneesByNumber) or new shape (itemsByNumber)
-    const hasOld =
-      !!parsed.assigneesByNumber && typeof parsed.assigneesByNumber === "object";
-    const hasNew = !!parsed.itemsByNumber && typeof parsed.itemsByNumber === "object";
-
-    if (!hasOld && !hasNew) return null;
-    if (!parsed.initializedAt || typeof parsed.initializedAt !== "string") return null;
-
-    return parsed;
-  } catch {
-    return null;
-  }
-}
-
-async function saveState(state: StateFile): Promise<void> {
-  await ensureDataDir();
-  await fs.writeFile(STATE_PATH, JSON.stringify(state, null, 2), "utf8");
 }
 
 async function getAnnounceChannel(
@@ -127,26 +80,6 @@ async function githubFetchJson<T>(url: string, token: string): Promise<T> {
   return (await res.json()) as T;
 }
 
-function stateToItems(existing: StateFile): Record<string, TrackedItem> {
-  // New format available
-  if (existing.itemsByNumber && typeof existing.itemsByNumber === "object") {
-    return existing.itemsByNumber;
-  }
-
-  // Upgrade old format in-memory (no title/url/kind available)
-  const old = existing.assigneesByNumber ?? {};
-  const upgraded: Record<string, TrackedItem> = {};
-  for (const [num, assignees] of Object.entries(old)) {
-    upgraded[num] = {
-      kind: "Issue",
-      title: "(unknown title)",
-      url: "(unknown url)",
-      assignees: uniqSorted(assignees ?? []),
-    };
-  }
-  return upgraded;
-}
-
 /**
  * Poll open issues (includes PRs) and notify on:
  * - assignee changes (add/remove/replace/multi/unassign)
@@ -154,7 +87,7 @@ function stateToItems(existing: StateFile): Record<string, TrackedItem> {
  *
  * Notes:
  * - Baseline-first: first successful run saves state and does NOT notify.
- * - State is persisted to ./data/github-assignees.json
+ * - State is persisted in SQLite (github_assignees_state)
  */
 export async function pollIssueAssigneesOnce(args: PollArgs): Promise<void> {
   const { client, owner, repo, announceChannelId } = args;
@@ -176,12 +109,8 @@ export async function pollIssueAssigneesOnce(args: PollArgs): Promise<void> {
   }
 
   // Load state (or init)
-  const existing = (await loadState()) ?? {
-    assigneesByNumber: {},
-    initializedAt: new Date().toISOString(),
-  };
-
-  const existingItemsByNumber = stateToItems(existing);
+  const existing = loadGithubAssigneeState(owner, repo);
+  const existingItemsByNumber = existing.itemsByNumber;
   const hadExistingState = Object.keys(existingItemsByNumber).length > 0;
 
   // Fetch open issues (includes PRs)
@@ -261,13 +190,13 @@ export async function pollIssueAssigneesOnce(args: PollArgs): Promise<void> {
   }
 
   // Save next state (drops closed issues automatically)
-  const nextState: StateFile = {
+  const nextState = {
+    initializedAt: existing.initializedAt,
     itemsByNumber: nextItemsByNumber,
-    initializedAt: existing.initializedAt ?? new Date().toISOString(),
   };
 
   try {
-    await saveState(nextState);
+    saveGithubAssigneeState(owner, repo, nextState);
   } catch (err) {
     logger.error({ err }, "[github/assignees] failed to save state");
   }
@@ -281,12 +210,12 @@ export async function pollIssueAssigneesOnce(args: PollArgs): Promise<void> {
     return;
   }
 
-  // Announce assignee changes
+  // Announce assignee changes (issues only)
   const issueNotifications = notifications.filter((n) => n.kind === "Issue");
 
   for (const n of issueNotifications) {
     const parts: string[] = [];
-    parts.push(`Issue # assignees updated`);
+    parts.push(`Issue #${n.number} assignees updated`);
     parts.push(n.title);
     parts.push(n.url);
 
@@ -308,12 +237,12 @@ export async function pollIssueAssigneesOnce(args: PollArgs): Promise<void> {
     }
   }
 
-  // Announce closures (issues + PRs)
+  // Announce closures (issues only)
   const closedIssues = closedNotifications.filter((c) => c.kind === "Issue");
 
   for (const c of closedIssues) {
     const parts: string[] = [];
-    parts.push(`Issue # closed`);
+    parts.push(`Issue #${c.number} closed`);
     parts.push(c.title);
     parts.push(c.url);
     parts.push("(Closed/merged/etc — detected via polling)");
