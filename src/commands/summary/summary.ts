@@ -1,153 +1,116 @@
-// src/commands/summary/summary.ts
-
 import {
   SlashCommandBuilder,
-  AttachmentBuilder,
-  MessageFlags,
   type ChatInputCommandInteraction,
+  AttachmentBuilder,
 } from "discord.js";
-import { summarize } from "../../services/summary/summarizer.js";
 import { logger } from "../../utils/logger.js";
 
-/**
- * Defines the /summary command.
- *
- * Summarizes recent messages from the current channel
- * and delivers the result privately via DM.
- */
 export const data = new SlashCommandBuilder()
-  .setName("summary")
-  .setDescription("Summarize recent messages and DM it to you")
+  .setName("history")
+  .setDescription("Get recent message history via DM")
   .addIntegerOption((opt) =>
     opt
       .setName("count")
-      .setDescription("How many messages to fetch")
-      .setMinValue(10)
+      .setDescription("Number of messages to retrieve (default: 50, max: 100)")
+      .setRequired(false)
+      .setMinValue(1)
       .setMaxValue(100),
   );
 
-/**
- * Handler for the /summary command.
- *
- * Flow:
- * 1. Defer an ephemeral reply so the user sees feedback immediately.
- * 2. Validate the channel supports messages.
- * 3. Fetch and filter recent user messages.
- * 4. Build a transcript.
- * 5. Generate a summary (local or LLM).
- * 6. Deliver the result via DM (text or file).
- * 7. Handle failures gracefully.
- */
+function formatMessageLine(args: {
+  createdAt: Date;
+  authorTag: string;
+  content: string;
+  attachmentCount: number;
+  hasEmbeds: boolean;
+}): string {
+  const ts = args.createdAt.toLocaleString();
+  const extra: string[] = [];
+
+  if (args.attachmentCount > 0) extra.push(`${args.attachmentCount} attachment(s)`);
+  if (args.hasEmbeds) extra.push("embed(s)");
+
+  const suffix = extra.length ? ` [${extra.join(", ")}]` : "";
+  return `[${ts}] ${args.authorTag}: ${args.content}${suffix}`;
+}
+
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
+  await interaction.deferReply({ ephemeral: true });
+
   const count = interaction.options.getInteger("count") ?? 50;
 
   try {
-    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-
-    /**
-     * Guard: only text-capable channels can be summarized.
-     */
     if (!interaction.channel || !interaction.channel.isTextBased()) {
-      await interaction.editReply("This channel does not support summarizing messages.");
+      await interaction.editReply(
+        "This channel does not support reading message history.",
+      );
       return;
     }
 
     const messages = await interaction.channel.messages.fetch({ limit: count });
 
     if (messages.size === 0) {
-      await interaction.editReply("No messages found to summarize.");
+      await interaction.editReply("No messages found in this channel.");
       return;
     }
 
-    /**
-     * Filter out bot messages and empty content,
-     * then sort oldest → newest for readability.
-     */
-    const userMessages = messages
-      .filter((m) => !m.author.bot && m.content)
-      .sort((a, b) => a.createdTimestamp - b.createdTimestamp);
+    const formatted = Array.from(messages.values())
+      .reverse()
+      .map((msg) => {
+        const content = msg.content?.trim() ? msg.content : "[No text content]";
+        return formatMessageLine({
+          createdAt: msg.createdAt,
+          authorTag: msg.author.tag,
+          content,
+          attachmentCount: msg.attachments.size,
+          hasEmbeds: msg.embeds.length > 0,
+        });
+      })
+      .join("\n");
 
-    if (userMessages.size === 0) {
-      await interaction.editReply("No usable messages found to summarize.");
-      return;
-    }
+    const header = `Message History (${messages.size} messages from #${
+      "name" in interaction.channel && interaction.channel.name
+        ? interaction.channel.name
+        : "channel"
+    })`;
 
-    /**
-     * Build a simple transcript the summarizer can consume.
-     */
-    const text = userMessages.map((m) => `${m.author.username}: ${m.content}`).join("\n");
+    try {
+      const user = interaction.user;
 
-    const output = await summarize(text);
+      // If it's short enough, send directly
+      const asText = `**${header}**\n\n${formatted}`;
+      if (asText.length <= 1900) {
+        await user.send({ content: asText });
+        await interaction.editReply(`✅ Sent ${messages.size} messages to your DMs.`);
+        return;
+      }
 
-    if (!output || output.trim().length === 0) {
-      await interaction.editReply("Summary came back empty.");
-      return;
-    }
-
-    /**
-     * If the summary exceeds Discord message limits,
-     * send it as a file attachment instead.
-     */
-    if (output.length > 2000) {
-      const file = new AttachmentBuilder(Buffer.from(output, "utf8"), {
-        name: "summary.txt",
+      // Otherwise send as a file
+      const buffer = Buffer.from(`${header}\n\n${formatted}`, "utf-8");
+      const attachment = new AttachmentBuilder(buffer, {
+        name: `history-${Date.now()}.txt`,
       });
 
-      try {
-        await interaction.user.send({
-          content: "Here is your summary (too long to send as a message):",
-          files: [file],
-        });
-
-        await interaction.editReply("Summary sent to your DMs.");
-      } catch (err) {
-        logger.warn(
-          { err, userId: interaction.user.id },
-          "[summary] DM file send failed",
-        );
-
-        await interaction.editReply(
-          "I generated the summary, but your DMs appear to be closed.",
-        );
-      }
-
-      return;
-    }
-
-    /**
-     * Normal-sized summary: send as plain DM text.
-     */
-    try {
-      await interaction.user.send(output);
-      await interaction.editReply("Summary sent to your DMs.");
-    } catch (err) {
-      logger.warn({ err, userId: interaction.user.id }, "[summary] DM text send failed");
+      await user.send({
+        content: `**${header}** (sent as a file)`,
+        files: [attachment],
+      });
 
       await interaction.editReply(
-        "I generated the summary, but could not DM you. Your DMs may be closed.",
+        `✅ Sent ${messages.size} messages to your DMs as a file.`,
+      );
+    } catch (dmError) {
+      logger.warn(
+        { userId: interaction.user.id, err: dmError },
+        "[history] could not send DM",
+      );
+
+      await interaction.editReply(
+        "❌ I couldn't DM you. Enable DMs from server members and try again.",
       );
     }
-  } catch (err) {
-    /**
-     * Top-level failure handler.
-     * We log the error and attempt to notify the user once.
-     */
-    logger.error(
-      { err, command: "summary", userId: interaction.user.id },
-      "[summary] Summary generation failed",
-    );
-
-    try {
-      if (interaction.replied || interaction.deferred) {
-        await interaction.editReply("Something went wrong while generating the summary.");
-      } else {
-        await interaction.reply({
-          content: "Something went wrong while generating the summary.",
-          flags: MessageFlags.Ephemeral,
-        });
-      }
-    } catch (replyErr) {
-      logger.error({ err: replyErr }, "[summary] Failed to send fallback error message");
-    }
+  } catch (error) {
+    logger.error({ error, count }, "[history] command failed");
+    await interaction.editReply("❌ Failed to fetch message history. Please try again.");
   }
 }
