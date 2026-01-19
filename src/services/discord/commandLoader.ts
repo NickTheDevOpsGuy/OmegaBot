@@ -29,6 +29,25 @@ export type CommandClient = Client & {
 };
 
 /**
+ * Recursively walk a directory and return absolute paths of all files.
+ */
+function walkFiles(dir: string): string[] {
+  const out: string[] = [];
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+
+  for (const ent of entries) {
+    const full = path.join(dir, ent.name);
+    if (ent.isDirectory()) {
+      out.push(...walkFiles(full));
+    } else {
+      out.push(full);
+    }
+  }
+
+  return out;
+}
+
+/**
  * Load all compiled command modules from dist/commands and register them into client.commands.
  *
  * Notes:
@@ -57,71 +76,63 @@ export async function loadCommands(client: CommandClient): Promise<void> {
     return;
   }
 
-  const groups = fs.readdirSync(basePath);
+  // Walk ALL .js files under dist/commands (nested folders supported)
+  const allFiles = walkFiles(basePath)
+    .filter((f) => f.endsWith(".js"))
+    // avoid accidental loading of .d.ts or sourcemaps etc
+    .filter((f) => !f.endsWith(".d.ts"));
 
-  for (const group of groups) {
-    const groupPath = path.join(basePath, group);
-    if (!fs.statSync(groupPath).isDirectory()) continue;
+  for (const fullPath of allFiles) {
+    // Relative path from dist/commands for logs
+    const relFile = path.relative(basePath, fullPath).replaceAll("\\", "/");
 
-    const files = fs.readdirSync(groupPath);
+    try {
+      // ESM-safe import path
+      const moduleUrl = pathToFileURL(fullPath).href;
+      const mod = (await import(moduleUrl)) as Partial<SlashCommand>;
 
-    for (const file of files) {
-      if (!file.endsWith(".js")) continue;
+      // Helpers are expected to be skipped
+      if (!mod.data || !mod.execute) {
+        skippedCount += 1;
+        skippedFiles.push(relFile);
 
-      const fullPath = path.join(groupPath, file);
-      const relFile = `${group}/${file}`;
-
-      try {
-        // ESM-safe import path
-        const moduleUrl = pathToFileURL(fullPath).href;
-        const mod = (await import(moduleUrl)) as Partial<SlashCommand>;
-
-        // Helpers are expected to be skipped
-        if (!mod.data || !mod.execute) {
-          skippedCount += 1;
-          skippedFiles.push(relFile);
-
-          logger.debug(
-            { file: relFile },
-            "Skipping non-command module (missing data or execute)",
-          );
-          continue;
-        }
-
-        const name = mod.data.name;
-
-        if (!name || typeof name !== "string") {
-          skippedCount += 1;
-          skippedFiles.push(relFile);
-
-          logger.warn(
-            { file: relFile },
-            "Skipping command module (invalid command name)",
-          );
-          continue;
-        }
-
-        // Avoid silent overwrites if two commands share the same name
-        if (client.commands.has(name)) {
-          skippedCount += 1;
-          skippedFiles.push(relFile);
-
-          logger.warn(
-            { name, file: relFile },
-            "Duplicate command name detected. Skipping this module.",
-          );
-          continue;
-        }
-
-        client.commands.set(name, mod as SlashCommand);
-        loadedCount += 1;
-        loadedNames.push(name);
-      } catch (err) {
-        failedCount += 1;
-        failedFiles.push(relFile);
-
-        logger.warn({ err, file: relFile, fullPath }, "Failed to import command module");
+        logger.debug(
+          { file: relFile },
+          "Skipping non-command module (missing data or execute)",
+        );
+        continue;
       }
+
+      const name = mod.data.name;
+
+      if (!name || typeof name !== "string") {
+        skippedCount += 1;
+        skippedFiles.push(relFile);
+
+        logger.warn({ file: relFile }, "Skipping command module (invalid command name)");
+        continue;
+      }
+
+      // Avoid silent overwrites if two commands share the same name
+      if (client.commands.has(name)) {
+        skippedCount += 1;
+        skippedFiles.push(relFile);
+
+        logger.warn(
+          { name, file: relFile },
+          "Duplicate command name detected. Skipping this module.",
+        );
+        continue;
+      }
+
+      client.commands.set(name, mod as SlashCommand);
+      loadedCount += 1;
+      loadedNames.push(name);
+    } catch (err) {
+      failedCount += 1;
+      failedFiles.push(relFile);
+
+      logger.warn({ err, file: relFile, fullPath }, "Failed to import command module");
     }
   }
 
