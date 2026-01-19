@@ -15,12 +15,10 @@ export const data = new SlashCommandBuilder()
       .setDescription("Number of messages to retrieve (default: 50, max: 100)")
       .setRequired(false)
       .setMinValue(1)
-      .setMaxValue(100)
+      .setMaxValue(100),
   );
 
-export async function execute(
-  interaction: ChatInputCommandInteraction
-): Promise<void> {
+export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   await interaction.deferReply({ ephemeral: true });
 
   const count = interaction.options.getInteger("count") ?? 50;
@@ -54,9 +52,7 @@ export async function execute(
         await user.send({
           content: `**Message History** (${messages.size} messages from #${interaction.channel?.name || "channel"})\n\n${formatted}`,
         });
-        await interaction.editReply(
-          `✅ Sent ${messages.size} messages to your DMs!`
-        );
+        await interaction.editReply(`✅ Sent ${messages.size} messages to your DMs!`);
       } else {
         // Content too long - send as file
         const buffer = Buffer.from(formatted, "utf-8");
@@ -70,24 +66,22 @@ export async function execute(
         });
 
         await interaction.editReply(
-          `✅ Sent ${messages.size} messages to your DMs as a file!`
+          `✅ Sent ${messages.size} messages to your DMs as a file!`,
         );
       }
     } catch (dmError) {
       // User has DMs disabled
       logger.warn(
         { userId: interaction.user.id, error: dmError },
-        "[history] Could not send DM"
+        "[history] Could not send DM",
       );
 
       await interaction.editReply(
-        "❌ I couldn't send you a DM. Please enable DMs from server members and try again."
+        "❌ I couldn't send you a DM. Please enable DMs from server members and try again.",
       );
     }
   } catch (error) {
     logger.error({ error, count }, "[history] Command failed");
-    await interaction.editReply(
-      "❌ Failed to fetch message history. Please try again."
-    );
+    await interaction.editReply("❌ Failed to fetch message history. Please try again.");
   }
 }
