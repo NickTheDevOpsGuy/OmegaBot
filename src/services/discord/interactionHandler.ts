@@ -88,7 +88,10 @@ async function safeErrorReply(
 
     // These are expected when the interaction already timed out or got ack'd elsewhere
     if (code === 10062 || code === 40060) {
-      logger.warn({ code }, "Cannot reply: interaction not available/already acknowledged");
+      logger.warn(
+        { code },
+        "Cannot reply: interaction not available/already acknowledged",
+      );
       return;
     }
 
@@ -117,9 +120,7 @@ export async function handleInteraction(
       // (If it fails due to timing, safeErrorReply will swallow known Discord codes.)
       await safeErrorReply(
         interaction,
-        new Error(
-          "Command not found. If this seems wrong, re-run the register script.",
-        ),
+        new Error("Command not found. If this seems wrong, re-run the register script."),
       );
       return;
     }
