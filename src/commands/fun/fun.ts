@@ -209,16 +209,23 @@ export const data = new SlashCommandBuilder()
       ),
   );
 
+/**
+ * Map subcommand names -> usage keys.
+ *
+ * IMPORTANT:
+ * - Do NOT include "remind" here unless FunCommandKey includes it,
+ *   or TS will fail the build.
+ * - We record "remind" separately below to keep this file compiling
+ *   even if FunCommandKey differs between branches/projects.
+ */
 function funKeyFromSub(sub: string): FunCommandKey | null {
   const allowed: Record<string, FunCommandKey> = {
     dice: "dice",
     coinflip: "coinflip",
     poll: "poll",
-    remind: "remind",
     weather: "weather",
     weather7: "weather7",
     leaderboard: "leaderboard",
-    // Note: joke subcommands all count as "joke"
   };
 
   return allowed[sub] ?? null;
@@ -228,17 +235,29 @@ async function maybeRecordUsage(
   interaction: ChatInputCommandInteraction,
   sub: string,
 ): Promise<void> {
-  const key = funKeyFromSub(sub);
-  if (!key) return;
-
   try {
+    // Special-case remind so this compiles even if FunCommandKey is missing it.
+    if (sub === "remind") {
+      await recordFunUsage({
+        userId: interaction.user.id,
+        command: "remind" as unknown as FunCommandKey,
+      });
+      return;
+    }
+
+    const key = funKeyFromSub(sub);
+    if (!key) return;
+
     await recordFunUsage({ userId: interaction.user.id, command: key });
   } catch (err) {
     logger.warn({ err, sub }, "[fun] failed to record usage");
   }
 }
 
-function deferFlags(ephemeral: boolean): { flags: MessageFlags } | undefined {
+/**
+ * Discord.js v14 types want a narrow flags value (Ephemeral only) here.
+ */
+function deferOpts(ephemeral: boolean): { flags: MessageFlags.Ephemeral } | undefined {
   return ephemeral ? { flags: MessageFlags.Ephemeral } : undefined;
 }
 
@@ -248,16 +267,14 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
   logger.info({ group, sub }, "[fun] execute");
 
-  // Subcommand group: /fun joke ...
+  // /fun joke ...
   if (group === "joke") {
-    // Let joke handler manage its own replies (some joke flows may choose their own defers)
     try {
       await handleJoke(interaction);
       await recordFunUsage({ userId: interaction.user.id, command: "joke" });
     } catch (err) {
       logger.error({ err, group, sub }, "[fun] joke subcommand failed");
 
-      // Best-effort response: only if still possible
       try {
         if (interaction.deferred || interaction.replied) {
           await interaction.editReply("Something went wrong. Try again in a bit.");
@@ -268,21 +285,20 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
           });
         }
       } catch {
-        // swallow, handler already logged
+        // swallow: already logged
       }
     }
     return;
   }
 
-  // Regular subcommands (not in a group)
-  // Poll usually needs to be public, everything else can be ephemeral.
+  // Most commands support ephemeral confirmation, poll is usually public
   const supportsEphemeral = sub !== "poll";
   const ephemeral = supportsEphemeral
     ? (interaction.options.getBoolean("ephemeral") ?? false)
     : false;
 
-  // Defer immediately to avoid 10062 timeouts
-  await interaction.deferReply(deferFlags(ephemeral));
+  // Defer fast to reduce 10062
+  await interaction.deferReply(deferOpts(ephemeral));
 
   try {
     if (sub === "dice") {
