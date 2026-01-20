@@ -216,7 +216,6 @@ function funKeyFromSub(sub: string): FunCommandKey | null {
     weather: "weather",
     weather7: "weather7",
     leaderboard: "leaderboard",
-    // Note: joke subcommands (random, add, remove, list) all count as "joke"
   };
 
   return allowed[sub] ?? null;
@@ -228,7 +227,6 @@ async function maybeRecordUsage(
 ): Promise<void> {
   try {
     if (sub === "remind") {
-      // Remove this cast once FunCommandKey includes "remind"
       await recordFunUsage({
         userId: interaction.user.id,
         command: "remind" as unknown as FunCommandKey,
@@ -248,6 +246,9 @@ async function maybeRecordUsage(
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const group = interaction.options.getSubcommandGroup();
   const sub = interaction.options.getSubcommand(true);
+
+  // DEBUG: proves what Discord sent AND which built file is executing
+  logger.info({ group: group ?? null, sub, file: import.meta.url }, "[fun] execute");
 
   if (group === "joke") {
     try {
@@ -334,7 +335,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       return;
     }
 
-    await interaction.editReply("Unknown subcommand.");
+    await interaction.editReply(`Unknown subcommand: ${sub} (group: ${group ?? "none"})`);
   } catch (err) {
     logger.error({ err, sub }, "[fun] subcommand failed");
     await interaction.editReply("Something went wrong. Try again in a bit.");

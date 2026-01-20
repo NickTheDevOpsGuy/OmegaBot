@@ -11,8 +11,6 @@ import { onGuildMemberAdd } from "./services/welcome/welcomeHandler.js";
 import { env } from "./config/env.js";
 import { logger } from "./utils/logger.js";
 
-import { createReminderScheduler } from "./services/reminders/index.js";
-
 /**
  * Create the Discord client.
  *
@@ -43,10 +41,6 @@ client.on("interactionCreate", async (interaction) => {
 
 /**
  * Welcome handler for new guild members.
- *
- * This will ONLY fire if:
- * - Server Members Intent is enabled in the portal
- * - GatewayIntentBits.GuildMembers is requested here
  */
 client.on("guildMemberAdd", async (member) => {
   logger.info(
@@ -58,30 +52,15 @@ client.on("guildMemberAdd", async (member) => {
     "guildMemberAdd event fired",
   );
 
-  // Auto-assign a default role on join (if configured)
   await handleAutoRole(member);
-
   await onGuildMemberAdd(member);
 });
 
 /**
  * Optional GitHub polling.
- * Each stream is enabled only when all required env vars are present.
  */
 const githubPrPollingEnabled = env.githubPrPollingEnabled;
 const githubAssigneePollingEnabled = env.githubAssigneePollingEnabled;
-
-/**
- * Start the bot.
- */
-initDatabase();
-logger.info("Database initialized");
-
-/**
- * Reminders service (SQLite-backed) and scheduler.
- * Attached to client so command handlers can use it.
- */
-client.reminderScheduler = createReminderScheduler(client);
 
 /**
  * Log once when the bot is ready.
@@ -89,8 +68,20 @@ client.reminderScheduler = createReminderScheduler(client);
 client.once("clientReady", () => {
   logger.info("OmegaBot is online");
 
-  client.reminderScheduler?.start();
-  logger.info("Reminder scheduler started");
+  // DEBUG: prove which bot/app is actually connected
+  logger.info(
+    {
+      loggedInAs: client.user
+        ? `${client.user.username}#${client.user.discriminator}`
+        : null,
+      botUserId: client.user?.id ?? null,
+      envAppId: env.appId ?? null,
+      guildId: env.guildId ?? null,
+    },
+    "[startup] bot identity",
+  );
+
+  logger.info({ commands: [...client.commands.keys()] }, "[startup] commands loaded");
 
   if (githubPrPollingEnabled) {
     logger.info(
@@ -126,11 +117,13 @@ client.once("clientReady", () => {
 });
 
 /**
- * Graceful shutdown.
+ * Start the bot.
  */
+initDatabase();
+logger.info("Database initialized");
+
 process.on("SIGINT", () => {
   logger.info("Shutting down...");
-  client.reminderScheduler?.stop();
   closeDatabase();
   process.exit(0);
 });
