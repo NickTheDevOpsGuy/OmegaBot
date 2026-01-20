@@ -1,6 +1,10 @@
 // src/commands/fun/fun.ts
 
-import { SlashCommandBuilder, type ChatInputCommandInteraction } from "discord.js";
+import {
+  MessageFlags,
+  SlashCommandBuilder,
+  type ChatInputCommandInteraction,
+} from "discord.js";
 import { logger } from "../../utils/logger.js";
 
 import { run as runDice } from "./subcommands/dice.js";
@@ -14,7 +18,6 @@ import { run as runLeaderboard } from "./subcommands/leaderboard.js";
 import type { LeaderboardMode } from "./subcommands/leaderboard.js";
 
 import { handleJoke, buildJokeSubcommands } from "./subcommands/joke/index.js";
-
 import { run as runRemind } from "./subcommands/remind.js";
 
 import { recordFunUsage, type FunCommandKey } from "../../services/fun/funUsageStore.js";
@@ -26,11 +29,8 @@ function parseTempUnit(raw: string | null): TempUnit {
 export const data = new SlashCommandBuilder()
   .setName("fun")
   .setDescription("Fun commands")
-
-  // /fun joke
   .addSubcommandGroup(buildJokeSubcommands)
 
-  // /fun dice
   .addSubcommand((s) =>
     s
       .setName("dice")
@@ -59,7 +59,6 @@ export const data = new SlashCommandBuilder()
       ),
   )
 
-  // /fun coinflip
   .addSubcommand((s) =>
     s
       .setName("coinflip")
@@ -72,7 +71,6 @@ export const data = new SlashCommandBuilder()
       ),
   )
 
-  // /fun poll (2–4 options)
   .addSubcommand((s) =>
     s
       .setName("poll")
@@ -94,7 +92,6 @@ export const data = new SlashCommandBuilder()
       ),
   )
 
-  // /fun remind
   .addSubcommand((s) =>
     s
       .setName("remind")
@@ -122,7 +119,6 @@ export const data = new SlashCommandBuilder()
       ),
   )
 
-  // /fun weather (daily)
   .addSubcommand((s) =>
     s
       .setName("weather")
@@ -148,7 +144,6 @@ export const data = new SlashCommandBuilder()
       ),
   )
 
-  // /fun weather7 (7-day)
   .addSubcommand((s) =>
     s
       .setName("weather7")
@@ -174,7 +169,6 @@ export const data = new SlashCommandBuilder()
       ),
   )
 
-  // /fun leaderboard
   .addSubcommand((s) =>
     s
       .setName("leaderboard")
@@ -211,8 +205,6 @@ function funKeyFromSub(sub: string): FunCommandKey | null {
     dice: "dice",
     coinflip: "coinflip",
     poll: "poll",
-    // NOTE: "remind" might not exist in FunCommandKey yet.
-    // It is handled explicitly in maybeRecordUsage() below.
     weather: "weather",
     weather7: "weather7",
     leaderboard: "leaderboard",
@@ -247,7 +239,6 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
   const group = interaction.options.getSubcommandGroup();
   const sub = interaction.options.getSubcommand(true);
 
-  // DEBUG: proves what Discord sent AND which built file is executing
   logger.info({ group: group ?? null, sub, file: import.meta.url }, "[fun] execute");
 
   if (group === "joke") {
@@ -256,24 +247,29 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       await recordFunUsage({ userId: interaction.user.id, command: "joke" });
     } catch (err) {
       logger.error({ err, sub, group }, "[fun] joke subcommand failed");
-      if (!interaction.replied && !interaction.deferred) {
-        await interaction.reply({
-          content: "Something went wrong. Try again in a bit.",
-          ephemeral: true,
-        });
-      } else {
-        await interaction.editReply("Something went wrong. Try again in a bit.");
+      // Joke handler manages its own replies; keep fallback minimal
+      try {
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({ content: "Something went wrong. Try again in a bit.", flags: MessageFlags.Ephemeral });
+        } else {
+          await interaction.editReply("Something went wrong. Try again in a bit.");
+        }
+      } catch (replyErr) {
+        logger.warn({ replyErr }, "[fun] failed to send joke error reply (ignored)");
       }
     }
     return;
   }
 
   const supportsEphemeral = sub !== "poll";
-  const ephemeral = supportsEphemeral
+  const wantsEphemeral = supportsEphemeral
     ? (interaction.options.getBoolean("ephemeral") ?? false)
     : false;
 
-  await interaction.deferReply({ ephemeral });
+  const flags = wantsEphemeral ? MessageFlags.Ephemeral : undefined;
+
+  // Use flags instead of deprecated ephemeral option
+  await interaction.deferReply(flags ? { flags } : undefined);
 
   try {
     if (sub === "dice") {
@@ -335,9 +331,13 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       return;
     }
 
-    await interaction.editReply(`Unknown subcommand: ${sub} (group: ${group ?? "none"})`);
+    await interaction.editReply(`Unknown subcommand: ${sub}`);
   } catch (err) {
     logger.error({ err, sub }, "[fun] subcommand failed");
-    await interaction.editReply("Something went wrong. Try again in a bit.");
+    try {
+      await interaction.editReply("Something went wrong. Try again in a bit.");
+    } catch (replyErr) {
+      logger.warn({ replyErr }, "[fun] failed to editReply after error (ignored)");
+    }
   }
 }
