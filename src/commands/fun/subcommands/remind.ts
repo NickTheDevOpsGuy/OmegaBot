@@ -25,7 +25,5 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
 
   const dueUnix = Math.floor(dueAtMs / 1000);
 
-  await interaction.editReply(
-    `✅ Got it. I’ll remind you <t:${dueUnix}:R> (id: ${id}).`,
-  );
+  await interaction.editReply(`✅ Got it. I’ll remind you <t:${dueUnix}:R> (id: ${id}).`);
 }
