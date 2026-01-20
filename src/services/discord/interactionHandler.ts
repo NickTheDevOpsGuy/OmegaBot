@@ -1,37 +1,17 @@
 // src/services/discord/interactionHandler.ts
 
-import type {
-  ChatInputCommandInteraction,
-  Interaction,
-  RepliableInteraction,
-} from "discord.js";
-import { MessageFlags } from "discord.js";
+import type { Interaction, RepliableInteraction } from "discord.js";
 import { logger } from "../../utils/logger.js";
 import type { CommandClient } from "./commandLoader.js";
 import type { OmegaCommand } from "./commandTypes.js";
 
 /**
- * Show raw error messages to users only in non-production.
- * You can tighten this later (e.g., allowlist your user ID, env flag, etc).
+ * Discord error codes we commonly want to treat as "normal noise".
+ * - 10062: Unknown interaction (token expired, replied too late, or already gone)
+ * - 40060: Interaction has already been acknowledged (double reply/defer race)
  */
-const SHOW_RAW_ERRORS = process.env.NODE_ENV !== "production";
+type DiscordErrorCode = 10062 | 40060;
 
-/**
- * Narrow unknown command modules into OmegaCommand.
- * This protects you from "Property execute does not exist on type unknown".
- */
-function isOmegaCommand(x: unknown): x is OmegaCommand {
-  if (!x || typeof x !== "object") return false;
-  const obj = x as Record<string, unknown>;
-  return typeof obj["execute"] === "function" && obj["data"] != null;
-}
-
-/**
- * Extract Discord REST error codes safely from unknown.
- * Examples:
- * - 10062 Unknown interaction
- * - 40060 Interaction has already been acknowledged
- */
 function getDiscordErrorCode(err: unknown): number | null {
   if (!err || typeof err !== "object") return null;
   const obj = err as Record<string, unknown>;
@@ -39,105 +19,99 @@ function getDiscordErrorCode(err: unknown): number | null {
   return typeof code === "number" ? code : null;
 }
 
-/**
- * Convert an error into a user-facing message.
- * In dev: show the real message.
- * In prod: keep it generic (avoid leaking internals).
- */
-function buildUserFacingError(err: unknown): string {
-  if (!SHOW_RAW_ERRORS) {
-    return "Something went wrong while running that command.";
-  }
-
-  if (err instanceof Error) {
-    // Keep it compact: Discord limits message size
-    const msg = err.message || String(err);
-    return `❌ **Error**\n\`\`\`\n${msg}\n\`\`\``;
-  }
-
-  return `❌ **Error**\n\`\`\`\n${String(err)}\n\`\`\``;
+function isIgnorableDiscordInteractionError(
+  code: number | null,
+): code is DiscordErrorCode {
+  return code === 10062 || code === 40060;
 }
 
-/**
- * Safe reply helper that:
- * - Uses flags (not deprecated ephemeral)
- * - Avoids double-ack issues
- * - Does not throw if Discord already consumed the interaction
- */
-async function safeErrorReply(
-  interaction: RepliableInteraction,
-  err: unknown,
-): Promise<void> {
-  const content = buildUserFacingError(err);
+function isOmegaCommand(x: unknown): x is OmegaCommand {
+  if (!x || typeof x !== "object") return false;
 
-  try {
-    // If already acknowledged, ONLY edit (or followUp if you prefer).
-    // editReply is the least spammy.
-    if (interaction.deferred || interaction.replied) {
-      await interaction.editReply({ content });
-      return;
-    }
+  const obj = x as Record<string, unknown>;
+  const execute = obj["execute"];
+  const data = obj["data"];
 
-    // First response: ephemeral via flags
-    await interaction.reply({
-      content,
-      flags: MessageFlags.Ephemeral,
-    });
-  } catch (replyErr) {
-    const code = getDiscordErrorCode(replyErr);
-
-    // These are expected when the interaction already timed out or got ack'd elsewhere
-    if (code === 10062 || code === 40060) {
-      logger.warn(
-        { code },
-        "Cannot reply: interaction not available/already acknowledged",
-      );
-      return;
-    }
-
-    logger.warn({ replyErr, code }, "Failed to send error to user");
-  }
+  return typeof execute === "function" && data != null;
 }
 
-/**
- * Handle Discord interactions.
- * We ONLY handle chat input slash commands here.
- */
 export async function handleInteraction(
   interaction: Interaction,
   client: CommandClient,
 ): Promise<void> {
   try {
+    // We only handle chat input slash commands here
     if (!interaction.isChatInputCommand()) return;
 
     const cmdName = interaction.commandName;
-    const raw = client.commands.get(cmdName);
 
+    const raw = client.commands.get(cmdName);
     if (!isOmegaCommand(raw)) {
       logger.warn({ cmdName }, "Command not found or invalid command module");
 
-      // Best-effort message to user.
-      // (If it fails due to timing, safeErrorReply will swallow known Discord codes.)
-      await safeErrorReply(
+      // Best-effort notify user (ephemeral)
+      await safeRepliableReply(
         interaction,
-        new Error("Command not found. If this seems wrong, re-run the register script."),
+        "Command not found. If this seems wrong, re-run the register script.",
+        true,
       );
       return;
     }
 
-    // The command is valid; execute it.
-    await raw.execute(interaction as ChatInputCommandInteraction);
+    await raw.execute(interaction);
   } catch (err) {
     const code = getDiscordErrorCode(err);
 
+    // These are very common and usually not actionable. Avoid log spam.
+    if (isIgnorableDiscordInteractionError(code)) {
+      logger.debug({ code }, "[interaction] ignored Discord interaction error");
+      return;
+    }
+
+    // Anything else is worth seeing.
     logger.error({ err, code }, "Interaction handler error");
 
-    // If the interaction is already gone or already ack'd, do nothing.
-    // Prevents the 40060 spam/crash loop.
-    if (code === 10062 || code === 40060) return;
-
     if (interaction.isRepliable()) {
-      await safeErrorReply(interaction, err);
+      await safeRepliableReply(
+        interaction,
+        "Something went wrong while running that command.",
+        true,
+      );
     }
+  }
+}
+
+async function safeRepliableReply(
+  interaction: RepliableInteraction,
+  content: string,
+  ephemeral: boolean,
+): Promise<void> {
+  try {
+    const flags = ephemeral ? 64 : undefined; // 64 = MessageFlags.Ephemeral (avoid deprecated `ephemeral:`)
+
+    // If the interaction is already acknowledged, use followUp/editReply paths.
+    if (interaction.deferred || interaction.replied) {
+      await interaction.followUp({ content, ...(flags ? { flags } : {}) });
+      return;
+    }
+
+    await interaction.reply({ content, ...(flags ? { flags } : {}) });
+  } catch (err) {
+    const code = getDiscordErrorCode(err);
+
+    // 10062: interaction is gone/expired
+    if (code === 10062) {
+      logger.debug({ code }, "Cannot reply: interaction is unknown/expired");
+      return;
+    }
+
+    // 40060: already acknowledged (race between reply/defer paths)
+    if (code === 40060) {
+      logger.debug({ code }, "Cannot reply: interaction already acknowledged");
+      return;
+    }
+
+    // Anything else: log and swallow so we never crash the process
+    logger.warn({ err, code }, "safeRepliableReply failed (ignored)");
   }
 }
