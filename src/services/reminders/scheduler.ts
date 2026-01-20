@@ -161,7 +161,10 @@ export class ReminderScheduler {
       if (!ch) return null;
 
       // Some channel types can be partial
-      const maybePartial = ch as unknown as { partial?: boolean; fetch?: () => Promise<unknown> };
+      const maybePartial = ch as unknown as {
+        partial?: boolean;
+        fetch?: () => Promise<unknown>;
+      };
 
       if (maybePartial.partial && typeof maybePartial.fetch === "function") {
         const full = await maybePartial.fetch();

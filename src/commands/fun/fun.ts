@@ -1,5 +1,9 @@
 // src/commands/help/help.ts
-import { SlashCommandBuilder, MessageFlags, type ChatInputCommandInteraction } from "discord.js";
+import {
+  SlashCommandBuilder,
+  MessageFlags,
+  type ChatInputCommandInteraction,
+} from "discord.js";
 import { logger } from "../../utils/logger.js";
 import { buildHelpText, type HelpTopic } from "../help/helpText.js";
 import type { CommandClient } from "../../services/discord/commandLoader.js";
@@ -31,10 +35,7 @@ export const data = new SlashCommandBuilder()
       ),
   )
   .addBooleanOption((opt) =>
-    opt
-      .setName("ephemeral")
-      .setDescription("Only show help to you")
-      .setRequired(false),
+    opt.setName("ephemeral").setDescription("Only show help to you").setRequired(false),
   );
 
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -43,13 +44,14 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
   try {
     // Defer immediately to avoid 10062 timeouts
-    await interaction.deferReply(ephemeral ? { flags: MessageFlags.Ephemeral } : undefined);
+    await interaction.deferReply(
+      ephemeral ? { flags: MessageFlags.Ephemeral } : undefined,
+    );
 
     const client = interaction.client as CommandClient;
 
     const isAdmin =
-      interaction.inGuild() &&
-      Boolean(interaction.memberPermissions?.has("ManageGuild"));
+      interaction.inGuild() && Boolean(interaction.memberPermissions?.has("ManageGuild"));
 
     const commands = listCommandsForHelp(client.commands);
 

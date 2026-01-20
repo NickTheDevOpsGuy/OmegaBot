@@ -107,7 +107,12 @@ function inferGroupFromName(name: string): string {
   if (name === "gh" || name === "pr") return "github";
   if (name === "fun") return "fun";
   if (name === "timezone") return "timezone";
-  if (name === "summary" || name === "history" || name === "playback" || name === "pagination")
+  if (
+    name === "summary" ||
+    name === "history" ||
+    name === "playback" ||
+    name === "pagination"
+  )
     return "summary";
   return "other";
 }
