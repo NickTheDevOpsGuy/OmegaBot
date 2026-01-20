@@ -1,14 +1,9 @@
 // src/commands/fun/fun.ts
 
-import {
-  MessageFlags,
-  SlashCommandBuilder,
-  type ChatInputCommandInteraction,
-} from "discord.js";
+import { SlashCommandBuilder, type ChatInputCommandInteraction } from "discord.js";
 import { logger } from "../../utils/logger.js";
 
 import { run as runDice } from "./subcommands/dice.js";
-
 import { run as runWeather } from "./subcommands/weather.js";
 import type { TempUnit, WeatherMode } from "../../services/weather/types.js";
 
@@ -19,6 +14,8 @@ import { run as runLeaderboard } from "./subcommands/leaderboard.js";
 import type { LeaderboardMode } from "./subcommands/leaderboard.js";
 
 import { handleJoke, buildJokeSubcommands } from "./subcommands/joke/index.js";
+
+import { run as runRemind } from "./subcommands/remind.js";
 
 import { recordFunUsage, type FunCommandKey } from "../../services/fun/funUsageStore.js";
 
@@ -94,6 +91,34 @@ export const data = new SlashCommandBuilder()
       )
       .addStringOption((o) =>
         o.setName("option4").setDescription("Option 4 (optional)").setRequired(false),
+      ),
+  )
+
+  // /fun remind
+  .addSubcommand((s) =>
+    s
+      .setName("remind")
+      .setDescription("Remind you in X minutes")
+      .addIntegerOption((o) =>
+        o
+          .setName("minutes")
+          .setDescription("Minutes from now (1 to 10080)")
+          .setMinValue(1)
+          .setMaxValue(10080)
+          .setRequired(true),
+      )
+      .addStringOption((o) =>
+        o
+          .setName("message")
+          .setDescription("What to remind you about")
+          .setMaxLength(1000)
+          .setRequired(true),
+      )
+      .addBooleanOption((o) =>
+        o
+          .setName("ephemeral")
+          .setDescription("Only show the confirmation to you")
+          .setRequired(false),
       ),
   )
 
@@ -186,6 +211,8 @@ function funKeyFromSub(sub: string): FunCommandKey | null {
     dice: "dice",
     coinflip: "coinflip",
     poll: "poll",
+    // NOTE: "remind" might not exist in FunCommandKey yet.
+    // It is handled explicitly in maybeRecordUsage() below.
     weather: "weather",
     weather7: "weather7",
     leaderboard: "leaderboard",
@@ -199,10 +226,19 @@ async function maybeRecordUsage(
   interaction: ChatInputCommandInteraction,
   sub: string,
 ): Promise<void> {
-  const key = funKeyFromSub(sub);
-  if (!key) return;
-
   try {
+    if (sub === "remind") {
+      // Remove this cast once FunCommandKey includes "remind"
+      await recordFunUsage({
+        userId: interaction.user.id,
+        command: "remind" as unknown as FunCommandKey,
+      });
+      return;
+    }
+
+    const key = funKeyFromSub(sub);
+    if (!key) return;
+
     await recordFunUsage({ userId: interaction.user.id, command: key });
   } catch (err) {
     logger.warn({ err, sub }, "[fun] failed to record usage");
@@ -210,23 +246,19 @@ async function maybeRecordUsage(
 }
 
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
-  // Check if we're in a subcommand group first
   const group = interaction.options.getSubcommandGroup();
   const sub = interaction.options.getSubcommand(true);
 
-  // Handle subcommand groups
   if (group === "joke") {
-    // Don't defer here - let the joke handler manage its own replies
     try {
       await handleJoke(interaction);
-      // Record usage as "joke" regardless of which subcommand
       await recordFunUsage({ userId: interaction.user.id, command: "joke" });
     } catch (err) {
       logger.error({ err, sub, group }, "[fun] joke subcommand failed");
       if (!interaction.replied && !interaction.deferred) {
         await interaction.reply({
           content: "Something went wrong. Try again in a bit.",
-          flags: MessageFlags.Ephemeral,
+          ephemeral: true,
         });
       } else {
         await interaction.editReply("Something went wrong. Try again in a bit.");
@@ -235,13 +267,12 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     return;
   }
 
-  // Regular subcommands (not in a group)
   const supportsEphemeral = sub !== "poll";
   const ephemeral = supportsEphemeral
     ? (interaction.options.getBoolean("ephemeral") ?? false)
     : false;
 
-  await interaction.deferReply(ephemeral ? { flags: MessageFlags.Ephemeral } : undefined);
+  await interaction.deferReply({ ephemeral });
 
   try {
     if (sub === "dice") {
@@ -258,6 +289,12 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
     if (sub === "poll") {
       await runPoll(interaction);
+      await maybeRecordUsage(interaction, sub);
+      return;
+    }
+
+    if (sub === "remind") {
+      await runRemind(interaction);
       await maybeRecordUsage(interaction, sub);
       return;
     }
