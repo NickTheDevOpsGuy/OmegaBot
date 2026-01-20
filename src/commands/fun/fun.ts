@@ -17,7 +17,7 @@ function getDiscordErrorCode(err: unknown): number | null {
 }
 
 export const data = new SlashCommandBuilder()
-  .setName("help")
+  .setName("fun")
   .setDescription("Show help by topic")
   .addStringOption((opt) =>
     opt
