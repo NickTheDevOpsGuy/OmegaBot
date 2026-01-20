@@ -38,39 +38,45 @@ export function insertReminder(input: {
 }
 
 export function getReminder(id: number): ReminderRow | undefined {
-  return db()
-    .prepare(`SELECT * FROM reminders WHERE id = ?`)
-    .get(id) as ReminderRow | undefined;
+  return db().prepare(`SELECT * FROM reminders WHERE id = ?`).get(id) as
+    | ReminderRow
+    | undefined;
 }
 
 export function listPendingReminders(): ReminderRow[] {
   return db()
-    .prepare(`
+    .prepare(
+      `
       SELECT * FROM reminders
       WHERE delivered_at IS NULL
       ORDER BY due_at ASC
-    `)
+    `,
+    )
     .all() as ReminderRow[];
 }
 
 export function listDueReminders(nowMs: number): ReminderRow[] {
   return db()
-    .prepare(`
+    .prepare(
+      `
       SELECT * FROM reminders
       WHERE delivered_at IS NULL
         AND due_at <= ?
       ORDER BY due_at ASC
       LIMIT 100
-    `)
+    `,
+    )
     .all(nowMs) as ReminderRow[];
 }
 
 export function markDelivered(id: number): void {
   db()
-    .prepare(`
+    .prepare(
+      `
       UPDATE reminders
       SET delivered_at = ?
       WHERE id = ?
-    `)
+    `,
+    )
     .run(Date.now(), id);
 }

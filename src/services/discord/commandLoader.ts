@@ -11,8 +11,6 @@ import {
 } from "discord.js";
 import { logger } from "../../utils/logger.js";
 
-
-
 /**
  * Contract that every slash command module must follow.
  *
