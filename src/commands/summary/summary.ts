@@ -97,7 +97,9 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     logger.error({ err, command: "summary" }, "[summary] command failed");
 
     if (interaction.deferred || interaction.replied) {
-      await interaction.editReply("❌ Something went wrong while generating the summary.");
+      await interaction.editReply(
+        "❌ Something went wrong while generating the summary.",
+      );
     } else {
       await interaction.reply({
         content: "❌ Something went wrong while generating the summary.",
