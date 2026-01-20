@@ -1,5 +1,6 @@
 // src/services/discord/commandLoader.ts
 
+import type { ReminderScheduler } from "../reminders/scheduler.js";
 import fs from "fs";
 import path from "path";
 import { pathToFileURL } from "url";
@@ -9,6 +10,8 @@ import {
   type ChatInputCommandInteraction,
 } from "discord.js";
 import { logger } from "../../utils/logger.js";
+
+
 
 /**
  * Contract that every slash command module must follow.
@@ -25,7 +28,8 @@ export interface SlashCommand {
  * Discord Client extended with a command registry.
  */
 export type CommandClient = Client & {
-  commands: Map<string, SlashCommand>;
+  commands: Map<string, unknown>;
+  reminderScheduler?: ReminderScheduler;
 };
 
 /**

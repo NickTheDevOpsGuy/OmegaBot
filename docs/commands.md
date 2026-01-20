@@ -218,6 +218,25 @@ Create a quick poll.
 
 ---
 
+### `/fun remind <minutes> <message>`
+
+Create a reminder that triggers after a number of minutes.
+
+**Options:**
+
+- `minutes` (required) — Minutes from now (1–10080)
+- `message` (required) — Reminder text (max 1000 characters)
+
+**Behavior:**
+
+- Reminder is persisted to SQLite immediately
+- Reminders are delivered even after bot restart
+- If the original channel is missing or not text-based, the reminder is skipped
+
+**Use case:** Set quick reminders without leaving Discord.
+
+---
+
 ### `/fun weather <location> [unit]`
 
 Show current weather for a location.

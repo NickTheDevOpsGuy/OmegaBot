@@ -11,6 +11,8 @@ import { onGuildMemberAdd } from "./services/welcome/welcomeHandler.js";
 import { env } from "./config/env.js";
 import { logger } from "./utils/logger.js";
 
+import { createReminderScheduler } from "./services/reminders/index.js";
+
 /**
  * Create the Discord client.
  *
@@ -70,10 +72,25 @@ const githubPrPollingEnabled = env.githubPrPollingEnabled;
 const githubAssigneePollingEnabled = env.githubAssigneePollingEnabled;
 
 /**
+ * Start the bot.
+ */
+initDatabase();
+logger.info("Database initialized");
+
+/**
+ * Reminders service (SQLite-backed) and scheduler.
+ * Attached to client so command handlers can use it.
+ */
+client.reminderScheduler = createReminderScheduler(client);
+
+/**
  * Log once when the bot is ready.
  */
 client.once("clientReady", () => {
   logger.info("OmegaBot is online");
+
+  client.reminderScheduler?.start();
+  logger.info("Reminder scheduler started");
 
   if (githubPrPollingEnabled) {
     logger.info(
@@ -109,13 +126,11 @@ client.once("clientReady", () => {
 });
 
 /**
- * Start the bot.
+ * Graceful shutdown.
  */
-initDatabase();
-logger.info("Database initialized");
-
 process.on("SIGINT", () => {
   logger.info("Shutting down...");
+  client.reminderScheduler?.stop();
   closeDatabase();
   process.exit(0);
 });
@@ -127,7 +142,6 @@ void client.login(env.token);
  */
 if (githubPrPollingEnabled || githubAssigneePollingEnabled) {
   setInterval(() => {
-    // 1) PR creation polling (new PR detection)
     if (githubPrPollingEnabled) {
       void pollPullRequestsOnce({
         client,
@@ -137,7 +151,6 @@ if (githubPrPollingEnabled || githubAssigneePollingEnabled) {
       });
     }
 
-    // 2) Assignee change polling (issues and PRs)
     if (githubAssigneePollingEnabled) {
       void pollIssueAssigneesOnce({
         client,

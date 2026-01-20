@@ -44,6 +44,7 @@ OmegaBot is a modular Discord bot designed to support development projects with 
 - Configuration and feature gating via environment variables (optional features run only when enabled)
 - Per-guild configuration backed by persistent storage and admin slash commands
 - **Timezone support** – Save your timezone, view it later, and compare times across locations or users
+- **Reminders** – SQLite-backed `/fun remind` with delivery that survives bot restarts
 
 ### Core commands
 

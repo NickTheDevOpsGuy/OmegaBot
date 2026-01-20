@@ -1,7 +1,8 @@
-## [Unreleased]
+## [2.0.1] - 2026-01-20
 
 ### Added
 
+- SQLite-backed reminders via `/fun remind` with reliable delivery after bot restart
 - Joke command system with generational categories (boomer, genx, millennial, genz, genalpha)
 - Coin flip result tracking and statistics
 - Coin flip leaderboard showing top flippers
@@ -9,30 +10,3 @@
 - Timezone commands (save, show, clear, compare)
 - Centralized structured logging
 - Initial changelog tracking
-
----
-
-## [2.0.0] - 2026-01-17
-
-### Changed
-
-- **BREAKING**: Upgraded to Discord.js v14
-  - Updated all interaction handlers to use v14 API
-  - Fixed type narrowing issues with guild checks
-  - Updated permission system for v14 compatibility
-  - Enhanced TypeScript type safety
-
-### Fixed
-
-- Fixed TypeScript compilation errors with type narrowing
-- Fixed FAQ remove command interaction handling
-- Fixed permission middleware type guards
-- Resolved avatar resolution to use maximum 4096px
-- Fixed safeReply type compatibility issues
-
-### Technical
-
-- Updated to Discord.js v14.16.3
-- Improved TypeScript strict mode compliance
-- Enhanced error handling in FAQ subcommands
-- Better type safety across permission checks

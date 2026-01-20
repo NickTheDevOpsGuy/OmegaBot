@@ -87,6 +87,7 @@ function buildFunHelp(): string {
     "`/fun dice`          Roll dice",
     "`/fun coinflip`      Flip a coin",
     "`/fun poll`          Create a poll",
+    "`/fun remind`        Remind you in X minutes",
     "`/fun weather`       Today's weather",
     "`/fun weather7`      7-day forecast",
     "`/fun leaderboard`  Show fun usage stats",
