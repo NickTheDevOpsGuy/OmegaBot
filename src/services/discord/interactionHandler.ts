@@ -10,8 +10,9 @@ import type { OmegaCommand } from "./commandTypes.js";
 
 function isOmegaCommand(x: unknown): x is OmegaCommand {
   if (!x || typeof x !== "object") return false;
-  const anyX = x as any;
-  return typeof anyX.execute === "function" && anyX.data != null;
+
+  const obj = x as Record<string, unknown>;
+  return typeof obj.execute === "function" && obj.data != null;
 }
 
 export async function handleInteraction(

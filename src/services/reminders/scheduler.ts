@@ -1,10 +1,5 @@
-import type {
-  Client,
-  DMChannel,
-  NewsChannel,
-  TextChannel,
-  AnyThreadChannel,
-} from "discord.js";
+// src/services/reminders/scheduler.ts
+import type { Client } from "discord.js";
 import {
   getReminder,
   insertReminder,
@@ -18,7 +13,25 @@ type Options = {
   pollEveryMs?: number;
 };
 
-type SendableChannel = TextChannel | NewsChannel | AnyThreadChannel | DMChannel;
+type Sendable = {
+  send: (options: { content: string }) => Promise<unknown>;
+  isTextBased?: () => boolean;
+};
+
+function isSendable(x: unknown): x is Sendable {
+  if (!x || typeof x !== "object") return false;
+
+  const obj = x as Record<string, unknown>;
+  if (typeof obj.send !== "function") return false;
+
+  // If it exposes isTextBased, require it to be true
+  if (typeof obj.isTextBased === "function") {
+    const fn = obj.isTextBased as () => boolean;
+    if (!fn()) return false;
+  }
+
+  return true;
+}
 
 export class ReminderScheduler {
   private client: Client;
@@ -90,32 +103,17 @@ export class ReminderScheduler {
     }
   }
 
-  private async getSendableChannel(channelId: string): Promise<SendableChannel | null> {
+  private async getSendableChannel(channelId: string): Promise<Sendable | null> {
     const ch = await this.client.channels.fetch(channelId);
     if (!ch) return null;
 
-    // If partial, fetch full channel object first
-    if ("partial" in ch && ch.partial) {
-      const full = await ch.fetch();
-      return this.toSendable(full);
+    // Handle partial channels
+    if ("partial" in ch && Boolean((ch as { partial?: boolean }).partial)) {
+      const fetched = await (ch as { fetch: () => Promise<unknown> }).fetch();
+      return isSendable(fetched) ? fetched : null;
     }
 
-    return this.toSendable(ch);
-  }
-
-  private toSendable(ch: unknown): SendableChannel | null {
-    // We only accept channels that definitely have `.send()`.
-    if (!ch || typeof ch !== "object") return null;
-
-    // These runtime checks are safe, and TS will accept the casts after guarding.
-    const anyCh = ch as any;
-
-    if (typeof anyCh.send !== "function") return null;
-
-    // Optional: ensure it is "text-based" to avoid weird edge channels
-    if (typeof anyCh.isTextBased === "function" && !anyCh.isTextBased()) return null;
-
-    return anyCh as SendableChannel;
+    return isSendable(ch) ? ch : null;
   }
 
   private async deliver(r: ReminderRow): Promise<void> {
