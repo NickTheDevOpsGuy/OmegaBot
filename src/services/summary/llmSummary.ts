@@ -92,7 +92,7 @@ export async function llmSummary(text: string): Promise<string> {
     "- If none, write: None",
     "",
     "## Action items",
-    "- 1 to 8 bullets with an owner if possible (\"Someone will...\").",
+    '- 1 to 8 bullets with an owner if possible ("Someone will...").',
     "- If none, write: None",
     "",
     "## Open questions",
