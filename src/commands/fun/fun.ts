@@ -22,15 +22,51 @@ import { run as runRemind } from "./subcommands/remind.js";
 
 import { recordFunUsage, type FunCommandKey } from "../../services/fun/funUsageStore.js";
 
+function userFacingError(err: unknown): string {
+  if (err instanceof Error) {
+    const msg = err.message.toLowerCase();
+
+    if (msg.includes("scheduler not initialized")) {
+      return "❌ Reminders are not available right now.";
+    }
+
+    if (msg.includes("unknown interaction")) {
+      return "❌ This command took too long to respond. Please try again.";
+    }
+
+    if (msg.includes("missing permissions")) {
+      return "❌ I don’t have the required permissions to do that.";
+    }
+
+    // Default: show the real message (safe, concise)
+    return `❌ ${err.message}`;
+  }
+
+  return "❌ An unexpected error occurred.";
+}
+
 function parseTempUnit(raw: string | null): TempUnit {
   return raw?.toLowerCase() === "c" ? "c" : "f";
+}
+
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null;
+}
+
+function getDiscordErrorCode(err: unknown): number | null {
+  if (!isRecord(err)) return null;
+  const code = err["code"];
+  return typeof code === "number" ? code : null;
 }
 
 export const data = new SlashCommandBuilder()
   .setName("fun")
   .setDescription("Fun commands")
+
+  // /fun joke
   .addSubcommandGroup(buildJokeSubcommands)
 
+  // /fun dice
   .addSubcommand((s) =>
     s
       .setName("dice")
@@ -59,6 +95,7 @@ export const data = new SlashCommandBuilder()
       ),
   )
 
+  // /fun coinflip
   .addSubcommand((s) =>
     s
       .setName("coinflip")
@@ -71,6 +108,7 @@ export const data = new SlashCommandBuilder()
       ),
   )
 
+  // /fun poll (2–4 options)
   .addSubcommand((s) =>
     s
       .setName("poll")
@@ -92,6 +130,7 @@ export const data = new SlashCommandBuilder()
       ),
   )
 
+  // /fun remind
   .addSubcommand((s) =>
     s
       .setName("remind")
@@ -119,6 +158,7 @@ export const data = new SlashCommandBuilder()
       ),
   )
 
+  // /fun weather (daily)
   .addSubcommand((s) =>
     s
       .setName("weather")
@@ -144,6 +184,7 @@ export const data = new SlashCommandBuilder()
       ),
   )
 
+  // /fun weather7 (7-day)
   .addSubcommand((s) =>
     s
       .setName("weather7")
@@ -169,6 +210,7 @@ export const data = new SlashCommandBuilder()
       ),
   )
 
+  // /fun leaderboard
   .addSubcommand((s) =>
     s
       .setName("leaderboard")
@@ -241,16 +283,19 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
   logger.info({ group: group ?? null, sub, file: import.meta.url }, "[fun] execute");
 
+  // Joke group manages its own replies
   if (group === "joke") {
     try {
       await handleJoke(interaction);
       await recordFunUsage({ userId: interaction.user.id, command: "joke" });
     } catch (err) {
       logger.error({ err, sub, group }, "[fun] joke subcommand failed");
-      // Joke handler manages its own replies; keep fallback minimal
       try {
         if (!interaction.replied && !interaction.deferred) {
-          await interaction.reply({ content: "Something went wrong. Try again in a bit.", flags: MessageFlags.Ephemeral });
+          await interaction.reply({
+            content: "Something went wrong. Try again in a bit.",
+            flags: MessageFlags.Ephemeral,
+          });
         } else {
           await interaction.editReply("Something went wrong. Try again in a bit.");
         }
@@ -261,6 +306,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     return;
   }
 
+  // Regular subcommands
   const supportsEphemeral = sub !== "poll";
   const wantsEphemeral = supportsEphemeral
     ? (interaction.options.getBoolean("ephemeral") ?? false)
@@ -268,8 +314,21 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
   const flags = wantsEphemeral ? MessageFlags.Ephemeral : undefined;
 
-  // Use flags instead of deprecated ephemeral option
-  await interaction.deferReply(flags ? { flags } : undefined);
+  // IMPORTANT: deferReply is the ack. If it fails with 10062/40060, do not try to reply again.
+  try {
+    await interaction.deferReply(flags ? { flags } : undefined);
+  } catch (err) {
+    const code = getDiscordErrorCode(err);
+
+    // 10062: Unknown interaction (expired token) | 40060: already acknowledged
+    if (code === 10062 || code === 40060) {
+      logger.warn({ code, sub }, "[fun] cannot deferReply (ignored)");
+      return;
+    }
+
+    logger.error({ err, code, sub }, "[fun] deferReply failed");
+    return;
+  }
 
   try {
     if (sub === "dice") {
@@ -334,10 +393,13 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     await interaction.editReply(`Unknown subcommand: ${sub}`);
   } catch (err) {
     logger.error({ err, sub }, "[fun] subcommand failed");
+
+    const message = userFacingError(err);
+
     try {
-      await interaction.editReply("Something went wrong. Try again in a bit.");
+      await interaction.editReply(message);
     } catch (replyErr) {
-      logger.warn({ replyErr }, "[fun] failed to editReply after error (ignored)");
+      logger.warn({ replyErr }, "[fun] failed to send error reply (ignored)");
     }
   }
 }

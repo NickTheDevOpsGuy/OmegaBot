@@ -168,6 +168,14 @@ function shutdown(signal: string): void {
 process.on("SIGINT", () => shutdown("SIGINT"));
 process.on("SIGTERM", () => shutdown("SIGTERM"));
 
+process.on("unhandledRejection", (reason) => {
+  logger.error({ reason }, "[process] unhandledRejection");
+});
+
+process.on("uncaughtException", (err) => {
+  logger.error({ err }, "[process] uncaughtException");
+});
+
 void client.login(env.token);
 
 /**
