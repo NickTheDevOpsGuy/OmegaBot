@@ -60,6 +60,48 @@ export function initDatabase(): Database.Database {
       last_seen_timestamp INTEGER NOT NULL,
       entity_type TEXT NOT NULL
     );
+
+    /* -------------------------------------------------------------------- */
+    /* Reminders                                                             */
+    /* -------------------------------------------------------------------- */
+    CREATE TABLE IF NOT EXISTS reminders (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL,
+      channel_id TEXT NOT NULL,
+      message TEXT NOT NULL,
+      due_at INTEGER NOT NULL,
+      created_at INTEGER NOT NULL,
+      delivered_at INTEGER
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_reminders_pending_due
+      ON reminders(delivered_at, due_at);
+
+    /* -------------------------------------------------------------------- */
+    /* GitHub assignee tracking                                              */
+    /* -------------------------------------------------------------------- */
+    CREATE TABLE IF NOT EXISTS github_assignees_meta (
+      owner TEXT NOT NULL,
+      repo TEXT NOT NULL,
+      initialized_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      PRIMARY KEY (owner, repo)
+    );
+
+    CREATE TABLE IF NOT EXISTS github_assignees_state (
+      owner TEXT NOT NULL,
+      repo TEXT NOT NULL,
+      number INTEGER NOT NULL,
+      kind TEXT NOT NULL,           -- "PR" | "Issue"
+      title TEXT NOT NULL,
+      url TEXT NOT NULL,
+      assignees_json TEXT,
+      updated_at TEXT NOT NULL,
+      PRIMARY KEY (owner, repo, number)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_github_assignees_repo
+      ON github_assignees_state(owner, repo);
   `);
 
   logger.info("Database tables created");
