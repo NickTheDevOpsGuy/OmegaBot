@@ -1,7 +1,10 @@
+// src/commands/history/history.ts
+
 import {
   SlashCommandBuilder,
   type ChatInputCommandInteraction,
   AttachmentBuilder,
+  MessageFlags,
 } from "discord.js";
 import { logger } from "../../utils/logger.js";
 
@@ -35,7 +38,7 @@ function formatMessageLine(args: {
 }
 
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   const count = interaction.options.getInteger("count") ?? 50;
 
@@ -77,7 +80,6 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     try {
       const user = interaction.user;
 
-      // If it's short enough, send directly
       const asText = `**${header}**\n\n${formatted}`;
       if (asText.length <= 1900) {
         await user.send({ content: asText });
@@ -85,7 +87,6 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         return;
       }
 
-      // Otherwise send as a file
       const buffer = Buffer.from(`${header}\n\n${formatted}`, "utf-8");
       const attachment = new AttachmentBuilder(buffer, {
         name: `history-${Date.now()}.txt`,
