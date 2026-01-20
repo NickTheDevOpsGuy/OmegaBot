@@ -1,5 +1,5 @@
 // src/services/fun/funUsageStore.ts
-import { getDb } from "../../services/database/db";
+import { getDb } from "../../services/database/db.js";
 
 export type FunCommandKey =
   | "joke"
