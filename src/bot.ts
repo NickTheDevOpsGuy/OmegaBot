@@ -10,6 +10,7 @@ import { handleAutoRole } from "./services/roles/autoRoleHandler.js";
 import { onGuildMemberAdd } from "./services/welcome/welcomeHandler.js";
 import { env } from "./config/env.js";
 import { logger } from "./utils/logger.js";
+import { ReminderScheduler } from "./services/reminders/scheduler.js";
 
 /**
  * Create the Discord client.
@@ -28,9 +29,25 @@ const client = new Client({
 client.commands = new Map();
 
 /**
+ * Start the bot.
+ */
+initDatabase();
+logger.info("Database initialized");
+
+/**
  * Load compiled slash command modules.
  */
 await loadCommands(client);
+
+/**
+ * Reminder scheduler (SQLite-backed).
+ *
+ * We attach it to the client so commands can access it.
+ * We start it on clientReady so channel fetching is reliable.
+ */
+client.reminderScheduler = new ReminderScheduler(client, {
+  pollEveryMs: 5000,
+});
 
 /**
  * Handle slash command interactions.
@@ -41,6 +58,10 @@ client.on("interactionCreate", async (interaction) => {
 
 /**
  * Welcome handler for new guild members.
+ *
+ * This will ONLY fire if:
+ * - Server Members Intent is enabled in the portal
+ * - GatewayIntentBits.GuildMembers is requested here
  */
 client.on("guildMemberAdd", async (member) => {
   logger.info(
@@ -52,12 +73,15 @@ client.on("guildMemberAdd", async (member) => {
     "guildMemberAdd event fired",
   );
 
+  // Auto-assign a default role on join (if configured)
   await handleAutoRole(member);
+
   await onGuildMemberAdd(member);
 });
 
 /**
  * Optional GitHub polling.
+ * Each stream is enabled only when all required env vars are present.
  */
 const githubPrPollingEnabled = env.githubPrPollingEnabled;
 const githubAssigneePollingEnabled = env.githubAssigneePollingEnabled;
@@ -82,6 +106,14 @@ client.once("clientReady", () => {
   );
 
   logger.info({ commands: [...client.commands.keys()] }, "[startup] commands loaded");
+
+  // Start reminder scheduler now that client is ready
+  try {
+    client.reminderScheduler?.start();
+    logger.info("Reminder scheduler started");
+  } catch (err) {
+    logger.error({ err }, "Failed to start reminder scheduler");
+  }
 
   if (githubPrPollingEnabled) {
     logger.info(
@@ -117,16 +149,24 @@ client.once("clientReady", () => {
 });
 
 /**
- * Start the bot.
+ * Shutdown handler (graceful).
  */
-initDatabase();
-logger.info("Database initialized");
+function shutdown(signal: string): void {
+  logger.info({ signal }, "Shutting down...");
 
-process.on("SIGINT", () => {
-  logger.info("Shutting down...");
+  try {
+    client.reminderScheduler?.stop();
+    logger.info("Reminder scheduler stopped");
+  } catch (err) {
+    logger.warn({ err }, "Failed to stop reminder scheduler cleanly");
+  }
+
   closeDatabase();
   process.exit(0);
-});
+}
+
+process.on("SIGINT", () => shutdown("SIGINT"));
+process.on("SIGTERM", () => shutdown("SIGTERM"));
 
 void client.login(env.token);
 
@@ -135,6 +175,7 @@ void client.login(env.token);
  */
 if (githubPrPollingEnabled || githubAssigneePollingEnabled) {
   setInterval(() => {
+    // 1) PR creation polling (new PR detection)
     if (githubPrPollingEnabled) {
       void pollPullRequestsOnce({
         client,
@@ -144,6 +185,7 @@ if (githubPrPollingEnabled || githubAssigneePollingEnabled) {
       });
     }
 
+    // 2) Assignee change polling (issues and PRs)
     if (githubAssigneePollingEnabled) {
       void pollIssueAssigneesOnce({
         client,
