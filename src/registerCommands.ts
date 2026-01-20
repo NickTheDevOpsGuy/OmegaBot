@@ -34,6 +34,13 @@ function walkFiles(dir: string): string[] {
   return files;
 }
 
+type CommandJson = ReturnType<SlashCommandBuilder["toJSON"]>;
+
+function extractTopLevelOptionNames(cmd: CommandJson): string[] {
+  const opts = cmd.options ?? [];
+  return opts.map((o) => o.name);
+}
+
 async function registerCommands(): Promise<void> {
   const rest = new REST({ version: "10" }).setToken(env.token);
 
@@ -47,7 +54,7 @@ async function registerCommands(): Promise<void> {
     (file) => file.endsWith(".js") && !file.endsWith(".d.ts"),
   );
 
-  const commands: ReturnType<SlashCommandBuilder["toJSON"]>[] = [];
+  const commands: CommandJson[] = [];
 
   for (const file of commandFiles) {
     const relFile = path.relative(commandsPath, file).replaceAll("\\", "/");
@@ -61,7 +68,17 @@ async function registerCommands(): Promise<void> {
         continue;
       }
 
-      commands.push(imported.data.toJSON());
+      const json = imported.data.toJSON();
+
+      // DEBUG: prove what subcommands Discord will receive for /fun
+      if (json.name === "fun") {
+        logger.info(
+          { options: extractTopLevelOptionNames(json) },
+          "[register] fun subcommands/groups",
+        );
+      }
+
+      commands.push(json);
       logger.info({ command: imported.data.name }, "Prepared command for registration");
     } catch (err) {
       logger.warn({ err, file: relFile }, "Failed to load command for registration");
