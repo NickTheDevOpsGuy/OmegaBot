@@ -1,107 +1,95 @@
-import { MessageFlags } from "discord.js";
+// src/commands/help/help.ts
 import {
   SlashCommandBuilder,
+  MessageFlags,
   PermissionFlagsBits,
   type ChatInputCommandInteraction,
 } from "discord.js";
-import { buildHelpText, type HelpTopic } from "./helpText.js";
-import {
-  extractCommandList,
-  type CommandListItem,
-} from "../../services/discord/commandMeta.js";
 import { logger } from "../../utils/logger.js";
+import { buildHelpText, type HelpTopic } from "../help/helpText.js";
+import type { CommandClient } from "../../services/discord/commandLoader.js";
+import { extractCommandList } from "../../services/discord/commandMeta.js";
 
-/**
- * /help
- *
- * Uses topics to keep output readable and under Discord limits.
- */
+function getDiscordErrorCode(err: unknown): number | null {
+  if (!err || typeof err !== "object") return null;
+  const obj = err as Record<string, unknown>;
+  const code = obj["code"];
+  return typeof code === "number" ? code : null;
+}
+
 export const data = new SlashCommandBuilder()
   .setName("help")
-  .setDescription("Show what OmegaBot can do and how to get started")
-  .addStringOption((o) =>
-    o
+  .setDescription("Show help by topic")
+  .addStringOption((opt) =>
+    opt
       .setName("topic")
-      .setDescription("Choose a help topic")
+      .setDescription("Help topic")
       .setRequired(false)
       .addChoices(
-        { name: "Overview", value: "overview" },
-        { name: "Fun", value: "fun" },
-        { name: "GitHub", value: "github" },
-        { name: "Summary", value: "summary" },
-        { name: "Timezone", value: "timezone" },
-        { name: "Admin", value: "admin" },
-        { name: "Commands", value: "commands" },
+        { name: "overview", value: "overview" },
+        { name: "fun", value: "fun" },
+        { name: "github", value: "github" },
+        { name: "summary", value: "summary" },
+        { name: "timezone", value: "timezone" },
+        { name: "admin", value: "admin" },
+        { name: "commands", value: "commands" },
       ),
+  )
+  .addBooleanOption((opt) =>
+    opt.setName("ephemeral").setDescription("Only show help to you").setRequired(false),
   );
 
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
+  const topic = (interaction.options.getString("topic") ?? "overview") as HelpTopic;
+
+  // Default to ephemeral unless user explicitly sets it false
+  const ephemeral = interaction.options.getBoolean("ephemeral") ?? true;
+
   try {
+    // Defer immediately to avoid 10062 timeouts
+    await interaction.deferReply(
+      ephemeral ? { flags: MessageFlags.Ephemeral } : undefined,
+    );
+
+    const client = interaction.client as CommandClient;
+
     const isAdmin =
       interaction.inGuild() &&
       Boolean(interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild));
 
-    let commands: CommandListItem[] = [];
-    try {
-      commands = extractCommandList(interaction.client);
-    } catch (err) {
-      logger.error({ err }, "[help] failed to extract command list");
-      commands = [];
-    }
+    // Pull what we can from the loaded command registry (best-effort)
+    const commands = extractCommandList(client);
 
-    const rawTopic = interaction.options.getString("topic") ?? "overview";
-
-    const allowedTopics: HelpTopic[] = [
-      "overview",
-      "fun",
-      "github",
-      "summary",
-      "timezone",
-      "admin",
-      "commands",
-    ];
-
-    const topic: HelpTopic = allowedTopics.includes(rawTopic as HelpTopic)
-      ? (rawTopic as HelpTopic)
-      : "overview";
-
-    let text: string;
-    try {
-      text = buildHelpText({
-        isAdmin,
-        commands,
-        topic,
-      });
-    } catch (err) {
-      logger.error({ err, topic }, "[help] buildHelpText failed");
-
-      text =
-        "**Help is temporarily unavailable**\n\n" +
-        "Something went wrong while building help text.\n" +
-        "An admin has been notified via logs.\n\n" +
-        "Try again in a bit.";
-    }
-
-    await interaction.reply({
-      content: text,
-      flags: MessageFlags.Ephemeral,
+    const content = buildHelpText({
+      isAdmin,
+      commands,
+      topic,
     });
+
+    await interaction.editReply({ content });
   } catch (err) {
     logger.error(
       { err, command: "help", userId: interaction.user.id },
       "[help] command failed",
     );
 
-    // Absolute last-resort fallback
+    const code = getDiscordErrorCode(err);
+
+    // If Discord says the interaction is gone, do nothing.
+    if (code === 10062) return;
+
+    // If already acknowledged, do nothing.
+    if (code === 40060) return;
+
+    // Best-effort edit if possible
     try {
-      if (!interaction.replied && !interaction.deferred) {
-        await interaction.reply({
+      if (interaction.deferred || interaction.replied) {
+        await interaction.editReply({
           content: "Help failed unexpectedly. Please try again later.",
-          flags: MessageFlags.Ephemeral,
         });
       }
-    } catch (replyErr) {
-      logger.error({ err: replyErr }, "[help] failed to send fallback reply");
+    } catch (err2) {
+      logger.error({ err: err2 }, "[help] failed to send fallback editReply");
     }
   }
 }

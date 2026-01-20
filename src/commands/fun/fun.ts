@@ -1,90 +1,352 @@
-// src/commands/help/help.ts
+// src/commands/fun/fun.ts
+
 import {
-  SlashCommandBuilder,
   MessageFlags,
+  SlashCommandBuilder,
   type ChatInputCommandInteraction,
 } from "discord.js";
 import { logger } from "../../utils/logger.js";
-import { buildHelpText, type HelpTopic } from "../help/helpText.js";
-import type { CommandClient } from "../../services/discord/commandLoader.js";
-import { listCommandsForHelp } from "../../services/discord/commandMeta.js";
 
-function getDiscordErrorCode(err: unknown): number | null {
-  if (!err || typeof err !== "object") return null;
-  const obj = err as Record<string, unknown>;
-  const code = obj["code"];
-  return typeof code === "number" ? code : null;
+import { run as runDice } from "./subcommands/dice.js";
+import { run as runCoinflip } from "./subcommands/coinflip.js";
+import { run as runPoll } from "./subcommands/poll.js";
+import { run as runLeaderboard } from "./subcommands/leaderboard.js";
+import type { LeaderboardMode } from "./subcommands/leaderboard.js";
+
+import { run as runWeather } from "./subcommands/weather.js";
+import type { TempUnit, WeatherMode } from "../../services/weather/types.js";
+
+import { handleJoke, buildJokeSubcommands } from "./subcommands/joke/index.js";
+
+import { run as runRemind } from "./subcommands/remind.js";
+
+import { recordFunUsage, type FunCommandKey } from "../../services/fun/funUsageStore.js";
+
+function parseTempUnit(raw: string | null): TempUnit {
+  return raw?.toLowerCase() === "c" ? "c" : "f";
 }
 
 export const data = new SlashCommandBuilder()
   .setName("fun")
-  .setDescription("Show help by topic")
-  .addStringOption((opt) =>
-    opt
-      .setName("topic")
-      .setDescription("Help topic")
-      .setRequired(false)
-      .addChoices(
-        { name: "overview", value: "overview" },
-        { name: "fun", value: "fun" },
-        { name: "github", value: "github" },
-        { name: "summary", value: "summary" },
-        { name: "timezone", value: "timezone" },
-        { name: "admin", value: "admin" },
-        { name: "commands", value: "commands" },
+  .setDescription("Fun commands")
+
+  // /fun joke (subcommand group)
+  .addSubcommandGroup(buildJokeSubcommands)
+
+  // /fun dice
+  .addSubcommand((s) =>
+    s
+      .setName("dice")
+      .setDescription("Roll some dice")
+      .addIntegerOption((o) =>
+        o
+          .setName("sides")
+          .setDescription("Number of sides on each die")
+          .setMinValue(2)
+          .setMaxValue(100)
+          .setRequired(false),
+      )
+      .addIntegerOption((o) =>
+        o
+          .setName("count")
+          .setDescription("How many dice to roll")
+          .setMinValue(1)
+          .setMaxValue(10)
+          .setRequired(false),
+      )
+      .addBooleanOption((o) =>
+        o
+          .setName("ephemeral")
+          .setDescription("Only show the result to you")
+          .setRequired(false),
       ),
   )
-  .addBooleanOption((opt) =>
-    opt.setName("ephemeral").setDescription("Only show help to you").setRequired(false),
+
+  // /fun coinflip
+  .addSubcommand((s) =>
+    s
+      .setName("coinflip")
+      .setDescription("Flip a coin")
+      .addBooleanOption((o) =>
+        o
+          .setName("ephemeral")
+          .setDescription("Only show the result to you")
+          .setRequired(false),
+      ),
+  )
+
+  // /fun poll (2–4 options)
+  .addSubcommand((s) =>
+    s
+      .setName("poll")
+      .setDescription("Create a quick poll (2–4 options)")
+      .addStringOption((o) =>
+        o.setName("question").setDescription("Poll question").setRequired(true),
+      )
+      .addStringOption((o) =>
+        o.setName("option1").setDescription("Option 1").setRequired(true),
+      )
+      .addStringOption((o) =>
+        o.setName("option2").setDescription("Option 2").setRequired(true),
+      )
+      .addStringOption((o) =>
+        o.setName("option3").setDescription("Option 3 (optional)").setRequired(false),
+      )
+      .addStringOption((o) =>
+        o.setName("option4").setDescription("Option 4 (optional)").setRequired(false),
+      ),
+  )
+
+  // /fun remind
+  .addSubcommand((s) =>
+    s
+      .setName("remind")
+      .setDescription("Remind you in X minutes")
+      .addIntegerOption((o) =>
+        o
+          .setName("minutes")
+          .setDescription("Minutes from now (1 to 10080)")
+          .setMinValue(1)
+          .setMaxValue(10080)
+          .setRequired(true),
+      )
+      .addStringOption((o) =>
+        o
+          .setName("message")
+          .setDescription("What to remind you about")
+          .setMaxLength(1000)
+          .setRequired(true),
+      )
+      .addBooleanOption((o) =>
+        o
+          .setName("ephemeral")
+          .setDescription("Only show the confirmation to you")
+          .setRequired(false),
+      ),
+  )
+
+  // /fun weather (daily)
+  .addSubcommand((s) =>
+    s
+      .setName("weather")
+      .setDescription("Weather for a location (includes current conditions)")
+      .addStringOption((o) =>
+        o
+          .setName("location")
+          .setDescription('City, "City, ST", ZIP, etc.')
+          .setRequired(true),
+      )
+      .addStringOption((o) =>
+        o
+          .setName("unit")
+          .setDescription("Temperature unit")
+          .addChoices({ name: "F", value: "f" }, { name: "C", value: "c" })
+          .setRequired(false),
+      )
+      .addBooleanOption((o) =>
+        o
+          .setName("ephemeral")
+          .setDescription("Only show the result to you")
+          .setRequired(false),
+      ),
+  )
+
+  // /fun weather7 (7-day)
+  .addSubcommand((s) =>
+    s
+      .setName("weather7")
+      .setDescription("7-day forecast (includes current conditions)")
+      .addStringOption((o) =>
+        o
+          .setName("location")
+          .setDescription('City, "City, ST", ZIP, etc.')
+          .setRequired(true),
+      )
+      .addStringOption((o) =>
+        o
+          .setName("unit")
+          .setDescription("Temperature unit")
+          .addChoices({ name: "F", value: "f" }, { name: "C", value: "c" })
+          .setRequired(false),
+      )
+      .addBooleanOption((o) =>
+        o
+          .setName("ephemeral")
+          .setDescription("Only show the result to you")
+          .setRequired(false),
+      ),
+  )
+
+  // /fun leaderboard
+  .addSubcommand((s) =>
+    s
+      .setName("leaderboard")
+      .setDescription("Show fun command leaderboard")
+      .addStringOption((o) =>
+        o
+          .setName("view")
+          .setDescription("What leaderboard view to show")
+          .setRequired(false)
+          .addChoices(
+            { name: "Top users", value: "users" },
+            { name: "Top commands", value: "commands" },
+            { name: "Single user", value: "user" },
+          ),
+      )
+      .addUserOption((o) =>
+        o
+          .setName("user")
+          .setDescription("User to inspect (used with view: Single user)")
+          .setRequired(false),
+      )
+      .addIntegerOption((o) =>
+        o
+          .setName("limit")
+          .setDescription("How many results to show (default 10, max 25)")
+          .setMinValue(1)
+          .setMaxValue(25)
+          .setRequired(false),
+      ),
   );
 
-export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
-  const topic = (interaction.options.getString("topic") ?? "overview") as HelpTopic;
-  const ephemeral = interaction.options.getBoolean("ephemeral") ?? true;
+function funKeyFromSub(sub: string): FunCommandKey | null {
+  const allowed: Record<string, FunCommandKey> = {
+    dice: "dice",
+    coinflip: "coinflip",
+    poll: "poll",
+    remind: "remind",
+    weather: "weather",
+    weather7: "weather7",
+    leaderboard: "leaderboard",
+    // Note: joke subcommands all count as "joke"
+  };
+
+  return allowed[sub] ?? null;
+}
+
+async function maybeRecordUsage(
+  interaction: ChatInputCommandInteraction,
+  sub: string,
+): Promise<void> {
+  const key = funKeyFromSub(sub);
+  if (!key) return;
 
   try {
-    // Defer immediately to avoid 10062 timeouts
-    await interaction.deferReply(
-      ephemeral ? { flags: MessageFlags.Ephemeral } : undefined,
-    );
-
-    const client = interaction.client as CommandClient;
-
-    const isAdmin =
-      interaction.inGuild() && Boolean(interaction.memberPermissions?.has("ManageGuild"));
-
-    const commands = listCommandsForHelp(client.commands);
-
-    const content = buildHelpText({
-      isAdmin,
-      commands,
-      topic,
-    });
-
-    await interaction.editReply({ content });
+    await recordFunUsage({ userId: interaction.user.id, command: key });
   } catch (err) {
-    logger.error(
-      { err, command: "help", userId: interaction.user.id },
-      "[help] command failed",
-    );
+    logger.warn({ err, sub }, "[fun] failed to record usage");
+  }
+}
 
-    const code = getDiscordErrorCode(err);
+function deferFlags(ephemeral: boolean): { flags: MessageFlags } | undefined {
+  return ephemeral ? { flags: MessageFlags.Ephemeral } : undefined;
+}
 
-    // If Discord says the interaction is gone, do nothing.
-    if (code === 10062) return;
+export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
+  const group = interaction.options.getSubcommandGroup();
+  const sub = interaction.options.getSubcommand(true);
 
-    // If already acknowledged, do nothing.
-    if (code === 40060) return;
+  logger.info({ group, sub }, "[fun] execute");
 
-    // Best-effort edit if possible
+  // Subcommand group: /fun joke ...
+  if (group === "joke") {
+    // Let joke handler manage its own replies (some joke flows may choose their own defers)
     try {
-      if (interaction.deferred || interaction.replied) {
-        await interaction.editReply({
-          content: "Help failed unexpectedly. Please try again later.",
-        });
+      await handleJoke(interaction);
+      await recordFunUsage({ userId: interaction.user.id, command: "joke" });
+    } catch (err) {
+      logger.error({ err, group, sub }, "[fun] joke subcommand failed");
+
+      // Best-effort response: only if still possible
+      try {
+        if (interaction.deferred || interaction.replied) {
+          await interaction.editReply("Something went wrong. Try again in a bit.");
+        } else {
+          await interaction.reply({
+            content: "Something went wrong. Try again in a bit.",
+            flags: MessageFlags.Ephemeral,
+          });
+        }
+      } catch {
+        // swallow, handler already logged
       }
-    } catch (err2) {
-      logger.error({ err: err2 }, "[help] failed to send fallback editReply");
     }
+    return;
+  }
+
+  // Regular subcommands (not in a group)
+  // Poll usually needs to be public, everything else can be ephemeral.
+  const supportsEphemeral = sub !== "poll";
+  const ephemeral = supportsEphemeral
+    ? (interaction.options.getBoolean("ephemeral") ?? false)
+    : false;
+
+  // Defer immediately to avoid 10062 timeouts
+  await interaction.deferReply(deferFlags(ephemeral));
+
+  try {
+    if (sub === "dice") {
+      await runDice(interaction);
+      await maybeRecordUsage(interaction, sub);
+      return;
+    }
+
+    if (sub === "coinflip") {
+      await runCoinflip(interaction);
+      await maybeRecordUsage(interaction, sub);
+      return;
+    }
+
+    if (sub === "poll") {
+      await runPoll(interaction);
+      await maybeRecordUsage(interaction, sub);
+      return;
+    }
+
+    if (sub === "remind") {
+      await runRemind(interaction);
+      await maybeRecordUsage(interaction, sub);
+      return;
+    }
+
+    if (sub === "leaderboard") {
+      const view = interaction.options.getString("view") ?? "users";
+      const limit = interaction.options.getInteger("limit") ?? 10;
+
+      if (view === "commands") {
+        const mode: LeaderboardMode = { kind: "commands", limit };
+        await runLeaderboard(interaction, mode);
+      } else if (view === "user") {
+        const u = interaction.options.getUser("user");
+        const targetId = u?.id ?? interaction.user.id;
+        const mode: LeaderboardMode = { kind: "user", userId: targetId };
+        await runLeaderboard(interaction, mode);
+      } else {
+        const mode: LeaderboardMode = { kind: "users", limit };
+        await runLeaderboard(interaction, mode);
+      }
+
+      await maybeRecordUsage(interaction, sub);
+      return;
+    }
+
+    if (sub === "weather" || sub === "weather7") {
+      const location = interaction.options.getString("location", true).trim();
+      const unit = parseTempUnit(interaction.options.getString("unit"));
+
+      const mode: WeatherMode =
+        sub === "weather"
+          ? { kind: "daily", location, unit }
+          : { kind: "7day", location, unit };
+
+      await runWeather(interaction, mode);
+      await maybeRecordUsage(interaction, sub);
+      return;
+    }
+
+    await interaction.editReply("Unknown subcommand.");
+  } catch (err) {
+    logger.error({ err, sub }, "[fun] subcommand failed");
+    await interaction.editReply("Something went wrong. Try again in a bit.");
   }
 }
