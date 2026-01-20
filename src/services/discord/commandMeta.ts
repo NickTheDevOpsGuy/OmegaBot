@@ -74,6 +74,21 @@ export function extractCommandList(client: unknown): CommandListItem[] {
   return items;
 }
 
+/**
+ * Backwards-compatible alias used by /help code.
+ *
+ * If your help command imports `listCommandsForHelp`, it will work.
+ */
+export function listCommandsForHelp(commandsMapOrClient: unknown): CommandListItem[] {
+  // Most callers will pass `client` (preferred).
+  // If someone passes `client.commands`, we still handle it.
+  if (commandsMapOrClient instanceof Map) {
+    return extractCommandList({ commands: commandsMapOrClient });
+  }
+
+  return extractCommandList(commandsMapOrClient);
+}
+
 function safeToJson(data: unknown): { name?: string; description?: string } | null {
   try {
     const d = data as { toJSON?: () => unknown };
@@ -87,8 +102,12 @@ function safeToJson(data: unknown): { name?: string; description?: string } | nu
 
 function inferGroupFromName(name: string): string {
   // Minimal inference, keeps output readable until the loader tags groups.
-  if (name === "help") return "general";
-  if (name === "config") return "admin";
-  if (name.includes("github")) return "github";
+  if (name === "help" || name === "ping" || name === "status") return "general";
+  if (name === "config" || name === "admin") return "admin";
+  if (name === "gh" || name === "pr") return "github";
+  if (name === "fun") return "fun";
+  if (name === "timezone") return "timezone";
+  if (name === "summary" || name === "history" || name === "playback" || name === "pagination")
+    return "summary";
   return "other";
 }

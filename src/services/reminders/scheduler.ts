@@ -1,5 +1,6 @@
 // src/services/reminders/scheduler.ts
 import type { Client } from "discord.js";
+import { logger } from "../../utils/logger.js";
 import {
   getReminder,
   insertReminder,
@@ -18,19 +19,36 @@ type Sendable = {
   isTextBased?: () => boolean;
 };
 
-function isSendable(x: unknown): x is Sendable {
-  if (!x || typeof x !== "object") return false;
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null;
+}
 
-  const obj = x as Record<string, unknown>;
-  if (typeof obj.send !== "function") return false;
+function isSendable(x: unknown): x is Sendable {
+  if (!isRecord(x)) return false;
+
+  const send = x["send"];
+  if (typeof send !== "function") return false;
 
   // If it exposes isTextBased, require it to be true
-  if (typeof obj.isTextBased === "function") {
-    const fn = obj.isTextBased as () => boolean;
-    if (!fn()) return false;
+  const isTextBased = x["isTextBased"];
+  if (typeof isTextBased === "function") {
+    const ok = (isTextBased as () => boolean)();
+    if (!ok) return false;
   }
 
   return true;
+}
+
+function getErrorInfo(err: unknown): { code?: number; message: string } {
+  if (!isRecord(err)) return { message: String(err) };
+
+  const code = err["code"];
+  const message = typeof err["message"] === "string" ? err["message"] : String(err);
+
+  return {
+    ...(typeof code === "number" ? { code } : {}),
+    message,
+  };
 }
 
 export class ReminderScheduler {
@@ -45,10 +63,21 @@ export class ReminderScheduler {
   }
 
   start(): void {
-    for (const r of listPendingReminders()) {
-      this.scheduleRow(r);
+    logger.info({ pollEveryMs: this.pollEveryMs }, "Reminder scheduler started");
+
+    // Schedule everything pending on boot
+    try {
+      const pending = listPendingReminders();
+      logger.info({ count: pending.length }, "[reminders] pending on startup");
+
+      for (const r of pending) {
+        this.scheduleRow(r);
+      }
+    } catch (err) {
+      logger.error({ err }, "[reminders] failed to load pending reminders on startup");
     }
 
+    // Poll loop as a safety net (also handles “restart while due”)
     this.pollTimer = setInterval(() => {
       void this.flushDue();
     }, this.pollEveryMs);
@@ -62,6 +91,8 @@ export class ReminderScheduler {
 
     for (const t of this.timers.values()) clearTimeout(t);
     this.timers.clear();
+
+    logger.info("Reminder scheduler stopped");
   }
 
   createAndSchedule(input: {
@@ -72,6 +103,17 @@ export class ReminderScheduler {
   }): number {
     const id = insertReminder(input);
     const row = getReminder(id);
+
+    logger.info(
+      {
+        id,
+        userId: input.userId,
+        channelId: input.channelId,
+        dueAtMs: input.dueAtMs,
+      },
+      "[reminders] created",
+    );
+
     if (row) this.scheduleRow(row);
     return id;
   }
@@ -83,6 +125,8 @@ export class ReminderScheduler {
     const existing = this.timers.get(r.id);
     if (existing) clearTimeout(existing);
 
+    logger.debug({ id: r.id, delayMs: delay }, "[reminders] scheduled");
+
     const t = setTimeout(() => {
       this.timers.delete(r.id);
       void this.deliver(r);
@@ -92,43 +136,82 @@ export class ReminderScheduler {
   }
 
   private async flushDue(): Promise<void> {
-    const due = listDueReminders(Date.now());
-    for (const r of due) {
-      const existing = this.timers.get(r.id);
-      if (existing) {
-        clearTimeout(existing);
-        this.timers.delete(r.id);
+    try {
+      const due = listDueReminders(Date.now());
+      if (due.length > 0) {
+        logger.info({ count: due.length }, "[reminders] due reminders");
       }
-      await this.deliver(r);
+
+      for (const r of due) {
+        const existing = this.timers.get(r.id);
+        if (existing) {
+          clearTimeout(existing);
+          this.timers.delete(r.id);
+        }
+        await this.deliver(r);
+      }
+    } catch (err) {
+      logger.error({ err }, "[reminders] flushDue failed");
     }
   }
 
-  private async getSendableChannel(channelId: string): Promise<Sendable | null> {
-    const ch = await this.client.channels.fetch(channelId);
-    if (!ch) return null;
+  private async getSendable(channelId: string): Promise<Sendable | null> {
+    try {
+      const ch = await this.client.channels.fetch(channelId);
+      if (!ch) return null;
 
-    // Handle partial channels
-    if ("partial" in ch && Boolean((ch as { partial?: boolean }).partial)) {
-      const fetched = await (ch as { fetch: () => Promise<unknown> }).fetch();
-      return isSendable(fetched) ? fetched : null;
+      // Some channel types can be partial
+      const maybePartial = ch as unknown as { partial?: boolean; fetch?: () => Promise<unknown> };
+
+      if (maybePartial.partial && typeof maybePartial.fetch === "function") {
+        const full = await maybePartial.fetch();
+        return isSendable(full) ? full : null;
+      }
+
+      return isSendable(ch) ? ch : null;
+    } catch (err) {
+      logger.warn({ channelId, err }, "[reminders] channel fetch failed");
+      return null;
     }
-
-    return isSendable(ch) ? ch : null;
   }
 
   private async deliver(r: ReminderRow): Promise<void> {
+    const now = Date.now();
+
     try {
-      const channel = await this.getSendableChannel(r.channel_id);
-      if (!channel) return;
+      const channel = await this.getSendable(r.channel_id);
+      if (!channel) {
+        logger.warn(
+          { id: r.id, channelId: r.channel_id },
+          "[reminders] channel not sendable, will retry later",
+        );
+        return;
+      }
 
       await channel.send({
         content: `<@${r.user_id}> ⏰ Reminder: ${r.message}`,
       });
 
       markDelivered(r.id);
-    } catch {
-      // Do not mark delivered.
-      // Poller will retry, so reminders are not missed after restart or transient errors.
+
+      logger.info(
+        { id: r.id, userId: r.user_id, channelId: r.channel_id, lagMs: now - r.due_at },
+        "[reminders] delivered",
+      );
+    } catch (err) {
+      const info = getErrorInfo(err);
+
+      // We intentionally do NOT mark delivered so it retries later.
+      logger.warn(
+        {
+          id: r.id,
+          userId: r.user_id,
+          channelId: r.channel_id,
+          code: info.code,
+          message: info.message,
+        },
+        "[reminders] delivery failed, will retry",
+      );
     }
   }
 }

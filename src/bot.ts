@@ -10,7 +10,7 @@ import { handleAutoRole } from "./services/roles/autoRoleHandler.js";
 import { onGuildMemberAdd } from "./services/welcome/welcomeHandler.js";
 import { env } from "./config/env.js";
 import { logger } from "./utils/logger.js";
-import { ReminderScheduler } from "./services/reminders/scheduler.js";
+import { createReminderScheduler } from "./services/reminders/index.js";
 
 /**
  * Create the Discord client.
@@ -29,7 +29,7 @@ const client = new Client({
 client.commands = new Map();
 
 /**
- * Start the bot.
+ * Start the database.
  */
 initDatabase();
 logger.info("Database initialized");
@@ -45,9 +45,7 @@ await loadCommands(client);
  * We attach it to the client so commands can access it.
  * We start it on clientReady so channel fetching is reliable.
  */
-client.reminderScheduler = new ReminderScheduler(client, {
-  pollEveryMs: 5000,
-});
+client.reminderScheduler = createReminderScheduler(client);
 
 /**
  * Handle slash command interactions.
@@ -58,10 +56,6 @@ client.on("interactionCreate", async (interaction) => {
 
 /**
  * Welcome handler for new guild members.
- *
- * This will ONLY fire if:
- * - Server Members Intent is enabled in the portal
- * - GatewayIntentBits.GuildMembers is requested here
  */
 client.on("guildMemberAdd", async (member) => {
   logger.info(
@@ -73,15 +67,12 @@ client.on("guildMemberAdd", async (member) => {
     "guildMemberAdd event fired",
   );
 
-  // Auto-assign a default role on join (if configured)
   await handleAutoRole(member);
-
   await onGuildMemberAdd(member);
 });
 
 /**
  * Optional GitHub polling.
- * Each stream is enabled only when all required env vars are present.
  */
 const githubPrPollingEnabled = env.githubPrPollingEnabled;
 const githubAssigneePollingEnabled = env.githubAssigneePollingEnabled;
@@ -168,38 +159,35 @@ function shutdown(signal: string): void {
 process.on("SIGINT", () => shutdown("SIGINT"));
 process.on("SIGTERM", () => shutdown("SIGTERM"));
 
-process.on("unhandledRejection", (reason) => {
-  logger.error({ reason }, "[process] unhandledRejection");
-});
-
-process.on("uncaughtException", (err) => {
-  logger.error({ err }, "[process] uncaughtException");
-});
-
 void client.login(env.token);
 
 /**
  * Schedule GitHub polling (if enabled).
+ *
+ * IMPORTANT:
+ * Promises inside setInterval must be caught, or Node will emit unhandledRejection.
  */
 if (githubPrPollingEnabled || githubAssigneePollingEnabled) {
   setInterval(() => {
-    // 1) PR creation polling (new PR detection)
     if (githubPrPollingEnabled) {
       void pollPullRequestsOnce({
         client,
         owner: env.githubOwner!,
         repo: env.githubRepo!,
         announceChannelId: env.githubPrAnnounceChannelId!,
+      }).catch((err) => {
+        logger.error({ err }, "[github] pollPullRequestsOnce failed");
       });
     }
 
-    // 2) Assignee change polling (issues and PRs)
     if (githubAssigneePollingEnabled) {
       void pollIssueAssigneesOnce({
         client,
         owner: env.githubOwner!,
         repo: env.githubRepo!,
         announceChannelId: env.githubAssigneeAnnounceChannelId!,
+      }).catch((err) => {
+        logger.error({ err }, "[github] pollIssueAssigneesOnce failed");
       });
     }
   }, env.githubPollIntervalMs);
