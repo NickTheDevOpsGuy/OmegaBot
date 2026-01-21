@@ -1,3 +1,4 @@
+// src/commands/fun/coinflipStore.ts
 import { getDb } from "../../services/database/db.js";
 
 export type CoinFlipResult = "heads" | "tails";
@@ -32,12 +33,18 @@ export function recordCoinFlip(args: {
     `
     INSERT INTO coin_flips (user_id, result, timestamp)
     VALUES (?, ?, ?)
-    `,
+  `,
   ).run(args.userId, args.result, ts);
 }
 
 export function getCoinFlipTotals(userId: string): CoinFlipTotals {
   const db = getDb();
+
+  type TotalsRow = {
+    total: number;
+    heads: number | null;
+    tails: number | null;
+  };
 
   const row = db
     .prepare(
@@ -48,16 +55,16 @@ export function getCoinFlipTotals(userId: string): CoinFlipTotals {
         SUM(CASE WHEN result = 'tails' THEN 1 ELSE 0 END) as tails
       FROM coin_flips
       WHERE user_id = ?
-      `,
+    `,
     )
-    .get(userId) as
-    | { total: number; heads: number | null; tails: number | null }
-    | undefined;
+    .get(userId) as TotalsRow | undefined;
+
+  if (!row) return { total: 0, heads: 0, tails: 0 };
 
   return {
-    total: row?.total ?? 0,
-    heads: row?.heads ?? 0,
-    tails: row?.tails ?? 0,
+    total: row.total ?? 0,
+    heads: row.heads ?? 0,
+    tails: row.tails ?? 0,
   };
 }
 
@@ -65,7 +72,12 @@ export function getRecentCoinFlips(userId: string, limit: number): CoinFlipRecen
   const db = getDb();
   const lim = Math.min(Math.max(limit, 1), 25);
 
-  return db
+  type RecentRow = {
+    result: string;
+    timestamp: number;
+  };
+
+  const rows = db
     .prepare(
       `
       SELECT result, timestamp
@@ -73,20 +85,29 @@ export function getRecentCoinFlips(userId: string, limit: number): CoinFlipRecen
       WHERE user_id = ?
       ORDER BY timestamp DESC
       LIMIT ?
-      `,
+    `,
     )
-    .all(userId, lim)
-    .map((r: any) => ({
-      result: r.result as CoinFlipResult,
-      timestamp: r.timestamp,
-    }));
+    .all(userId, lim) as RecentRow[];
+
+  // DB constraint guarantees heads/tails, but normalize defensively.
+  return rows.map((r) => ({
+    result: r.result === "heads" ? "heads" : "tails",
+    timestamp: r.timestamp,
+  }));
 }
 
 export function getCoinFlipLeaderboard(limit: number): CoinFlipLeaderboardRow[] {
   const db = getDb();
   const lim = Math.min(Math.max(limit, 1), 25);
 
-  return db
+  type LeaderRow = {
+    userId: string;
+    total: number;
+    heads: number | null;
+    tails: number | null;
+  };
+
+  const rows = db
     .prepare(
       `
       SELECT
@@ -98,13 +119,14 @@ export function getCoinFlipLeaderboard(limit: number): CoinFlipLeaderboardRow[] 
       GROUP BY user_id
       ORDER BY total DESC
       LIMIT ?
-      `,
+    `,
     )
-    .all(lim)
-    .map((r: any) => ({
-      userId: r.userId,
-      total: r.total ?? 0,
-      heads: r.heads ?? 0,
-      tails: r.tails ?? 0,
-    }));
+    .all(lim) as LeaderRow[];
+
+  return rows.map((r) => ({
+    userId: r.userId,
+    total: r.total ?? 0,
+    heads: r.heads ?? 0,
+    tails: r.tails ?? 0,
+  }));
 }
