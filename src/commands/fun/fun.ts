@@ -17,7 +17,6 @@ import { run as runWeather } from "./subcommands/weather.js";
 import type { TempUnit, WeatherMode } from "../../services/weather/types.js";
 
 import { handleJoke, buildJokeSubcommands } from "./subcommands/joke/index.js";
-
 import { run as runRemind } from "./subcommands/remind.js";
 
 import { recordFunUsage, type FunCommandKey } from "../../services/fun/funUsageStore.js";
@@ -226,6 +225,7 @@ function funKeyFromSub(sub: string): FunCommandKey | null {
     weather: "weather",
     weather7: "weather7",
     leaderboard: "leaderboard",
+    // NOTE: joke handled separately as "joke"
   };
 
   return allowed[sub] ?? null;
@@ -236,7 +236,7 @@ async function maybeRecordUsage(
   sub: string,
 ): Promise<void> {
   try {
-    // Special-case remind so this compiles even if FunCommandKey is missing it.
+    // Special-case remind so this compiles even if FunCommandKey is missing it
     if (sub === "remind") {
       await recordFunUsage({
         userId: interaction.user.id,

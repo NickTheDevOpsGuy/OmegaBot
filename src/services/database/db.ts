@@ -55,6 +55,19 @@ export function initDatabase(): Database.Database {
     CREATE INDEX IF NOT EXISTS idx_fun_usage_user ON fun_usage(user_id);
     CREATE INDEX IF NOT EXISTS idx_fun_usage_command ON fun_usage(command);
 
+    /* -------------------------------------------------------------------- */
+    /* Coin flips                                                            */
+    /* -------------------------------------------------------------------- */
+    CREATE TABLE IF NOT EXISTS coin_flips (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL,
+      result TEXT NOT NULL CHECK (result IN ('heads','tails')),
+      timestamp INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_coin_flips_user ON coin_flips(user_id);
+    CREATE INDEX IF NOT EXISTS idx_coin_flips_user_ts ON coin_flips(user_id, timestamp);
+
     CREATE TABLE IF NOT EXISTS github_last_seen (
       repo_key TEXT PRIMARY KEY,
       last_seen_timestamp INTEGER NOT NULL,

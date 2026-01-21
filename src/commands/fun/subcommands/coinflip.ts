@@ -1,5 +1,7 @@
+// src/commands/fun/subcommands/coinflip.ts
 import type { ChatInputCommandInteraction } from "discord.js";
 import { logger } from "../../../utils/logger.js";
+import { recordCoinFlip, type CoinFlipResult } from "../coinflipStore.js";
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -21,6 +23,14 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
 
   const isHeads = Math.random() < 0.5;
 
+  const stored: CoinFlipResult = isHeads ? "heads" : "tails";
+  try {
+    recordCoinFlip({ userId: interaction.user.id, result: stored });
+  } catch (err) {
+    // Do not fail the command if storage fails
+    logger.warn({ err }, "[fun/coinflip] failed to record coin flip");
+  }
+
   // Clean final result (no duplicate coin emoji)
   const result = isHeads ? "🟡 **HEADS**" : "⚪ **TAILS**";
 
@@ -29,7 +39,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
   logger.debug(
     {
       userId: interaction.user.id,
-      result: isHeads ? "heads" : "tails",
+      result: stored,
     },
     "[fun/coinflip] result sent",
   );
