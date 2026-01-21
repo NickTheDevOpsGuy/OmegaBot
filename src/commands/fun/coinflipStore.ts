@@ -1,4 +1,3 @@
-// src/commands/fun/coinflipStore.ts
 import { getDb } from "../../services/database/db.js";
 
 export type CoinFlipResult = "heads" | "tails";
@@ -55,12 +54,10 @@ export function getCoinFlipTotals(userId: string): CoinFlipTotals {
     | { total: number; heads: number | null; tails: number | null }
     | undefined;
 
-  if (!row) return { total: 0, heads: 0, tails: 0 };
-
   return {
-    total: row.total ?? 0,
-    heads: row.heads ?? 0,
-    tails: row.tails ?? 0,
+    total: row?.total ?? 0,
+    heads: row?.heads ?? 0,
+    tails: row?.tails ?? 0,
   };
 }
 
@@ -68,7 +65,7 @@ export function getRecentCoinFlips(userId: string, limit: number): CoinFlipRecen
   const db = getDb();
   const lim = Math.min(Math.max(limit, 1), 25);
 
-  const rows = db
+  return db
     .prepare(
       `
       SELECT result, timestamp
@@ -78,19 +75,18 @@ export function getRecentCoinFlips(userId: string, limit: number): CoinFlipRecen
       LIMIT ?
       `,
     )
-    .all(userId, lim) as Array<{ result: "heads" | "tails" | string; timestamp: number }>;
-
-  return rows.map((r) => ({
-    result: r.result === "heads" ? "heads" : "tails",
-    timestamp: r.timestamp,
-  }));
+    .all(userId, lim)
+    .map((r: any) => ({
+      result: r.result as CoinFlipResult,
+      timestamp: r.timestamp,
+    }));
 }
 
 export function getCoinFlipLeaderboard(limit: number): CoinFlipLeaderboardRow[] {
   const db = getDb();
   const lim = Math.min(Math.max(limit, 1), 25);
 
-  const rows = db
+  return db
     .prepare(
       `
       SELECT
@@ -104,17 +100,11 @@ export function getCoinFlipLeaderboard(limit: number): CoinFlipLeaderboardRow[] 
       LIMIT ?
       `,
     )
-    .all(lim) as Array<{
-    userId: string;
-    total: number;
-    heads: number | null;
-    tails: number | null;
-  }>;
-
-  return rows.map((r) => ({
-    userId: r.userId,
-    total: r.total ?? 0,
-    heads: r.heads ?? 0,
-    tails: r.tails ?? 0,
-  }));
+    .all(lim)
+    .map((r: any) => ({
+      userId: r.userId,
+      total: r.total ?? 0,
+      heads: r.heads ?? 0,
+      tails: r.tails ?? 0,
+    }));
 }

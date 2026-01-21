@@ -1,37 +1,117 @@
-// src/commands/fun/subcommands/coinflip.ts
-import type { ChatInputCommandInteraction } from "discord.js";
-import { logger } from "../../../utils/logger.js";
-import { recordCoinFlip, type CoinFlipResult } from "../coinflipStore.js";
+// src/commands/fun/coinflipStore.ts
+import { getDb } from "../../../services/database/db.js";
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+export type CoinFlipResult = "heads" | "tails";
+
+export type CoinFlipTotals = {
+  total: number;
+  heads: number;
+  tails: number;
+};
+
+export type CoinFlipRecentRow = {
+  result: CoinFlipResult;
+  timestamp: number;
+};
+
+export type CoinFlipLeaderboardRow = {
+  userId: string;
+  total: number;
+  heads: number;
+  tails: number;
+};
+
+export function recordCoinFlip(args: {
+  userId: string;
+  result: CoinFlipResult;
+  timestamp?: number;
+}): void {
+  const db = getDb();
+  const ts = args.timestamp ?? Date.now();
+
+  db.prepare(
+    `
+    INSERT INTO coin_flips (user_id, result, timestamp)
+    VALUES (?, ?, ?)
+  `,
+  ).run(args.userId, args.result, ts);
 }
 
-export async function run(interaction: ChatInputCommandInteraction): Promise<void> {
-  // Parent (fun.ts) owns deferReply(). We only editReply() here.
+export function getCoinFlipTotals(userId: string): CoinFlipTotals {
+  const db = getDb();
 
-  const frames = ["|", "/", "-", "\\", "|", "/", "-", "\\"];
-  for (const f of frames) {
-    await interaction.editReply(`🪙 Flipping ${f}`);
-    await sleep(140);
-  }
+  const row = db
+    .prepare(
+      `
+      SELECT
+        COUNT(*) as total,
+        SUM(CASE WHEN result = 'heads' THEN 1 ELSE 0 END) as heads,
+        SUM(CASE WHEN result = 'tails' THEN 1 ELSE 0 END) as tails
+      FROM coin_flips
+      WHERE user_id = ?
+    `,
+    )
+    .get(userId) as
+    | { total: number; heads: number | null; tails: number | null }
+    | undefined;
 
-  await interaction.editReply("🪙 Tossed…");
-  await sleep(260);
+  if (!row) return { total: 0, heads: 0, tails: 0 };
 
-  const isHeads = Math.random() < 0.5;
-  const stored: CoinFlipResult = isHeads ? "heads" : "tails";
+  return {
+    total: row.total ?? 0,
+    heads: row.heads ?? 0,
+    tails: row.tails ?? 0,
+  };
+}
 
-  try {
-    recordCoinFlip({ userId: interaction.user.id, result: stored });
-  } catch (err) {
-    logger.warn({ err }, "[fun/coinflip] failed to record coin flip");
-  }
+export function getRecentCoinFlips(userId: string, limit: number): CoinFlipRecentRow[] {
+  const db = getDb();
+  const lim = Math.min(Math.max(limit, 1), 25);
 
-  await interaction.editReply(isHeads ? "🟡 **HEADS**" : "⚪ **TAILS**");
+  const rows = db
+    .prepare(
+      `
+      SELECT result, timestamp
+      FROM coin_flips
+      WHERE user_id = ?
+      ORDER BY timestamp DESC
+      LIMIT ?
+    `,
+    )
+    .all(userId, lim) as Array<{ result: "heads" | "tails"; timestamp: number }>;
 
-  logger.debug(
-    { userId: interaction.user.id, result: stored },
-    "[fun/coinflip] result sent",
-  );
+  return rows.map((r) => ({ result: r.result, timestamp: r.timestamp }));
+}
+
+export function getCoinFlipLeaderboard(limit: number): CoinFlipLeaderboardRow[] {
+  const db = getDb();
+  const lim = Math.min(Math.max(limit, 1), 25);
+
+  const rows = db
+    .prepare(
+      `
+      SELECT
+        user_id as userId,
+        COUNT(*) as total,
+        SUM(CASE WHEN result = 'heads' THEN 1 ELSE 0 END) as heads,
+        SUM(CASE WHEN result = 'tails' THEN 1 ELSE 0 END) as tails
+      FROM coin_flips
+      GROUP BY user_id
+      ORDER BY total DESC
+      LIMIT ?
+    `,
+    )
+    .all(lim) as Array<{
+    userId: string;
+    total: number;
+    heads: number | null;
+    tails: number | null;
+  }>;
+
+  return rows.map((r) => ({
+    userId: r.userId,
+    total: r.total ?? 0,
+    heads: r.heads ?? 0,
+    tails: r.tails ?? 0,
+  }));
 }

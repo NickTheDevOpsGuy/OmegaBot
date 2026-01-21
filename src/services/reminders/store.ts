@@ -1,3 +1,4 @@
+// src/services/reminders/store.ts
 import type Database from "better-sqlite3";
 import { getDb } from "../database/db.js";
 
@@ -67,6 +68,13 @@ export function listDueReminders(nowMs: number): ReminderRow[] {
     `,
     )
     .all(nowMs) as ReminderRow[];
+}
+
+/**
+ * Backwards compatible alias (older scheduler code imported this name).
+ */
+export function fetchDueReminders(nowMs: number): ReminderRow[] {
+  return listDueReminders(nowMs);
 }
 
 export function markDelivered(id: number): void {

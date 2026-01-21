@@ -1,3 +1,4 @@
+// src/services/discord/commandTypes.ts
 import type {
   ChatInputCommandInteraction,
   SlashCommandBuilder,
@@ -5,12 +6,20 @@ import type {
   SlashCommandSubcommandsOnlyBuilder,
 } from "discord.js";
 
-export type OmegaCommand = {
+/**
+ * Canonical command module shape stored in `client.commands`.
+ */
+export type CommandModule = {
   data:
     | SlashCommandBuilder
     | SlashCommandOptionsOnlyBuilder
     | SlashCommandSubcommandsOnlyBuilder;
+
   execute: (interaction: ChatInputCommandInteraction) => Promise<void>;
+
+  /**
+   * Optional metadata used by /help rendering and logging.
+   */
   adminOnly?: boolean;
   group?: string;
 };

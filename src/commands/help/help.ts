@@ -6,7 +6,7 @@ import {
   type ChatInputCommandInteraction,
 } from "discord.js";
 import { logger } from "../../utils/logger.js";
-import { buildHelpText, type HelpTopic } from "../help/helpText.js";
+import { buildHelpText, type HelpTopic } from "./helpText.js";
 import type { CommandClient } from "../../services/discord/commandLoader.js";
 import { extractCommandList } from "../../services/discord/commandMeta.js";
 
@@ -15,6 +15,21 @@ function getDiscordErrorCode(err: unknown): number | null {
   const obj = err as Record<string, unknown>;
   const code = obj["code"];
   return typeof code === "number" ? code : null;
+}
+
+const HELP_TOPICS: HelpTopic[] = [
+  "overview",
+  "fun",
+  "github",
+  "summary",
+  "timezone",
+  "admin",
+  "commands",
+];
+
+function parseHelpTopic(raw: string | null): HelpTopic {
+  if (!raw) return "overview";
+  return (HELP_TOPICS.includes(raw as HelpTopic) ? raw : "overview") as HelpTopic;
 }
 
 export const data = new SlashCommandBuilder()
@@ -40,10 +55,11 @@ export const data = new SlashCommandBuilder()
   );
 
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
-  const topic = (interaction.options.getString("topic") ?? "overview") as HelpTopic;
+  const startedAt = Date.now();
 
   // Default to ephemeral unless user explicitly sets it false
   const ephemeral = interaction.options.getBoolean("ephemeral") ?? true;
+  const topic = parseHelpTopic(interaction.options.getString("topic"));
 
   try {
     // Defer immediately to avoid 10062 timeouts
@@ -57,7 +73,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       interaction.inGuild() &&
       Boolean(interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild));
 
-    // Pull what we can from the loaded command registry (best-effort)
+    // Best-effort pull from loaded registry
     const commands = extractCommandList(client);
 
     const content = buildHelpText({
@@ -67,19 +83,42 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     });
 
     await interaction.editReply({ content });
-  } catch (err) {
-    logger.error(
-      { err, command: "help", userId: interaction.user.id },
-      "[help] command failed",
-    );
 
+    logger.info(
+      {
+        topic,
+        ephemeral,
+        isAdmin,
+        commandCount: commands.length,
+        ms: Date.now() - startedAt,
+      },
+      "[help] sent",
+    );
+  } catch (err) {
     const code = getDiscordErrorCode(err);
 
     // If Discord says the interaction is gone, do nothing.
-    if (code === 10062) return;
+    if (code === 10062) {
+      logger.debug({ code }, "[help] skipped (expired interaction)");
+      return;
+    }
 
     // If already acknowledged, do nothing.
-    if (code === 40060) return;
+    if (code === 40060) {
+      logger.debug({ code }, "[help] skipped (already acknowledged)");
+      return;
+    }
+
+    logger.error(
+      {
+        err,
+        code,
+        command: "help",
+        userId: interaction.user.id,
+        ms: Date.now() - startedAt,
+      },
+      "[help] failed",
+    );
 
     // Best-effort edit if possible
     try {

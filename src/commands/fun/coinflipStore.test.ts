@@ -1,30 +1,117 @@
-// src/services/fun/funUsageStore.test.ts
-import { describe, expect, it } from "vitest";
-import { useInMemoryDb } from "../../test/dbTestUtils.js";
-import { getFunUsageSnapshot, recordFunUsage } from "./funUsageStore.js";
+// src/services/fun/coinflipStore.ts
+import { getDb } from "../../services/database/db.js";
 
-useInMemoryDb();
+export type CoinFlipResult = "heads" | "tails";
 
-describe("funUsageStore", () => {
-  it("aggregates totals by command", async () => {
-    await recordFunUsage({ userId: "u1", command: "dice" });
-    await recordFunUsage({ userId: "u1", command: "dice" });
-    await recordFunUsage({ userId: "u2", command: "coinflip" });
+export type CoinFlipTotals = {
+  total: number;
+  heads: number;
+  tails: number;
+};
 
-    const snap = await getFunUsageSnapshot();
+export type CoinFlipRecentRow = {
+  result: CoinFlipResult;
+  timestamp: number;
+};
 
-    expect(snap.totalsByCommand.dice).toBe(2);
-    expect(snap.totalsByCommand.coinflip).toBe(1);
-  });
+export type CoinFlipLeaderboardRow = {
+  userId: string;
+  total: number;
+  heads: number;
+  tails: number;
+};
 
-  it("aggregates totals by user", async () => {
-    await recordFunUsage({ userId: "u1", command: "poll" });
-    await recordFunUsage({ userId: "u1", command: "poll" });
-    await recordFunUsage({ userId: "u2", command: "poll" });
+export function recordCoinFlip(args: {
+  userId: string;
+  result: CoinFlipResult;
+  timestamp?: number;
+}): void {
+  const db = getDb();
+  const ts = args.timestamp ?? Date.now();
 
-    const snap = await getFunUsageSnapshot();
+  db.prepare(
+    `
+    INSERT INTO coin_flips (user_id, result, timestamp)
+    VALUES (?, ?, ?)
+  `,
+  ).run(args.userId, args.result, ts);
+}
 
-    expect(snap.totalsByUser.u1).toBe(2);
-    expect(snap.totalsByUser.u2).toBe(1);
-  });
-});
+export function getCoinFlipTotals(userId: string): CoinFlipTotals {
+  const db = getDb();
+
+  const row = db
+    .prepare(
+      `
+      SELECT
+        COUNT(*) as total,
+        SUM(CASE WHEN result = 'heads' THEN 1 ELSE 0 END) as heads,
+        SUM(CASE WHEN result = 'tails' THEN 1 ELSE 0 END) as tails
+      FROM coin_flips
+      WHERE user_id = ?
+    `,
+    )
+    .get(userId) as
+    | { total: number; heads: number | null; tails: number | null }
+    | undefined;
+
+  if (!row) return { total: 0, heads: 0, tails: 0 };
+
+  return {
+    total: row.total ?? 0,
+    heads: row.heads ?? 0,
+    tails: row.tails ?? 0,
+  };
+}
+
+export function getRecentCoinFlips(userId: string, limit: number): CoinFlipRecentRow[] {
+  const db = getDb();
+  const lim = Math.min(Math.max(limit, 1), 25);
+
+  const rows = db
+    .prepare(
+      `
+      SELECT result, timestamp
+      FROM coin_flips
+      WHERE user_id = ?
+      ORDER BY timestamp DESC
+      LIMIT ?
+    `,
+    )
+    .all(userId, lim) as Array<{ result: "heads" | "tails"; timestamp: number }>;
+
+  return rows.map((r) => ({ result: r.result, timestamp: r.timestamp }));
+}
+
+export function getCoinFlipLeaderboard(limit: number): CoinFlipLeaderboardRow[] {
+  const db = getDb();
+  const lim = Math.min(Math.max(limit, 1), 25);
+
+  const rows = db
+    .prepare(
+      `
+      SELECT
+        user_id as userId,
+        COUNT(*) as total,
+        SUM(CASE WHEN result = 'heads' THEN 1 ELSE 0 END) as heads,
+        SUM(CASE WHEN result = 'tails' THEN 1 ELSE 0 END) as tails
+      FROM coin_flips
+      GROUP BY user_id
+      ORDER BY total DESC
+      LIMIT ?
+    `,
+    )
+    .all(lim) as Array<{
+    userId: string;
+    total: number;
+    heads: number | null;
+    tails: number | null;
+  }>;
+
+  return rows.map((r) => ({
+    userId: r.userId,
+    total: r.total ?? 0,
+    heads: r.heads ?? 0,
+    tails: r.tails ?? 0,
+  }));
+}

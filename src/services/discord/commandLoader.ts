@@ -1,162 +1,94 @@
 // src/services/discord/commandLoader.ts
-
-import type { ReminderScheduler } from "../reminders/scheduler.js";
-import fs from "fs";
-import path from "path";
-import { pathToFileURL } from "url";
-import {
-  Client,
-  SlashCommandBuilder,
-  type ChatInputCommandInteraction,
-} from "discord.js";
+import { Client } from "discord.js";
+import { readdir } from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { logger } from "../../utils/logger.js";
+import type { CommandModule } from "./commandTypes.js";
 
 /**
- * Contract that every slash command module must follow.
- *
- * - `data` describes the command to Discord (name, description, options)
- * - `execute` runs when a user invokes the command
- */
-export interface SlashCommand {
-  data: SlashCommandBuilder;
-  execute: (interaction: ChatInputCommandInteraction) => Promise<void>;
-}
-
-/**
- * Discord Client extended with a command registry.
+ * Client typing: command loader populates this registry.
  */
 export type CommandClient = Client & {
-  commands: Map<string, unknown>;
-  reminderScheduler?: ReminderScheduler;
+  commands: Map<string, CommandModule>;
+  reminderScheduler?: { start: () => void; stop: () => void };
 };
 
-/**
- * Recursively walk a directory and return absolute paths of all files.
- */
-function walkFiles(dir: string): string[] {
-  const out: string[] = [];
-  const entries = fs.readdirSync(dir, { withFileTypes: true });
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return !!v && typeof v === "object";
+}
 
-  for (const ent of entries) {
-    const full = path.join(dir, ent.name);
-    if (ent.isDirectory()) {
-      out.push(...walkFiles(full));
-    } else {
-      out.push(full);
-    }
-  }
-
-  return out;
+function isCommandModule(mod: unknown): mod is CommandModule {
+  if (!isRecord(mod)) return false;
+  return (
+    "data" in mod &&
+    "execute" in mod &&
+    typeof (mod as { execute?: unknown }).execute === "function"
+  );
 }
 
 /**
- * Load all compiled command modules from dist/commands and register them into client.commands.
+ * Load compiled command modules from /dist.
+ * This loader runs at runtime (node), so it imports built JS.
  *
- * Notes:
- * - We load from dist/ because the bot runs compiled JS.
- * - A single broken command should not crash the entire bot.
- * - Helper modules may exist alongside commands and will be skipped.
+ * Convention:
+ * - src/commands/<name>/<name>.ts  -> dist/commands/<name>/<name>.js
+ * - Each module exports { data, execute, ... }
  */
 export async function loadCommands(client: CommandClient): Promise<void> {
-  const basePath = path.join(process.cwd(), "dist", "commands");
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
 
-  // Diagnostics
-  let loadedCount = 0;
-  let skippedCount = 0;
-  let failedCount = 0;
+  // From dist/services/discord -> dist/commands
+  const commandsDir = path.resolve(__dirname, "../../commands");
 
-  const loadedNames: string[] = [];
-  const skippedFiles: string[] = [];
-  const failedFiles: string[] = [];
+  logger.info({ commandsDir }, "[commands] loading");
 
-  if (!fs.existsSync(basePath)) {
-    logger.error(
-      { basePath },
-      "Command loader base path not found. Did you build the project?",
-    );
-    logger.info({ loadedCount: 0 }, "Commands loaded");
-    return;
-  }
+  const entries = await readdir(commandsDir, { withFileTypes: true });
 
-  // Walk ALL .js files under dist/commands (nested folders supported)
-  const allFiles = walkFiles(basePath)
-    .filter((f) => f.endsWith(".js"))
-    // avoid accidental loading of .d.ts or sourcemaps etc
-    .filter((f) => !f.endsWith(".d.ts"));
+  let loaded = 0;
 
-  for (const fullPath of allFiles) {
-    // Relative path from dist/commands for logs
-    const relFile = path.relative(basePath, fullPath).replaceAll("\\", "/");
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+
+    const folder = entry.name;
+    const file = path.join(commandsDir, folder, `${folder}.js`);
 
     try {
-      // ESM-safe import path
-      const moduleUrl = pathToFileURL(fullPath).href;
-      const mod = (await import(moduleUrl)) as Partial<SlashCommand>;
+      const url = pathToFileURL(file).href;
+      const imported = await import(url);
 
-      // Helpers are expected to be skipped
-      if (!mod.data || !mod.execute) {
-        skippedCount += 1;
-        skippedFiles.push(relFile);
+      // Support either default export OR named exports
+      const modUnknown = (imported?.default ?? imported) as unknown;
 
-        logger.debug(
-          { file: relFile },
-          "Skipping non-command module (missing data or execute)",
-        );
-        continue;
-      }
-
-      const name = mod.data.name;
-
-      if (!name || typeof name !== "string") {
-        skippedCount += 1;
-        skippedFiles.push(relFile);
-
-        logger.warn({ file: relFile }, "Skipping command module (invalid command name)");
-        continue;
-      }
-
-      // Avoid silent overwrites if two commands share the same name
-      if (client.commands.has(name)) {
-        skippedCount += 1;
-        skippedFiles.push(relFile);
-
+      if (!isCommandModule(modUnknown)) {
         logger.warn(
-          { name, file: relFile },
-          "Duplicate command name detected. Skipping this module.",
+          { folder, file },
+          "[commands] skipped: module does not export { data, execute }",
         );
         continue;
       }
 
-      client.commands.set(name, mod as SlashCommand);
-      loadedCount += 1;
-      loadedNames.push(name);
-    } catch (err) {
-      failedCount += 1;
-      failedFiles.push(relFile);
+      const command = modUnknown;
 
-      logger.warn({ err, file: relFile, fullPath }, "Failed to import command module");
+      client.commands.set(command.data.name, command);
+      loaded++;
+
+      logger.info(
+        {
+          name: command.data.name,
+          adminOnly: Boolean(command.adminOnly),
+          group: command.group ?? "other",
+        },
+        "[commands] loaded",
+      );
+    } catch (err) {
+      logger.error({ err, folder, file }, "[commands] failed to load");
     }
   }
 
-  // Summary (info)
   logger.info(
-    {
-      loadedCount,
-      loadedNames,
-      skippedCount,
-      failedCount,
-    },
-    "Commands loaded",
+    { loaded, names: [...client.commands.keys()] },
+    "[commands] registry ready",
   );
-
-  // Details only when useful
-  if (failedCount > 0) {
-    logger.warn(
-      { failedCount, failedFiles },
-      "One or more command modules failed to load",
-    );
-  }
-
-  // Keep skip list debug-only to avoid noise
-  logger.debug({ skippedCount, skippedFiles }, "Non-command modules skipped");
 }

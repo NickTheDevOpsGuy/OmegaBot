@@ -77,11 +77,14 @@ client.on("guildMemberAdd", async (member) => {
 const githubPrPollingEnabled = env.githubPrPollingEnabled;
 const githubAssigneePollingEnabled = env.githubAssigneePollingEnabled;
 
+let isReady = false;
+
 /**
  * Log once when the bot is ready.
  */
 client.once("clientReady", () => {
   logger.info("OmegaBot is online");
+  isReady = true;
 
   // DEBUG: prove which bot/app is actually connected
   logger.info(
@@ -169,6 +172,9 @@ void client.login(env.token);
  */
 if (githubPrPollingEnabled || githubAssigneePollingEnabled) {
   setInterval(() => {
+    // Optional readiness guard: don't poll until Discord client is ready.
+    if (!isReady) return;
+
     if (githubPrPollingEnabled) {
       void pollPullRequestsOnce({
         client,
