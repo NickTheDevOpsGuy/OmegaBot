@@ -152,30 +152,38 @@ Flip a coin with animation.
 
 - `ephemeral` (optional) — Show result only to you
 
-**Output:** Heads or tails (result is tracked for stats)
+**Behavior:**
+
+- Animated flip, then reveals **HEADS** or **TAILS**
+- Result is persisted to SQLite (`coin_flips`) and used by `/fun coinflipstats`
 
 **Use case:** Make quick decisions or settle debates.
 
----
+### `/fun coinflipstats`
 
-### `/fun coinstats [user] [leaderboard]`
+View coin flip statistics (persisted).
 
-View coin flip statistics.
+**Features:**
+
+- `/fun coinflipstats` — Personal heads vs tails breakdown (default: you)
+- `/fun coinflipstats user:<user>` — Inspect another user
+- `/fun coinflipstats leaderboard:true` — Top flippers leaderboard (ignores `user` + `recent`)
 
 **Options:**
 
-- `user` (optional) — Check another user's stats
-- `leaderboard` (optional) — Show top flippers (true/false)
+- `leaderboard` (optional) — Show top flippers (default: false)
+- `user` (optional) — Target user (default: you)
+- `limit` (optional) — How many recent flips or leaderboard rows (default: 10, max: 25)
+- `recent` (optional) — Include recent flips (default: true; ignored when leaderboard=true)
+- `ephemeral` (optional) — Show result only to you
 
 **Displays:**
 
-- Personal stats: Heads vs. tails count and percentages
-- Leaderboard: Top 10 users by total flips
-- User avatar and formatted results
+- Personal stats: total, heads/tails counts, percentages
+- Recent flips as `H T H ...` (when `recent:true` and flips exist)
+- Leaderboard: top users by total flips, with heads percentage
 
-**Use case:** Track your luck and see who flips the most.
-
----
+**Use case:** Track your luck, see who flips the most, and compare friends.
 
 ### `/fun dice [sides] [count]`
 

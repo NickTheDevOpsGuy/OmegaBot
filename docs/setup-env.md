@@ -5,6 +5,31 @@ All configuration is done via a `.env` file that is **not committed to source co
 
 ---
 
+### Database (SQLite)
+
+OmegaBot uses SQLite via `better-sqlite3`.
+
+```env
+# Optional. Defaults to data/omegabot.db
+DATABASE_PATH=data/omegabot.db
+```
+
+- `DATABASE_PATH`
+  - Path to the SQLite database file
+  - Use `:memory:` in tests to run entirely in-memory
+
+---
+
+### Reminders
+
+```env
+# Optional. Enable extra scheduler timing logs (debug-level)
+REMINDER_TIMING_LOGS=0
+```
+
+- `REMINDER_TIMING_LOGS`
+  - Set to `1` to enable debug timing logs for the reminder scheduler tick
+
 ## Setup
 
 Copy the example file and fill in real values:

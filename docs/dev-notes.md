@@ -160,9 +160,9 @@ if (interaction.inGuild()) {
 
 ### Unit Tests
 
-- FAQ service has comprehensive unit tests
-- Run tests with: `npm test`
-- Tests use vitest framework
+- Run in watch mode: `npm run test`
+- Run once (CI): `npm run test:run`
+- Database-backed tests should use the in-memory SQLite helper: `src/test/dbTestUtils.ts`
 
 ### Manual Testing
 
@@ -172,6 +172,7 @@ When testing commands:
 - Test with missing permissions
 - Test with invalid inputs
 - Test DM vs guild contexts
+- Test "ephemeral" vs public responses (where supported)
 
 ---
 

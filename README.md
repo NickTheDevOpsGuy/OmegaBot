@@ -165,6 +165,26 @@ OmegaBot is online
 
 ---
 
+## Testing
+
+OmegaBot uses **Vitest** for fast unit tests.
+
+```bash
+npm run test       # watch mode
+npm run test:run   # CI mode
+```
+
+Most database-backed unit tests run with an in-memory SQLite database (`DATABASE_PATH=:memory:`) via `src/test/dbTestUtils.ts`.
+
+## CI
+
+Pull requests run:
+
+- `npm run test:run` (Vitest)
+- `npm run lint` (ESLint)
+- `npm run typecheck` (TypeScript)
+- `npm run format:check` (Prettier)
+
 ## Technical Stack
 
 - **Runtime**: Node.js 18+
