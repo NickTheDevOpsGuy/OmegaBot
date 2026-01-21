@@ -204,24 +204,6 @@ OmegaBot uses discord.js v14 which includes:
 │   │   └── OmegaBot.yml
 │   └── pull_request_template.md
 ├── .husky
-│   ├── _
-│   │   ├── .gitignore
-│   │   ├── applypatch-msg
-│   │   ├── commit-msg
-│   │   ├── h
-│   │   ├── husky.sh
-│   │   ├── post-applypatch
-│   │   ├── post-checkout
-│   │   ├── post-commit
-│   │   ├── post-merge
-│   │   ├── post-rewrite
-│   │   ├── pre-applypatch
-│   │   ├── pre-auto-gc
-│   │   ├── pre-commit
-│   │   ├── pre-merge-commit
-│   │   ├── pre-push
-│   │   ├── pre-rebase
-│   │   └── prepare-commit-msg
 │   ├── pre-commit
 │   └── pre-push
 ├── assets
@@ -275,9 +257,10 @@ OmegaBot uses discord.js v14 which includes:
 │   │   │   │   ├── poll.ts
 │   │   │   │   ├── remind.ts
 │   │   │   │   └── weather.ts
+│   │   │   ├── coinflipStore.test.ts
 │   │   │   ├── coinflipStore.ts
-│   │   │   ├── fun.ts
-│   │   │   └── funUsageStore.ts
+│   │   │   ├── coinStore.ts
+│   │   │   └── fun.ts
 │   │   ├── general
 │   │   │   └── ping.ts
 │   │   ├── github
@@ -329,7 +312,7 @@ OmegaBot uses discord.js v14 which includes:
 │   │   │   ├── store.ts
 │   │   │   └── types.ts
 │   │   ├── fun
-│   │   │   ├── coinStore.ts
+│   │   │   ├── funUsageStore.test.ts
 │   │   │   ├── funUsageStore.ts
 │   │   │   └── pollStore.ts
 │   │   ├── github
@@ -370,6 +353,8 @@ OmegaBot uses discord.js v14 which includes:
 │   │   └── welcome
 │   │       ├── welcomeHandler.ts
 │   │       └── welcomeMessage.ts
+│   ├── test
+│   │   └── dbTestUtils.ts
 │   ├── types
 │   │   └── discord-client.d.ts
 │   ├── utils
