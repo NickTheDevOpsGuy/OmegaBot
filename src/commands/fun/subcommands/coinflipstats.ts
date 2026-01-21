@@ -28,9 +28,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
     if (includeRecent) {
       const recents = getRecentCoinFlips(user.id, limit);
       if (recents.length > 0) {
-        const line = recents
-          .map((r) => (r.result === "heads" ? "H" : "T"))
-          .join(" ");
+        const line = recents.map((r) => (r.result === "heads" ? "H" : "T")).join(" ");
         content += `\n\nRecent (${recents.length}):\n\`${line}\``;
       } else {
         content += `\n\nNo flips recorded yet. Try \`/fun coinflip\`.`;

@@ -269,12 +269,15 @@ OmegaBot uses discord.js v14 which includes:
 │   │   │   │   │   ├── random.ts
 │   │   │   │   │   └── remove.ts
 │   │   │   │   ├── coinflip.ts
+│   │   │   │   ├── coinflipstats.ts
 │   │   │   │   ├── dice.ts
 │   │   │   │   ├── leaderboard.ts
 │   │   │   │   ├── poll.ts
 │   │   │   │   ├── remind.ts
 │   │   │   │   └── weather.ts
-│   │   │   └── fun.ts
+│   │   │   ├── coinflipStore.ts
+│   │   │   ├── fun.ts
+│   │   │   └── funUsageStore.ts
 │   │   ├── general
 │   │   │   └── ping.ts
 │   │   ├── github
@@ -379,7 +382,6 @@ OmegaBot uses discord.js v14 which includes:
 ├── .gitignore
 ├── .prettierignore
 ├── .prettierrc.yml
-├── blah
 ├── CHANGELOG.md
 ├── CONTRIBUTORS.md
 ├── eslint.config.ts
@@ -388,6 +390,7 @@ OmegaBot uses discord.js v14 which includes:
 ├── package.json
 ├── README.md
 ├── tsconfig.json
+└── vitest.config.ts
 
 ```
 

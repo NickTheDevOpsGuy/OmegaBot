@@ -1,3 +1,5 @@
+// src/commands/help/helpText.ts
+
 import type { CommandListItem } from "../../services/discord/commandMeta.js";
 
 export type HelpTopic =
@@ -82,15 +84,16 @@ function buildFunHelp(): string {
     "All fun commands live under `/fun`.",
     "Most support `ephemeral:true` to only show the result to you.",
     "",
-    "`/fun chucknorris`   Random, category, or search",
-    "`/fun dadjoke`       Random or search",
-    "`/fun dice`          Roll dice",
-    "`/fun coinflip`      Flip a coin",
-    "`/fun poll`          Create a poll",
-    "`/fun remind`        Remind you in X minutes",
-    "`/fun weather`       Today's weather",
-    "`/fun weather7`      7-day forecast",
-    "`/fun leaderboard`  Show fun usage stats",
+    "`/fun chucknorris`    Random, category, or search",
+    "`/fun dadjoke`        Random or search",
+    "`/fun dice`           Roll dice",
+    "`/fun coinflip`       Flip a coin",
+    "`/fun coinflipstats`  Coin flip stats (you or another user)",
+    "`/fun poll`           Create a poll",
+    "`/fun remind`         Remind you in X minutes",
+    "`/fun weather`        Today's weather",
+    "`/fun weather7`       7-day forecast",
+    "`/fun leaderboard`    Show fun usage stats",
   ].join("\n");
 }
 
@@ -122,9 +125,9 @@ function buildTimezoneHelp(): string {
   return [
     "**Help: Timezone**",
     "",
-    "`/timezone set`    Save your timezone",
-    "`/timezone show`   Show your timezone",
-    "`/timezone clear`  Remove saved timezone",
+    "`/timezone set`     Save your timezone",
+    "`/timezone show`    Show your timezone",
+    "`/timezone clear`   Remove saved timezone",
     "`/timezone compare` Compare with another user",
     "`/timezone convert` Convert times between zones",
   ].join("\n");

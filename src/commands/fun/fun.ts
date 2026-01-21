@@ -17,12 +17,22 @@ import { run as runWeather } from "./subcommands/weather.js";
 import type { TempUnit, WeatherMode } from "../../services/weather/types.js";
 
 import { handleJoke, buildJokeSubcommands } from "./subcommands/joke/index.js";
+
 import { run as runRemind } from "./subcommands/remind.js";
+import { run as runCoinflipStats } from "./subcommands/coinflipstats.js";
 
 import { recordFunUsage, type FunCommandKey } from "../../services/fun/funUsageStore.js";
 
 function parseTempUnit(raw: string | null): TempUnit {
   return raw?.toLowerCase() === "c" ? "c" : "f";
+}
+
+/**
+ * Discord.js v14 prefers flags for ephemeral instead of `ephemeral: true`.
+ * Keep the type narrow so TS doesn't fight the deferReply overloads.
+ */
+function deferOpts(ephemeral: boolean): { flags: MessageFlags.Ephemeral } | undefined {
+  return ephemeral ? { flags: MessageFlags.Ephemeral } : undefined;
 }
 
 export const data = new SlashCommandBuilder()
@@ -66,6 +76,39 @@ export const data = new SlashCommandBuilder()
     s
       .setName("coinflip")
       .setDescription("Flip a coin")
+      .addBooleanOption((o) =>
+        o
+          .setName("ephemeral")
+          .setDescription("Only show the result to you")
+          .setRequired(false),
+      ),
+  )
+
+  // /fun coinflipstats
+  .addSubcommand((s) =>
+    s
+      .setName("coinflipstats")
+      .setDescription("Show heads vs tails stats (you or another user)")
+      .addUserOption((o) =>
+        o
+          .setName("user")
+          .setDescription("Inspect another user (optional)")
+          .setRequired(false),
+      )
+      .addIntegerOption((o) =>
+        o
+          .setName("limit")
+          .setDescription("How many recent flips to show (default 10, max 25)")
+          .setMinValue(1)
+          .setMaxValue(25)
+          .setRequired(false),
+      )
+      .addBooleanOption((o) =>
+        o
+          .setName("recent")
+          .setDescription("Include recent flips (default true)")
+          .setRequired(false),
+      )
       .addBooleanOption((o) =>
         o
           .setName("ephemeral")
@@ -211,21 +254,19 @@ export const data = new SlashCommandBuilder()
 /**
  * Map subcommand names -> usage keys.
  *
- * IMPORTANT:
- * - Do NOT include "remind" here unless FunCommandKey includes it,
- *   or TS will fail the build.
- * - We record "remind" separately below to keep this file compiling
- *   even if FunCommandKey differs between branches/projects.
+ * Note: joke is handled separately because it is a subcommand group.
  */
 function funKeyFromSub(sub: string): FunCommandKey | null {
   const allowed: Record<string, FunCommandKey> = {
     dice: "dice",
     coinflip: "coinflip",
     poll: "poll",
+    remind: "remind",
     weather: "weather",
     weather7: "weather7",
     leaderboard: "leaderboard",
-    // NOTE: joke handled separately as "joke"
+    // Optional: add this if you add it to FunCommandKey + DB tracking
+    // coinflipstats: "coinflipstats",
   };
 
   return allowed[sub] ?? null;
@@ -235,45 +276,30 @@ async function maybeRecordUsage(
   interaction: ChatInputCommandInteraction,
   sub: string,
 ): Promise<void> {
+  const key = funKeyFromSub(sub);
+  if (!key) return;
+
   try {
-    // Special-case remind so this compiles even if FunCommandKey is missing it
-    if (sub === "remind") {
-      await recordFunUsage({
-        userId: interaction.user.id,
-        command: "remind" as unknown as FunCommandKey,
-      });
-      return;
-    }
-
-    const key = funKeyFromSub(sub);
-    if (!key) return;
-
     await recordFunUsage({ userId: interaction.user.id, command: key });
   } catch (err) {
     logger.warn({ err, sub }, "[fun] failed to record usage");
   }
 }
 
-/**
- * Discord.js v14 types want a narrow flags value (Ephemeral only) here.
- */
-function deferOpts(ephemeral: boolean): { flags: MessageFlags.Ephemeral } | undefined {
-  return ephemeral ? { flags: MessageFlags.Ephemeral } : undefined;
-}
-
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
-  const group = interaction.options.getSubcommandGroup();
+  // getSubcommandGroup(false) prevents throwing when there is no group
+  const group = interaction.options.getSubcommandGroup(false) ?? null;
   const sub = interaction.options.getSubcommand(true);
 
-  logger.info({ group, sub }, "[fun] execute");
+  logger.info({ group, sub, file: import.meta.url }, "[fun] execute");
 
-  // /fun joke ...
+  // Handle subcommand groups first
   if (group === "joke") {
     try {
       await handleJoke(interaction);
       await recordFunUsage({ userId: interaction.user.id, command: "joke" });
     } catch (err) {
-      logger.error({ err, group, sub }, "[fun] joke subcommand failed");
+      logger.error({ err, sub, group }, "[fun] joke subcommand failed");
 
       try {
         if (interaction.deferred || interaction.replied) {
@@ -285,19 +311,18 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
           });
         }
       } catch {
-        // swallow: already logged
+        // swallow
       }
     }
     return;
   }
 
-  // Most commands support ephemeral confirmation, poll is usually public
+  // Most commands support ephemeral, poll is usually public
   const supportsEphemeral = sub !== "poll";
   const ephemeral = supportsEphemeral
     ? (interaction.options.getBoolean("ephemeral") ?? false)
     : false;
 
-  // Defer fast to reduce 10062
   await interaction.deferReply(deferOpts(ephemeral));
 
   try {
@@ -310,6 +335,12 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     if (sub === "coinflip") {
       await runCoinflip(interaction);
       await maybeRecordUsage(interaction, sub);
+      return;
+    }
+
+    if (sub === "coinflipstats") {
+      await runCoinflipStats(interaction);
+      // optional: track usage if you add it into FunCommandKey
       return;
     }
 
@@ -360,6 +391,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       return;
     }
 
+    logger.warn({ sub }, "[fun] unknown subcommand hit");
     await interaction.editReply("Unknown subcommand.");
   } catch (err) {
     logger.error({ err, sub }, "[fun] subcommand failed");

@@ -10,3 +10,4 @@
 - Timezone commands (save, show, clear, compare)
 - Centralized structured logging
 - Initial changelog tracking
+- Added recording of head or tails per user for fun

@@ -11,11 +11,11 @@ export type FunCommandKey =
   | "weather7"
   | "leaderboard";
 
-export async function recordFunUsage(args: {
+export function recordFunUsage(args: {
   userId: string;
   command: FunCommandKey;
   timestamp?: number;
-}): Promise<void> {
+}): void {
   const db = getDb();
   const ts = args.timestamp ?? Date.now();
 
@@ -29,11 +29,11 @@ export async function recordFunUsage(args: {
 }
 
 export type FunUsageSnapshot = {
-  totalsByCommand: Record<string, number>;
+  totalsByCommand: Partial<Record<FunCommandKey, number>>;
   totalsByUser: Record<string, number>;
 };
 
-export async function getFunUsageSnapshot(): Promise<FunUsageSnapshot> {
+export function getFunUsageSnapshot(): FunUsageSnapshot {
   const db = getDb();
 
   const byCommandRows = db
@@ -44,7 +44,7 @@ export async function getFunUsageSnapshot(): Promise<FunUsageSnapshot> {
       GROUP BY command
     `,
     )
-    .all() as Array<{ command: string; count: number }>;
+    .all() as Array<{ command: FunCommandKey; count: number }>;
 
   const byUserRows = db
     .prepare(
@@ -56,7 +56,7 @@ export async function getFunUsageSnapshot(): Promise<FunUsageSnapshot> {
     )
     .all() as Array<{ user_id: string; count: number }>;
 
-  const totalsByCommand: Record<string, number> = {};
+  const totalsByCommand: Partial<Record<FunCommandKey, number>> = {};
   for (const r of byCommandRows) totalsByCommand[r.command] = r.count;
 
   const totalsByUser: Record<string, number> = {};
