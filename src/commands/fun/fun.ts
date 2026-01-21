@@ -261,7 +261,6 @@ function funKeyFromSub(sub: string): FunCommandKey | null {
     dice: "dice",
     coinflip: "coinflip",
     poll: "poll",
-    remind: "remind",
     weather: "weather",
     weather7: "weather7",
     leaderboard: "leaderboard",
