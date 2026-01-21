@@ -9,36 +9,39 @@ import { logger } from "./utils/logger.js";
 
 /**
  * Shape every slash command module must export.
- * This matches commandLoader.ts exactly.
+ * This matches commandLoader.ts expectations.
  */
 type SlashCommandModule = {
   data: SlashCommandBuilder;
 };
 
-/**
- * Recursively walk a directory and return all files.
- */
-function walkFiles(dir: string): string[] {
-  const entries = fs.readdirSync(dir, { withFileTypes: true });
-  const files: string[] = [];
-
-  for (const entry of entries) {
-    const fullPath = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      files.push(...walkFiles(fullPath));
-    } else {
-      files.push(fullPath);
-    }
-  }
-
-  return files;
-}
-
 type CommandJson = ReturnType<SlashCommandBuilder["toJSON"]>;
 
-function extractTopLevelOptionNames(cmd: CommandJson): string[] {
-  const opts = cmd.options ?? [];
-  return opts.map((o) => o.name);
+function readCommandFolders(commandsPath: string): string[] {
+  return fs
+    .readdirSync(commandsPath, { withFileTypes: true })
+    .filter((d) => d.isDirectory())
+    .map((d) => d.name);
+}
+
+function uniqByName(commands: CommandJson[]): { unique: CommandJson[]; dupes: string[] } {
+  const seen = new Set<string>();
+  const dupes: string[] = [];
+  const unique: CommandJson[] = [];
+
+  for (const cmd of commands) {
+    const name = cmd.name?.trim();
+    if (!name) continue;
+
+    if (seen.has(name)) {
+      dupes.push(name);
+      continue;
+    }
+    seen.add(name);
+    unique.push(cmd);
+  }
+
+  return { unique, dupes };
 }
 
 async function registerCommands(): Promise<void> {
@@ -50,65 +53,69 @@ async function registerCommands(): Promise<void> {
     throw new Error(`dist/commands not found. Did you forget to run "npm run build"?`);
   }
 
-  const commandFiles = walkFiles(commandsPath).filter(
-    (file) => file.endsWith(".js") && !file.endsWith(".d.ts"),
-  );
+  const folders = readCommandFolders(commandsPath);
 
   const commands: CommandJson[] = [];
 
-  for (const file of commandFiles) {
-    const relFile = path.relative(commandsPath, file).replaceAll("\\", "/");
+  for (const folder of folders) {
+    const file = path.join(commandsPath, folder, `${folder}.js`);
+    const relFile = path.relative(process.cwd(), file).replaceAll("\\", "/");
+
+    if (!fs.existsSync(file)) {
+      logger.debug({ folder, file: relFile }, "[register] skip (missing entry file)");
+      continue;
+    }
 
     try {
       const moduleUrl = pathToFileURL(file).href;
       const imported = (await import(moduleUrl)) as Partial<SlashCommandModule>;
 
       if (!imported.data) {
-        logger.debug({ file: relFile }, "Skipping non-command module (missing data)");
+        logger.warn({ folder, file: relFile }, "[register] skip (missing exported data)");
         continue;
       }
 
       const json = imported.data.toJSON();
 
-      // DEBUG: prove what subcommands Discord will receive for /fun
-      if (json.name === "fun") {
-        logger.info(
-          { options: extractTopLevelOptionNames(json) },
-          "[register] fun subcommands/groups",
-        );
-      }
-
       commands.push(json);
-      logger.info({ command: imported.data.name }, "Prepared command for registration");
+      logger.info({ command: imported.data.name, file: relFile }, "[register] prepared");
     } catch (err) {
-      logger.warn({ err, file: relFile }, "Failed to load command for registration");
+      logger.warn({ err, folder, file: relFile }, "[register] failed to load");
     }
   }
 
   if (commands.length === 0) {
-    logger.warn("No commands found to register");
+    logger.warn("[register] no commands found to register");
     return;
   }
 
-  logger.info({ count: commands.length }, "Registering application (/) commands");
+  // Detect duplicates before calling Discord
+  const { unique, dupes } = uniqByName(commands);
+  if (dupes.length > 0) {
+    logger.error(
+      { dupes, count: dupes.length },
+      "[register] duplicate command names detected (will fail Discord validation)",
+    );
+    throw new Error(`Duplicate command names: ${[...new Set(dupes)].join(", ")}`);
+  }
+
+  logger.info({ count: unique.length }, "[register] registering application commands");
 
   if (env.guildId) {
-    // Guild-scoped (fast refresh, dev-friendly)
     await rest.put(Routes.applicationGuildCommands(env.appId, env.guildId), {
-      body: commands,
+      body: unique,
     });
 
     logger.info(
-      { guildId: env.guildId, count: commands.length },
-      "Guild commands registered",
+      { guildId: env.guildId, count: unique.length },
+      "[register] guild commands registered",
     );
   } else {
-    // Global (can take up to 1 hour to propagate)
     await rest.put(Routes.applicationCommands(env.appId), {
-      body: commands,
+      body: unique,
     });
 
-    logger.info({ count: commands.length }, "Global commands registered");
+    logger.info({ count: unique.length }, "[register] global commands registered");
   }
 }
 
