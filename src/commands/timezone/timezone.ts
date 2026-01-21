@@ -34,6 +34,12 @@ export const data = new SlashCommandBuilder()
           .setName("guild")
           .setDescription("If true, store per-server (otherwise global)")
           .setRequired(false),
+      )
+      .addBooleanOption((o) =>
+        o
+          .setName("private")
+          .setDescription("Only show the result to you (default true)")
+          .setRequired(false),
       ),
   )
 
@@ -47,6 +53,12 @@ export const data = new SlashCommandBuilder()
           .setName("guild")
           .setDescription("If true, read the per-server timezone")
           .setRequired(false),
+      )
+      .addBooleanOption((o) =>
+        o
+          .setName("private")
+          .setDescription("Only show the result to you (default false)")
+          .setRequired(false),
       ),
   )
 
@@ -59,6 +71,12 @@ export const data = new SlashCommandBuilder()
         o
           .setName("guild")
           .setDescription("If true, clear the per-server timezone")
+          .setRequired(false),
+      )
+      .addBooleanOption((o) =>
+        o
+          .setName("private")
+          .setDescription("Only show the result to you (default true)")
           .setRequired(false),
       ),
   )
@@ -75,6 +93,12 @@ export const data = new SlashCommandBuilder()
         o
           .setName("guild")
           .setDescription("Use per-server timezones if set")
+          .setRequired(false),
+      )
+      .addBooleanOption((o) =>
+        o
+          .setName("private")
+          .setDescription("Only show the result to you (default false)")
           .setRequired(false),
       ),
   )
@@ -109,14 +133,36 @@ export const data = new SlashCommandBuilder()
           .setName("guild")
           .setDescription("Use per-server timezone for default 'from'")
           .setRequired(false),
+      )
+      .addBooleanOption((o) =>
+        o
+          .setName("private")
+          .setDescription("Only show the result to you (default false)")
+          .setRequired(false),
       ),
   )
   .setDMPermission(true);
 
-export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
-  const sub = interaction.options.getSubcommand(true);
+function deferOpts(isPrivate: boolean): { flags: MessageFlags.Ephemeral } | undefined {
+  return isPrivate ? { flags: MessageFlags.Ephemeral } : undefined;
+}
 
-  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+type Sub = "set" | "show" | "clear" | "compare" | "convert";
+
+function defaultPrivateForSub(sub: Sub): boolean {
+  // "set/clear" are usually personal housekeeping
+  // "show/compare/convert" are useful to share, so default public
+  if (sub === "set" || sub === "clear") return true;
+  return false;
+}
+
+export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
+  const sub = interaction.options.getSubcommand(true) as Sub;
+
+  const isPrivate =
+    interaction.options.getBoolean("private") ?? defaultPrivateForSub(sub);
+
+  await interaction.deferReply(deferOpts(isPrivate));
 
   try {
     if (sub === "set") return await handleSet(interaction);
@@ -136,10 +182,6 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 /* Timezone input normalization                                                */
 /* -------------------------------------------------------------------------- */
 
-/**
- * Small curated set of friendly names -> IANA zones.
- * This avoids exposing the full IANA list while covering common needs.
- */
 const COMMON_TIMEZONES: Array<{ name: string; tz: string; label?: string }> = [
   { name: "US Eastern", tz: "America/New_York", label: "ET" },
   { name: "US Central", tz: "America/Chicago", label: "CT" },
@@ -156,12 +198,7 @@ const COMMON_TIMEZONES: Array<{ name: string; tz: string; label?: string }> = [
   { name: "Australia East", tz: "Australia/Sydney" },
 ];
 
-/**
- * Common abbreviations people actually type.
- * Note: abbreviations are ambiguous globally, but this is a pragmatic bot UX choice.
- */
 const ALIAS_TO_IANA: Record<string, { tz: string; label?: string }> = {
-  // US / common
   et: { tz: "America/New_York", label: "ET" },
   est: { tz: "America/New_York", label: "ET" },
   edt: { tz: "America/New_York", label: "ET" },
@@ -178,7 +215,6 @@ const ALIAS_TO_IANA: Record<string, { tz: string; label?: string }> = {
   pst: { tz: "America/Los_Angeles", label: "PT" },
   pdt: { tz: "America/Los_Angeles", label: "PT" },
 
-  // UTC-ish
   utc: { tz: "Etc/UTC", label: "UTC" },
   gmt: { tz: "Etc/UTC", label: "UTC" },
 };
@@ -202,12 +238,10 @@ function normalizeZoneInput(raw: string): { tz: string; label?: string } | null 
 
   const key = normalizeKey(v);
 
-  // Friendly names: "us eastern", "central europe", etc.
   for (const z of COMMON_TIMEZONES) {
     if (normalizeKey(z.name) === key) return { tz: z.tz, label: z.label };
   }
 
-  // Allow a couple shorthand friendly variants people type
   if (key === "eastern" || key === "east") return { tz: "America/New_York", label: "ET" };
   if (key === "central" || key === "midwest")
     return { tz: "America/Chicago", label: "CT" };
@@ -215,11 +249,9 @@ function normalizeZoneInput(raw: string): { tz: string; label?: string } | null 
   if (key === "pacific" || key === "west")
     return { tz: "America/Los_Angeles", label: "PT" };
 
-  // Abbreviations: "ET", "PST", etc.
   const alias = ALIAS_TO_IANA[key.replace(/\./g, "")];
   if (alias) return { tz: alias.tz, label: alias.label };
 
-  // Power user path: accept IANA directly
   if (isValidIanaZone(v)) return { tz: v };
 
   return null;
@@ -426,7 +458,6 @@ function parseTimeString(raw: string): { hours: number; minutes: number } | null
   const s = raw.trim().toLowerCase();
   if (!s) return null;
 
-  // Match "19:30" or "7:30pm" or "7pm"
   const m = s.match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/i);
   if (!m) return null;
 
