@@ -1,3 +1,4 @@
+// vitest.config.ts
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
@@ -5,5 +6,7 @@ export default defineConfig({
     environment: "node",
     globals: true,
     clearMocks: true,
+    restoreMocks: true,
+    include: ["src/**/*.test.ts", "src/**/*.spec.ts"],
   },
 });

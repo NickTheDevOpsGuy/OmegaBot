@@ -10,15 +10,25 @@ export function initDatabase(): Database.Database {
   if (db) return db;
 
   const databasePath = process.env.DATABASE_PATH || "data/omegabot.db";
-  const dbDir = path.dirname(databasePath);
 
-  if (!fs.existsSync(dbDir)) {
-    fs.mkdirSync(dbDir, { recursive: true });
+  // Support in-memory DB for tests (":memory:") without touching the filesystem.
+  const isMemory = databasePath === ":memory:";
+
+  if (!isMemory) {
+    const dbDir = path.dirname(databasePath);
+
+    if (!fs.existsSync(dbDir)) {
+      fs.mkdirSync(dbDir, { recursive: true });
+    }
   }
 
   logger.info({ path: databasePath }, "Initializing database");
   db = new Database(databasePath);
-  db.pragma("journal_mode = WAL");
+
+  // WAL is great for file-backed DBs; avoid it for ":memory:".
+  if (!isMemory) {
+    db.pragma("journal_mode = WAL");
+  }
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS faqs (

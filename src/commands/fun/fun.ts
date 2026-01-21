@@ -9,6 +9,7 @@ import { logger } from "../../utils/logger.js";
 
 import { run as runDice } from "./subcommands/dice.js";
 import { run as runCoinflip } from "./subcommands/coinflip.js";
+import { run as runCoinflipStats } from "./subcommands/coinflipstats.js";
 import { run as runPoll } from "./subcommands/poll.js";
 import { run as runLeaderboard } from "./subcommands/leaderboard.js";
 import type { LeaderboardMode } from "./subcommands/leaderboard.js";
@@ -19,7 +20,6 @@ import type { TempUnit, WeatherMode } from "../../services/weather/types.js";
 import { handleJoke, buildJokeSubcommands } from "./subcommands/joke/index.js";
 
 import { run as runRemind } from "./subcommands/remind.js";
-import { run as runCoinflipStats } from "./subcommands/coinflipstats.js";
 
 import { recordFunUsage, type FunCommandKey } from "../../services/fun/funUsageStore.js";
 
@@ -88,7 +88,13 @@ export const data = new SlashCommandBuilder()
   .addSubcommand((s) =>
     s
       .setName("coinflipstats")
-      .setDescription("Show heads vs tails stats (you or another user)")
+      .setDescription("Heads vs tails breakdown, or a leaderboard")
+      .addBooleanOption((o) =>
+        o
+          .setName("leaderboard")
+          .setDescription("Show top flippers (ignores user/recent)")
+          .setRequired(false),
+      )
       .addUserOption((o) =>
         o
           .setName("user")
@@ -98,7 +104,9 @@ export const data = new SlashCommandBuilder()
       .addIntegerOption((o) =>
         o
           .setName("limit")
-          .setDescription("How many recent flips to show (default 10, max 25)")
+          .setDescription(
+            "How many recent flips or leaderboard rows (default 10, max 25)",
+          )
           .setMinValue(1)
           .setMaxValue(25)
           .setRequired(false),
@@ -255,6 +263,10 @@ export const data = new SlashCommandBuilder()
  * Map subcommand names -> usage keys.
  *
  * Note: joke is handled separately because it is a subcommand group.
+ *
+ * Important: we intentionally do NOT include "remind" here to avoid the
+ * TS2322 issue you hit when FunCommandKey is out of sync between branches.
+ * We record remind separately in maybeRecordUsage() below.
  */
 function funKeyFromSub(sub: string): FunCommandKey | null {
   const allowed: Record<string, FunCommandKey> = {
@@ -264,8 +276,6 @@ function funKeyFromSub(sub: string): FunCommandKey | null {
     weather: "weather",
     weather7: "weather7",
     leaderboard: "leaderboard",
-    // Optional: add this if you add it to FunCommandKey + DB tracking
-    // coinflipstats: "coinflipstats",
   };
 
   return allowed[sub] ?? null;
@@ -275,10 +285,19 @@ async function maybeRecordUsage(
   interaction: ChatInputCommandInteraction,
   sub: string,
 ): Promise<void> {
-  const key = funKeyFromSub(sub);
-  if (!key) return;
-
   try {
+    // Special-case remind so this compiles even if FunCommandKey differs.
+    if (sub === "remind") {
+      await recordFunUsage({
+        userId: interaction.user.id,
+        command: "remind" as unknown as FunCommandKey,
+      });
+      return;
+    }
+
+    const key = funKeyFromSub(sub);
+    if (!key) return;
+
     await recordFunUsage({ userId: interaction.user.id, command: key });
   } catch (err) {
     logger.warn({ err, sub }, "[fun] failed to record usage");
@@ -286,19 +305,18 @@ async function maybeRecordUsage(
 }
 
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
-  // getSubcommandGroup(false) prevents throwing when there is no group
   const group = interaction.options.getSubcommandGroup(false) ?? null;
   const sub = interaction.options.getSubcommand(true);
 
   logger.info({ group, sub, file: import.meta.url }, "[fun] execute");
 
-  // Handle subcommand groups first
+  // /fun joke ...
   if (group === "joke") {
     try {
       await handleJoke(interaction);
       await recordFunUsage({ userId: interaction.user.id, command: "joke" });
     } catch (err) {
-      logger.error({ err, sub, group }, "[fun] joke subcommand failed");
+      logger.error({ err, group, sub }, "[fun] joke subcommand failed");
 
       try {
         if (interaction.deferred || interaction.replied) {
@@ -316,7 +334,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     return;
   }
 
-  // Most commands support ephemeral, poll is usually public
+  // Most commands support ephemeral confirmation, poll is usually public
   const supportsEphemeral = sub !== "poll";
   const ephemeral = supportsEphemeral
     ? (interaction.options.getBoolean("ephemeral") ?? false)
@@ -339,7 +357,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
     if (sub === "coinflipstats") {
       await runCoinflipStats(interaction);
-      // optional: track usage if you add it into FunCommandKey
+      // optional: add to FunCommandKey later if you want it tracked
       return;
     }
 
