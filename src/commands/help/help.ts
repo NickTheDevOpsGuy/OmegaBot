@@ -51,14 +51,14 @@ export const data = new SlashCommandBuilder()
       ),
   )
   .addBooleanOption((opt) =>
-    opt.setName("ephemeral").setDescription("Only show help to you").setRequired(false),
+    opt.setName("private").setDescription("Only show help to you").setRequired(false),
   );
 
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const startedAt = Date.now();
 
   // Default to ephemeral unless user explicitly sets it false
-  const ephemeral = interaction.options.getBoolean("ephemeral") ?? true;
+  const ephemeral = interaction.options.getBoolean("private") ?? true;
   const topic = parseHelpTopic(interaction.options.getString("topic"));
 
   try {

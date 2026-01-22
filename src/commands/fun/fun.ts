@@ -95,7 +95,7 @@ export const data = new SlashCommandBuilder()
           .setMinValue(1)
           .setMaxValue(10),
       )
-      .addBooleanOption((o) => o.setName("ephemeral").setDescription("Only show to you")),
+      .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
   )
 
   // /fun coinflip
@@ -103,7 +103,7 @@ export const data = new SlashCommandBuilder()
     s
       .setName("coinflip")
       .setDescription("Flip a coin")
-      .addBooleanOption((o) => o.setName("ephemeral").setDescription("Only show to you")),
+      .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
   )
 
   // /fun coinflipstats
@@ -118,7 +118,7 @@ export const data = new SlashCommandBuilder()
       .addIntegerOption((o) =>
         o.setName("limit").setDescription("Rows to show").setMinValue(1).setMaxValue(25),
       )
-      .addBooleanOption((o) => o.setName("ephemeral").setDescription("Only show to you")),
+      .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
   )
 
   // /fun poll
@@ -156,7 +156,7 @@ export const data = new SlashCommandBuilder()
         o.setName("message").setDescription("Reminder message").setRequired(true),
       )
       .addBooleanOption((o) =>
-        o.setName("ephemeral").setDescription("Only show confirmation to you"),
+        o.setName("private").setDescription("Only show confirmation to you"),
       ),
   )
 
@@ -174,7 +174,7 @@ export const data = new SlashCommandBuilder()
           .setDescription("Temperature unit")
           .addChoices({ name: "F", value: "f" }, { name: "C", value: "c" }),
       )
-      .addBooleanOption((o) => o.setName("ephemeral").setDescription("Only show to you")),
+      .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
   )
 
   // /fun leaderboard
@@ -206,7 +206,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
   const group = interaction.options.getSubcommandGroup(false);
   const sub = interaction.options.getSubcommand(true);
 
-  const ephemeral = interaction.options.getBoolean("ephemeral") ?? sub !== "poll"; // polls default public
+  const ephemeral = interaction.options.getBoolean("private") ?? sub !== "poll"; // polls default public
 
   await interaction.deferReply(deferOpts(ephemeral));
 

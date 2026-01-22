@@ -59,7 +59,7 @@ export const data = new SlashCommandBuilder()
       )
       .addBooleanOption((o) =>
         o
-          .setName("ephemeral")
+          .setName("private")
           .setDescription("Only show the result to you")
           .setRequired(false),
       ),
@@ -78,7 +78,7 @@ export const data = new SlashCommandBuilder()
       )
       .addBooleanOption((o) =>
         o
-          .setName("ephemeral")
+          .setName("private")
           .setDescription("Only show the result to you")
           .setRequired(false),
       ),
@@ -106,7 +106,7 @@ export const data = new SlashCommandBuilder()
       )
       .addBooleanOption((o) =>
         o
-          .setName("ephemeral")
+          .setName("private")
           .setDescription("Only show the result to you")
           .setRequired(false),
       ),
@@ -122,7 +122,7 @@ export const data = new SlashCommandBuilder()
       )
       .addBooleanOption((o) =>
         o
-          .setName("ephemeral")
+          .setName("private")
           .setDescription("Only show the result to you")
           .setRequired(false),
       ),
@@ -138,7 +138,7 @@ export const data = new SlashCommandBuilder()
  */
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const sub = interaction.options.getSubcommand(true);
-  const ephemeral = interaction.options.getBoolean("ephemeral") ?? false;
+  const ephemeral = interaction.options.getBoolean("private") ?? false;
 
   // Parent owns the interaction lifecycle: always defer first.
   await interaction.deferReply(ephemeral ? { flags: MessageFlags.Ephemeral } : undefined);
