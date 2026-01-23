@@ -11,7 +11,7 @@ export type CoinFlipTotals = {
 
 export type CoinFlipRecentRow = {
   result: CoinFlipResult;
-  timestamp: number;
+  created_at: number;
 };
 
 export type CoinFlipLeaderboardRow = {
@@ -21,23 +21,58 @@ export type CoinFlipLeaderboardRow = {
   tails: number;
 };
 
+export type CoinFlipStats = CoinFlipTotals & {
+  recent: CoinFlipResult[];
+};
+
+/* -------------------------------------------------------------------------- */
+/* Table guard                                                                 */
+/* -------------------------------------------------------------------------- */
+
+function ensureCoinFlipTable(): void {
+  const db = getDb();
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS coin_flips (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL,
+      result TEXT NOT NULL CHECK (result IN ('heads','tails')),
+      created_at INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_coin_flips_user_created
+      ON coin_flips(user_id, created_at DESC);
+  `);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Writes                                                                      */
+/* -------------------------------------------------------------------------- */
+
 export function recordCoinFlip(args: {
   userId: string;
   result: CoinFlipResult;
-  timestamp?: number;
+  createdAt?: number;
 }): void {
+  ensureCoinFlipTable();
+
   const db = getDb();
-  const ts = args.timestamp ?? Date.now();
+  const ts = args.createdAt ?? Date.now();
 
   db.prepare(
     `
-    INSERT INTO coin_flips (user_id, result, timestamp)
+    INSERT INTO coin_flips (user_id, result, created_at)
     VALUES (?, ?, ?)
   `,
   ).run(args.userId, args.result, ts);
 }
 
+/* -------------------------------------------------------------------------- */
+/* Reads                                                                       */
+/* -------------------------------------------------------------------------- */
+
 export function getCoinFlipTotals(userId: string): CoinFlipTotals {
+  ensureCoinFlipTable();
   const db = getDb();
 
   type TotalsRow = {
@@ -69,34 +104,52 @@ export function getCoinFlipTotals(userId: string): CoinFlipTotals {
 }
 
 export function getRecentCoinFlips(userId: string, limit: number): CoinFlipRecentRow[] {
+  ensureCoinFlipTable();
   const db = getDb();
   const lim = Math.min(Math.max(limit, 1), 25);
 
   type RecentRow = {
     result: string;
-    timestamp: number;
+    created_at: number;
   };
 
   const rows = db
     .prepare(
       `
-      SELECT result, timestamp
+      SELECT result, created_at
       FROM coin_flips
       WHERE user_id = ?
-      ORDER BY timestamp DESC
+      ORDER BY created_at DESC
       LIMIT ?
     `,
     )
     .all(userId, lim) as RecentRow[];
 
-  // DB constraint guarantees heads/tails, but normalize defensively.
   return rows.map((r) => ({
     result: r.result === "heads" ? "heads" : "tails",
-    timestamp: r.timestamp,
+    created_at: r.created_at,
   }));
 }
 
+/**
+ * Convenience helper used by /fun coinflipstats
+ */
+export function getCoinFlipStats(userId: string, recentLimit = 5): CoinFlipStats {
+  const totals = getCoinFlipTotals(userId);
+  const recent = getRecentCoinFlips(userId, recentLimit).map((r) => r.result);
+
+  return {
+    ...totals,
+    recent,
+  };
+}
+
+/* -------------------------------------------------------------------------- */
+/* Leaderboard                                                                */
+/* -------------------------------------------------------------------------- */
+
 export function getCoinFlipLeaderboard(limit: number): CoinFlipLeaderboardRow[] {
+  ensureCoinFlipTable();
   const db = getDb();
   const lim = Math.min(Math.max(limit, 1), 25);
 

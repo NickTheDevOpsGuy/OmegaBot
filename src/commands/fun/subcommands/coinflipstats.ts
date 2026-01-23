@@ -1,97 +1,40 @@
 // src/commands/fun/subcommands/coinflipstats.ts
-
 import type { ChatInputCommandInteraction } from "discord.js";
 import { logger } from "../../../utils/logger.js";
-import {
-  getCoinFlipLeaderboard,
-  getCoinFlipTotals,
-  getRecentCoinFlips,
-} from "../coinflipStore.js";
+import { getCoinFlipStats } from "../coinflipStore.js";
 
-/**
- * /fun coinflipstats
- *
- * Features:
- * - /fun coinflipstats                    personal heads vs tails breakdown
- * - /fun coinflipstats leaderboard:true   top flippers
- * - /fun coinflipstats user:<user>        inspect another user
- */
+function pct(part: number, total: number): string {
+  if (total <= 0) return "0%";
+  return `${Math.round((part / total) * 100)}%`;
+}
+
+function short(r: "heads" | "tails"): string {
+  return r === "heads" ? "H" : "T";
+}
+
 export async function run(interaction: ChatInputCommandInteraction): Promise<void> {
   // Parent (fun.ts) owns deferReply(). We only editReply() here.
 
-  const leaderboard = interaction.options.getBoolean("leaderboard") ?? false;
-  const limitRaw = interaction.options.getInteger("limit") ?? 10;
-  const limit = Math.min(Math.max(limitRaw, 1), 25);
-
-  if (leaderboard) {
-    try {
-      const rows = getCoinFlipLeaderboard(limit);
-
-      if (rows.length === 0) {
-        await interaction.editReply(
-          "🪙 **Coin Flip Stats**\n\nNo flips recorded yet. Try `/fun coinflip`.",
-        );
-        return;
-      }
-
-      const lines = rows.map((r, idx) => {
-        const pctHeads = r.total > 0 ? Math.round((r.heads / r.total) * 100) : 0;
-        return `${idx + 1}. <@${r.userId}>  Total: **${r.total}**  Heads: **${r.heads}** (${pctHeads}%)`;
-      });
-
-      await interaction.editReply(
-        ["🪙 **Coin Flip Leaderboard**", "", ...lines].join("\n"),
-      );
-
-      logger.info(
-        { requester: interaction.user.id, limit },
-        "[fun/coinflipstats] leaderboard sent",
-      );
-      return;
-    } catch (err) {
-      logger.error({ err }, "[fun/coinflipstats] leaderboard failed");
-      await interaction.editReply(
-        "Failed to load coin flip leaderboard. Try again in a bit.",
-      );
-      return;
-    }
-  }
-
-  const user = interaction.options.getUser("user") ?? interaction.user;
-  const includeRecent = interaction.options.getBoolean("recent") ?? true;
+  const target = interaction.options.getUser("user") ?? interaction.user;
 
   try {
-    const totals = getCoinFlipTotals(user.id);
+    const stats = getCoinFlipStats(target.id, 10);
 
-    const pctHeads =
-      totals.total > 0 ? Math.round((totals.heads / totals.total) * 100) : 0;
-    const pctTails =
-      totals.total > 0 ? Math.round((totals.tails / totals.total) * 100) : 0;
+    const lines: string[] = [];
+    lines.push(`🪙 Coin Flip Stats for ${target.toString()}`);
+    lines.push(`Total: ${stats.total}`);
+    lines.push(`Heads: ${stats.heads} (${pct(stats.heads, stats.total)})`);
+    lines.push(`Tails: ${stats.tails} (${pct(stats.tails, stats.total)})`);
+    lines.push("");
+    lines.push(`Recent (${stats.recent.length}):`);
+    lines.push(stats.recent.length ? stats.recent.map(short).join(" ") : "None yet.");
 
-    let content =
-      `🪙 **Coin Flip Stats** for <@${user.id}>\n` +
-      `Total: **${totals.total}**\n` +
-      `Heads: **${totals.heads}** (${pctHeads}%)\n` +
-      `Tails: **${totals.tails}** (${pctTails}%)`;
-
-    if (includeRecent) {
-      const recents = getRecentCoinFlips(user.id, limit);
-      if (recents.length > 0) {
-        const line = recents.map((r) => (r.result === "heads" ? "H" : "T")).join(" ");
-        content += `\n\nRecent (${recents.length}):\n\`${line}\``;
-      } else {
-        content += `\n\nNo flips recorded yet. Try \`/fun coinflip\`.`;
-      }
-    }
-
-    await interaction.editReply(content);
-
-    logger.info(
-      { requester: interaction.user.id, target: user.id, totals, includeRecent, limit },
-      "[fun/coinflipstats] stats sent",
-    );
+    await interaction.editReply(lines.join("\n"));
   } catch (err) {
-    logger.error({ err }, "[fun/coinflipstats] failed");
+    logger.error(
+      { err, userId: interaction.user.id, targetId: target.id },
+      "[fun/coinflipstats] failed",
+    );
     await interaction.editReply("Failed to load coin flip stats. Try again in a bit.");
   }
 }

@@ -1,46 +1,40 @@
 // src/commands/fun/subcommands/coinflip.ts
-
 import type { ChatInputCommandInteraction } from "discord.js";
 import { logger } from "../../../utils/logger.js";
-import { recordCoinFlip } from "../coinflipStore.js";
-
-type CoinFlipResult = "heads" | "tails";
+import { recordCoinFlip, type CoinFlipResult } from "../coinflipStore.js";
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export async function run(interaction: ChatInputCommandInteraction): Promise<void> {
-  // Parent command already deferred the reply
+  // Parent (fun.ts) owns deferReply(). We only editReply() here.
+
   const frames = ["|", "/", "-", "\\", "|", "/", "-", "\\"];
+  for (const f of frames) {
+    await interaction.editReply(`🪙 Flipping ${f}`);
+    await sleep(140);
+  }
+
+  await interaction.editReply("🪙 Tossed…");
+  await sleep(260);
+
+  const isHeads = Math.random() < 0.5;
+  const stored: CoinFlipResult = isHeads ? "heads" : "tails";
 
   try {
-    for (const f of frames) {
-      await interaction.editReply(`🪙 Flipping ${f}`);
-      await sleep(120);
-    }
-
-    await interaction.editReply("🪙 Tossed…");
-    await sleep(200);
-
-    const isHeads = Math.random() < 0.5;
-    const result: CoinFlipResult = isHeads ? "heads" : "tails";
-
-    // Persist result (best effort)
-    try {
-      recordCoinFlip({
-        userId: interaction.user.id,
-        result,
-      });
-    } catch (err) {
-      logger.warn({ err }, "[fun/coinflip] failed to record coin flip");
-    }
-
-    await interaction.editReply(result === "heads" ? "🟡 **HEADS**" : "⚪ **TAILS**");
-
-    logger.debug({ userId: interaction.user.id, result }, "[fun/coinflip] delivered");
+    const rowId = recordCoinFlip({ userId: interaction.user.id, result: stored });
+    logger.info(
+      { userId: interaction.user.id, result: stored, rowId },
+      "[fun/coinflip] recorded",
+    );
   } catch (err) {
-    logger.error({ err }, "[fun/coinflip] execution failed");
-    await interaction.editReply("Coin flip failed. Try again.");
+    // Do NOT hide this. If stats are wrong, this is usually why.
+    logger.error(
+      { err, userId: interaction.user.id, result: stored },
+      "[fun/coinflip] failed to record coin flip",
+    );
   }
+
+  await interaction.editReply(isHeads ? "🟡 **HEADS**" : "⚪ **TAILS**");
 }
