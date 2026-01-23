@@ -45,6 +45,36 @@ function isCommandModule(cmd: unknown): cmd is CommandModule {
   );
 }
 
+/**
+ * Small helper so "unknown command" logs can suggest the closest registry keys.
+ * Not fancy levenshtein, but enough to spot casing/pluralization/old names.
+ */
+function closestCommandNames(input: string, candidates: string[], max = 5): string[] {
+  const needle = input.trim().toLowerCase();
+  if (!needle) return [];
+
+  function score(name: string): number {
+    const n = name.toLowerCase();
+
+    // exact
+    if (n === needle) return 0;
+
+    // starts-with is usually the best hint
+    if (n.startsWith(needle) || needle.startsWith(n)) return 1;
+
+    // contains
+    if (n.includes(needle) || needle.includes(n)) return 2;
+
+    // cheap distance-ish: length diff + first/last char mismatch
+    const len = Math.abs(n.length - needle.length);
+    const first = n[0] === needle[0] ? 0 : 1;
+    const last = n[n.length - 1] === needle[needle.length - 1] ? 0 : 1;
+    return 3 + len + first + last;
+  }
+
+  return [...candidates].sort((a, b) => score(a) - score(b)).slice(0, max);
+}
+
 async function safeRepliableReply(
   interaction: RepliableInteraction,
   content: string,
@@ -79,43 +109,88 @@ export async function handleInteraction(
 ): Promise<void> {
   if (!interaction.isChatInputCommand()) return;
 
+  const start = performance.now();
+
+  const meta = {
+    interactionId: interaction.id,
+    command: interaction.commandName,
+    userId: interaction.user.id,
+    username: interaction.user.username,
+    guildId: interaction.inGuild() ? interaction.guildId : null,
+    channelId: interaction.channelId ?? null,
+    // If you ever suspect readiness / partial cache timing issues:
+    clientReady: typeof client.isReady === "function" ? client.isReady() : null,
+    registrySize: client.commands?.size ?? null,
+  };
+
+  // Useful to correlate "command not found" reports to startup/reload timing
+  logger.debug(meta, "[interaction] received");
+
   const commandUnknown = client.commands.get(interaction.commandName);
 
   if (!commandUnknown) {
-    logger.warn({ command: interaction.commandName }, "[interaction] unknown command");
+    const keys = [...client.commands.keys()];
+    const closest = closestCommandNames(interaction.commandName, keys, 6);
+
+    logger.warn(
+      {
+        ...meta,
+        knownCommandsSample: keys.slice(0, 40),
+        closest,
+      },
+      "[interaction] unknown command (not in registry)",
+    );
+
+    // You can optionally reply, but many bots choose not to.
+    // If you want to tell the user quietly:
+    // await safeRepliableReply(interaction, "That command is not available right now. Try again in a moment.", true);
     return;
   }
 
   if (!isCommandModule(commandUnknown)) {
     logger.error(
-      { command: interaction.commandName },
+      {
+        ...meta,
+        foundType: typeof commandUnknown,
+        foundKeys: isRecord(commandUnknown) ? Object.keys(commandUnknown) : null,
+      },
       "[interaction] invalid command module shape",
+    );
+
+    await safeRepliableReply(
+      interaction,
+      "That command is misconfigured on the bot. Tell an admin to check logs.",
+      true,
     );
     return;
   }
 
   const command = commandUnknown;
-  const start = performance.now();
 
   try {
+    // If you want to see what modules are actually being executed:
+    logger.debug(
+      {
+        ...meta,
+        moduleName: command.data.name,
+        group: command.group ?? null,
+        adminOnly: Boolean(command.adminOnly),
+      },
+      "[interaction] executing",
+    );
+
     await command.execute(interaction);
   } catch (err) {
     // Drop noisy cases to debug so logs stay useful
     if (isDiscordUnknownInteraction(err) || isDiscordAlreadyAcknowledged(err)) {
-      logger.debug(
-        { command: interaction.commandName, err },
-        "[interaction] skipped (expired/acknowledged)",
-      );
+      logger.debug({ ...meta, err }, "[interaction] skipped (expired/acknowledged)");
       return;
     }
 
     const code = getDiscordErrorCode(err);
     const msg = getDiscordErrorMessage(err);
 
-    logger.error(
-      { err, command: interaction.commandName, code, msg },
-      "[interaction] command failed",
-    );
+    logger.error({ ...meta, err, code, msg }, "[interaction] command failed");
 
     const hint =
       code != null ? `Discord error code: ${code}` : msg ? `Error: ${msg}` : null;
@@ -129,9 +204,6 @@ export async function handleInteraction(
     );
   } finally {
     const ms = Math.round(performance.now() - start);
-    logger.debug(
-      { command: interaction.commandName, ms },
-      "[interaction] command timing",
-    );
+    logger.debug({ ...meta, ms }, "[interaction] command timing");
   }
 }
