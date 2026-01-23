@@ -17,7 +17,6 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
   const target = interaction.options.getUser("user") ?? interaction.user;
 
   try {
-    // Use the object signature so we can't mix up parameter order
     const stats = getCoinFlipStats({ userId: target.id, limit: 10 });
 
     const lines: string[] = [];
@@ -27,7 +26,12 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
     lines.push(`Tails: ${stats.tails} (${pct(stats.tails, stats.total)})`);
     lines.push("");
     lines.push(`Recent (${stats.recent.length}):`);
-    lines.push(stats.recent.length ? stats.recent.map(short).join(" ") : "None yet.");
+
+    lines.push(
+      stats.recent.length
+        ? stats.recent.map((row) => short(row.result)).join(" ")
+        : "None yet.",
+    );
 
     await interaction.editReply(lines.join("\n"));
   } catch (err) {
