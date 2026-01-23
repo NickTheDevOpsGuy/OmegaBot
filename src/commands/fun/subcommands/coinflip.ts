@@ -1,40 +1,46 @@
-// src/commands/fun/subcommands/coinflip.ts
+// src/commands/fun/subcommands/coinflipstats.ts
 import type { ChatInputCommandInteraction } from "discord.js";
 import { logger } from "../../../utils/logger.js";
-import { recordCoinFlip, type CoinFlipResult } from "../coinflipStore.js";
+import { getCoinFlipStats } from "../coinflipStore.js";
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+type FlipShort = "H" | "T";
+
+function pct(part: number, total: number): string {
+  if (total <= 0) return "0%";
+  return `${Math.round((part / total) * 100)}%`;
+}
+
+function short(r: "heads" | "tails"): FlipShort {
+  return r === "heads" ? "H" : "T";
 }
 
 export async function run(interaction: ChatInputCommandInteraction): Promise<void> {
   // Parent (fun.ts) owns deferReply(). We only editReply() here.
 
-  const frames = ["|", "/", "-", "\\", "|", "/", "-", "\\"];
-  for (const f of frames) {
-    await interaction.editReply(`🪙 Flipping ${f}`);
-    await sleep(140);
-  }
-
-  await interaction.editReply("🪙 Tossed…");
-  await sleep(260);
-
-  const isHeads = Math.random() < 0.5;
-  const stored: CoinFlipResult = isHeads ? "heads" : "tails";
+  const target = interaction.options.getUser("user") ?? interaction.user;
 
   try {
-    const rowId = recordCoinFlip({ userId: interaction.user.id, result: stored });
-    logger.info(
-      { userId: interaction.user.id, result: stored, rowId },
-      "[fun/coinflip] recorded",
-    );
-  } catch (err) {
-    // Do NOT hide this. If stats are wrong, this is usually why.
-    logger.error(
-      { err, userId: interaction.user.id, result: stored },
-      "[fun/coinflip] failed to record coin flip",
-    );
-  }
+    const stats = getCoinFlipStats({ userId: target.id, limit: 10 });
 
-  await interaction.editReply(isHeads ? "🟡 **HEADS**" : "⚪ **TAILS**");
+    const lines: string[] = [];
+    lines.push(`🪙 Coin Flip Stats for ${target.toString()}`);
+    lines.push(`Total: ${stats.total}`);
+    lines.push(`Heads: ${stats.heads} (${pct(stats.heads, stats.total)})`);
+    lines.push(`Tails: ${stats.tails} (${pct(stats.tails, stats.total)})`);
+    lines.push("");
+    lines.push(`Recent (${stats.recent.length}):`);
+    lines.push(
+      stats.recent.length
+        ? stats.recent.map((r) => short(r.result)).join(" ")
+        : "None yet.",
+    );
+
+    await interaction.editReply(lines.join("\n"));
+  } catch (err) {
+    logger.error(
+      { err, userId: interaction.user.id, targetId: target.id },
+      "[fun/coinflipstats] failed",
+    );
+    await interaction.editReply("Failed to load coin flip stats. Try again in a bit.");
+  }
 }

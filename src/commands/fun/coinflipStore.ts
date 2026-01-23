@@ -1,4 +1,5 @@
 // src/commands/fun/coinflipStore.ts
+import type Database from "better-sqlite3";
 import { getDb } from "../../services/database/db.js";
 
 export type CoinFlipResult = "heads" | "tails";
@@ -11,7 +12,11 @@ export type CoinFlipTotals = {
 
 export type CoinFlipRecentRow = {
   result: CoinFlipResult;
-  created_at: number;
+  timestamp: number;
+};
+
+export type CoinFlipStats = CoinFlipTotals & {
+  recent: CoinFlipRecentRow[];
 };
 
 export type CoinFlipLeaderboardRow = {
@@ -21,59 +26,71 @@ export type CoinFlipLeaderboardRow = {
   tails: number;
 };
 
-export type CoinFlipStats = CoinFlipTotals & {
-  recent: CoinFlipResult[];
-};
-
-/* -------------------------------------------------------------------------- */
-/* Table guard                                                                 */
-/* -------------------------------------------------------------------------- */
-
-function ensureCoinFlipTable(): void {
-  const db = getDb();
-
+/**
+ * Ensure coin_flips exists and is compatible with current code.
+ *
+ * This protects you from schema drift when you add columns later.
+ */
+function ensureCoinFlipTable(db: Database.Database): void {
+  // 1) Create table if missing
   db.exec(`
     CREATE TABLE IF NOT EXISTS coin_flips (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id TEXT NOT NULL,
       result TEXT NOT NULL CHECK (result IN ('heads','tails')),
-      created_at INTEGER NOT NULL
+      timestamp INTEGER NOT NULL
     );
+  `);
 
-    CREATE INDEX IF NOT EXISTS idx_coin_flips_user_created
-      ON coin_flips(user_id, created_at DESC);
+  // 2) If table existed from an older version, it may be missing `timestamp`.
+  // Use PRAGMA to detect columns.
+  type ColRow = { name: string };
+  const cols = db.prepare(`PRAGMA table_info(coin_flips)`).all() as ColRow[];
+
+  const colNames = new Set(cols.map((c) => c.name));
+
+  if (!colNames.has("timestamp")) {
+    // Add column with a default so existing rows become valid.
+    // (SQLite requires DEFAULT for NOT NULL when adding a column.)
+    db.exec(`ALTER TABLE coin_flips ADD COLUMN timestamp INTEGER NOT NULL DEFAULT 0;`);
+
+    // Backfill reasonable values for old rows (0 is fine, but nicer to set to "now")
+    // Only update rows that are still 0.
+    db.prepare(`UPDATE coin_flips SET timestamp = ? WHERE timestamp = 0`).run(Date.now());
+  }
+
+  // 3) Indexes (safe to run repeatedly)
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_coin_flips_user ON coin_flips(user_id);
+    CREATE INDEX IF NOT EXISTS idx_coin_flips_user_ts ON coin_flips(user_id, timestamp);
   `);
 }
 
-/* -------------------------------------------------------------------------- */
-/* Writes                                                                      */
-/* -------------------------------------------------------------------------- */
+function normalizeResult(r: string): CoinFlipResult {
+  return r === "heads" ? "heads" : "tails";
+}
 
 export function recordCoinFlip(args: {
   userId: string;
   result: CoinFlipResult;
-  createdAt?: number;
+  timestamp?: number;
 }): void {
-  ensureCoinFlipTable();
-
   const db = getDb();
-  const ts = args.createdAt ?? Date.now();
+  ensureCoinFlipTable(db);
+
+  const ts = args.timestamp ?? Date.now();
 
   db.prepare(
     `
-    INSERT INTO coin_flips (user_id, result, created_at)
+    INSERT INTO coin_flips (user_id, result, timestamp)
     VALUES (?, ?, ?)
   `,
   ).run(args.userId, args.result, ts);
 }
 
-/* -------------------------------------------------------------------------- */
-/* Reads                                                                       */
-/* -------------------------------------------------------------------------- */
-
 export function getCoinFlipTotals(userId: string): CoinFlipTotals {
-  ensureCoinFlipTable();
   const db = getDb();
+  ensureCoinFlipTable(db);
 
   type TotalsRow = {
     total: number;
@@ -104,53 +121,47 @@ export function getCoinFlipTotals(userId: string): CoinFlipTotals {
 }
 
 export function getRecentCoinFlips(userId: string, limit: number): CoinFlipRecentRow[] {
-  ensureCoinFlipTable();
   const db = getDb();
+  ensureCoinFlipTable(db);
+
   const lim = Math.min(Math.max(limit, 1), 25);
 
   type RecentRow = {
     result: string;
-    created_at: number;
+    timestamp: number;
   };
 
   const rows = db
     .prepare(
       `
-      SELECT result, created_at
+      SELECT result, timestamp
       FROM coin_flips
       WHERE user_id = ?
-      ORDER BY created_at DESC
+      ORDER BY timestamp DESC
       LIMIT ?
     `,
     )
     .all(userId, lim) as RecentRow[];
 
   return rows.map((r) => ({
-    result: r.result === "heads" ? "heads" : "tails",
-    created_at: r.created_at,
+    result: normalizeResult(r.result),
+    timestamp: Number(r.timestamp ?? 0),
   }));
 }
 
 /**
- * Convenience helper used by /fun coinflipstats
+ * Single helper coinflipstats should use.
  */
-export function getCoinFlipStats(userId: string, recentLimit = 5): CoinFlipStats {
-  const totals = getCoinFlipTotals(userId);
-  const recent = getRecentCoinFlips(userId, recentLimit).map((r) => r.result);
-
-  return {
-    ...totals,
-    recent,
-  };
+export function getCoinFlipStats(args: { userId: string; limit: number }): CoinFlipStats {
+  const totals = getCoinFlipTotals(args.userId);
+  const recent = getRecentCoinFlips(args.userId, args.limit);
+  return { ...totals, recent };
 }
 
-/* -------------------------------------------------------------------------- */
-/* Leaderboard                                                                */
-/* -------------------------------------------------------------------------- */
-
 export function getCoinFlipLeaderboard(limit: number): CoinFlipLeaderboardRow[] {
-  ensureCoinFlipTable();
   const db = getDb();
+  ensureCoinFlipTable(db);
+
   const lim = Math.min(Math.max(limit, 1), 25);
 
   type LeaderRow = {
@@ -177,7 +188,7 @@ export function getCoinFlipLeaderboard(limit: number): CoinFlipLeaderboardRow[] 
     .all(lim) as LeaderRow[];
 
   return rows.map((r) => ({
-    userId: r.userId,
+    userId: String(r.userId),
     total: r.total ?? 0,
     heads: r.heads ?? 0,
     tails: r.tails ?? 0,

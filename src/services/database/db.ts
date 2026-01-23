@@ -1,29 +1,51 @@
 // src/services/database/db.ts
 import Database from "better-sqlite3";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { logger } from "../../utils/logger.js";
-import fs from "fs";
-import path from "path";
 
 let db: Database.Database | null = null;
+
+function resolveDatabasePath(): { raw: string; resolved: string } {
+  const raw = (process.env.DATABASE_PATH || "data/omegabot.db").trim();
+
+  // Support in-memory DB for tests (":memory:") without touching the filesystem.
+  if (raw === ":memory:") return { raw, resolved: raw };
+
+  // Make the default stable regardless of where node is executed from.
+  // Resolve relative paths against the project root-ish location (src/services/database).
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+
+  const resolved = path.isAbsolute(raw) ? raw : path.resolve(__dirname, "../../../", raw);
+
+  return { raw, resolved };
+}
 
 export function initDatabase(): Database.Database {
   if (db) return db;
 
-  const databasePath = process.env.DATABASE_PATH || "data/omegabot.db";
-
-  // Support in-memory DB for tests (":memory:") without touching the filesystem.
-  const isMemory = databasePath === ":memory:";
+  const { raw, resolved } = resolveDatabasePath();
+  const isMemory = resolved === ":memory:";
 
   if (!isMemory) {
-    const dbDir = path.dirname(databasePath);
-
+    const dbDir = path.dirname(resolved);
     if (!fs.existsSync(dbDir)) {
       fs.mkdirSync(dbDir, { recursive: true });
     }
   }
 
-  logger.info({ path: databasePath }, "Initializing database");
-  db = new Database(databasePath);
+  logger.info(
+    {
+      cwd: process.cwd(),
+      databasePathRaw: raw,
+      databasePathResolved: resolved,
+    },
+    "Initializing database",
+  );
+
+  db = new Database(resolved);
 
   // WAL is great for file-backed DBs; avoid it for ":memory:".
   if (!isMemory) {
@@ -66,6 +88,20 @@ export function initDatabase(): Database.Database {
     CREATE INDEX IF NOT EXISTS idx_fun_usage_command ON fun_usage(command);
 
     /* -------------------------------------------------------------------- */
+    /* Jokes                                                                 */
+    /* -------------------------------------------------------------------- */
+    CREATE TABLE IF NOT EXISTS jokes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      joke_text TEXT NOT NULL,
+      category TEXT NOT NULL,
+      added_by TEXT NOT NULL,
+      added_at INTEGER NOT NULL,
+      usage_count INTEGER DEFAULT 0
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_jokes_category ON jokes(category);
+
+    /* -------------------------------------------------------------------- */
     /* Coin flips                                                            */
     /* -------------------------------------------------------------------- */
     CREATE TABLE IF NOT EXISTS coin_flips (
@@ -78,6 +114,9 @@ export function initDatabase(): Database.Database {
     CREATE INDEX IF NOT EXISTS idx_coin_flips_user ON coin_flips(user_id);
     CREATE INDEX IF NOT EXISTS idx_coin_flips_user_ts ON coin_flips(user_id, timestamp);
 
+    /* -------------------------------------------------------------------- */
+    /* GitHub last seen                                                      */
+    /* -------------------------------------------------------------------- */
     CREATE TABLE IF NOT EXISTS github_last_seen (
       repo_key TEXT PRIMARY KEY,
       last_seen_timestamp INTEGER NOT NULL,
@@ -115,7 +154,7 @@ export function initDatabase(): Database.Database {
       owner TEXT NOT NULL,
       repo TEXT NOT NULL,
       number INTEGER NOT NULL,
-      kind TEXT NOT NULL,           -- "PR" | "Issue"
+      kind TEXT NOT NULL,
       title TEXT NOT NULL,
       url TEXT NOT NULL,
       assignees_json TEXT,

@@ -14,11 +14,11 @@ function short(r: "heads" | "tails"): string {
 
 export async function run(interaction: ChatInputCommandInteraction): Promise<void> {
   // Parent (fun.ts) owns deferReply(). We only editReply() here.
-
   const target = interaction.options.getUser("user") ?? interaction.user;
 
   try {
-    const stats = getCoinFlipStats(target.id, 10);
+    // Use the object signature so we can't mix up parameter order
+    const stats = getCoinFlipStats({ userId: target.id, limit: 10 });
 
     const lines: string[] = [];
     lines.push(`🪙 Coin Flip Stats for ${target.toString()}`);
