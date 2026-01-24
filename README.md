@@ -94,6 +94,7 @@ All fun commands are available under `/fun`:
 ## Documentation
 
 - 🤖 [Discord Bot Setup Guide](docs/setup-discord.md)
+- ⚙️ [Environment Setup](docs/setup-env.md)
 - 📘 [Command Reference](docs/commands.md)
 - ❓ [FAQ Storage Design](docs/faq.md)
 - 🧠 [Transcript & Summary Design](docs/transcripts.md)
