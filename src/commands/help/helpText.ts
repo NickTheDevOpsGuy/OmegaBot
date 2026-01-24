@@ -1,4 +1,7 @@
 // src/commands/help/helpText.ts
+//
+// FIXED VERSION - matches actual bot commands (no chucknorris/dadjoke/weather7)
+//
 
 import type { CommandListItem } from "../../services/discord/commandMeta.js";
 
@@ -71,10 +74,11 @@ function buildOverviewHelp(args: { isAdmin: boolean }): string {
     `overview, fun, github, summary, timezone${isAdmin ? ", admin" : ""}, commands`,
     "",
     "**Quick picks**",
-    "`/fun dadjoke`     Random dad joke",
-    "`/fun poll`        Create a quick poll",
-    "`/gh status`       Check GitHub integration status",
-    "`/summary`         Summarize recent messages",
+    "`/fun joke random`  Random joke",
+    "`/fun poll`         Create a quick poll",
+    "`/fun coinflip`     Flip a coin",
+    "`/gh status`        Check GitHub integration status",
+    "`/summary`          Summarize recent messages",
     "",
     "If new commands don't show up, an admin may need to run the register script.",
   ].join("\n");
@@ -87,16 +91,24 @@ function buildFunHelp(): string {
     "All fun commands live under `/fun`.",
     "Most support `private:true` to only show the result to you.",
     "",
-    "`/fun chucknorris`    Random, category, or search",
-    "`/fun dadjoke`        Random or search",
-    "`/fun dice`           Roll dice",
+    "**Games**",
+    "`/fun dice`           Roll dice (2-100 sides, 1-10 dice)",
     "`/fun coinflip`       Flip a coin",
+    "`/fun poll`           Create a poll (2-4 options)",
+    "",
+    "**Jokes**",
+    "`/fun joke random`    Random joke (optional category filter)",
+    "`/fun joke add`       Add a joke to the database",
+    "`/fun joke list`      Browse recent jokes",
+    "`/fun joke remove`    Remove a joke (moderators)",
+    "",
+    "**Stats & Info**",
     "`/fun coinflipstats`  Coin flip stats (you or another user)",
-    "`/fun poll`           Create a poll",
+    "`/fun leaderboard`    Fun command usage leaderboard",
+    "`/fun weather`        Current weather for a location",
+    "",
+    "**Utility**",
     "`/fun remind`         Remind you in X minutes",
-    "`/fun weather`        Today's weather",
-    "`/fun weather7`       7-day forecast",
-    "`/fun leaderboard`    Show fun usage stats",
   ].join("\n");
 }
 

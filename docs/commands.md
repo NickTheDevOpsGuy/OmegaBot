@@ -87,6 +87,183 @@ Fetch a single pull request by number.
 
 Entertainment and engagement commands. All fun commands track usage for leaderboards.
 
+### `/fun 8ball <question>`
+
+Ask the magic 8-ball a question.
+
+**Options:**
+
+- `question` (required) — Your yes/no question (max 200 characters)
+- `private` (optional) — Only show result to you
+
+**Behavior:** Returns one of 20 classic magic 8-ball responses (positive, neutral, or negative).
+
+**Use case:** Get mystical guidance on life's important questions.
+
+---
+
+### `/fun rps <choice> [stats]`
+
+Play rock paper scissors against the bot.
+
+**Options:**
+
+- `choice` (required) — Rock, Paper, or Scissors
+- `stats` (optional) — Show your win/loss record instead of playing
+- `private` (optional) — Only show result to you
+
+**Behavior:**
+
+- Tracks wins, losses, and ties per user
+- Calculates win rate percentage
+
+**Use case:** Quick game, settle disputes, or compete for the best record.
+
+---
+
+### `/fun coinflip`
+
+Flip a coin with animation.
+
+**Options:**
+
+- `private` (optional) — Show result only to you
+
+**Behavior:**
+
+- Animated flip, then reveals **HEADS** or **TAILS**
+- Result is persisted to SQLite (`coin_flips`) and used by `/fun coinflipstats`
+
+**Use case:** Make quick decisions or settle debates.
+
+---
+
+### `/fun coinflipstats`
+
+View coin flip statistics.
+
+**Options:**
+
+- `leaderboard` (optional) — Show leaderboard instead of personal stats
+- `user` (optional) — Target user (default: you)
+- `limit` (optional) — How many rows to show (default: 10, max: 25)
+- `private` (optional) — Show result only to you
+
+**Displays:**
+
+- Total flips, heads/tails counts and percentages
+- Visual emoji bar showing heads vs tails distribution
+- Recent flips as `H T H ...`
+- Leaderboard: top users by total flips (when leaderboard=true)
+
+**Use case:** Track your luck, see who flips the most, and compare with friends.
+
+---
+
+### `/fun dice [sides] [count]`
+
+Roll dice with optional animation.
+
+**Options:**
+
+- `sides` (optional, default: 6) — Number of sides per die (2–100)
+- `count` (optional, default: 1) — Number of dice to roll (1–10)
+- `private` (optional) — Show result only to you
+
+**Behavior:**
+
+- d6 rolls display dice face emojis
+- Multiple dice show individual results and total
+
+**Use case:** Tabletop gaming, random number generation.
+
+---
+
+### `/fun poll <question> <option1> <option2> [option3] [option4]`
+
+Create a quick poll.
+
+**Options:**
+
+- `question` (required) — Poll question
+- `option1` (required) — First option
+- `option2` (required) — Second option
+- `option3` (optional) — Third option
+- `option4` (optional) — Fourth option
+
+**Behavior:**
+
+- 2–4 options supported
+- One vote per user
+- Poll automatically closes after timeout
+
+**Use case:** Quick community decisions or feedback.
+
+---
+
+### `/fun remind <minutes> <message>`
+
+Create a reminder that triggers after a number of minutes.
+
+**Options:**
+
+- `minutes` (required) — Minutes from now (1–10080, i.e., up to 7 days)
+- `message` (required) — Reminder text (max 1000 characters)
+- `private` (optional) — Show confirmation only to you
+
+**Behavior:**
+
+- Reminder is persisted to SQLite immediately
+- Reminders are delivered even after bot restart
+- If the original channel is missing or not text-based, the reminder is skipped
+
+**Use case:** Set quick reminders without leaving Discord.
+
+---
+
+### `/fun weather <location> [unit]`
+
+Show current weather for a location.
+
+**Options:**
+
+- `location` (required) — City, ZIP code, or region
+- `unit` (optional) — Temperature unit (F or C)
+- `private` (optional) — Show result only to you
+
+**Displays:**
+
+- Current temperature and feels-like
+- Weather conditions
+- Sunrise/sunset times
+
+**Use case:** Check weather without leaving Discord.
+
+---
+
+### `/fun leaderboard [view] [user] [limit]`
+
+View fun command usage statistics.
+
+**Options:**
+
+- `view` (optional) — Display mode:
+  - `users` — Top users (default)
+  - `commands` — Top fun commands
+  - `user` — Single-user breakdown
+- `user` (optional) — Target user (for single-user view)
+- `limit` (optional) — Number of results (default: 10, max: 25)
+
+**Views:**
+
+- **Top users:** Shows most active users with avatar and per-command highlights
+- **Top commands:** Commands ranked by usage count
+- **Single-user:** Detailed breakdown of one user's activity
+
+**Use case:** See who's most engaged with fun commands.
+
+---
+
 ### `/fun joke`
 
 Community-submitted jokes organized by generation.
@@ -141,166 +318,6 @@ Browse recent jokes.
 **Displays:** Last 10 jokes with ID, category, and usage count.
 
 **Use case:** See what jokes are available.
-
----
-
-### `/fun coinflip`
-
-Flip a coin with animation.
-
-**Options:**
-
-- `ephemeral` (optional) — Show result only to you
-
-**Behavior:**
-
-- Animated flip, then reveals **HEADS** or **TAILS**
-- Result is persisted to SQLite (`coin_flips`) and used by `/fun coinflipstats`
-
-**Use case:** Make quick decisions or settle debates.
-
-### `/fun coinflipstats`
-
-View coin flip statistics (persisted).
-
-**Features:**
-
-- `/fun coinflipstats` — Personal heads vs tails breakdown (default: you)
-- `/fun coinflipstats user:<user>` — Inspect another user
-- `/fun coinflipstats leaderboard:true` — Top flippers leaderboard (ignores `user` + `recent`)
-
-**Options:**
-
-- `leaderboard` (optional) — Show top flippers (default: false)
-- `user` (optional) — Target user (default: you)
-- `limit` (optional) — How many recent flips or leaderboard rows (default: 10, max: 25)
-- `recent` (optional) — Include recent flips (default: true; ignored when leaderboard=true)
-- `ephemeral` (optional) — Show result only to you
-
-**Displays:**
-
-- Personal stats: total, heads/tails counts, percentages
-- Recent flips as `H T H ...` (when `recent:true` and flips exist)
-- Leaderboard: top users by total flips, with heads percentage
-
-**Use case:** Track your luck, see who flips the most, and compare friends.
-
-### `/fun dice [sides] [count]`
-
-Roll dice with optional animation.
-
-**Options:**
-
-- `sides` (optional, default: 6) — Number of sides per die (2–100)
-- `count` (optional, default: 1) — Number of dice to roll (1–10)
-- `ephemeral` (optional) — Show result only to you
-
-**Behavior:**
-
-- d6 rolls display dice face emojis
-- Multiple dice show individual results and total
-
-**Use case:** Tabletop gaming, random number generation.
-
----
-
-### `/fun poll <question> <option1> <option2> [option3] [option4]`
-
-Create a quick poll.
-
-**Options:**
-
-- `question` (required) — Poll question
-- `option1` (required) — First option
-- `option2` (required) — Second option
-- `option3` (optional) — Third option
-- `option4` (optional) — Fourth option
-
-**Behavior:**
-
-- 2–4 options supported
-- One vote per user
-- Poll automatically closes after timeout
-
-**Use case:** Quick community decisions or feedback.
-
----
-
-### `/fun remind <minutes> <message>`
-
-Create a reminder that triggers after a number of minutes.
-
-**Options:**
-
-- `minutes` (required) — Minutes from now (1–10080)
-- `message` (required) — Reminder text (max 1000 characters)
-
-**Behavior:**
-
-- Reminder is persisted to SQLite immediately
-- Reminders are delivered even after bot restart
-- If the original channel is missing or not text-based, the reminder is skipped
-
-**Use case:** Set quick reminders without leaving Discord.
-
----
-
-### `/fun weather <location> [unit]`
-
-Show current weather for a location.
-
-**Options:**
-
-- `location` (required) — City, ZIP code, or region
-- `unit` (optional) — Temperature unit (F or C)
-- `ephemeral` (optional) — Show result only to you
-
-**Displays:**
-
-- Current temperature and feels-like
-- Weather conditions
-- Sunrise/sunset times
-
-**Use case:** Check weather without leaving Discord.
-
----
-
-### `/fun weather7 <location> [unit]`
-
-Show 7-day weather forecast.
-
-**Options:**
-
-- `location` (required) — City, ZIP code, or region
-- `unit` (optional) — Temperature unit (F or C)
-- `ephemeral` (optional) — Show result only to you
-
-**Displays:** Week-long forecast with high/low temperatures.
-
-**Use case:** Plan ahead for the week.
-
----
-
-### `/fun leaderboard [view] [user] [limit]`
-
-View fun command usage statistics.
-
-**Options:**
-
-- `view` (optional) — Display mode:
-  - `users` — Top users (default)
-  - `commands` — Top fun commands
-  - `user` — Single-user breakdown
-- `user` (optional) — Target user (for single-user view)
-- `limit` (optional) — Number of results (default: 10, max: 25)
-
-**Views:**
-
-- **Top users:** Shows most active users with avatar and per-command highlights
-- **Top commands:** Commands ranked by usage count
-- **Single-user:** Detailed breakdown of one user's activity
-
-**Use case:** See who's most engaged with fun commands.
 
 ---
 
@@ -370,13 +387,15 @@ Demo the reusable pagination helper.
 
 Commands for managing user timezones. Useful for coordinating across time zones.
 
-### `/timezone save <timezone>`
+### `/timezone set <timezone>`
 
 Save your IANA timezone.
 
 **Options:**
 
 - `timezone` (required) — IANA timezone identifier (e.g., `America/New_York`)
+- `guild` (optional) — Save for this guild only
+- `private` (optional) — Show confirmation only to you (default: true)
 
 **Use case:** Let others know your local time for better coordination.
 
@@ -389,6 +408,8 @@ Display saved timezone.
 **Options:**
 
 - `user` (optional) — Check another user's timezone
+- `guild` (optional) — Check guild-specific timezone
+- `private` (optional) — Show only to you
 
 **Displays:** Timezone and current local time.
 
@@ -399,6 +420,11 @@ Display saved timezone.
 ### `/timezone clear`
 
 Remove your saved timezone from the database.
+
+**Options:**
+
+- `guild` (optional) — Clear guild-specific timezone only
+- `private` (optional) — Show confirmation only to you (default: true)
 
 **Use case:** Stop sharing your timezone information.
 
@@ -411,10 +437,28 @@ Compare your timezone with another user's.
 **Options:**
 
 - `user` (required) — User to compare with
+- `guild` (optional) — Use guild-specific timezones
+- `private` (optional) — Show only to you
 
 **Displays:** Time difference between timezones.
 
 **Use case:** Calculate time differences for scheduling.
+
+---
+
+### `/timezone convert <time> <to> [from]`
+
+Convert a time between timezones.
+
+**Options:**
+
+- `time` (required) — Time to convert (e.g., "7:30pm")
+- `to` (required) — Target timezone
+- `from` (optional) — Source timezone (defaults to your saved timezone)
+- `guild` (optional) — Use guild-specific timezone
+- `private` (optional) — Show only to you
+
+**Use case:** Figure out meeting times across timezones.
 
 ---
 
@@ -493,11 +537,47 @@ Search FAQ entries by keyword.
 
 ---
 
+## Admin Commands
+
+Commands requiring special permissions.
+
+### `/config welcome-channel set`
+
+Set the welcome channel for new member greetings.
+
+**Permissions:** Manage Server
+
+### `/config welcome-channel clear`
+
+Remove the welcome channel configuration.
+
+**Permissions:** Manage Server
+
+### `/admin timeout <user> <duration> [reason]`
+
+Timeout a user.
+
+**Permissions:** Requires configured moderator role
+
+### `/admin kick <user> [reason]`
+
+Kick a user from the server.
+
+**Permissions:** Requires configured moderator role
+
+### `/admin ban <user> [reason]`
+
+Ban a user from the server.
+
+**Permissions:** Requires configured moderator role
+
+---
+
 ## Notes
 
 - **Usage Tracking:** Fun commands automatically track usage for leaderboards
 - **Permissions:** Some commands require specific roles (check server configuration)
-- **API Keys:** Weather and LLM features require API keys in `.env`
+- **API Keys:** Weather features require API keys in `.env`
 - **GitHub Integration:** GitHub commands require repository configuration
 
 For configuration details, see `.env.example` in the repository.

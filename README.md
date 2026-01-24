@@ -71,13 +71,16 @@ OmegaBot is a modular Discord bot designed to support development projects with 
 
 All fun commands are available under `/fun`:
 
-- `/fun chucknorris` – Chuck Norris facts (random, category, or search)
-- `/fun dadjoke` – Random or searched dad jokes
+- `/fun 8ball` – Ask the magic 8-ball a question
+- `/fun rps` – Rock paper scissors with win tracking
 - `/fun coinflip` – Heads or tails
+- `/fun coinflipstats` – View coin flip statistics with emoji bars
 - `/fun dice` – Custom dice rolls
-- `/fun weather` – Daily weather
-- `/fun weather7` – 7-day forecast
+- `/fun poll` – Create polls with 2-4 options
+- `/fun remind` – Set reminders (1 min to 7 days)
+- `/fun weather` – Current weather for a location
 - `/fun leaderboard` – Track fun command usage and top users
+- `/fun joke` – Community jokes (random, add, list, remove)
 
 ## Planned features
 
@@ -190,6 +193,7 @@ Pull requests run:
 - **Runtime**: Node.js 18+
 - **Language**: TypeScript 5.x
 - **Discord Library**: discord.js v14
+- **Database**: SQLite via better-sqlite3
 - **Logging**: pino
 - **Code Quality**: ESLint, Prettier
 - **Git Hooks**: Husky
@@ -230,14 +234,7 @@ OmegaBot uses discord.js v14 which includes:
 │   ├── banner.png
 │   └── omegabot.png
 ├── data
-│   ├── faqs.json
-│   ├── fun-usage.json
-│   ├── github-assignees.json
-│   ├── guild-config.json
-│   ├── last-seen.json
-│   ├── omegabot.db
-│   ├── omegabot.db-shm
-│   └── omegabot.db-wal
+│   └── omegabot.db
 ├── docs
 │   ├── commands.md
 │   ├── dev-notes.md
@@ -245,8 +242,6 @@ OmegaBot uses discord.js v14 which includes:
 │   ├── setup-discord.md
 │   ├── setup-env.md
 │   └── transcripts.md
-├── scripts
-│   └── precheck.sh
 ├── src
 │   ├── commands
 │   │   ├── admin
@@ -273,9 +268,11 @@ OmegaBot uses discord.js v14 which includes:
 │   │   │   │   ├── coinflip.ts
 │   │   │   │   ├── coinflipstats.ts
 │   │   │   │   ├── dice.ts
+│   │   │   │   ├── eightball.ts
 │   │   │   │   ├── leaderboard.ts
 │   │   │   │   ├── poll.ts
 │   │   │   │   ├── remind.ts
+│   │   │   │   ├── rps.ts
 │   │   │   │   └── weather.ts
 │   │   │   ├── coinflipStore.test.ts
 │   │   │   ├── coinflipStore.ts
@@ -312,7 +309,6 @@ OmegaBot uses discord.js v14 which includes:
 │   │   │   ├── index.ts
 │   │   │   └── types.ts
 │   │   ├── database
-│   │   │   ├── db-joke-schema.sql
 │   │   │   └── db.ts
 │   │   ├── discord
 │   │   │   ├── commandLoader.ts
@@ -326,13 +322,10 @@ OmegaBot uses discord.js v14 which includes:
 │   │   │   ├── _shared.ts
 │   │   │   ├── faqService.ts
 │   │   │   ├── permissions.ts
-│   │   │   ├── services.test.ts
 │   │   │   ├── services.ts
-│   │   │   ├── store.test.ts
 │   │   │   ├── store.ts
 │   │   │   └── types.ts
 │   │   ├── fun
-│   │   │   ├── funUsageStore.test.ts
 │   │   │   ├── funUsageStore.ts
 │   │   │   └── pollStore.ts
 │   │   ├── github
@@ -348,6 +341,9 @@ OmegaBot uses discord.js v14 which includes:
 │   │   │   └── types.ts
 │   │   ├── joke
 │   │   │   └── jokeStore.ts
+│   │   ├── logging
+│   │   │   ├── requestContext.ts
+│   │   │   └── index.ts
 │   │   ├── reminders
 │   │   │   ├── index.ts
 │   │   │   ├── scheduler.ts

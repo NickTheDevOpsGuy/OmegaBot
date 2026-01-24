@@ -1,4 +1,7 @@
 // src/commands/fun/fun.ts
+//
+// UPDATED VERSION - adds 8ball and rps to existing commands
+//
 
 import {
   MessageFlags,
@@ -19,6 +22,10 @@ import type { WeatherMode, TempUnit } from "../../services/weather/types.js";
 
 import { handleJoke, buildJokeSubcommands } from "./subcommands/joke/index.js";
 import { run as runRemind } from "./subcommands/remind.js";
+
+// NEW: 8ball and RPS
+import { run as runEightball } from "./subcommands/eightball.js";
+import { run as runRps } from "./subcommands/rps.js";
 
 import { recordFunUsage, type FunCommandKey } from "../../services/fun/funUsageStore.js";
 
@@ -43,6 +50,8 @@ function funKeyFromSub(sub: string): FunCommandKey | null {
     weather7: "weather7",
     leaderboard: "leaderboard",
     joke: "joke",
+    "8ball": "8ball" as FunCommandKey,
+    rps: "rps" as FunCommandKey,
   };
 
   return map[sub] ?? null;
@@ -75,6 +84,43 @@ export const data = new SlashCommandBuilder()
 
   // /fun joke (subcommand group)
   .addSubcommandGroup(buildJokeSubcommands)
+
+  // /fun 8ball (NEW)
+  .addSubcommand((s) =>
+    s
+      .setName("8ball")
+      .setDescription("Ask the magic 8-ball a question")
+      .addStringOption((o) =>
+        o
+          .setName("question")
+          .setDescription("Your yes/no question")
+          .setRequired(true)
+          .setMaxLength(200),
+      )
+      .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+  )
+
+  // /fun rps (NEW)
+  .addSubcommand((s) =>
+    s
+      .setName("rps")
+      .setDescription("Play rock paper scissors")
+      .addStringOption((o) =>
+        o
+          .setName("choice")
+          .setDescription("Your choice")
+          .setRequired(true)
+          .addChoices(
+            { name: "Rock 🪨", value: "rock" },
+            { name: "Paper 📄", value: "paper" },
+            { name: "Scissors ✂️", value: "scissors" },
+          ),
+      )
+      .addBooleanOption((o) =>
+        o.setName("stats").setDescription("Show your RPS stats instead of playing"),
+      )
+      .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+  )
 
   // /fun dice
   .addSubcommand((s) =>
@@ -214,6 +260,20 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     if (group === "joke") {
       await handleJoke(interaction);
       await maybeRecordUsage(interaction, "joke");
+      return;
+    }
+
+    // NEW: 8ball
+    if (sub === "8ball") {
+      await runEightball(interaction);
+      await maybeRecordUsage(interaction, sub);
+      return;
+    }
+
+    // NEW: RPS
+    if (sub === "rps") {
+      await runRps(interaction);
+      await maybeRecordUsage(interaction, sub);
       return;
     }
 
