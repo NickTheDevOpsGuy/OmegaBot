@@ -30,12 +30,8 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
     const lines: string[] = [];
     lines.push(`🪙 Coin Flip Stats for ${target.toString()}`);
     lines.push(`Total: ${stats.total}`);
-    lines.push(
-      `${HEADS_EMOJI} Heads: ${stats.heads} (${pct(stats.heads, stats.total)})`,
-    );
-    lines.push(
-      `${TAILS_EMOJI} Tails: ${stats.tails} (${pct(stats.tails, stats.total)})`,
-    );
+    lines.push(`${HEADS_EMOJI} Heads: ${stats.heads} (${pct(stats.heads, stats.total)})`);
+    lines.push(`${TAILS_EMOJI} Tails: ${stats.tails} (${pct(stats.tails, stats.total)})`);
     lines.push("");
     lines.push(`${HEADS_EMOJI} ${emojiBar(HEADS_EMOJI, stats.heads)}`);
     lines.push(`${TAILS_EMOJI} ${emojiBar(TAILS_EMOJI, stats.tails)}`);

@@ -102,7 +102,10 @@ export function traceDbOperation<T>(operation: string, fn: () => T): T {
         `DB: ${operation} (${duration}ms)`,
       );
     } else {
-      logger.debug({ operation, durationMs: duration }, `DB: ${operation} (${duration}ms)`);
+      logger.debug(
+        { operation, durationMs: duration },
+        `DB: ${operation} (${duration}ms)`,
+      );
     }
 
     return result;
@@ -115,7 +118,10 @@ export function traceDbOperation<T>(operation: string, fn: () => T): T {
         `DB: ${operation} failed (${duration}ms)`,
       );
     } else {
-      logger.error({ operation, durationMs: duration, err }, `DB: ${operation} failed (${duration}ms)`);
+      logger.error(
+        { operation, durationMs: duration, err },
+        `DB: ${operation} failed (${duration}ms)`,
+      );
     }
 
     throw err;
@@ -142,7 +148,10 @@ export async function traceDbOperationAsync<T>(
         `DB: ${operation} (${duration}ms)`,
       );
     } else {
-      logger.debug({ operation, durationMs: duration }, `DB: ${operation} (${duration}ms)`);
+      logger.debug(
+        { operation, durationMs: duration },
+        `DB: ${operation} (${duration}ms)`,
+      );
     }
 
     return result;
@@ -155,7 +164,10 @@ export async function traceDbOperationAsync<T>(
         `DB: ${operation} failed (${duration}ms)`,
       );
     } else {
-      logger.error({ operation, durationMs: duration, err }, `DB: ${operation} failed (${duration}ms)`);
+      logger.error(
+        { operation, durationMs: duration, err },
+        `DB: ${operation} failed (${duration}ms)`,
+      );
     }
 
     throw err;
