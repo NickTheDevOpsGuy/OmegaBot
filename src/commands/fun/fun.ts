@@ -1,7 +1,4 @@
 // src/commands/fun/fun.ts
-//
-// UPDATED VERSION - adds 8ball and rps to existing commands
-//
 
 import {
   MessageFlags,
@@ -22,8 +19,6 @@ import type { WeatherMode, TempUnit } from "../../services/weather/types.js";
 
 import { handleJoke, buildJokeSubcommands } from "./subcommands/joke/index.js";
 import { run as runRemind } from "./subcommands/remind.js";
-
-// NEW: 8ball and RPS
 import { run as runEightball } from "./subcommands/eightball.js";
 import { run as runRps } from "./subcommands/rps.js";
 
@@ -50,8 +45,8 @@ function funKeyFromSub(sub: string): FunCommandKey | null {
     weather7: "weather7",
     leaderboard: "leaderboard",
     joke: "joke",
-    "8ball": "8ball" as FunCommandKey,
-    rps: "rps" as FunCommandKey,
+    "8ball": "8ball",
+    rps: "rps",
   };
 
   return map[sub] ?? null;
@@ -85,7 +80,7 @@ export const data = new SlashCommandBuilder()
   // /fun joke (subcommand group)
   .addSubcommandGroup(buildJokeSubcommands)
 
-  // /fun 8ball (NEW)
+  // /fun 8ball
   .addSubcommand((s) =>
     s
       .setName("8ball")
@@ -100,7 +95,7 @@ export const data = new SlashCommandBuilder()
       .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
   )
 
-  // /fun rps (NEW)
+  // /fun rps
   .addSubcommand((s) =>
     s
       .setName("rps")
@@ -210,7 +205,24 @@ export const data = new SlashCommandBuilder()
   .addSubcommand((s) =>
     s
       .setName("weather")
-      .setDescription("Weather for a location")
+      .setDescription("Current weather for a location")
+      .addStringOption((o) =>
+        o.setName("location").setDescription("City or ZIP").setRequired(true),
+      )
+      .addStringOption((o) =>
+        o
+          .setName("unit")
+          .setDescription("Temperature unit")
+          .addChoices({ name: "F", value: "f" }, { name: "C", value: "c" }),
+      )
+      .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+  )
+
+  // /fun weather7
+  .addSubcommand((s) =>
+    s
+      .setName("weather7")
+      .setDescription("7-day forecast for a location")
       .addStringOption((o) =>
         o.setName("location").setDescription("City or ZIP").setRequired(true),
       )
@@ -263,14 +275,12 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       return;
     }
 
-    // NEW: 8ball
     if (sub === "8ball") {
       await runEightball(interaction);
       await maybeRecordUsage(interaction, sub);
       return;
     }
 
-    // NEW: RPS
     if (sub === "rps") {
       await runRps(interaction);
       await maybeRecordUsage(interaction, sub);
@@ -330,6 +340,17 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       const unit = parseTempUnit(interaction.options.getString("unit"));
 
       const mode: WeatherMode = { kind: "daily", location, unit };
+
+      await runWeather(interaction, mode);
+      await maybeRecordUsage(interaction, sub);
+      return;
+    }
+
+    if (sub === "weather7") {
+      const location = interaction.options.getString("location", true).trim();
+      const unit = parseTempUnit(interaction.options.getString("unit"));
+
+      const mode: WeatherMode = { kind: "7day", location, unit };
 
       await runWeather(interaction, mode);
       await maybeRecordUsage(interaction, sub);

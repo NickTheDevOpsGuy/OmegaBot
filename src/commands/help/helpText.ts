@@ -1,7 +1,4 @@
 // src/commands/help/helpText.ts
-//
-// FIXED VERSION - matches actual bot commands (no chucknorris/dadjoke/weather7)
-//
 
 import type { CommandListItem } from "../../services/discord/commandMeta.js";
 
@@ -74,6 +71,7 @@ function buildOverviewHelp(args: { isAdmin: boolean }): string {
     `overview, fun, github, summary, timezone${isAdmin ? ", admin" : ""}, commands`,
     "",
     "**Quick picks**",
+    "`/fun 8ball`        Ask the magic 8-ball",
     "`/fun joke random`  Random joke",
     "`/fun poll`         Create a quick poll",
     "`/fun coinflip`     Flip a coin",
@@ -92,6 +90,8 @@ function buildFunHelp(): string {
     "Most support `private:true` to only show the result to you.",
     "",
     "**Games**",
+    "`/fun 8ball`          Ask the magic 8-ball a question",
+    "`/fun rps`            Rock paper scissors (tracks stats)",
     "`/fun dice`           Roll dice (2-100 sides, 1-10 dice)",
     "`/fun coinflip`       Flip a coin",
     "`/fun poll`           Create a poll (2-4 options)",
@@ -106,6 +106,7 @@ function buildFunHelp(): string {
     "`/fun coinflipstats`  Coin flip stats (you or another user)",
     "`/fun leaderboard`    Fun command usage leaderboard",
     "`/fun weather`        Current weather for a location",
+    "`/fun weather7`       7-day forecast for a location",
     "",
     "**Utility**",
     "`/fun remind`         Remind you in X minutes",
