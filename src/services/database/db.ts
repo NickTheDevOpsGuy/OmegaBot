@@ -23,6 +23,91 @@ function resolveDatabasePath(): { raw: string; resolved: string } {
   return { raw, resolved };
 }
 
+/**
+ * Attempt to recover a corrupted database.
+ * Returns true if recovery succeeded, false otherwise.
+ */
+function attemptDatabaseRecovery(dbPath: string): boolean {
+  const backupPath = `${dbPath}.corrupted.${Date.now()}`;
+  const recoveredPath = `${dbPath}.recovered`;
+
+  try {
+    logger.warn({ dbPath, backupPath }, "Attempting database recovery...");
+
+    // Backup the corrupted file
+    fs.copyFileSync(dbPath, backupPath);
+    logger.info({ backupPath }, "Corrupted database backed up");
+
+    // Try to recover using SQLite's .recover command via a new connection
+    try {
+      const corruptedDb = new Database(dbPath, { readonly: true });
+      const recoveredDb = new Database(recoveredPath);
+
+      // Get schema and data using pragma and manual copy
+      const tables = corruptedDb
+        .prepare(
+          `SELECT name, sql FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'`,
+        )
+        .all() as Array<{ name: string; sql: string }>;
+
+      for (const table of tables) {
+        try {
+          // Create table in recovered db
+          recoveredDb.exec(table.sql);
+
+          // Copy data
+          const rows = corruptedDb.prepare(`SELECT * FROM "${table.name}"`).all();
+          if (rows.length > 0) {
+            const columns = Object.keys(rows[0] as object);
+            const placeholders = columns.map(() => "?").join(", ");
+            const insert = recoveredDb.prepare(
+              `INSERT INTO "${table.name}" (${columns.map((c) => `"${c}"`).join(", ")}) VALUES (${placeholders})`,
+            );
+
+            for (const row of rows) {
+              try {
+                insert.run(...columns.map((c) => (row as Record<string, unknown>)[c]));
+              } catch {
+                // Skip rows that fail
+              }
+            }
+          }
+          logger.info({ table: table.name, rows: rows.length }, "Recovered table");
+        } catch (err) {
+          logger.warn({ table: table.name, err }, "Failed to recover table");
+        }
+      }
+
+      corruptedDb.close();
+      recoveredDb.close();
+
+      // Replace corrupted with recovered
+      fs.unlinkSync(dbPath);
+      fs.renameSync(recoveredPath, dbPath);
+
+      logger.info("Database recovery completed successfully");
+      return true;
+    } catch (recoveryErr) {
+      logger.error(
+        { err: recoveryErr },
+        "Recovery via copy failed, will create fresh database",
+      );
+
+      // Clean up partial recovery
+      if (fs.existsSync(recoveredPath)) {
+        fs.unlinkSync(recoveredPath);
+      }
+
+      // Delete corrupted file, will create fresh
+      fs.unlinkSync(dbPath);
+      return true; // Let it create a fresh database
+    }
+  } catch (err) {
+    logger.error({ err }, "Database recovery failed completely");
+    return false;
+  }
+}
+
 export function initDatabase(): Database.Database {
   if (db) return db;
 
@@ -45,7 +130,53 @@ export function initDatabase(): Database.Database {
     "Initializing database",
   );
 
-  db = new Database(resolved);
+  // Try to open the database, with corruption recovery
+  let retryCount = 0;
+  const maxRetries = 2;
+
+  while (retryCount < maxRetries) {
+    try {
+      db = new Database(resolved);
+
+      // Test the connection with a simple query
+      db.prepare("SELECT 1").get();
+
+      break; // Success!
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      const isCorruption =
+        errorMessage.includes("SQLITE_CORRUPT") ||
+        errorMessage.includes("database disk image is malformed") ||
+        errorMessage.includes("file is not a database");
+
+      if (isCorruption && !isMemory && retryCount === 0) {
+        logger.error({ err }, "Database corruption detected, attempting recovery...");
+
+        // Close the failed connection if it exists
+        if (db) {
+          try {
+            db.close();
+          } catch {
+            // Ignore close errors
+          }
+          db = null;
+        }
+
+        const recovered = attemptDatabaseRecovery(resolved);
+        if (recovered) {
+          retryCount++;
+          continue; // Try again with recovered/fresh database
+        }
+      }
+
+      // Re-throw if not corruption or recovery failed
+      throw err;
+    }
+  }
+
+  if (!db) {
+    throw new Error("Failed to initialize database after recovery attempts");
+  }
 
   // WAL is great for file-backed DBs; avoid it for ":memory:".
   if (!isMemory) {
@@ -247,6 +378,27 @@ export function initDatabase(): Database.Database {
     );
 
     CREATE INDEX IF NOT EXISTS idx_afk_guild ON afk_status(guild_id);
+
+    /* -------------------------------------------------------------------- */
+    /* Tic-Tac-Toe                                                            */
+    /* -------------------------------------------------------------------- */
+    CREATE TABLE IF NOT EXISTS ttt_stats (
+      user_id TEXT PRIMARY KEY,
+      wins INTEGER NOT NULL DEFAULT 0,
+      losses INTEGER NOT NULL DEFAULT 0,
+      ties INTEGER NOT NULL DEFAULT 0,
+      updated_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS ttt_h2h (
+      user1_id TEXT NOT NULL,
+      user2_id TEXT NOT NULL,
+      user1_wins INTEGER NOT NULL DEFAULT 0,
+      user2_wins INTEGER NOT NULL DEFAULT 0,
+      ties INTEGER NOT NULL DEFAULT 0,
+      updated_at INTEGER NOT NULL,
+      PRIMARY KEY (user1_id, user2_id)
+    );
   `);
 
   logger.info("Database tables created");

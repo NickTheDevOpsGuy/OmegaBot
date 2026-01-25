@@ -94,6 +94,7 @@ function buildFunHelp(): string {
     "`/fun 8ball`          Ask the magic 8-ball a question",
     "`/fun rps`            Rock paper scissors vs bot",
     "`/fun rps opponent:@user`  Challenge another player!",
+    "`/fun tictactoe opponent:@user` Play Tic-Tac-Toe",
     "`/fun trivia`         Answer trivia questions for points",
     "`/fun dice`           Roll dice (2-100 sides, 1-10 dice)",
     "`/fun coinflip`       Flip a coin",

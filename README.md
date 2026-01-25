@@ -45,6 +45,7 @@ OmegaBot is a modular Discord bot designed to support development projects with 
 - Per-guild configuration backed by persistent storage and admin slash commands
 - **Timezone support** – Save your timezone, view it later, and compare times across locations or users
 - **Reminders** – SQLite-backed `/fun remind` with delivery that survives bot restarts
+- **AFK system** – Set AFK status with auto-reply when mentioned
 
 ### Core commands
 
@@ -56,6 +57,7 @@ OmegaBot is a modular Discord bot designed to support development projects with 
 - /pagination – reusable inline paging helper
 - /timezone – per-user IANA timezone support
 - /changelog – ephemeral release preview
+- /afk – set AFK status with auto-reply
 
 ### FAQ system
 
@@ -71,22 +73,40 @@ OmegaBot is a modular Discord bot designed to support development projects with 
 
 All fun commands are available under `/fun`:
 
+**Games**
+
 - `/fun 8ball` – Ask the magic 8-ball a question
-- `/fun rps` – Rock paper scissors with win tracking
+- `/fun rps` – Rock paper scissors (solo or `opponent:@user` for PvP)
+- `/fun tictactoe` – Tic Tac Toe (solo or `opponent:@user` for PvP)
+- `/fun trivia` – Trivia questions with points and streaks
 - `/fun coinflip` – Heads or tails
-- `/fun coinflipstats` – View coin flip statistics with emoji bars
-- `/fun dice` – Custom dice rolls
+- `/fun dice` – Custom dice rolls (2-100 sides, 1-10 dice)
 - `/fun poll` – Create polls with 2-4 options
+
+**Quotes & Jokes**
+
+- `/fun quote add` – Save a memorable server quote
+- `/fun quote random` – Get a random quote
+- `/fun quote list` – Browse recent quotes
+- `/fun quote search` – Search quotes by text
+- `/fun joke` – Community jokes (random, add, list, remove)
+
+**Daily & Stats**
+
+- `/fun daily` – Daily check-in for points and streaks
+- `/fun coinflipstats` – Coin flip statistics with emoji bars
+- `/fun leaderboard` – Fun command usage and top users
+
+**Utility**
+
 - `/fun remind` – Set reminders (1 min to 7 days)
 - `/fun weather` – Current weather for a location
-- `/fun leaderboard` – Track fun command usage and top users
-- `/fun joke` – Community jokes (random, add, list, remove)
+- `/fun weather7` – 7-day forecast
 
 ## Planned features
 
 - `/docs` command for documentation lookups
 - Expanded GitHub automation (labels, reviews, merge events)
-- Enhanced fun leaderboard views and stats
 - Improved summary output (highlights, action items, structured sections)
 
 ---
@@ -263,6 +283,8 @@ OmegaBot uses discord.js v14 which includes:
 │   ├── commands
 │   │   ├── admin
 │   │   │   └── admin.ts
+│   │   ├── afk
+│   │   │   └── afk.ts
 │   │   ├── changelog
 │   │   │   └── changelog.ts
 │   │   ├── config
@@ -282,6 +304,7 @@ OmegaBot uses discord.js v14 which includes:
 │   │   │   └── subcommands
 │   │   │       ├── coinflipstats.ts
 │   │   │       ├── coinflip.ts
+│   │   │       ├── daily.ts
 │   │   │       ├── dice.ts
 │   │   │       ├── eightball.ts
 │   │   │       ├── joke
@@ -292,8 +315,11 @@ OmegaBot uses discord.js v14 which includes:
 │   │   │       │   └── remove.ts
 │   │   │       ├── leaderboard.ts
 │   │   │       ├── poll.ts
+│   │   │       ├── quote.ts
 │   │   │       ├── remind.ts
 │   │   │       ├── rps.ts
+│   │   │       ├── tictactoe.ts
+│   │   │       ├── trivia.ts
 │   │   │       └── weather.ts
 │   │   ├── general
 │   │   │   └── ping.ts

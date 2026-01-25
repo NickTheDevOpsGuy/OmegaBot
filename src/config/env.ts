@@ -69,6 +69,12 @@ export const env = {
   openAIModel,
 
   /* ---------------------------------------------------------------- */
+  /* Weather API                                                       */
+  /* ---------------------------------------------------------------- */
+
+  weatherApiKey: process.env.WEATHERAPI_KEY?.trim() || null,
+
+  /* ---------------------------------------------------------------- */
   /* GitHub                                                           */
   /* ---------------------------------------------------------------- */
 
@@ -104,5 +110,11 @@ export const env = {
     const token = process.env.GITHUB_TOKEN;
     if (!token) throw new Error("GITHUB_TOKEN is required for this GitHub feature");
     return token;
+  },
+
+  requireWeatherApiKey(): string {
+    const key = process.env.WEATHERAPI_KEY?.trim();
+    if (!key) throw new Error("WEATHERAPI_KEY is required for weather commands");
+    return key;
   },
 };

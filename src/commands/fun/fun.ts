@@ -24,6 +24,8 @@ import { run as runRps } from "./subcommands/rps.js";
 import { run as runTrivia } from "./subcommands/trivia.js";
 import { run as runQuote } from "./subcommands/quote.js";
 import { run as runDaily } from "./subcommands/daily.js";
+import { run as runTictactoe } from "./subcommands/tictactoe.js";
+import { run as runTictactoe } from "./subcommands/tictactoe.js";
 
 import { recordFunUsage, type FunCommandKey } from "../../services/fun/funUsageStore.js";
 
@@ -53,6 +55,7 @@ function funKeyFromSub(sub: string): FunCommandKey | null {
     trivia: "trivia",
     quote: "quote",
     daily: "daily",
+    tictactoe: "tictactoe",
   };
 
   return map[sub] ?? null;
@@ -211,6 +214,34 @@ export const data = new SlashCommandBuilder()
       .addBooleanOption((o) => o.setName("stats").setDescription("Show your daily stats"))
       .addBooleanOption((o) =>
         o.setName("leaderboard").setDescription("Show daily leaderboard"),
+      )
+      .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+  )
+
+  // /fun tictactoe
+  .addSubcommand((s) =>
+    s
+      .setName("tictactoe")
+      .setDescription("Play Tic Tac Toe")
+      .addUserOption((o) =>
+        o.setName("opponent").setDescription("Challenge another player (or play vs bot)"),
+      )
+      .addBooleanOption((o) =>
+        o.setName("stats").setDescription("Show your Tic Tac Toe stats"),
+      )
+      .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+  )
+
+  // /fun tictactoe
+  .addSubcommand((s) =>
+    s
+      .setName("tictactoe")
+      .setDescription("Play Tic-Tac-Toe against another player")
+      .addUserOption((o) =>
+        o.setName("opponent").setDescription("Challenge another player"),
+      )
+      .addBooleanOption((o) =>
+        o.setName("stats").setDescription("Show your Tic-Tac-Toe stats"),
       )
       .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
   )
@@ -399,6 +430,12 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
     if (sub === "daily") {
       await runDaily(interaction);
+      await maybeRecordUsage(interaction, sub);
+      return;
+    }
+
+    if (sub === "tictactoe") {
+      await runTictactoe(interaction);
       await maybeRecordUsage(interaction, sub);
       return;
     }
