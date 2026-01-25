@@ -5,11 +5,10 @@ import path from "node:path";
 import { logger } from "../../utils/logger.js";
 
 export type FunCommandKey =
-  | "chucknorris"
-  | "dadjoke"
+  | "8ball"
+  | "rps"
   | "dice"
   | "coinflip"
-  | "java"
   | "poll"
   | "weather"
   | "weather7"
@@ -37,11 +36,10 @@ const DATA_DIR = path.join(process.cwd(), "data");
 const STORE_PATH = path.join(DATA_DIR, "fun-usage.json");
 
 const ALL_COMMANDS: FunCommandKey[] = [
-  "chucknorris",
-  "dadjoke",
+  "8ball",
+  "rps",
   "dice",
   "coinflip",
-  "java",
   "poll",
   "weather",
   "weather7",
