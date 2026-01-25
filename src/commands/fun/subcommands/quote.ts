@@ -141,20 +141,6 @@ function searchQuotes(guildId: string, query: string, limit = 10): QuoteRow[] {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Helpers                                                                     */
-/* -------------------------------------------------------------------------- */
-
-function formatQuoteEmbed(quote: QuoteRow, client: any): EmbedBuilder {
-  const embed = new EmbedBuilder()
-    .setDescription(`"${quote.quote_text}"`)
-    .setFooter({ text: `Quote #${quote.id}` })
-    .setTimestamp(quote.added_at)
-    .setColor(0x5865f2);
-
-  return embed;
-}
-
-/* -------------------------------------------------------------------------- */
 /* Command handler                                                             */
 /* -------------------------------------------------------------------------- */
 

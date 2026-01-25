@@ -6,7 +6,6 @@ import {
   ComponentType,
   type ChatInputCommandInteraction,
 } from "discord.js";
-import { logger } from "../../../utils/logger.js";
 import { getDb } from "../../../services/database/db.js";
 
 type TriviaCategory =

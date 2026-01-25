@@ -3,7 +3,6 @@ import {
   SlashCommandBuilder,
   type ChatInputCommandInteraction,
   type Message,
-  type Client,
 } from "discord.js";
 import { logger } from "../../utils/logger.js";
 import { getDb } from "../../services/database/db.js";
