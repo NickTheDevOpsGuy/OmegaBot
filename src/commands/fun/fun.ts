@@ -25,7 +25,6 @@ import { run as runTrivia } from "./subcommands/trivia.js";
 import { run as runQuote } from "./subcommands/quote.js";
 import { run as runDaily } from "./subcommands/daily.js";
 import { run as runTictactoe } from "./subcommands/tictactoe.js";
-import { run as runTictactoe } from "./subcommands/tictactoe.js";
 
 import { recordFunUsage, type FunCommandKey } from "../../services/fun/funUsageStore.js";
 
