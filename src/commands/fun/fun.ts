@@ -25,6 +25,7 @@ import { run as runTrivia } from "./subcommands/trivia.js";
 import { run as runQuote } from "./subcommands/quote.js";
 import { run as runDaily } from "./subcommands/daily.js";
 import { run as runTictactoe } from "./subcommands/tictactoe.js";
+import { run as runTictactoe } from "./subcommands/tictactoe.js";
 
 import { recordFunUsage, type FunCommandKey } from "../../services/fun/funUsageStore.js";
 
@@ -227,20 +228,6 @@ export const data = new SlashCommandBuilder()
       )
       .addBooleanOption((o) =>
         o.setName("stats").setDescription("Show your Tic Tac Toe stats"),
-      )
-      .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
-  )
-
-  // /fun tictactoe
-  .addSubcommand((s) =>
-    s
-      .setName("tictactoe")
-      .setDescription("Play Tic-Tac-Toe against another player")
-      .addUserOption((o) =>
-        o.setName("opponent").setDescription("Challenge another player"),
-      )
-      .addBooleanOption((o) =>
-        o.setName("stats").setDescription("Show your Tic-Tac-Toe stats"),
       )
       .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
   )
