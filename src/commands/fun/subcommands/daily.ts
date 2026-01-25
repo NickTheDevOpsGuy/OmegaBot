@@ -183,9 +183,7 @@ function doCheckIn(userId: string): {
   return { points, streak: newStreak, isNewBest, milestone };
 }
 
-function getDailyLeaderboard(
-  limit: number,
-): Array<{
+function getDailyLeaderboard(limit: number): Array<{
   userId: string;
   points: number;
   streak: number;
