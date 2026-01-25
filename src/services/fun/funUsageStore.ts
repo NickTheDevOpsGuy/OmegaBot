@@ -13,7 +13,10 @@ export type FunCommandKey =
   | "weather"
   | "weather7"
   | "leaderboard"
-  | "joke";
+  | "joke"
+  | "trivia"
+  | "quote"
+  | "daily";
 
 type FunUsageStoreV1 = {
   version: 1;
@@ -45,6 +48,9 @@ const ALL_COMMANDS: FunCommandKey[] = [
   "weather7",
   "leaderboard",
   "joke",
+  "trivia",
+  "quote",
+  "daily",
 ];
 
 function nowIso(): string {

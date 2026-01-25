@@ -120,7 +120,7 @@ export async function run(
   if (!anyUserUsage && !anyCommandUsage) {
     embed.setTitle("Fun Leaderboard");
     embed.setDescription(
-      "No fun command usage recorded yet. Try `/fun dadjoke` to get started.",
+      "No fun command usage recorded yet. Try `/fun 8ball` or `/fun rps` to get started!",
     );
     await interaction.editReply({ embeds: [embed] });
     return;

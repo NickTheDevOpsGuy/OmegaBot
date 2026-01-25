@@ -1,7 +1,7 @@
 // src/bot.ts
 import { initDatabase, closeDatabase } from "./services/database/db.js";
 
-import { Client, GatewayIntentBits } from "discord.js";
+import { Client, GatewayIntentBits, Events } from "discord.js";
 import { loadCommands, type CommandClient } from "./services/discord/commandLoader.js";
 import { handleInteraction } from "./services/discord/interactionHandler.js";
 import { pollPullRequestsOnce } from "./services/github/prPoller.js";
@@ -11,6 +11,25 @@ import { onGuildMemberAdd } from "./services/welcome/welcomeHandler.js";
 import { env } from "./config/env.js";
 import { logger } from "./utils/logger.js";
 import { createReminderScheduler } from "./services/reminders/index.js";
+import { handleAfkMentions } from "./commands/afk/afk.js";
+
+/* -------------------------------------------------------------------------- */
+/* Process error handlers                                                      */
+/* -------------------------------------------------------------------------- */
+
+process.on("unhandledRejection", (reason, promise) => {
+  logger.error({ reason, promise }, "Unhandled Promise Rejection");
+});
+
+process.on("uncaughtException", (err) => {
+  logger.error({ err }, "Uncaught Exception - shutting down");
+  closeDatabase();
+  process.exit(1);
+});
+
+/* -------------------------------------------------------------------------- */
+/* Discord client setup                                                        */
+/* -------------------------------------------------------------------------- */
 
 /**
  * Create the Discord client.
@@ -18,9 +37,16 @@ import { createReminderScheduler } from "./services/reminders/index.js";
  * Required intents:
  * - Guilds: base guild access, slash commands
  * - GuildMembers: REQUIRED for guildMemberAdd (welcome messages)
+ * - GuildMessages: REQUIRED for AFK mention detection
+ * - MessageContent: REQUIRED for reading message content (AFK)
  */
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+  ],
 }) as CommandClient;
 
 /**
@@ -50,14 +76,25 @@ client.reminderScheduler = createReminderScheduler(client);
 /**
  * Handle slash command interactions.
  */
-client.on("interactionCreate", async (interaction) => {
+client.on(Events.InteractionCreate, async (interaction) => {
   await handleInteraction(interaction, client);
+});
+
+/**
+ * Handle messages for AFK detection.
+ */
+client.on(Events.MessageCreate, async (message) => {
+  try {
+    await handleAfkMentions(message);
+  } catch (err) {
+    logger.error({ err }, "[afk] handleAfkMentions failed");
+  }
 });
 
 /**
  * Welcome handler for new guild members.
  */
-client.on("guildMemberAdd", async (member) => {
+client.on(Events.GuildMemberAdd, async (member) => {
   logger.info(
     {
       guildId: member.guild.id,
@@ -82,7 +119,7 @@ let isReady = false;
 /**
  * Log once when the bot is ready.
  */
-client.once("clientReady", () => {
+client.once(Events.ClientReady, () => {
   logger.info("OmegaBot is online");
   isReady = true;
 

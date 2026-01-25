@@ -21,6 +21,9 @@ import { handleJoke, buildJokeSubcommands } from "./subcommands/joke/index.js";
 import { run as runRemind } from "./subcommands/remind.js";
 import { run as runEightball } from "./subcommands/eightball.js";
 import { run as runRps } from "./subcommands/rps.js";
+import { run as runTrivia } from "./subcommands/trivia.js";
+import { run as runQuote } from "./subcommands/quote.js";
+import { run as runDaily } from "./subcommands/daily.js";
 
 import { recordFunUsage, type FunCommandKey } from "../../services/fun/funUsageStore.js";
 
@@ -47,6 +50,9 @@ function funKeyFromSub(sub: string): FunCommandKey | null {
     joke: "joke",
     "8ball": "8ball",
     rps: "rps",
+    trivia: "trivia",
+    quote: "quote",
+    daily: "daily",
   };
 
   return map[sub] ?? null;
@@ -80,6 +86,59 @@ export const data = new SlashCommandBuilder()
   // /fun joke (subcommand group)
   .addSubcommandGroup(buildJokeSubcommands)
 
+  // /fun quote (subcommand group)
+  .addSubcommandGroup((g) =>
+    g
+      .setName("quote")
+      .setDescription("Save and view memorable server quotes")
+      .addSubcommand((s) =>
+        s
+          .setName("add")
+          .setDescription("Add a new quote")
+          .addUserOption((o) =>
+            o.setName("author").setDescription("Who said it").setRequired(true),
+          )
+          .addStringOption((o) =>
+            o
+              .setName("text")
+              .setDescription("The quote")
+              .setRequired(true)
+              .setMaxLength(500),
+          )
+          .addStringOption((o) =>
+            o.setName("context").setDescription("Optional context").setMaxLength(200),
+          ),
+      )
+      .addSubcommand((s) =>
+        s
+          .setName("random")
+          .setDescription("Get a random quote")
+          .addUserOption((o) => o.setName("author").setDescription("Filter by author")),
+      )
+      .addSubcommand((s) =>
+        s
+          .setName("list")
+          .setDescription("List recent quotes")
+          .addUserOption((o) => o.setName("author").setDescription("Filter by author")),
+      )
+      .addSubcommand((s) =>
+        s
+          .setName("remove")
+          .setDescription("Remove a quote")
+          .addIntegerOption((o) =>
+            o.setName("id").setDescription("Quote ID to remove").setRequired(true),
+          ),
+      )
+      .addSubcommand((s) =>
+        s
+          .setName("search")
+          .setDescription("Search quotes")
+          .addStringOption((o) =>
+            o.setName("query").setDescription("Search text").setRequired(true),
+          ),
+      ),
+  )
+
   // /fun 8ball
   .addSubcommand((s) =>
     s
@@ -103,16 +162,55 @@ export const data = new SlashCommandBuilder()
       .addStringOption((o) =>
         o
           .setName("choice")
-          .setDescription("Your choice")
-          .setRequired(true)
+          .setDescription("Your choice (for solo play vs bot)")
           .addChoices(
             { name: "Rock 🪨", value: "rock" },
             { name: "Paper 📄", value: "paper" },
             { name: "Scissors ✂️", value: "scissors" },
           ),
       )
+      .addUserOption((o) =>
+        o.setName("opponent").setDescription("Challenge another player"),
+      )
+      .addBooleanOption((o) => o.setName("stats").setDescription("Show your RPS stats"))
+      .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+  )
+
+  // /fun trivia
+  .addSubcommand((s) =>
+    s
+      .setName("trivia")
+      .setDescription("Answer trivia questions for points")
+      .addStringOption((o) =>
+        o
+          .setName("category")
+          .setDescription("Question category")
+          .addChoices(
+            { name: "🎯 General", value: "general" },
+            { name: "🔬 Science", value: "science" },
+            { name: "📜 History", value: "history" },
+            { name: "🌍 Geography", value: "geography" },
+            { name: "🎬 Entertainment", value: "entertainment" },
+            { name: "⚽ Sports", value: "sports" },
+          ),
+      )
       .addBooleanOption((o) =>
-        o.setName("stats").setDescription("Show your RPS stats instead of playing"),
+        o.setName("stats").setDescription("Show your trivia stats"),
+      )
+      .addBooleanOption((o) =>
+        o.setName("leaderboard").setDescription("Show trivia leaderboard"),
+      )
+      .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+  )
+
+  // /fun daily
+  .addSubcommand((s) =>
+    s
+      .setName("daily")
+      .setDescription("Daily check-in for points and streaks")
+      .addBooleanOption((o) => o.setName("stats").setDescription("Show your daily stats"))
+      .addBooleanOption((o) =>
+        o.setName("leaderboard").setDescription("Show daily leaderboard"),
       )
       .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
   )
@@ -275,6 +373,12 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       return;
     }
 
+    if (group === "quote") {
+      await runQuote(interaction, sub as "add" | "random" | "list" | "remove" | "search");
+      await maybeRecordUsage(interaction, "quote");
+      return;
+    }
+
     if (sub === "8ball") {
       await runEightball(interaction);
       await maybeRecordUsage(interaction, sub);
@@ -283,6 +387,18 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
     if (sub === "rps") {
       await runRps(interaction);
+      await maybeRecordUsage(interaction, sub);
+      return;
+    }
+
+    if (sub === "trivia") {
+      await runTrivia(interaction);
+      await maybeRecordUsage(interaction, sub);
+      return;
+    }
+
+    if (sub === "daily") {
+      await runDaily(interaction);
       await maybeRecordUsage(interaction, sub);
       return;
     }

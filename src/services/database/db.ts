@@ -164,6 +164,89 @@ export function initDatabase(): Database.Database {
 
     CREATE INDEX IF NOT EXISTS idx_github_assignees_repo
       ON github_assignees_state(owner, repo);
+
+    /* -------------------------------------------------------------------- */
+    /* Rock Paper Scissors                                                    */
+    /* -------------------------------------------------------------------- */
+    CREATE TABLE IF NOT EXISTS rps_stats (
+      user_id TEXT PRIMARY KEY,
+      wins INTEGER NOT NULL DEFAULT 0,
+      losses INTEGER NOT NULL DEFAULT 0,
+      ties INTEGER NOT NULL DEFAULT 0,
+      updated_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS rps_h2h (
+      user1_id TEXT NOT NULL,
+      user2_id TEXT NOT NULL,
+      user1_wins INTEGER NOT NULL DEFAULT 0,
+      user2_wins INTEGER NOT NULL DEFAULT 0,
+      ties INTEGER NOT NULL DEFAULT 0,
+      updated_at INTEGER NOT NULL,
+      PRIMARY KEY (user1_id, user2_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS rps_pvp_stats (
+      user_id TEXT PRIMARY KEY,
+      wins INTEGER NOT NULL DEFAULT 0,
+      losses INTEGER NOT NULL DEFAULT 0,
+      ties INTEGER NOT NULL DEFAULT 0,
+      updated_at INTEGER NOT NULL
+    );
+
+    /* -------------------------------------------------------------------- */
+    /* Trivia                                                                 */
+    /* -------------------------------------------------------------------- */
+    CREATE TABLE IF NOT EXISTS trivia_stats (
+      user_id TEXT PRIMARY KEY,
+      correct INTEGER NOT NULL DEFAULT 0,
+      incorrect INTEGER NOT NULL DEFAULT 0,
+      points INTEGER NOT NULL DEFAULT 0,
+      streak INTEGER NOT NULL DEFAULT 0,
+      best_streak INTEGER NOT NULL DEFAULT 0,
+      updated_at INTEGER NOT NULL
+    );
+
+    /* -------------------------------------------------------------------- */
+    /* Quotes                                                                 */
+    /* -------------------------------------------------------------------- */
+    CREATE TABLE IF NOT EXISTS quotes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      guild_id TEXT NOT NULL,
+      author_id TEXT NOT NULL,
+      quote_text TEXT NOT NULL,
+      added_by TEXT NOT NULL,
+      added_at INTEGER NOT NULL,
+      context TEXT
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_quotes_guild ON quotes(guild_id);
+    CREATE INDEX IF NOT EXISTS idx_quotes_author ON quotes(guild_id, author_id);
+
+    /* -------------------------------------------------------------------- */
+    /* Daily Check-ins                                                        */
+    /* -------------------------------------------------------------------- */
+    CREATE TABLE IF NOT EXISTS daily_checkins (
+      user_id TEXT PRIMARY KEY,
+      streak INTEGER NOT NULL DEFAULT 0,
+      best_streak INTEGER NOT NULL DEFAULT 0,
+      total_checkins INTEGER NOT NULL DEFAULT 0,
+      points INTEGER NOT NULL DEFAULT 0,
+      last_checkin INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+
+    /* -------------------------------------------------------------------- */
+    /* AFK Status                                                             */
+    /* -------------------------------------------------------------------- */
+    CREATE TABLE IF NOT EXISTS afk_status (
+      user_id TEXT PRIMARY KEY,
+      guild_id TEXT NOT NULL,
+      message TEXT NOT NULL,
+      set_at INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_afk_guild ON afk_status(guild_id);
   `);
 
   logger.info("Database tables created");
