@@ -163,7 +163,8 @@ function getDailyStreak(
       .prepare(`SELECT streak, best_streak, points FROM daily_checkins WHERE user_id = ?`)
       .get(userId) as { streak: number; best_streak: number; points: number } | undefined;
 
-    return row ?? { current: 0, best: 0, points: 0 };
+    if (!row) return { current: 0, best: 0, points: 0 };
+    return { current: row.streak, best: row.best_streak, points: row.points };
   } catch {
     return { current: 0, best: 0, points: 0 };
   }
