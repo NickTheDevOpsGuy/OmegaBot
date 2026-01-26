@@ -1,43 +1,52 @@
 // src/services/config/types.ts
 
 /**
- * GuildConfig
+ * Per-guild configuration.
  *
- * Per-guild configuration for OmegaBot.
- * This is intentionally small and focused so we can expand safely over time.
+ * Keep this explicit (no index signatures) so TypeScript
+ * catches typos when updating config.
  */
 export type GuildConfig = {
-  /** Discord guild (server) id */
   guildId: string;
 
   /* ------------------------------------------------------------------ */
-  /* Welcome / onboarding                                                 */
+  /* Welcome messages                                                    */
   /* ------------------------------------------------------------------ */
-
-  /**
-   * Master enable/disable for welcome messages in this guild.
-   * Defaults to true.
-   */
   welcomeEnabled: boolean;
-
-  /**
-   * Preferred channel for welcome messages.
-   * If null, we fall back to system channel, then first text channel.
-   */
   welcomeChannelId: string | null;
+
+  /* ------------------------------------------------------------------ */
+  /* Starboard                                                           */
+  /* ------------------------------------------------------------------ */
+  starboardChannelId: string | null;
+  starboardThreshold: number;
+
+  /* ------------------------------------------------------------------ */
+  /* Metadata                                                            */
+  /* ------------------------------------------------------------------ */
+  updatedAt: number;
 };
 
 /**
- * Patch type used to update config values without requiring the full object.
- * guildId is excluded intentionally (immutable key).
- */
-export type GuildConfigPatch = Partial<Omit<GuildConfig, "guildId">>;
-
-/**
- * Default config for new guilds.
- * Applied automatically when no saved config exists.
+ * Default values used when a guild has no stored config yet.
  */
 export const DEFAULT_GUILD_CONFIG: Omit<GuildConfig, "guildId"> = {
+  // Welcome
   welcomeEnabled: true,
   welcomeChannelId: null,
+
+  // Starboard
+  starboardChannelId: null,
+  starboardThreshold: 3,
+
+  // Metadata
+  updatedAt: 0,
 };
+
+/**
+ * Patch type used by setters.
+ *
+ * - guildId is immutable
+ * - updatedAt is controlled internally
+ */
+export type GuildConfigPatch = Partial<Omit<GuildConfig, "guildId" | "updatedAt">>;

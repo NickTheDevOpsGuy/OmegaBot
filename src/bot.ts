@@ -1,7 +1,7 @@
 // src/bot.ts
 import { initDatabase, closeDatabase } from "./services/database/db.js";
 
-import { Client, GatewayIntentBits, Events } from "discord.js";
+import { Client, GatewayIntentBits, Events, Partials } from "discord.js";
 import { loadCommands, type CommandClient } from "./services/discord/commandLoader.js";
 import { handleInteraction } from "./services/discord/interactionHandler.js";
 import { pollPullRequestsOnce } from "./services/github/prPoller.js";
@@ -11,6 +11,7 @@ import { onGuildMemberAdd } from "./services/welcome/welcomeHandler.js";
 import { env } from "./config/env.js";
 import { logger } from "./utils/logger.js";
 import { createReminderScheduler } from "./services/reminders/index.js";
+import { getGuildConfig } from "./services/config/index.js";
 import { handleAfkMentions } from "./commands/afk/afk.js";
 
 /* -------------------------------------------------------------------------- */
@@ -78,6 +79,57 @@ client.reminderScheduler = createReminderScheduler(client);
  */
 client.on(Events.InteractionCreate, async (interaction) => {
   await handleInteraction(interaction, client);
+});
+
+/* -------------------------------------------------------------------------- */
+/* Starboard                                                                   */
+/* -------------------------------------------------------------------------- */
+
+const starboardPosted = new Set<string>();
+
+client.on("messageReactionAdd", async (reaction, user) => {
+  try {
+    if (user.bot) return;
+    if (!reaction.message.guildId) return;
+
+    // With partials enabled, fetch when needed
+    if (reaction.partial) await reaction.fetch();
+    if (reaction.message.partial) await reaction.message.fetch();
+
+    const emoji = reaction.emoji.name;
+    if (emoji !== "⭐") return;
+
+    const cfg = getGuildConfig(reaction.message.guildId);
+    const channelId = cfg.starboardChannelId;
+    const threshold = cfg.starboardThreshold ?? 3;
+
+    if (!channelId) return;
+    if ((reaction.count ?? 0) < threshold) return;
+
+    const messageId = reaction.message.id;
+    if (starboardPosted.has(messageId)) return;
+    starboardPosted.add(messageId);
+
+    const starChannel = await reaction.message.guild?.channels
+      .fetch(channelId)
+      .catch(() => null);
+
+    if (!starChannel || !starChannel.isTextBased()) return;
+
+    const jump = reaction.message.url;
+    const content = (reaction.message.content ?? "").trim().slice(0, 1800);
+
+    await starChannel.send({
+      content: [
+        `⭐ **Starred message** (\`${reaction.count ?? 0}\` stars)`,
+        jump,
+        "",
+        content || "_(no text)_",
+      ].join("\n"),
+    });
+  } catch (err) {
+    logger.debug({ err }, "[starboard] reaction handler failed");
+  }
 });
 
 /**

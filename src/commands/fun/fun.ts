@@ -25,6 +25,10 @@ import { run as runTrivia } from "./subcommands/trivia.js";
 import { run as runQuote } from "./subcommands/quote.js";
 import { run as runDaily } from "./subcommands/daily.js";
 import { run as runTictactoe } from "./subcommands/tictactoe.js";
+import { run as runBlackjack } from "./subcommands/blackjack.js";
+import { run as runConnect4 } from "./subcommands/connect4.js";
+import { run as runWouldYouRather } from "./subcommands/wouldYouRather.js";
+import { run as runFact } from "./subcommands/fact.js";
 
 import { recordFunUsage, type FunCommandKey } from "../../services/fun/funUsageStore.js";
 
@@ -230,6 +234,40 @@ export const data = new SlashCommandBuilder()
       )
       .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
   )
+  // /fun blackjack
+  .addSubcommand((s) =>
+    s
+      .setName("blackjack")
+      .setDescription("Play a quick game of Blackjack (vs dealer)")
+      .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+  )
+
+  // /fun connect4
+  .addSubcommand((s) =>
+    s
+      .setName("connect4")
+      .setDescription("Play Connect 4 vs another user")
+      .addUserOption((o) =>
+        o.setName("user").setDescription("Opponent (required)").setRequired(true),
+      )
+      .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+  )
+
+  // /fun would-you-rather
+  .addSubcommand((s) =>
+    s
+      .setName("would-you-rather")
+      .setDescription("Would you rather… vote with buttons")
+      .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+  )
+
+  // /fun fact
+  .addSubcommand((s) =>
+    s
+      .setName("fact")
+      .setDescription("Random interesting fact")
+      .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+  )
 
   // /fun dice
   .addSubcommand((s) =>
@@ -421,6 +459,30 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
     if (sub === "tictactoe") {
       await runTictactoe(interaction);
+      await maybeRecordUsage(interaction, sub);
+      return;
+    }
+
+    if (sub === "blackjack") {
+      await runBlackjack(interaction);
+      await maybeRecordUsage(interaction, sub);
+      return;
+    }
+
+    if (sub === "connect4") {
+      await runConnect4(interaction);
+      await maybeRecordUsage(interaction, sub);
+      return;
+    }
+
+    if (sub === "would-you-rather") {
+      await runWouldYouRather(interaction);
+      await maybeRecordUsage(interaction, sub);
+      return;
+    }
+
+    if (sub === "fact") {
+      await runFact(interaction);
       await maybeRecordUsage(interaction, sub);
       return;
     }

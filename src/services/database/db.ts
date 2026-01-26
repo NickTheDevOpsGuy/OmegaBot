@@ -243,7 +243,6 @@ export function initDatabase(): Database.Database {
     );
 
     CREATE INDEX IF NOT EXISTS idx_coin_flips_user ON coin_flips(user_id);
-    CREATE INDEX IF NOT EXISTS idx_coin_flips_user_ts ON coin_flips(user_id, timestamp);
 
     /* -------------------------------------------------------------------- */
     /* GitHub last seen                                                      */
@@ -400,6 +399,32 @@ export function initDatabase(): Database.Database {
       PRIMARY KEY (user1_id, user2_id)
     );
   `);
+
+  // -------------------------------------------------------------------------
+  // Migrations (keep init resilient across schema tweaks)
+  // -------------------------------------------------------------------------
+  function ensureCoinFlipsSchema(): void {
+    try {
+      const cols = db!.prepare("PRAGMA table_info(coin_flips)").all() as Array<{
+        name: string;
+      }>;
+      const hasTimestamp = cols.some((c) => c.name === "timestamp");
+      if (!hasTimestamp) {
+        logger.warn("[db] migrating coin_flips: adding missing timestamp column");
+        db!.exec(
+          "ALTER TABLE coin_flips ADD COLUMN timestamp INTEGER NOT NULL DEFAULT 0;",
+        );
+      }
+      db!.exec(
+        "CREATE INDEX IF NOT EXISTS idx_coin_flips_user_ts ON coin_flips(user_id, timestamp);",
+      );
+    } catch (err) {
+      // Never crash the bot on a best-effort migration.
+      logger.error({ err }, "[db] coin_flips migration failed");
+    }
+  }
+
+  ensureCoinFlipsSchema();
 
   logger.info("Database tables created");
   return db;
