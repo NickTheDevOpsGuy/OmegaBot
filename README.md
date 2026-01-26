@@ -283,14 +283,42 @@ OmegaBot uses discord.js v14 which includes:
 <summary>🗂 Click to expand file structure</summary>
 
 ```
+
 .
+├── .github
+│   ├── ISSUE_TEMPLATE
+│   │   ├── bug.yml
+│   │   ├── config.yml
+│   │   ├── documentation.yml
+│   │   ├── enhancement_refactor.yml
+│   │   ├── feature_request.yml
+│   │   └── question_discussion.yml
+│   ├── workflows
+│   │   └── OmegaBot.yml
+│   └── pull_request_template.md
+├── .husky
+│   ├── _
+│   │   ├── applypatch-msg
+│   │   ├── commit-msg
+│   │   ├── h
+│   │   ├── husky.sh
+│   │   ├── post-applypatch
+│   │   ├── post-checkout
+│   │   ├── post-commit
+│   │   ├── post-merge
+│   │   ├── post-rewrite
+│   │   ├── pre-applypatch
+│   │   ├── pre-auto-gc
+│   │   ├── pre-commit
+│   │   ├── pre-merge-commit
+│   │   ├── pre-push
+│   │   ├── pre-rebase
+│   │   └── prepare-commit-msg
+│   ├── pre-commit
+│   └── pre-push
 ├── assets
 │   ├── banner.png
 │   └── omegabot.png
-├── CHANGELOG.md
-├── CONTRIBUTORS.md
-├── data
-│   └── omegabot.db
 ├── docs
 │   ├── commands.md
 │   ├── dev-notes.md
@@ -298,76 +326,192 @@ OmegaBot uses discord.js v14 which includes:
 │   ├── setup-discord.md
 │   ├── setup-env.md
 │   └── transcripts.md
-├── .env.example
-├── eslint.config.ts
-├── .github
-│   ├── ISSUE_TEMPLATE
-│   └── workflows
-├── .gitignore
-├── .husky
-├── LICENSE
 ├── migrations
-├── package.json
-├── README.md
+│   └── 001_rps_stats.sql
 ├── scripts
+│   └── precheck.sh
 ├── src
-│   ├── bot.ts
 │   ├── commands
 │   │   ├── achievements
+│   │   │   └── achievements.ts
 │   │   ├── admin
+│   │   │   └── admin.ts
 │   │   ├── afk
+│   │   │   └── afk.ts
 │   │   ├── avatar
+│   │   │   └── avatar.ts
 │   │   ├── changelog
+│   │   │   └── changelog.ts
 │   │   ├── config
+│   │   │   └── config.ts
 │   │   ├── faq
+│   │   │   ├── subcommands
+│   │   │   │   ├── add.ts
+│   │   │   │   ├── get.ts
+│   │   │   │   ├── list.ts
+│   │   │   │   └── remove.ts
+│   │   │   └── faq.ts
 │   │   ├── fun
-│   │   │   └── subcommands
-│   │   │       ├── blackjack.ts
-│   │   │       ├── connect4.ts
-│   │   │       ├── hangman.ts
-│   │   │       ├── slots.ts
-│   │   │       ├── stats.ts
-│   │   │       ├── wordle.ts
-│   │   │       └── ...
+│   │   │   ├── subcommands
+│   │   │   │   ├── joke
+│   │   │   │   │   ├── add.ts
+│   │   │   │   │   ├── index.ts
+│   │   │   │   │   ├── list.ts
+│   │   │   │   │   ├── random.ts
+│   │   │   │   │   └── remove.ts
+│   │   │   │   ├── blackjack.ts
+│   │   │   │   ├── coinflip.ts
+│   │   │   │   ├── coinflipstats.ts
+│   │   │   │   ├── connect4.ts
+│   │   │   │   ├── daily.ts
+│   │   │   │   ├── dice.ts
+│   │   │   │   ├── eightball.ts
+│   │   │   │   ├── fact.ts
+│   │   │   │   ├── hangman.ts
+│   │   │   │   ├── leaderboard.ts
+│   │   │   │   ├── poll.ts
+│   │   │   │   ├── quote.ts
+│   │   │   │   ├── remind.ts
+│   │   │   │   ├── rps.ts
+│   │   │   │   ├── slots.ts
+│   │   │   │   ├── stats.ts
+│   │   │   │   ├── tictactoe.ts
+│   │   │   │   ├── trivia.ts
+│   │   │   │   ├── weather.ts
+│   │   │   │   ├── wordle.ts
+│   │   │   │   └── wouldYouRather.ts
+│   │   │   ├── coinflipStore.test.ts
+│   │   │   ├── coinflipStore.ts
+│   │   │   ├── coinStore.ts
+│   │   │   └── fun.ts
 │   │   ├── general
-│   │   ├── giveaway
+│   │   │   └── ping.ts
 │   │   ├── github
+│   │   │   ├── gh.ts
+│   │   │   ├── pr.ts
+│   │   │   └── status.ts
+│   │   ├── giveaway
+│   │   │   └── giveaway.ts
 │   │   ├── help
+│   │   │   ├── help.ts
+│   │   │   └── helpText.ts
 │   │   ├── history
+│   │   │   └── history.ts
 │   │   ├── pagination
+│   │   │   └── pagination.ts
 │   │   ├── playback
+│   │   │   └── playback.ts
 │   │   ├── serverinfo
+│   │   │   └── serverinfo.ts
 │   │   ├── starboard
+│   │   │   └── starboard.ts
 │   │   ├── suggestion
+│   │   │   └── suggestion.ts
 │   │   ├── summary
+│   │   │   └── summary.ts
 │   │   ├── timezone
+│   │   │   └── timezone.ts
 │   │   └── userinfo
+│   │       └── userinfo.ts
 │   ├── config
-│   ├── registerCommands.ts
+│   │   └── env.ts
 │   ├── services
 │   │   ├── ai
+│   │   │   └── claudeService.ts
 │   │   ├── cache
+│   │   │   └── simpleCache.ts
 │   │   ├── config
+│   │   │   ├── guildConfigStore.ts
+│   │   │   ├── index.ts
+│   │   │   └── types.ts
 │   │   ├── database
+│   │   │   └── db.ts
 │   │   ├── discord
+│   │   │   ├── commandLoader.ts
+│   │   │   ├── commandMeta.ts
+│   │   │   ├── commandTypes.ts
+│   │   │   ├── cooldowns.ts
+│   │   │   ├── fetchChannelMessages.ts
+│   │   │   ├── interactionHandler.ts
+│   │   │   ├── safeReply.ts
+│   │   │   └── tracedInteractionHandler.ts
 │   │   ├── faq
+│   │   │   ├── _shared.ts
+│   │   │   ├── faqService.ts
+│   │   │   ├── permissions.ts
+│   │   │   ├── services.test.ts
+│   │   │   ├── services.ts
+│   │   │   ├── store.test.ts
+│   │   │   ├── store.ts
+│   │   │   └── types.ts
 │   │   ├── fun
+│   │   │   ├── funUsageStore.test.ts
+│   │   │   ├── funUsageStore.ts
+│   │   │   └── pollStore.ts
 │   │   ├── github
+│   │   │   ├── githubApi.ts
+│   │   │   ├── githubCache.ts
+│   │   │   ├── githubClient.ts
+│   │   │   ├── githubErrorMessage.ts
+│   │   │   ├── issueAssigneePoller.ts
+│   │   │   ├── issueAssigneePollerState.ts
+│   │   │   ├── lastSeenStore.ts
+│   │   │   ├── prFormatter.ts
+│   │   │   ├── prPoller.ts
+│   │   │   └── types.ts
 │   │   ├── joke
+│   │   │   └── jokeStore.ts
 │   │   ├── logging
+│   │   │   ├── index.ts
+│   │   │   └── requestContext.ts
 │   │   ├── reminders
+│   │   │   ├── index.ts
+│   │   │   ├── scheduler.ts
+│   │   │   ├── schema.ts
+│   │   │   └── store.ts
 │   │   ├── roles
+│   │   │   └── autoRoleHandler.ts
 │   │   ├── summary
+│   │   │   ├── llmSummary.ts
+│   │   │   ├── localSummary.ts
+│   │   │   └── summarizer.ts
 │   │   ├── time
+│   │   │   ├── formatTimestamp.ts
+│   │   │   └── validateTimezone.ts
 │   │   ├── timezone
+│   │   │   └── timezoneStore.ts
 │   │   ├── transcript
+│   │   │   ├── buildTranscript.ts
+│   │   │   └── defaults.ts
 │   │   ├── weather
+│   │   │   ├── forecast.ts
+│   │   │   └── types.ts
 │   │   └── welcome
+│   │       ├── welcomeHandler.ts
+│   │       └── welcomeMessage.ts
 │   ├── test
+│   │   └── dbTestUtils.ts
 │   ├── types
-│   └── utils
+│   │   └── discord-client.d.ts
+│   ├── utils
+│   │   ├── colors.ts
+│   │   ├── interactions.ts
+│   │   └── logger.ts
+│   ├── bot.ts
+│   └── registerCommands.ts
+├── .env.example
+├── .gitignore
+├── .prettierignore
+├── .prettierrc.yml
+├── CHANGELOG.md
+├── CONTRIBUTORS.md
+├── eslint.config.ts
+├── LICENSE
+├── package-lock.json
+├── package.json
+├── README.md
 ├── tsconfig.json
-└── vitest.config.ts
+
 ```
 
 </details>
