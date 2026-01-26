@@ -8,7 +8,6 @@ import {
   TextInputStyle,
   ComponentType,
   type ChatInputCommandInteraction,
-  type ModalSubmitInteraction,
 } from "discord.js";
 import { logger } from "../../../utils/logger.js";
 import { getDb } from "../../../services/database/db.js";

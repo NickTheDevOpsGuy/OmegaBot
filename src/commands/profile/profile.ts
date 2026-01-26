@@ -10,14 +10,6 @@ import { getDb } from "../../services/database/db.js";
 /* Stat Fetchers                                                               */
 /* -------------------------------------------------------------------------- */
 
-function safeQuery<T>(query: () => T | undefined): T | null {
-  try {
-    return query() ?? null;
-  } catch {
-    return null;
-  }
-}
-
 function getTotalGamesPlayed(db: ReturnType<typeof getDb>, userId: string): number {
   let total = 0;
   const tables = [

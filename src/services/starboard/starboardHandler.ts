@@ -133,8 +133,8 @@ function buildStarboardEmbed(reaction: MessageReaction, starCount: number): Embe
 
 export async function handleStarboardReaction(
   reaction: MessageReaction | PartialMessageReaction,
-  user: User | PartialUser,
-  added: boolean,
+  _user: User | PartialUser,
+  _added: boolean,
 ): Promise<void> {
   try {
     // Fetch partial reaction if needed
