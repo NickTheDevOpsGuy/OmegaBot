@@ -32,7 +32,7 @@ OmegaBot is a modular Discord bot designed to support development projects with 
 
 - Modular slash-command system with auto-loading from `dist/commands`
 - Centralized interaction routing with consistent, safe error handling
-- Structured logging (pino)
+- Structured logging (pino) with timing and Discord error code awareness
 - Welcome and onboarding flows triggered on member join (`guildMemberAdd`)
 - Optional auto-role assignment for new members (`DISCORD_AUTO_ROLE_ID`)
 - GitHub integration with polling-based automation, including:
@@ -41,49 +41,58 @@ OmegaBot is a modular Discord bot designed to support development projects with 
   - New PR announcements
   - Issue and PR assignee change announcements
   - Issue and PR closed announcements
-- Configuration and feature gating via environment variables (optional features run only when enabled)
+- Configuration and feature gating via environment variables  
+  (optional features run only when enabled)
 - Per-guild configuration backed by persistent storage and admin slash commands
-- **Timezone support** – Save your timezone, view it later, and compare times across locations or users
+- **Timezone support** – Save your timezone, view it later, compare users, and convert times across zones
 - **Reminders** – SQLite-backed `/fun remind` with delivery that survives bot restarts
 - **AFK system** – Set AFK status with auto-reply when mentioned
+- **Starboard system** – Automatically highlights starred messages once a reaction threshold is met
+- **Suggestion system** – Server members can submit ideas and vote on them
+- **Persistent storage** – SQLite via `better-sqlite3` for stats, reminders, fun usage, and configuration
+- **Safe interaction handling** – Gracefully handles expired or already-acknowledged interactions
 
 ### Core commands
 
-- /help – command discovery and getting started guide
-- /ping – health check
-- /summary – conversation summaries (local + LLM mode)
-- /history – conversation history (DM + file fallback)
-- /playback – transcript playback with button pagination
-- /pagination – reusable inline paging helper
-- /timezone – per-user IANA timezone support
-- /changelog – ephemeral release preview
-- /afk – set AFK status with auto-reply
+- /help – Command discovery and getting started guide
+- /ping – Health check
+- /summary – Conversation summaries (local + LLM mode)
+- /history – Conversation history (DM + file fallback)
+- /playback – Transcript playback with button pagination
+- /pagination – Reusable inline paging helper
+- /timezone – Per-user IANA timezone support (set, show, compare, convert)
+- /changelog – Ephemeral release preview
+- /afk – Set AFK status with auto-reply
 
 ### FAQ system
 
-- /faq add – create persistent FAQ entries
-- /faq get – retrieve FAQs by key
-- /faq list – list FAQs with sorting and filtering
-- /faq remove – remove FAQs with confirmation flow
-- Persistent on-disk storage (versioned JSON)
+- /faq add – Create persistent FAQ entries
+- /faq get – Retrieve FAQs by key
+- /faq list – List FAQs with sorting and filtering
+- /faq remove – Remove FAQs with confirmation flow
+- Persistent on-disk storage
 - Usage tracking for FAQs
 - Permission guardrails for destructive actions
 
 ### Fun / utility commands
 
-All fun commands are available under `/fun`:
+All fun commands are available under `/fun`.
 
-**Games**
+#### Games
 
 - `/fun 8ball` – Ask the magic 8-ball a question
 - `/fun rps` – Rock paper scissors (solo or `opponent:@user` for PvP)
 - `/fun tictactoe` – Tic Tac Toe (solo or `opponent:@user` for PvP)
 - `/fun trivia` – Trivia questions with points and streaks
 - `/fun coinflip` – Heads or tails
-- `/fun dice` – Custom dice rolls (2-100 sides, 1-10 dice)
-- `/fun poll` – Create polls with 2-4 options
+- `/fun coinflipstats` – Coin flip statistics with emoji breakdowns
+- `/fun dice` – Custom dice rolls (2–100 sides, 1–10 dice)
+- `/fun poll` – Create polls with 2–4 options
+- `/fun blackjack` – Interactive blackjack game with buttons
+- `/fun connect4` – PvP Connect 4 game with interactive buttons
+- `/fun would-you-rather` – Vote on random WYR questions
 
-**Quotes & Jokes**
+#### Quotes & Jokes
 
 - `/fun quote add` – Save a memorable server quote
 - `/fun quote random` – Get a random quote
@@ -91,23 +100,26 @@ All fun commands are available under `/fun`:
 - `/fun quote search` – Search quotes by text
 - `/fun joke` – Community jokes (random, add, list, remove)
 
-**Daily & Stats**
+#### Daily & Stats
 
 - `/fun daily` – Daily check-in for points and streaks
-- `/fun coinflipstats` – Coin flip statistics with emoji bars
 - `/fun leaderboard` – Fun command usage and top users
 
-**Utility**
+#### Utility
 
-- `/fun remind` – Set reminders (1 min to 7 days)
+- `/fun remind` – Set reminders (1 minute to 7 days)
 - `/fun weather` – Current weather for a location
 - `/fun weather7` – 7-day forecast
+- `/fun fact` – Random interesting facts
 
 ## Planned features
 
 - `/docs` command for documentation lookups
 - Expanded GitHub automation (labels, reviews, merge events)
-- Improved summary output (highlights, action items, structured sections)
+- Achievement system (games played, streaks, milestones)
+- Daily and weekly challenges
+- Improved summary output
+- (highlights, action items, structured sections)
 
 ---
 
