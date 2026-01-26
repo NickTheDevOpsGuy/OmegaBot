@@ -504,6 +504,20 @@ export function initDatabase(): Database.Database {
     );
 
     CREATE INDEX IF NOT EXISTS idx_giveaways_ends ON giveaways(ends_at) WHERE ended = 0;
+
+    /* -------------------------------------------------------------------- */
+    /* Starboard                                                               */
+    /* -------------------------------------------------------------------- */
+    CREATE TABLE IF NOT EXISTS starboard_posts (
+      original_message_id TEXT PRIMARY KEY,
+      starboard_message_id TEXT NOT NULL,
+      guild_id TEXT NOT NULL,
+      channel_id TEXT NOT NULL,
+      star_count INTEGER NOT NULL DEFAULT 0,
+      created_at INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_starboard_guild ON starboard_posts(guild_id);
   `);
 
   // -------------------------------------------------------------------------

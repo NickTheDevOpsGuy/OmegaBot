@@ -195,6 +195,84 @@ const ACHIEVEMENTS: Achievement[] = [
       } catch { return false; }
     },
   },
+  {
+    id: "high_roller",
+    name: "High Roller",
+    description: "Spin the slots 100 times",
+    emoji: "🎲",
+    category: "luck",
+    checkFn: (userId, db) => {
+      try {
+        const row = db.prepare(`SELECT spins FROM slots_stats WHERE user_id = ?`).get(userId) as { spins: number } | undefined;
+        return (row?.spins ?? 0) >= 100;
+      } catch { return false; }
+    },
+  },
+  {
+    id: "word_nerd",
+    name: "Word Nerd",
+    description: "Win 10 Wordle games",
+    emoji: "📚",
+    category: "games",
+    checkFn: (userId, db) => {
+      try {
+        const row = db.prepare(`SELECT won FROM wordle_stats WHERE user_id = ?`).get(userId) as { won: number } | undefined;
+        return (row?.won ?? 0) >= 10;
+      } catch { return false; }
+    },
+  },
+  {
+    id: "hangman_hero",
+    name: "Hangman Hero",
+    description: "Win 10 Hangman games",
+    emoji: "🎯",
+    category: "games",
+    checkFn: (userId, db) => {
+      try {
+        const row = db.prepare(`SELECT wins FROM hangman_stats WHERE user_id = ?`).get(userId) as { wins: number } | undefined;
+        return (row?.wins ?? 0) >= 10;
+      } catch { return false; }
+    },
+  },
+  {
+    id: "card_shark",
+    name: "Card Shark",
+    description: "Win 25 Blackjack games",
+    emoji: "🦈",
+    category: "games",
+    checkFn: (userId, db) => {
+      try {
+        const row = db.prepare(`SELECT wins FROM blackjack_stats WHERE user_id = ?`).get(userId) as { wins: number } | undefined;
+        return (row?.wins ?? 0) >= 25;
+      } catch { return false; }
+    },
+  },
+  {
+    id: "connect_master",
+    name: "Connect Master",
+    description: "Win 10 Connect 4 games",
+    emoji: "🔴",
+    category: "games",
+    checkFn: (userId, db) => {
+      try {
+        const row = db.prepare(`SELECT wins FROM connect4_stats WHERE user_id = ?`).get(userId) as { wins: number } | undefined;
+        return (row?.wins ?? 0) >= 10;
+      } catch { return false; }
+    },
+  },
+  {
+    id: "generous",
+    name: "Generous",
+    description: "Host 3 giveaways",
+    emoji: "🎁",
+    category: "social",
+    checkFn: (userId, db) => {
+      try {
+        const row = db.prepare(`SELECT COUNT(*) as count FROM giveaways WHERE host_id = ?`).get(userId) as { count: number };
+        return row.count >= 3;
+      } catch { return false; }
+    },
+  },
 
   // Social
   {

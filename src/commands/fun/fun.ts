@@ -18,7 +18,7 @@ import { run as runWeather } from "./subcommands/weather.js";
 import type { WeatherMode, TempUnit } from "../../services/weather/types.js";
 
 import { handleJoke, buildJokeSubcommands } from "./subcommands/joke/index.js";
-import { run as runRemind } from "./subcommands/remind.js";
+import { run as runReminders } from "./subcommands/reminders.js";
 import { run as runEightball } from "./subcommands/eightball.js";
 import { run as runRps } from "./subcommands/rps.js";
 import { run as runTrivia } from "./subcommands/trivia.js";
@@ -384,24 +384,38 @@ export const data = new SlashCommandBuilder()
       .addStringOption((o) => o.setName("option4").setDescription("Option 4")),
   )
 
-  // /fun remind
-  .addSubcommand((s) =>
-    s
+  // /fun remind (subcommand group)
+  .addSubcommandGroup((g) =>
+    g
       .setName("remind")
-      .setDescription("Remind you in X minutes")
-      .addIntegerOption((o) =>
-        o
-          .setName("minutes")
-          .setDescription("Minutes from now")
-          .setMinValue(1)
-          .setMaxValue(10080)
-          .setRequired(true),
+      .setDescription("Set and manage reminders")
+      .addSubcommand((s) =>
+        s
+          .setName("set")
+          .setDescription("Set a new reminder")
+          .addStringOption((o) =>
+            o
+              .setName("time")
+              .setDescription("When (e.g., 5m, 1h, 1d, 1h30m)")
+              .setRequired(true),
+          )
+          .addStringOption((o) =>
+            o.setName("message").setDescription("Reminder message").setRequired(true).setMaxLength(500),
+          ),
       )
-      .addStringOption((o) =>
-        o.setName("message").setDescription("Reminder message").setRequired(true),
+      .addSubcommand((s) =>
+        s.setName("list").setDescription("View your pending reminders"),
       )
-      .addBooleanOption((o) =>
-        o.setName("private").setDescription("Only show confirmation to you"),
+      .addSubcommand((s) =>
+        s
+          .setName("cancel")
+          .setDescription("Cancel a reminder")
+          .addIntegerOption((o) =>
+            o.setName("id").setDescription("Reminder ID to cancel").setRequired(true),
+          ),
+      )
+      .addSubcommand((s) =>
+        s.setName("clear").setDescription("Cancel all your reminders"),
       ),
   )
 
@@ -586,8 +600,8 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       return;
     }
 
-    if (sub === "remind") {
-      await runRemind(interaction);
+    if (group === "remind") {
+      await runReminders(interaction, sub as "set" | "list" | "cancel" | "clear");
       return;
     }
 

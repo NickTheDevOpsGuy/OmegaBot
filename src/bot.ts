@@ -1,19 +1,30 @@
 // src/bot.ts
 import { initDatabase, closeDatabase } from "./services/database/db.js";
 
-import { Client, GatewayIntentBits } from "discord.js";
+import { Client, GatewayIntentBits, Partials } from "discord.js";
 import { loadCommands, type CommandClient } from "./services/discord/commandLoader.js";
 import { handleInteraction } from "./services/discord/interactionHandler.js";
 import { pollPullRequestsOnce } from "./services/github/prPoller.js";
 import { pollIssueAssigneesOnce } from "./services/github/issueAssigneePoller.js";
 import { handleAutoRole } from "./services/roles/autoRoleHandler.js";
 import { onGuildMemberAdd } from "./services/welcome/welcomeHandler.js";
+import { setupStarboardListeners } from "./services/starboard/starboardHandler.js";
 import { env } from "./config/env.js";
 import { logger } from "./utils/logger.js";
 import { createReminderScheduler } from "./services/reminders/index.js";
 
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildMessageReactions,
+    GatewayIntentBits.GuildMessages,
+  ],
+  partials: [
+    Partials.Message,
+    Partials.Reaction,
+    Partials.User,
+  ],
 }) as CommandClient;
 
 client.commands = new Map();
@@ -48,6 +59,9 @@ const githubAssigneePollingEnabled = env.githubAssigneePollingEnabled;
 
 client.once("clientReady", () => {
   logger.info("OmegaBot is online");
+
+  // Setup starboard reaction listeners
+  setupStarboardListeners(client);
 
   logger.info(
     {

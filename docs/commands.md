@@ -1,8 +1,8 @@
 # OmegaBot Command Reference
 
-All fun commands are available under `/fun`:
-
 ## Games
+
+All games are under `/fun`:
 
 | Command | Description |
 |---------|-------------|
@@ -32,6 +32,8 @@ Most games support these options:
 - `leaderboard:true` - Show jackpot leaderboard
 - `paytable:true` - Show symbol payouts and odds
 
+---
+
 ## Quotes & Jokes
 
 | Command | Description |
@@ -46,6 +48,8 @@ Most games support these options:
 | `/fun joke list` | Browse jokes |
 | `/fun joke remove` | Remove a joke |
 
+---
+
 ## Daily & Stats
 
 | Command | Description |
@@ -55,11 +59,30 @@ Most games support these options:
 | `/fun coinflipstats` | Coin flip statistics with emoji bars |
 | `/fun leaderboard` | Fun command usage and top users |
 
-## Utility
+---
+
+## Reminders
 
 | Command | Description |
 |---------|-------------|
-| `/fun remind` | Set reminders (1 min to 7 days) |
+| `/fun remind set` | Set a new reminder (e.g., `5m`, `1h`, `1d`, `1h30m`) |
+| `/fun remind list` | View all your pending reminders |
+| `/fun remind cancel` | Cancel a reminder by ID |
+| `/fun remind clear` | Cancel all your reminders |
+
+**Examples:**
+```
+/fun remind set time:30m message:Check the oven
+/fun remind set time:1d message:Submit report
+/fun remind set time:2h30m message:Team meeting
+```
+
+---
+
+## Utility Commands
+
+| Command | Description |
+|---------|-------------|
 | `/fun weather` | Current weather for a location |
 | `/fun weather7` | 7-day forecast |
 | `/fun fact` | Random interesting facts |
@@ -73,10 +96,11 @@ Most games support these options:
 | `/help` | Command discovery and getting started guide |
 | `/ping` | Health check |
 | `/afk` | Set AFK status (auto-replies when pinged) |
-| `/userinfo` | View info about a user |
-| `/serverinfo` | View info about the server |
-| `/avatar` | View a user's avatar (multiple sizes) |
+| `/userinfo` | View detailed info about a user |
+| `/serverinfo` | View server statistics and info |
+| `/avatar` | View user avatars in multiple sizes |
 | `/timezone` | Set, view, and compare timezones |
+| `/profile` | View your or another user's profile |
 | `/achievements` | View your unlocked achievements |
 
 ---
@@ -95,7 +119,7 @@ Most games support these options:
 /giveaway start prize:"Steam Gift Card" duration:"1d" winners:3
 ```
 
-Durations: `10s`, `30m`, `1h`, `1d` (min 10 seconds, max 30 days)
+**Durations:** `10s`, `30m`, `1h`, `1d` (min 10 seconds, max 30 days)
 
 ---
 
@@ -112,13 +136,24 @@ Durations: `10s`, `30m`, `1h`, `1d` (min 10 seconds, max 30 days)
 
 ---
 
+## Starboard
+
+Messages that receive enough ⭐ reactions are automatically posted to the starboard channel.
+
+| Command | Description |
+|---------|-------------|
+| `/starboard set` | Set starboard channel and threshold |
+| `/starboard status` | View current starboard settings |
+| `/starboard clear` | Disable starboard |
+
+**Note:** Make sure the bot has the "Message Content" and "Guild Message Reactions" intents enabled.
+
+---
+
 ## Server Configuration
 
 | Command | Description |
 |---------|-------------|
-| `/starboard setup` | Configure starboard channel and threshold |
-| `/starboard status` | View current starboard settings |
-| `/starboard clear` | Disable starboard |
 | `/config` | Server configuration (admins) |
 
 ---
@@ -127,26 +162,40 @@ Durations: `10s`, `30m`, `1h`, `1d` (min 10 seconds, max 30 days)
 
 Achievements are unlocked automatically as you use the bot. View with `/achievements`.
 
-### 🎮 Games
-- **First Victory** - Win your first game
-- **Getting Good** - Win 10 games total
-- **Champion** - Win 50 games total
-- **Natural 21** - Get a blackjack
-- **Wordle Wizard** - Get a 7-day Wordle streak
+### 🎮 Games (8)
+| Achievement | Description |
+|-------------|-------------|
+| 🏆 First Victory | Win your first game |
+| ⭐ Getting Good | Win 10 games total |
+| 🥇 Champion | Win 50 games total |
+| 🃏 Natural 21 | Get a blackjack |
+| 🟩 Wordle Wizard | Get a 7-day Wordle streak |
+| 📚 Word Nerd | Win 10 Wordle games |
+| 🎯 Hangman Hero | Win 10 Hangman games |
+| 🦈 Card Shark | Win 25 Blackjack games |
+| 🔴 Connect Master | Win 10 Connect 4 games |
 
-### 🍀 Luck
-- **Jackpot!** - Hit a slot machine jackpot
-- **Lucky Streak** - Win slots 5 times
-- **Coin Master** - Flip 100 coins
+### 🍀 Luck (4)
+| Achievement | Description |
+|-------------|-------------|
+| 💎 Jackpot! | Hit a slot machine jackpot |
+| 🎰 Lucky Streak | Win slots 5 times |
+| 🪙 Coin Master | Flip 100 coins |
+| 🎲 High Roller | Spin the slots 100 times |
 
-### 💪 Dedication
-- **Week Warrior** - 7-day daily check-in streak
-- **Month Master** - 30-day daily check-in streak
-- **Trivia Master** - Answer 50 trivia questions correctly
-- **On Fire** - Get a 10-question trivia streak
+### 💪 Dedication (4)
+| Achievement | Description |
+|-------------|-------------|
+| 📅 Week Warrior | 7-day daily check-in streak |
+| 🔥 Month Master | 30-day daily check-in streak |
+| 🧠 Trivia Master | Answer 50 trivia questions correctly |
+| 💯 On Fire | Get a 10-question trivia streak |
 
-### 💬 Social
-- **Quotable** - Have one of your quotes saved
+### 💬 Social (2)
+| Achievement | Description |
+|-------------|-------------|
+| 💬 Quotable | Have one of your quotes saved |
+| 🎁 Generous | Host 3 giveaways |
 
 ---
 
