@@ -1,8 +1,5 @@
 // src/commands/fun/subcommands/slots.ts
-import {
-  EmbedBuilder,
-  type ChatInputCommandInteraction,
-} from "discord.js";
+import { EmbedBuilder, type ChatInputCommandInteraction } from "discord.js";
 import { getDb } from "../../../services/database/db.js";
 
 // Symbols with weights (higher = more common)
@@ -49,9 +46,16 @@ function getStats(userId: string): SlotsStats {
   ensureSlotsTable();
   const db = getDb();
 
-  type Row = { spins: number; wins: number; jackpots: number; biggest_win: string | null };
+  type Row = {
+    spins: number;
+    wins: number;
+    jackpots: number;
+    biggest_win: string | null;
+  };
   const row = db
-    .prepare(`SELECT spins, wins, jackpots, biggest_win FROM slots_stats WHERE user_id = ?`)
+    .prepare(
+      `SELECT spins, wins, jackpots, biggest_win FROM slots_stats WHERE user_id = ?`,
+    )
     .get(userId) as Row | undefined;
 
   if (!row) return { spins: 0, wins: 0, jackpots: 0, biggestWin: null, winRate: 0 };
@@ -65,13 +69,20 @@ function getStats(userId: string): SlotsStats {
   };
 }
 
-function recordSpin(userId: string, isWin: boolean, isJackpot: boolean, payout: number): void {
+function recordSpin(
+  userId: string,
+  isWin: boolean,
+  isJackpot: boolean,
+  payout: number,
+): void {
   ensureSlotsTable();
   const db = getDb();
   const now = Date.now();
 
   const current = getStats(userId);
-  const currentBiggest = current.biggestWin ? parseInt(current.biggestWin.replace("x", ""), 10) : 0;
+  const currentBiggest = current.biggestWin
+    ? parseInt(current.biggestWin.replace("x", ""), 10)
+    : 0;
   const newBiggest = payout > currentBiggest ? `${payout}x` : current.biggestWin;
 
   db.prepare(
@@ -84,8 +95,15 @@ function recordSpin(userId: string, isWin: boolean, isJackpot: boolean, payout: 
        biggest_win = ?,
        updated_at = ?`,
   ).run(
-    userId, isWin ? 1 : 0, isJackpot ? 1 : 0, newBiggest, now,
-    isWin ? 1 : 0, isJackpot ? 1 : 0, newBiggest, now,
+    userId,
+    isWin ? 1 : 0,
+    isJackpot ? 1 : 0,
+    newBiggest,
+    now,
+    isWin ? 1 : 0,
+    isJackpot ? 1 : 0,
+    newBiggest,
+    now,
   );
 }
 
@@ -107,7 +125,7 @@ function getLeaderboard(limit = 10): Array<{ user_id: string; jackpots: number }
 /* Game Logic                                                                  */
 /* -------------------------------------------------------------------------- */
 
-function spinReel(): typeof SYMBOLS[number] {
+function spinReel(): (typeof SYMBOLS)[number] {
   const roll = Math.random() * TOTAL_WEIGHT;
   let cumulative = 0;
 
@@ -121,7 +139,10 @@ function spinReel(): typeof SYMBOLS[number] {
   return SYMBOLS[0]; // Fallback
 }
 
-function calculatePayout(reels: Array<typeof SYMBOLS[number]>): { payout: number; type: string } {
+function calculatePayout(reels: Array<(typeof SYMBOLS)[number]>): {
+  payout: number;
+  type: string;
+} {
   const [a, b, c] = reels;
 
   // Three of a kind
@@ -154,8 +175,9 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
   const showPaytable = interaction.options.getBoolean("paytable") ?? false;
 
   if (showPaytable) {
-    const paytableLines = SYMBOLS.map((s) => 
-      `${s.emoji} ${s.name.padEnd(8)} - ${s.payout}x (${((s.weight / TOTAL_WEIGHT) * 100).toFixed(1)}%)`
+    const paytableLines = SYMBOLS.map(
+      (s) =>
+        `${s.emoji} ${s.name.padEnd(8)} - ${s.payout}x (${((s.weight / TOTAL_WEIGHT) * 100).toFixed(1)}%)`,
     );
 
     await interaction.editReply(
@@ -181,17 +203,12 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       return;
     }
 
-    const lines = leaders.map((l, i) => 
-      `${i + 1}. <@${l.user_id}> - ${l.jackpots} jackpot${l.jackpots === 1 ? "" : "s"}`
+    const lines = leaders.map(
+      (l, i) =>
+        `${i + 1}. <@${l.user_id}> - ${l.jackpots} jackpot${l.jackpots === 1 ? "" : "s"}`,
     );
 
-    await interaction.editReply(
-      [
-        "🎰 **Jackpot Leaderboard**",
-        "",
-        ...lines,
-      ].join("\n"),
-    );
+    await interaction.editReply(["🎰 **Jackpot Leaderboard**", "", ...lines].join("\n"));
     return;
   }
 
@@ -205,7 +222,9 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
         `Spins: ${stats.spins} | Wins: ${stats.wins} (${stats.winRate}%)`,
         `💎 Jackpots: ${stats.jackpots}`,
         stats.biggestWin ? `Biggest Win: ${stats.biggestWin}` : "",
-      ].filter(Boolean).join("\n"),
+      ]
+        .filter(Boolean)
+        .join("\n"),
     );
     return;
   }
@@ -223,26 +242,24 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
   const embed = new EmbedBuilder()
     .setTitle("🎰 Slot Machine")
     .setDescription(
-      [
-        "╔═══════════════╗",
-        `║  ${reelDisplay}  ║`,
-        "╚═══════════════╝",
-      ].join("\n"),
+      ["╔═══════════════╗", `║  ${reelDisplay}  ║`, "╚═══════════════╝"].join("\n"),
     )
     .setColor(isJackpot ? 0xffd700 : isWin ? 0x00ff00 : 0xff6b6b);
 
   if (isJackpot) {
-    embed.addFields(
-      { name: "🎉 JACKPOT!", value: `You hit the **${payout}x** jackpot!`, inline: false },
-    );
+    embed.addFields({
+      name: "🎉 JACKPOT!",
+      value: `You hit the **${payout}x** jackpot!`,
+      inline: false,
+    });
   } else if (isWin) {
-    embed.addFields(
-      { name: "Winner!", value: `${type} - **${payout}x** payout!`, inline: false },
-    );
+    embed.addFields({
+      name: "Winner!",
+      value: `${type} - **${payout}x** payout!`,
+      inline: false,
+    });
   } else {
-    embed.addFields(
-      { name: "No luck this time", value: "Spin again!", inline: false },
-    );
+    embed.addFields({ name: "No luck this time", value: "Spin again!", inline: false });
   }
 
   embed.setFooter({ text: "Use /fun slots stats to see your record" });

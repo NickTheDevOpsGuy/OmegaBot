@@ -31,6 +31,7 @@ OmegaBot is a modular Discord bot designed to support development projects with 
 ## Current Features
 
 ### Core Features
+
 - Modular slash-command system with auto-loading from `dist/commands`
 - Centralized interaction routing with consistent, safe error handling
 - Structured logging (pino) with timing and Discord error code awareness
@@ -40,12 +41,14 @@ OmegaBot is a modular Discord bot designed to support development projects with 
 - **Persistent storage** – SQLite via `better-sqlite3` for all data
 
 ### GitHub Integration
+
 - Health/status checks
 - Issue and PR lookups
 - New PR announcements
 - Assignee change announcements
 
 ### Engagement Features
+
 - **Timezone support** – Save your timezone, view it later, compare users
 - **Reminders** – Set, list, cancel with flexible time formats
 - **AFK system** – Set AFK status with auto-reply when mentioned
@@ -61,71 +64,71 @@ OmegaBot is a modular Discord bot designed to support development projects with 
 
 ### Core Commands
 
-| Command | Description |
-|---------|-------------|
-| `/help` | Command discovery and getting started guide |
-| `/ping` | Health check |
-| `/profile` | View your or another user's profile |
-| `/achievements` | View your unlocked achievements |
-| `/timezone` | Per-user timezone support |
-| `/afk` | Set AFK status with auto-reply |
-| `/userinfo` | View detailed info about a user |
-| `/serverinfo` | View server statistics |
-| `/avatar` | View user avatars |
+| Command         | Description                                 |
+| --------------- | ------------------------------------------- |
+| `/help`         | Command discovery and getting started guide |
+| `/ping`         | Health check                                |
+| `/profile`      | View your or another user's profile         |
+| `/achievements` | View your unlocked achievements             |
+| `/timezone`     | Per-user timezone support                   |
+| `/afk`          | Set AFK status with auto-reply              |
+| `/userinfo`     | View detailed info about a user             |
+| `/serverinfo`   | View server statistics                      |
+| `/avatar`       | View user avatars                           |
 
 ### Games (13 total!)
 
-| Command | Description |
-|---------|-------------|
-| `/fun 8ball` | Ask the magic 8-ball |
-| `/fun rps` | Rock paper scissors (solo or PvP) |
-| `/fun tictactoe` | Tic Tac Toe (solo or PvP) |
-| `/fun trivia` | Trivia with points and streaks |
-| `/fun blackjack` | Interactive blackjack |
-| `/fun connect4` | PvP Connect 4 |
-| `/fun hangman` | Classic word guessing |
-| `/fun wordle` | Daily word puzzle |
-| `/fun slots` | Slot machine with jackpots |
-| `/fun would-you-rather` | Vote on WYR questions |
-| `/fun coinflip` | Heads or tails |
-| `/fun dice` | Custom dice rolls |
-| `/fun poll` | Create polls |
+| Command                 | Description                       |
+| ----------------------- | --------------------------------- |
+| `/fun 8ball`            | Ask the magic 8-ball              |
+| `/fun rps`              | Rock paper scissors (solo or PvP) |
+| `/fun tictactoe`        | Tic Tac Toe (solo or PvP)         |
+| `/fun trivia`           | Trivia with points and streaks    |
+| `/fun blackjack`        | Interactive blackjack             |
+| `/fun connect4`         | PvP Connect 4                     |
+| `/fun hangman`          | Classic word guessing             |
+| `/fun wordle`           | Daily word puzzle                 |
+| `/fun slots`            | Slot machine with jackpots        |
+| `/fun would-you-rather` | Vote on WYR questions             |
+| `/fun coinflip`         | Heads or tails                    |
+| `/fun dice`             | Custom dice rolls                 |
+| `/fun poll`             | Create polls                      |
 
 ### Reminders
 
-| Command | Description |
-|---------|-------------|
-| `/fun remind set` | Set a reminder (5m, 1h, 1d, 1h30m) |
-| `/fun remind list` | View pending reminders |
-| `/fun remind cancel` | Cancel a reminder |
-| `/fun remind clear` | Cancel all reminders |
+| Command              | Description                        |
+| -------------------- | ---------------------------------- |
+| `/fun remind set`    | Set a reminder (5m, 1h, 1d, 1h30m) |
+| `/fun remind list`   | View pending reminders             |
+| `/fun remind cancel` | Cancel a reminder                  |
+| `/fun remind clear`  | Cancel all reminders               |
 
 ### Stats & Engagement
 
-| Command | Description |
-|---------|-------------|
-| `/fun daily` | Daily check-in for points |
-| `/fun stats` | View all game stats |
-| `/fun leaderboard` | Fun command leaderboard |
-| `/fun quote` | Save/view memorable quotes |
-| `/fun joke` | Community jokes |
+| Command            | Description                |
+| ------------------ | -------------------------- |
+| `/fun daily`       | Daily check-in for points  |
+| `/fun stats`       | View all game stats        |
+| `/fun leaderboard` | Fun command leaderboard    |
+| `/fun quote`       | Save/view memorable quotes |
+| `/fun joke`        | Community jokes            |
 
 ### Giveaway System
 
-| Command | Description |
-|---------|-------------|
-| `/giveaway start` | Create a giveaway |
-| `/giveaway end` | End early |
-| `/giveaway reroll` | Pick new winners |
-| `/giveaway list` | List active giveaways |
+| Command            | Description           |
+| ------------------ | --------------------- |
+| `/giveaway start`  | Create a giveaway     |
+| `/giveaway end`    | End early             |
+| `/giveaway reroll` | Pick new winners      |
+| `/giveaway list`   | List active giveaways |
 
 ### Server Features
 
-| Command | Description |
-|---------|-------------|
-| `/starboard set` | Configure starboard |
-| `/suggestion submit` | Submit an idea |
-| `/config` | Server configuration |
+| Command              | Description          |
+| -------------------- | -------------------- |
+| `/starboard set`     | Configure starboard  |
+| `/suggestion submit` | Submit an idea       |
+| `/config`            | Server configuration |
 
 ---
 
@@ -206,6 +209,7 @@ npm run dev
 ### Required Bot Permissions
 
 Make sure your bot has these intents enabled in the Discord Developer Portal:
+
 - **Server Members Intent** - For welcome messages and user info
 - **Message Content Intent** - For starboard and AFK system
 

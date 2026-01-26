@@ -15,27 +15,216 @@ import { getDb } from "../../../services/database/db.js";
 
 // Word list - common 5-letter words
 const WORDS = [
-  "about", "above", "abuse", "actor", "acute", "admit", "adopt", "adult", "after", "again",
-  "agent", "agree", "ahead", "alarm", "album", "alert", "alike", "alive", "allow", "alone",
-  "along", "alter", "among", "anger", "angle", "angry", "apart", "apple", "apply", "arena",
-  "argue", "arise", "array", "aside", "asset", "avoid", "award", "aware", "badly", "baker",
-  "bases", "basic", "basin", "basis", "beach", "began", "begin", "begun", "being", "below",
-  "bench", "billy", "birth", "black", "blame", "blank", "blast", "blend", "bless", "blind",
-  "block", "blood", "bloom", "blown", "blues", "board", "boost", "booth", "bound", "brain",
-  "brand", "bread", "break", "breed", "brick", "bride", "brief", "bring", "broad", "broke",
-  "brown", "brush", "build", "built", "bunch", "burst", "buyer", "cabin", "cable", "calif",
-  "carry", "catch", "cause", "chain", "chair", "chaos", "charm", "chart", "chase", "cheap",
-  "check", "chest", "chief", "child", "china", "chose", "civil", "claim", "class", "clean",
-  "clear", "click", "climb", "clock", "close", "cloud", "coach", "coast", "could", "count",
-  "court", "cover", "crack", "craft", "crash", "crazy", "cream", "crime", "cross", "crowd",
-  "crown", "cycle", "daily", "dance", "dated", "dealt", "death", "debut", "decay", "depth",
-  "doing", "doubt", "dozen", "draft", "drain", "drama", "drank", "drawn", "dream", "dress",
-  "drink", "drive", "drops", "drove", "drugs", "dying", "early", "earth", "eight", "elite",
-  "empty", "enemy", "enjoy", "enter", "entry", "equal", "error", "essay", "event", "every",
-  "exact", "exist", "extra", "faith", "falls", "false", "fancy", "fatal", "fault", "favor",
-  "feast", "fiber", "field", "fifth", "fifty", "fight", "final", "first", "fixed", "flash",
-  "fleet", "flesh", "float", "floor", "fluid", "focus", "force", "forge", "forth", "forty",
-  "forum", "found", "frame", "frank", "fraud", "fresh", "front", "fruit", "fully", "funny",
+  "about",
+  "above",
+  "abuse",
+  "actor",
+  "acute",
+  "admit",
+  "adopt",
+  "adult",
+  "after",
+  "again",
+  "agent",
+  "agree",
+  "ahead",
+  "alarm",
+  "album",
+  "alert",
+  "alike",
+  "alive",
+  "allow",
+  "alone",
+  "along",
+  "alter",
+  "among",
+  "anger",
+  "angle",
+  "angry",
+  "apart",
+  "apple",
+  "apply",
+  "arena",
+  "argue",
+  "arise",
+  "array",
+  "aside",
+  "asset",
+  "avoid",
+  "award",
+  "aware",
+  "badly",
+  "baker",
+  "bases",
+  "basic",
+  "basin",
+  "basis",
+  "beach",
+  "began",
+  "begin",
+  "begun",
+  "being",
+  "below",
+  "bench",
+  "billy",
+  "birth",
+  "black",
+  "blame",
+  "blank",
+  "blast",
+  "blend",
+  "bless",
+  "blind",
+  "block",
+  "blood",
+  "bloom",
+  "blown",
+  "blues",
+  "board",
+  "boost",
+  "booth",
+  "bound",
+  "brain",
+  "brand",
+  "bread",
+  "break",
+  "breed",
+  "brick",
+  "bride",
+  "brief",
+  "bring",
+  "broad",
+  "broke",
+  "brown",
+  "brush",
+  "build",
+  "built",
+  "bunch",
+  "burst",
+  "buyer",
+  "cabin",
+  "cable",
+  "calif",
+  "carry",
+  "catch",
+  "cause",
+  "chain",
+  "chair",
+  "chaos",
+  "charm",
+  "chart",
+  "chase",
+  "cheap",
+  "check",
+  "chest",
+  "chief",
+  "child",
+  "china",
+  "chose",
+  "civil",
+  "claim",
+  "class",
+  "clean",
+  "clear",
+  "click",
+  "climb",
+  "clock",
+  "close",
+  "cloud",
+  "coach",
+  "coast",
+  "could",
+  "count",
+  "court",
+  "cover",
+  "crack",
+  "craft",
+  "crash",
+  "crazy",
+  "cream",
+  "crime",
+  "cross",
+  "crowd",
+  "crown",
+  "cycle",
+  "daily",
+  "dance",
+  "dated",
+  "dealt",
+  "death",
+  "debut",
+  "decay",
+  "depth",
+  "doing",
+  "doubt",
+  "dozen",
+  "draft",
+  "drain",
+  "drama",
+  "drank",
+  "drawn",
+  "dream",
+  "dress",
+  "drink",
+  "drive",
+  "drops",
+  "drove",
+  "drugs",
+  "dying",
+  "early",
+  "earth",
+  "eight",
+  "elite",
+  "empty",
+  "enemy",
+  "enjoy",
+  "enter",
+  "entry",
+  "equal",
+  "error",
+  "essay",
+  "event",
+  "every",
+  "exact",
+  "exist",
+  "extra",
+  "faith",
+  "falls",
+  "false",
+  "fancy",
+  "fatal",
+  "fault",
+  "favor",
+  "feast",
+  "fiber",
+  "field",
+  "fifth",
+  "fifty",
+  "fight",
+  "final",
+  "first",
+  "fixed",
+  "flash",
+  "fleet",
+  "flesh",
+  "float",
+  "floor",
+  "fluid",
+  "focus",
+  "force",
+  "forge",
+  "forth",
+  "forty",
+  "forum",
+  "found",
+  "frame",
+  "frank",
+  "fraud",
+  "fresh",
+  "front",
+  "fruit",
+  "fully",
+  "funny",
 ];
 
 const MAX_GUESSES = 6;
@@ -92,11 +281,20 @@ function getStats(userId: string): WordleStats {
   };
 
   const row = db
-    .prepare(`SELECT played, won, current_streak, max_streak, guess_distribution FROM wordle_stats WHERE user_id = ?`)
+    .prepare(
+      `SELECT played, won, current_streak, max_streak, guess_distribution FROM wordle_stats WHERE user_id = ?`,
+    )
     .get(userId) as Row | undefined;
 
   if (!row) {
-    return { played: 0, won: 0, currentStreak: 0, maxStreak: 0, winRate: 0, guessDistribution: {} };
+    return {
+      played: 0,
+      won: 0,
+      currentStreak: 0,
+      maxStreak: 0,
+      winRate: 0,
+      guessDistribution: {},
+    };
   }
 
   return {
@@ -172,8 +370,17 @@ function saveGame(userId: string, guesses: string[], won: boolean): void {
        guess_distribution = ?,
        updated_at = ?`,
   ).run(
-    userId, won ? 1 : 0, newStreak, newMaxStreak, JSON.stringify(dist), now,
-    won ? 1 : 0, newStreak, newMaxStreak, JSON.stringify(dist), now,
+    userId,
+    won ? 1 : 0,
+    newStreak,
+    newMaxStreak,
+    JSON.stringify(dist),
+    now,
+    won ? 1 : 0,
+    newStreak,
+    newMaxStreak,
+    JSON.stringify(dist),
+    now,
   );
 }
 
@@ -181,7 +388,11 @@ function saveGame(userId: string, guesses: string[], won: boolean): void {
 /* UI                                                                          */
 /* -------------------------------------------------------------------------- */
 
-function getLetterResult(guess: string, word: string, index: number): "correct" | "present" | "absent" {
+function getLetterResult(
+  guess: string,
+  word: string,
+  index: number,
+): "correct" | "present" | "absent" {
   const letter = guess[index];
   if (word[index] === letter) return "correct";
   if (word.includes(letter)) return "present";
@@ -200,7 +411,11 @@ function formatGuess(guess: string, word: string): string {
     .join("");
 }
 
-function buildGameMessage(guesses: string[], word: string, status: "playing" | "won" | "lost"): string {
+function buildGameMessage(
+  guesses: string[],
+  word: string,
+  status: "playing" | "won" | "lost",
+): string {
   const lines = ["🟩 **Wordle** - Daily Puzzle", ""];
 
   for (const guess of guesses) {
@@ -224,7 +439,10 @@ function buildGameMessage(guesses: string[], word: string, status: "playing" | "
   return lines.join("\n");
 }
 
-function buildGuessButton(gameId: string, disabled = false): ActionRowBuilder<ButtonBuilder> {
+function buildGuessButton(
+  gameId: string,
+  disabled = false,
+): ActionRowBuilder<ButtonBuilder> {
   return new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
       .setCustomId(`wordle:${gameId}:guess`)
@@ -245,10 +463,13 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
   if (showStatsFlag) {
     const stats = getStats(interaction.user.id);
 
-    const distLines = Object.entries(stats.guessDistribution)
-      .sort(([a], [b]) => parseInt(a) - parseInt(b))
-      .map(([guesses, count]) => `${guesses}: ${"█".repeat(Math.min(count, 20))} ${count}`)
-      .join("\n") || "No wins yet";
+    const distLines =
+      Object.entries(stats.guessDistribution)
+        .sort(([a], [b]) => parseInt(a) - parseInt(b))
+        .map(
+          ([guesses, count]) => `${guesses}: ${"█".repeat(Math.min(count, 20))} ${count}`,
+        )
+        .join("\n") || "No wins yet";
 
     await interaction.editReply(
       [
@@ -268,9 +489,15 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
   const existingGame = getTodayGame(interaction.user.id);
 
   if (existingGame) {
-    const status = existingGame.won ? "won" : existingGame.guesses.length >= MAX_GUESSES ? "lost" : "playing";
+    const status = existingGame.won
+      ? "won"
+      : existingGame.guesses.length >= MAX_GUESSES
+        ? "lost"
+        : "playing";
     await interaction.editReply({
-      content: buildGameMessage(existingGame.guesses, word, status) + "\n\n*Continuing your game...*",
+      content:
+        buildGameMessage(existingGame.guesses, word, status) +
+        "\n\n*Continuing your game...*",
       components: status === "playing" ? [buildGuessButton(`${Date.now()}`)] : [],
     });
 
@@ -288,7 +515,8 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
   const collector = message.createMessageComponentCollector({
     componentType: ComponentType.Button,
     time: 600_000, // 10 minutes
-    filter: (i) => i.user.id === interaction.user.id && i.customId.startsWith(`wordle:${gameId}:`),
+    filter: (i) =>
+      i.user.id === interaction.user.id && i.customId.startsWith(`wordle:${gameId}:`),
   });
 
   collector.on("collect", async (buttonInteraction) => {
@@ -319,7 +547,10 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       const guess = modalSubmit.fields.getTextInputValue("guess").toLowerCase().trim();
 
       if (guess.length !== WORD_LENGTH || !/^[a-z]+$/.test(guess)) {
-        await modalSubmit.reply({ content: "Please enter a valid 5-letter word!", ephemeral: true });
+        await modalSubmit.reply({
+          content: "Please enter a valid 5-letter word!",
+          ephemeral: true,
+        });
         return;
       }
 
@@ -357,7 +588,9 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
     if (reason === "time" && guesses.length < MAX_GUESSES) {
       try {
         await message.edit({
-          content: buildGameMessage(guesses, word, "playing") + "\n\n⏱️ *Session expired. Use `/fun wordle` to continue.*",
+          content:
+            buildGameMessage(guesses, word, "playing") +
+            "\n\n⏱️ *Session expired. Use `/fun wordle` to continue.*",
           components: [buildGuessButton(gameId, true)],
         });
       } catch (err) {

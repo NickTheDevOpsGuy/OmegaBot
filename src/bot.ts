@@ -20,11 +20,7 @@ const client = new Client({
     GatewayIntentBits.GuildMessageReactions,
     GatewayIntentBits.GuildMessages,
   ],
-  partials: [
-    Partials.Message,
-    Partials.Reaction,
-    Partials.User,
-  ],
+  partials: [Partials.Message, Partials.Reaction, Partials.User],
 }) as CommandClient;
 
 client.commands = new Map();

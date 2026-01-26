@@ -118,9 +118,16 @@ function recordResult(
        ties = ties + ?,
        updated_at = ?`,
   ).run(
-    id1, id2,
-    isPlayer1Winner ? 1 : 0, isPlayer2Winner ? 1 : 0, isTie ? 1 : 0, now,
-    isPlayer1Winner ? 1 : 0, isPlayer2Winner ? 1 : 0, isTie ? 1 : 0, now,
+    id1,
+    id2,
+    isPlayer1Winner ? 1 : 0,
+    isPlayer2Winner ? 1 : 0,
+    isTie ? 1 : 0,
+    now,
+    isPlayer1Winner ? 1 : 0,
+    isPlayer2Winner ? 1 : 0,
+    isTie ? 1 : 0,
+    now,
   );
 }
 
@@ -351,7 +358,9 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
 
         collector.stop("draw");
         await interaction.editReply({
-          content: ["🏁 **Game over**", "It's a draw.", "", renderBoard(board)].join("\n"),
+          content: ["🏁 **Game over**", "It's a draw.", "", renderBoard(board)].join(
+            "\n",
+          ),
           components: controls({ gameId, board, disabled: true }),
         });
         return;

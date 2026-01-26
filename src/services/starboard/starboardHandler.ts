@@ -76,10 +76,9 @@ function saveStarboardPost(data: {
 function updateStarCount(messageId: string, starCount: number): void {
   ensureStarboardTable();
   const db = getDb();
-  db.prepare(`UPDATE starboard_posts SET star_count = ? WHERE original_message_id = ?`).run(
-    starCount,
-    messageId,
-  );
+  db.prepare(
+    `UPDATE starboard_posts SET star_count = ? WHERE original_message_id = ?`,
+  ).run(starCount, messageId);
 }
 
 function deleteStarboardPost(messageId: string): void {
@@ -92,10 +91,7 @@ function deleteStarboardPost(messageId: string): void {
 /* Embed Builder                                                               */
 /* -------------------------------------------------------------------------- */
 
-function buildStarboardEmbed(
-  reaction: MessageReaction,
-  starCount: number,
-): EmbedBuilder {
+function buildStarboardEmbed(reaction: MessageReaction, starCount: number): EmbedBuilder {
   const message = reaction.message;
   const author = message.author;
 
@@ -203,7 +199,10 @@ export async function handleStarboardReaction(
       .catch(() => null);
 
     if (!starboardChannel || !starboardChannel.isTextBased()) {
-      logger.warn({ starboardChannelId }, "[starboard] channel not found or not text-based");
+      logger.warn(
+        { starboardChannelId },
+        "[starboard] channel not found or not text-based",
+      );
       return;
     }
 
@@ -221,7 +220,10 @@ export async function handleStarboardReaction(
             await starboardMessage.delete();
           }
           deleteStarboardPost(message.id);
-          logger.debug({ messageId: message.id }, "[starboard] removed post (below threshold)");
+          logger.debug(
+            { messageId: message.id },
+            "[starboard] removed post (below threshold)",
+          );
         } catch (err) {
           logger.debug({ err }, "[starboard] failed to delete starboard message");
         }

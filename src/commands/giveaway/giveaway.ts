@@ -77,33 +77,50 @@ function createGiveaway(data: {
       `INSERT INTO giveaways (guild_id, channel_id, host_id, prize, winner_count, ends_at, ended, created_at)
        VALUES (?, ?, ?, ?, ?, ?, 0, ?)`,
     )
-    .run(data.guildId, data.channelId, data.hostId, data.prize, data.winnerCount, data.endsAt, now);
+    .run(
+      data.guildId,
+      data.channelId,
+      data.hostId,
+      data.prize,
+      data.winnerCount,
+      data.endsAt,
+      now,
+    );
 
   return Number(result.lastInsertRowid);
 }
 
 function setGiveawayMessage(giveawayId: number, messageId: string): void {
   const db = getDb();
-  db.prepare(`UPDATE giveaways SET message_id = ? WHERE id = ?`).run(messageId, giveawayId);
+  db.prepare(`UPDATE giveaways SET message_id = ? WHERE id = ?`).run(
+    messageId,
+    giveawayId,
+  );
 }
 
 function getGiveaway(giveawayId: number): Giveaway | null {
   ensureGiveawayTables();
   const db = getDb();
-  return db.prepare(`SELECT * FROM giveaways WHERE id = ?`).get(giveawayId) as Giveaway | null;
+  return db
+    .prepare(`SELECT * FROM giveaways WHERE id = ?`)
+    .get(giveawayId) as Giveaway | null;
 }
 
 function getGiveawayByMessage(messageId: string): Giveaway | null {
   ensureGiveawayTables();
   const db = getDb();
-  return db.prepare(`SELECT * FROM giveaways WHERE message_id = ?`).get(messageId) as Giveaway | null;
+  return db
+    .prepare(`SELECT * FROM giveaways WHERE message_id = ?`)
+    .get(messageId) as Giveaway | null;
 }
 
 function getActiveGiveaways(guildId: string): Giveaway[] {
   ensureGiveawayTables();
   const db = getDb();
   return db
-    .prepare(`SELECT * FROM giveaways WHERE guild_id = ? AND ended = 0 ORDER BY ends_at ASC`)
+    .prepare(
+      `SELECT * FROM giveaways WHERE guild_id = ? AND ended = 0 ORDER BY ends_at ASC`,
+    )
     .all(guildId) as Giveaway[];
 }
 
@@ -113,8 +130,9 @@ function addEntry(giveawayId: number, userId: string): boolean {
   const now = Date.now();
 
   try {
-    db.prepare(`INSERT INTO giveaway_entries (giveaway_id, user_id, entered_at) VALUES (?, ?, ?)`)
-      .run(giveawayId, userId, now);
+    db.prepare(
+      `INSERT INTO giveaway_entries (giveaway_id, user_id, entered_at) VALUES (?, ?, ?)`,
+    ).run(giveawayId, userId, now);
     return true;
   } catch {
     return false; // Already entered
@@ -151,8 +169,10 @@ function getEntryCount(giveawayId: number): number {
 function endGiveaway(giveawayId: number, winners: string[]): void {
   ensureGiveawayTables();
   const db = getDb();
-  db.prepare(`UPDATE giveaways SET ended = 1, winners = ? WHERE id = ?`)
-    .run(JSON.stringify(winners), giveawayId);
+  db.prepare(`UPDATE giveaways SET ended = 1, winners = ? WHERE id = ?`).run(
+    JSON.stringify(winners),
+    giveawayId,
+  );
 }
 
 /* -------------------------------------------------------------------------- */
@@ -231,7 +251,10 @@ function buildGiveawayEmbed(giveaway: Giveaway, entryCount: number): EmbedBuilde
   return embed;
 }
 
-function buildGiveawayButtons(giveawayId: number, disabled = false): ActionRowBuilder<ButtonBuilder> {
+function buildGiveawayButtons(
+  giveawayId: number,
+  disabled = false,
+): ActionRowBuilder<ButtonBuilder> {
   return new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
       .setCustomId(`giveaway:${giveawayId}:enter`)
@@ -251,7 +274,9 @@ function buildGiveawayButtons(giveawayId: number, disabled = false): ActionRowBu
 /* Button Handler (export for interactionHandler.ts)                           */
 /* -------------------------------------------------------------------------- */
 
-export async function handleGiveawayButton(interaction: ButtonInteraction): Promise<void> {
+export async function handleGiveawayButton(
+  interaction: ButtonInteraction,
+): Promise<void> {
   const [, giveawayIdStr, action] = interaction.customId.split(":");
   const giveawayId = parseInt(giveawayIdStr, 10);
 
@@ -270,7 +295,10 @@ export async function handleGiveawayButton(interaction: ButtonInteraction): Prom
   if (action === "enter") {
     const added = addEntry(giveawayId, interaction.user.id);
     if (added) {
-      await interaction.reply({ content: "🎉 You've entered the giveaway! Good luck!", ephemeral: true });
+      await interaction.reply({
+        content: "🎉 You've entered the giveaway! Good luck!",
+        ephemeral: true,
+      });
     } else {
       await interaction.reply({ content: "You're already entered!", ephemeral: true });
     }
@@ -279,7 +307,10 @@ export async function handleGiveawayButton(interaction: ButtonInteraction): Prom
     if (removed) {
       await interaction.reply({ content: "You've left the giveaway.", ephemeral: true });
     } else {
-      await interaction.reply({ content: "You weren't entered in this giveaway.", ephemeral: true });
+      await interaction.reply({
+        content: "You weren't entered in this giveaway.",
+        ephemeral: true,
+      });
     }
   }
 
@@ -305,13 +336,24 @@ export const data = new SlashCommandBuilder()
       .setName("start")
       .setDescription("Start a new giveaway")
       .addStringOption((o) =>
-        o.setName("prize").setDescription("What are you giving away?").setRequired(true).setMaxLength(200),
+        o
+          .setName("prize")
+          .setDescription("What are you giving away?")
+          .setRequired(true)
+          .setMaxLength(200),
       )
       .addStringOption((o) =>
-        o.setName("duration").setDescription("Duration (e.g., 1h, 30m, 1d)").setRequired(true),
+        o
+          .setName("duration")
+          .setDescription("Duration (e.g., 1h, 30m, 1d)")
+          .setRequired(true),
       )
       .addIntegerOption((o) =>
-        o.setName("winners").setDescription("Number of winners (default: 1)").setMinValue(1).setMaxValue(10),
+        o
+          .setName("winners")
+          .setDescription("Number of winners (default: 1)")
+          .setMinValue(1)
+          .setMaxValue(10),
       ),
   )
   .addSubcommand((s) =>
@@ -319,7 +361,10 @@ export const data = new SlashCommandBuilder()
       .setName("end")
       .setDescription("End a giveaway early")
       .addStringOption((o) =>
-        o.setName("message_id").setDescription("Message ID of the giveaway").setRequired(true),
+        o
+          .setName("message_id")
+          .setDescription("Message ID of the giveaway")
+          .setRequired(true),
       ),
   )
   .addSubcommand((s) =>
@@ -327,7 +372,10 @@ export const data = new SlashCommandBuilder()
       .setName("reroll")
       .setDescription("Reroll winners for a giveaway")
       .addStringOption((o) =>
-        o.setName("message_id").setDescription("Message ID of the giveaway").setRequired(true),
+        o
+          .setName("message_id")
+          .setDescription("Message ID of the giveaway")
+          .setRequired(true),
       ),
   )
   .addSubcommand((s) => s.setName("list").setDescription("List active giveaways"))
@@ -335,7 +383,10 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   if (!interaction.guildId || !interaction.guild) {
-    await interaction.reply({ content: "This command can only be used in a server!", ephemeral: true });
+    await interaction.reply({
+      content: "This command can only be used in a server!",
+      ephemeral: true,
+    });
     return;
   }
 
@@ -349,7 +400,9 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
     const durationMs = parseDuration(durationStr);
     if (!durationMs) {
-      await interaction.editReply("Invalid duration. Use formats like: 10s, 30m, 1h, 1d (min 10s, max 30d)");
+      await interaction.editReply(
+        "Invalid duration. Use formats like: 10s, 30m, 1h, 1d (min 10s, max 30d)",
+      );
       return;
     }
 
@@ -433,7 +486,9 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     endGiveaway(giveaway.id, winners);
 
     try {
-      const channel = await interaction.guild.channels.fetch(giveaway.channel_id) as TextChannel;
+      const channel = (await interaction.guild.channels.fetch(
+        giveaway.channel_id,
+      )) as TextChannel;
       const message = await channel.messages.fetch(giveaway.message_id!);
 
       const updatedGiveaway = getGiveaway(giveaway.id)!;
@@ -476,7 +531,9 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     endGiveaway(giveaway.id, newWinners);
 
     try {
-      const channel = await interaction.guild.channels.fetch(giveaway.channel_id) as TextChannel;
+      const channel = (await interaction.guild.channels.fetch(
+        giveaway.channel_id,
+      )) as TextChannel;
 
       if (newWinners.length > 0) {
         await channel.send(
@@ -505,8 +562,6 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       return `**${g.prize}** - ${entryCount} entries - Ends in ${timeLeft}`;
     });
 
-    await interaction.editReply(
-      ["**Active Giveaways**", "", ...lines].join("\n"),
-    );
+    await interaction.editReply(["**Active Giveaways**", "", ...lines].join("\n"));
   }
 }

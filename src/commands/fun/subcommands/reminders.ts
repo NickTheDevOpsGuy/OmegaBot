@@ -1,8 +1,5 @@
 // src/commands/fun/subcommands/reminders.ts
-import {
-  EmbedBuilder,
-  type ChatInputCommandInteraction,
-} from "discord.js";
+import { EmbedBuilder, type ChatInputCommandInteraction } from "discord.js";
 import { getDb } from "../../../services/database/db.js";
 import { logger } from "../../../utils/logger.js";
 
@@ -53,7 +50,9 @@ function cancelReminder(reminderId: number, userId: string): boolean {
 function cancelAllReminders(userId: string): number {
   const db = getDb();
   const result = db
-    .prepare(`UPDATE reminders SET delivered_at = ? WHERE user_id = ? AND delivered_at IS NULL`)
+    .prepare(
+      `UPDATE reminders SET delivered_at = ? WHERE user_id = ? AND delivered_at IS NULL`,
+    )
     .run(Date.now(), userId);
   return result.changes;
 }
@@ -144,7 +143,9 @@ export async function run(
     const embed = new EmbedBuilder()
       .setTitle("⏰ Your Reminders")
       .setColor(0x5865f2)
-      .setFooter({ text: `${reminders.length} pending reminder${reminders.length === 1 ? "" : "s"}` });
+      .setFooter({
+        text: `${reminders.length} pending reminder${reminders.length === 1 ? "" : "s"}`,
+      });
 
     const lines = reminders.map((r) => {
       const timeLeft = formatTimeUntil(r.due_at);
@@ -164,13 +165,17 @@ export async function run(
 
     const reminder = getReminder(reminderId, userId);
     if (!reminder) {
-      await interaction.editReply(`Reminder #${reminderId} not found or doesn't belong to you.`);
+      await interaction.editReply(
+        `Reminder #${reminderId} not found or doesn't belong to you.`,
+      );
       return;
     }
 
     const cancelled = cancelReminder(reminderId, userId);
     if (cancelled) {
-      await interaction.editReply(`✅ Cancelled reminder #${reminderId}: "${reminder.message.slice(0, 50)}..."`);
+      await interaction.editReply(
+        `✅ Cancelled reminder #${reminderId}: "${reminder.message.slice(0, 50)}..."`,
+      );
     } else {
       await interaction.editReply(`Failed to cancel reminder #${reminderId}.`);
     }
@@ -183,7 +188,9 @@ export async function run(
     if (count === 0) {
       await interaction.editReply("You don't have any reminders to clear.");
     } else {
-      await interaction.editReply(`✅ Cleared ${count} reminder${count === 1 ? "" : "s"}.`);
+      await interaction.editReply(
+        `✅ Cleared ${count} reminder${count === 1 ? "" : "s"}.`,
+      );
     }
     return;
   }
@@ -213,7 +220,7 @@ export async function run(
     const timestamp = Math.floor(dueAt / 1000);
     await interaction.editReply(
       `✅ Reminder #${id} set! I'll remind you <t:${timestamp}:R> (<t:${timestamp}:f>)\n` +
-      `> ${message.slice(0, 100)}${message.length > 100 ? "..." : ""}`,
+        `> ${message.slice(0, 100)}${message.length > 100 ? "..." : ""}`,
     );
 
     logger.info({ userId, reminderId: id, dueAt }, "[remind] reminder created");

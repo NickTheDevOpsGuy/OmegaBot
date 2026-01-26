@@ -49,7 +49,9 @@ function getStats(userId: string): BlackjackStats {
 
   type Row = { wins: number; losses: number; ties: number; blackjacks: number };
   const row = db
-    .prepare(`SELECT wins, losses, ties, blackjacks FROM blackjack_stats WHERE user_id = ?`)
+    .prepare(
+      `SELECT wins, losses, ties, blackjacks FROM blackjack_stats WHERE user_id = ?`,
+    )
     .get(userId) as Row | undefined;
 
   if (!row) return { wins: 0, losses: 0, ties: 0, blackjacks: 0, winRate: 0 };
@@ -61,7 +63,11 @@ function getStats(userId: string): BlackjackStats {
   };
 }
 
-function recordResult(userId: string, result: "win" | "loss" | "tie", isBlackjack = false): void {
+function recordResult(
+  userId: string,
+  result: "win" | "loss" | "tie",
+  isBlackjack = false,
+): void {
   ensureBlackjackTable();
   const db = getDb();
   const now = Date.now();
@@ -267,7 +273,8 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
   const collector = message.createMessageComponentCollector({
     componentType: ComponentType.Button,
     time: GAME_TIMEOUT_MS,
-    filter: (i) => i.user.id === interaction.user.id && i.customId.startsWith(`bj:${gameId}:`),
+    filter: (i) =>
+      i.user.id === interaction.user.id && i.customId.startsWith(`bj:${gameId}:`),
   });
 
   collector.on("collect", async (buttonInteraction: ButtonInteraction) => {
@@ -290,7 +297,14 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       if (playerValue === 21) {
         // Auto-stand on 21
         collector.stop("stand");
-        await playDealerTurn(buttonInteraction, playerHand, dealerHand, deck, gameId, interaction.user.id);
+        await playDealerTurn(
+          buttonInteraction,
+          playerHand,
+          dealerHand,
+          deck,
+          gameId,
+          interaction.user.id,
+        );
         return;
       }
 
@@ -300,7 +314,14 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       });
     } else if (action === "stand") {
       collector.stop("stand");
-      await playDealerTurn(buttonInteraction, playerHand, dealerHand, deck, gameId, interaction.user.id);
+      await playDealerTurn(
+        buttonInteraction,
+        playerHand,
+        dealerHand,
+        deck,
+        gameId,
+        interaction.user.id,
+      );
     }
   });
 
@@ -309,7 +330,9 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       recordResult(interaction.user.id, "loss");
       try {
         await message.edit({
-          content: buildGameMessage(playerHand, dealerHand, "dealer_win", false) + "\n\n⏱️ *Timed out*",
+          content:
+            buildGameMessage(playerHand, dealerHand, "dealer_win", false) +
+            "\n\n⏱️ *Timed out*",
           components: [buildButtons(gameId, true)],
         });
       } catch (err) {

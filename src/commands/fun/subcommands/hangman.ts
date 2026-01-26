@@ -11,12 +11,54 @@ import { logger } from "../../../utils/logger.js";
 import { getDb } from "../../../services/database/db.js";
 
 const WORDS = [
-  "apple", "beach", "chair", "dance", "eagle", "flame", "grape", "house",
-  "juice", "knife", "lemon", "mouse", "night", "ocean", "piano", "queen",
-  "river", "snake", "tiger", "uncle", "viola", "water", "xenon", "yacht",
-  "zebra", "brain", "cloud", "dream", "earth", "frost", "ghost", "happy",
-  "image", "jolly", "karma", "lunar", "magic", "ninja", "opera", "pixel",
-  "quest", "robot", "storm", "train", "urban", "video", "witch", "youth",
+  "apple",
+  "beach",
+  "chair",
+  "dance",
+  "eagle",
+  "flame",
+  "grape",
+  "house",
+  "juice",
+  "knife",
+  "lemon",
+  "mouse",
+  "night",
+  "ocean",
+  "piano",
+  "queen",
+  "river",
+  "snake",
+  "tiger",
+  "uncle",
+  "viola",
+  "water",
+  "xenon",
+  "yacht",
+  "zebra",
+  "brain",
+  "cloud",
+  "dream",
+  "earth",
+  "frost",
+  "ghost",
+  "happy",
+  "image",
+  "jolly",
+  "karma",
+  "lunar",
+  "magic",
+  "ninja",
+  "opera",
+  "pixel",
+  "quest",
+  "robot",
+  "storm",
+  "train",
+  "urban",
+  "video",
+  "witch",
+  "youth",
 ];
 
 const HANGMAN_STAGES = [
@@ -49,7 +91,12 @@ function ensureHangmanTable(): void {
   `);
 }
 
-type HangmanStats = { wins: number; losses: number; totalGuesses: number; winRate: number };
+type HangmanStats = {
+  wins: number;
+  losses: number;
+  totalGuesses: number;
+  winRate: number;
+};
 
 function getStats(userId: string): HangmanStats {
   ensureHangmanTable();
@@ -85,8 +132,15 @@ function recordResult(userId: string, won: boolean, guesses: number): void {
        total_guesses = total_guesses + ?,
        updated_at = ?`,
   ).run(
-    userId, won ? 1 : 0, won ? 0 : 1, guesses, now,
-    won ? 1 : 0, won ? 0 : 1, guesses, now,
+    userId,
+    won ? 1 : 0,
+    won ? 0 : 1,
+    guesses,
+    now,
+    won ? 1 : 0,
+    won ? 0 : 1,
+    guesses,
+    now,
   );
 }
 
@@ -117,7 +171,11 @@ function buildLetterButtons(
         new ButtonBuilder()
           .setCustomId(`hm:${gameId}:${letter}`)
           .setLabel(letter)
-          .setStyle(guessed.has(letter.toLowerCase()) ? ButtonStyle.Secondary : ButtonStyle.Primary)
+          .setStyle(
+            guessed.has(letter.toLowerCase())
+              ? ButtonStyle.Secondary
+              : ButtonStyle.Primary,
+          )
           .setDisabled(disabled || guessed.has(letter.toLowerCase())),
       );
     }
@@ -143,7 +201,10 @@ function buildGameMessage(
     "",
   ];
 
-  const wrongLetters = [...guessed].filter((l) => !word.includes(l)).join(", ").toUpperCase();
+  const wrongLetters = [...guessed]
+    .filter((l) => !word.includes(l))
+    .join(", ")
+    .toUpperCase();
   if (wrongLetters) {
     lines.push(`Wrong: ${wrongLetters} (${wrongCount}/${MAX_WRONG})`);
   }
@@ -194,7 +255,8 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
   const collector = message.createMessageComponentCollector({
     componentType: ComponentType.Button,
     time: GAME_TIMEOUT_MS,
-    filter: (i) => i.user.id === interaction.user.id && i.customId.startsWith(`hm:${gameId}:`),
+    filter: (i) =>
+      i.user.id === interaction.user.id && i.customId.startsWith(`hm:${gameId}:`),
   });
 
   collector.on("collect", async (buttonInteraction: ButtonInteraction) => {
@@ -238,7 +300,8 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       recordResult(interaction.user.id, false, totalGuesses);
       try {
         await message.edit({
-          content: buildGameMessage(word, guessed, wrongCount, "lost") + "\n\n⏱️ *Timed out*",
+          content:
+            buildGameMessage(word, guessed, wrongCount, "lost") + "\n\n⏱️ *Timed out*",
           components: buildLetterButtons(gameId, guessed, true),
         });
       } catch (err) {

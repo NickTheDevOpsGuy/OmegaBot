@@ -45,7 +45,13 @@ function getTotalGamesPlayed(db: ReturnType<typeof getDb>, userId: string): numb
 
 function getTotalWins(db: ReturnType<typeof getDb>, userId: string): number {
   let total = 0;
-  const tables = ["rps_stats", "ttt_stats", "blackjack_stats", "hangman_stats", "connect4_stats"];
+  const tables = [
+    "rps_stats",
+    "ttt_stats",
+    "blackjack_stats",
+    "hangman_stats",
+    "connect4_stats",
+  ];
 
   for (const table of tables) {
     try {
@@ -61,7 +67,10 @@ function getTotalWins(db: ReturnType<typeof getDb>, userId: string): number {
   return total;
 }
 
-function getAchievementCount(db: ReturnType<typeof getDb>, userId: string): { earned: number; total: number } {
+function getAchievementCount(
+  db: ReturnType<typeof getDb>,
+  userId: string,
+): { earned: number; total: number } {
   // Simplified achievement check - mirrors achievements.ts logic
   const checks = [
     // Games
@@ -69,46 +78,66 @@ function getAchievementCount(db: ReturnType<typeof getDb>, userId: string): { ea
     () => getTotalWins(db, userId) >= 10,
     () => getTotalWins(db, userId) >= 50,
     () => {
-      const row = db.prepare(`SELECT blackjacks FROM blackjack_stats WHERE user_id = ?`).get(userId) as { blackjacks: number } | undefined;
+      const row = db
+        .prepare(`SELECT blackjacks FROM blackjack_stats WHERE user_id = ?`)
+        .get(userId) as { blackjacks: number } | undefined;
       return (row?.blackjacks ?? 0) >= 1;
     },
     () => {
-      const row = db.prepare(`SELECT max_streak FROM wordle_stats WHERE user_id = ?`).get(userId) as { max_streak: number } | undefined;
+      const row = db
+        .prepare(`SELECT max_streak FROM wordle_stats WHERE user_id = ?`)
+        .get(userId) as { max_streak: number } | undefined;
       return (row?.max_streak ?? 0) >= 7;
     },
     // Luck
     () => {
-      const row = db.prepare(`SELECT jackpots FROM slots_stats WHERE user_id = ?`).get(userId) as { jackpots: number } | undefined;
+      const row = db
+        .prepare(`SELECT jackpots FROM slots_stats WHERE user_id = ?`)
+        .get(userId) as { jackpots: number } | undefined;
       return (row?.jackpots ?? 0) >= 1;
     },
     () => {
-      const row = db.prepare(`SELECT wins FROM slots_stats WHERE user_id = ?`).get(userId) as { wins: number } | undefined;
+      const row = db
+        .prepare(`SELECT wins FROM slots_stats WHERE user_id = ?`)
+        .get(userId) as { wins: number } | undefined;
       return (row?.wins ?? 0) >= 5;
     },
     () => {
-      const row = db.prepare(`SELECT COUNT(*) as count FROM coin_flips WHERE user_id = ?`).get(userId) as { count: number };
+      const row = db
+        .prepare(`SELECT COUNT(*) as count FROM coin_flips WHERE user_id = ?`)
+        .get(userId) as { count: number };
       return row.count >= 100;
     },
     // Dedication
     () => {
-      const row = db.prepare(`SELECT best_streak FROM daily_checkins WHERE user_id = ?`).get(userId) as { best_streak: number } | undefined;
+      const row = db
+        .prepare(`SELECT best_streak FROM daily_checkins WHERE user_id = ?`)
+        .get(userId) as { best_streak: number } | undefined;
       return (row?.best_streak ?? 0) >= 7;
     },
     () => {
-      const row = db.prepare(`SELECT best_streak FROM daily_checkins WHERE user_id = ?`).get(userId) as { best_streak: number } | undefined;
+      const row = db
+        .prepare(`SELECT best_streak FROM daily_checkins WHERE user_id = ?`)
+        .get(userId) as { best_streak: number } | undefined;
       return (row?.best_streak ?? 0) >= 30;
     },
     () => {
-      const row = db.prepare(`SELECT correct FROM trivia_stats WHERE user_id = ?`).get(userId) as { correct: number } | undefined;
+      const row = db
+        .prepare(`SELECT correct FROM trivia_stats WHERE user_id = ?`)
+        .get(userId) as { correct: number } | undefined;
       return (row?.correct ?? 0) >= 50;
     },
     () => {
-      const row = db.prepare(`SELECT best_streak FROM trivia_stats WHERE user_id = ?`).get(userId) as { best_streak: number } | undefined;
+      const row = db
+        .prepare(`SELECT best_streak FROM trivia_stats WHERE user_id = ?`)
+        .get(userId) as { best_streak: number } | undefined;
       return (row?.best_streak ?? 0) >= 10;
     },
     // Social
     () => {
-      const row = db.prepare(`SELECT COUNT(*) as count FROM quotes WHERE author_id = ?`).get(userId) as { count: number };
+      const row = db
+        .prepare(`SELECT COUNT(*) as count FROM quotes WHERE author_id = ?`)
+        .get(userId) as { count: number };
       return row.count >= 1;
     },
   ];
@@ -125,7 +154,10 @@ function getAchievementCount(db: ReturnType<typeof getDb>, userId: string): { ea
   return { earned, total: checks.length };
 }
 
-function getDailyStreak(db: ReturnType<typeof getDb>, userId: string): { current: number; best: number; points: number } {
+function getDailyStreak(
+  db: ReturnType<typeof getDb>,
+  userId: string,
+): { current: number; best: number; points: number } {
   try {
     const row = db
       .prepare(`SELECT streak, best_streak, points FROM daily_checkins WHERE user_id = ?`)
@@ -162,12 +194,8 @@ function getFavoriteCommand(db: ReturnType<typeof getDb>, userId: string): strin
 export const data = new SlashCommandBuilder()
   .setName("profile")
   .setDescription("View your or another user's profile")
-  .addUserOption((o) =>
-    o.setName("user").setDescription("User to view profile for"),
-  )
-  .addBooleanOption((o) =>
-    o.setName("private").setDescription("Only show to you"),
-  );
+  .addUserOption((o) => o.setName("user").setDescription("User to view profile for"))
+  .addBooleanOption((o) => o.setName("private").setDescription("Only show to you"));
 
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const ephemeral = interaction.options.getBoolean("private") ?? false;
@@ -195,7 +223,9 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
   ];
 
   if (member?.joinedTimestamp) {
-    accountLines.push(`🏠 **Joined Server:** <t:${Math.floor(member.joinedTimestamp / 1000)}:R>`);
+    accountLines.push(
+      `🏠 **Joined Server:** <t:${Math.floor(member.joinedTimestamp / 1000)}:R>`,
+    );
   }
 
   embed.addFields({ name: "📋 Account", value: accountLines.join("\n"), inline: false });
@@ -208,7 +238,9 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         `Games Played: **${totalGames}**`,
         `Wins: **${totalWins}** (${winRate}% win rate)`,
         favoriteCommand ? `Favorite: **${favoriteCommand}**` : null,
-      ].filter(Boolean).join("\n"),
+      ]
+        .filter(Boolean)
+        .join("\n"),
       inline: true,
     });
   }
@@ -235,9 +267,14 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
   // Progress bar for achievements
   const progressBarLength = 10;
-  const filledCount = Math.round((achievements.earned / achievements.total) * progressBarLength);
-  const progressBar = "█".repeat(filledCount) + "░".repeat(progressBarLength - filledCount);
-  embed.setFooter({ text: `Achievement Progress: [${progressBar}] ${Math.round((achievements.earned / achievements.total) * 100)}%` });
+  const filledCount = Math.round(
+    (achievements.earned / achievements.total) * progressBarLength,
+  );
+  const progressBar =
+    "█".repeat(filledCount) + "░".repeat(progressBarLength - filledCount);
+  embed.setFooter({
+    text: `Achievement Progress: [${progressBar}] ${Math.round((achievements.earned / achievements.total) * 100)}%`,
+  });
 
   await interaction.editReply({ embeds: [embed] });
 }

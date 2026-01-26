@@ -251,7 +251,9 @@ export const data = new SlashCommandBuilder()
     s
       .setName("blackjack")
       .setDescription("Play a quick game of Blackjack (vs dealer)")
-      .addBooleanOption((o) => o.setName("stats").setDescription("Show your blackjack stats"))
+      .addBooleanOption((o) =>
+        o.setName("stats").setDescription("Show your blackjack stats"),
+      )
       .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
   )
 
@@ -263,7 +265,9 @@ export const data = new SlashCommandBuilder()
       .addUserOption((o) =>
         o.setName("user").setDescription("Opponent").setRequired(false),
       )
-      .addBooleanOption((o) => o.setName("stats").setDescription("Show your Connect 4 stats"))
+      .addBooleanOption((o) =>
+        o.setName("stats").setDescription("Show your Connect 4 stats"),
+      )
       .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
   )
 
@@ -288,7 +292,9 @@ export const data = new SlashCommandBuilder()
     s
       .setName("hangman")
       .setDescription("Play Hangman - guess the word!")
-      .addBooleanOption((o) => o.setName("stats").setDescription("Show your Hangman stats"))
+      .addBooleanOption((o) =>
+        o.setName("stats").setDescription("Show your Hangman stats"),
+      )
       .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
   )
 
@@ -297,7 +303,9 @@ export const data = new SlashCommandBuilder()
     s
       .setName("wordle")
       .setDescription("Play the daily Wordle puzzle")
-      .addBooleanOption((o) => o.setName("stats").setDescription("Show your Wordle stats"))
+      .addBooleanOption((o) =>
+        o.setName("stats").setDescription("Show your Wordle stats"),
+      )
       .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
   )
 
@@ -307,7 +315,9 @@ export const data = new SlashCommandBuilder()
       .setName("slots")
       .setDescription("Spin the slot machine!")
       .addBooleanOption((o) => o.setName("stats").setDescription("Show your slots stats"))
-      .addBooleanOption((o) => o.setName("leaderboard").setDescription("Show jackpot leaderboard"))
+      .addBooleanOption((o) =>
+        o.setName("leaderboard").setDescription("Show jackpot leaderboard"),
+      )
       .addBooleanOption((o) => o.setName("paytable").setDescription("Show payout table"))
       .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
   )
@@ -400,7 +410,11 @@ export const data = new SlashCommandBuilder()
               .setRequired(true),
           )
           .addStringOption((o) =>
-            o.setName("message").setDescription("Reminder message").setRequired(true).setMaxLength(500),
+            o
+              .setName("message")
+              .setDescription("Reminder message")
+              .setRequired(true)
+              .setMaxLength(500),
           ),
       )
       .addSubcommand((s) =>

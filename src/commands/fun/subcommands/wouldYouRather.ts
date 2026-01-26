@@ -29,7 +29,10 @@ const QUESTIONS: Wyr[] = [
   ["Have a dragon", "Be a dragon"],
   ["Be Batman", "Be Iron Man"],
   ["Have hands for feet", "Have feet for hands"],
-  ["Sneeze every time someone thinks about you", "Hiccup every time someone says your name"],
+  [
+    "Sneeze every time someone thinks about you",
+    "Hiccup every time someone says your name",
+  ],
   ["Have a rewind button for life", "Have a pause button for life"],
   ["Only eat pizza forever", "Never eat pizza again"],
   ["Have a pet dinosaur", "Have a pet alien"],
@@ -98,12 +101,24 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       const pctB = Math.round((votesB / totalVotes) * 100);
 
       const barLength = 10;
-      const barA = "█".repeat(Math.round((pctA / 100) * barLength)).padEnd(barLength, "░");
-      const barB = "█".repeat(Math.round((pctB / 100) * barLength)).padEnd(barLength, "░");
+      const barA = "█"
+        .repeat(Math.round((pctA / 100) * barLength))
+        .padEnd(barLength, "░");
+      const barB = "█"
+        .repeat(Math.round((pctB / 100) * barLength))
+        .padEnd(barLength, "░");
 
       embed.addFields(
-        { name: "🅰️ Option A", value: `${optionA}\n\`${barA}\` ${pctA}% (${votesA})`, inline: false },
-        { name: "🅱️ Option B", value: `${optionB}\n\`${barB}\` ${pctB}% (${votesB})`, inline: false },
+        {
+          name: "🅰️ Option A",
+          value: `${optionA}\n\`${barA}\` ${pctA}% (${votesA})`,
+          inline: false,
+        },
+        {
+          name: "🅱️ Option B",
+          value: `${optionB}\n\`${barB}\` ${pctB}% (${votesB})`,
+          inline: false,
+        },
       );
 
       let result = "";
@@ -115,13 +130,17 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
         result = "🤝 **It's a tie!**";
       }
       embed.setDescription(result);
-      embed.setFooter({ text: `Voting ended • ${totalVotes} total vote${totalVotes === 1 ? "" : "s"}` });
+      embed.setFooter({
+        text: `Voting ended • ${totalVotes} total vote${totalVotes === 1 ? "" : "s"}`,
+      });
     } else {
       embed.addFields(
         { name: "🅰️ Option A", value: optionA, inline: true },
         { name: "🅱️ Option B", value: optionB, inline: true },
       );
-      embed.setFooter({ text: `Vote within 60 seconds! • ${totalVotes} vote${totalVotes === 1 ? "" : "s"}` });
+      embed.setFooter({
+        text: `Vote within 60 seconds! • ${totalVotes} vote${totalVotes === 1 ? "" : "s"}`,
+      });
     }
 
     return embed;

@@ -114,7 +114,10 @@ export async function handleInteraction(
       try {
         await handleGiveawayButton(interaction);
       } catch (err) {
-        logger.error({ err, customId: interaction.customId }, "[interaction] giveaway button failed");
+        logger.error(
+          { err, customId: interaction.customId },
+          "[interaction] giveaway button failed",
+        );
       }
       return;
     }

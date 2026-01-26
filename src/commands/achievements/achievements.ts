@@ -31,9 +31,13 @@ const ACHIEVEMENTS: Achievement[] = [
       const tables = ["rps_stats", "ttt_stats", "blackjack_stats", "hangman_stats"];
       for (const table of tables) {
         try {
-          const row = db.prepare(`SELECT wins FROM ${table} WHERE user_id = ?`).get(userId) as { wins: number } | undefined;
+          const row = db
+            .prepare(`SELECT wins FROM ${table} WHERE user_id = ?`)
+            .get(userId) as { wins: number } | undefined;
           if (row && row.wins > 0) return true;
-        } catch { /* table might not exist */ }
+        } catch {
+          /* table might not exist */
+        }
       }
       return false;
     },
@@ -49,9 +53,13 @@ const ACHIEVEMENTS: Achievement[] = [
       const tables = ["rps_stats", "ttt_stats", "blackjack_stats", "hangman_stats"];
       for (const table of tables) {
         try {
-          const row = db.prepare(`SELECT wins FROM ${table} WHERE user_id = ?`).get(userId) as { wins: number } | undefined;
+          const row = db
+            .prepare(`SELECT wins FROM ${table} WHERE user_id = ?`)
+            .get(userId) as { wins: number } | undefined;
           if (row) total += row.wins;
-        } catch { /* table might not exist */ }
+        } catch {
+          /* table might not exist */
+        }
       }
       return total >= 10;
     },
@@ -67,9 +75,13 @@ const ACHIEVEMENTS: Achievement[] = [
       const tables = ["rps_stats", "ttt_stats", "blackjack_stats", "hangman_stats"];
       for (const table of tables) {
         try {
-          const row = db.prepare(`SELECT wins FROM ${table} WHERE user_id = ?`).get(userId) as { wins: number } | undefined;
+          const row = db
+            .prepare(`SELECT wins FROM ${table} WHERE user_id = ?`)
+            .get(userId) as { wins: number } | undefined;
           if (row) total += row.wins;
-        } catch { /* table might not exist */ }
+        } catch {
+          /* table might not exist */
+        }
       }
       return total >= 50;
     },
@@ -82,9 +94,13 @@ const ACHIEVEMENTS: Achievement[] = [
     category: "games",
     checkFn: (userId, db) => {
       try {
-        const row = db.prepare(`SELECT blackjacks FROM blackjack_stats WHERE user_id = ?`).get(userId) as { blackjacks: number } | undefined;
+        const row = db
+          .prepare(`SELECT blackjacks FROM blackjack_stats WHERE user_id = ?`)
+          .get(userId) as { blackjacks: number } | undefined;
         return (row?.blackjacks ?? 0) >= 1;
-      } catch { return false; }
+      } catch {
+        return false;
+      }
     },
   },
   {
@@ -95,9 +111,13 @@ const ACHIEVEMENTS: Achievement[] = [
     category: "games",
     checkFn: (userId, db) => {
       try {
-        const row = db.prepare(`SELECT max_streak FROM wordle_stats WHERE user_id = ?`).get(userId) as { max_streak: number } | undefined;
+        const row = db
+          .prepare(`SELECT max_streak FROM wordle_stats WHERE user_id = ?`)
+          .get(userId) as { max_streak: number } | undefined;
         return (row?.max_streak ?? 0) >= 7;
-      } catch { return false; }
+      } catch {
+        return false;
+      }
     },
   },
 
@@ -110,9 +130,13 @@ const ACHIEVEMENTS: Achievement[] = [
     category: "luck",
     checkFn: (userId, db) => {
       try {
-        const row = db.prepare(`SELECT jackpots FROM slots_stats WHERE user_id = ?`).get(userId) as { jackpots: number } | undefined;
+        const row = db
+          .prepare(`SELECT jackpots FROM slots_stats WHERE user_id = ?`)
+          .get(userId) as { jackpots: number } | undefined;
         return (row?.jackpots ?? 0) >= 1;
-      } catch { return false; }
+      } catch {
+        return false;
+      }
     },
   },
   {
@@ -123,9 +147,13 @@ const ACHIEVEMENTS: Achievement[] = [
     category: "luck",
     checkFn: (userId, db) => {
       try {
-        const row = db.prepare(`SELECT wins FROM slots_stats WHERE user_id = ?`).get(userId) as { wins: number } | undefined;
+        const row = db
+          .prepare(`SELECT wins FROM slots_stats WHERE user_id = ?`)
+          .get(userId) as { wins: number } | undefined;
         return (row?.wins ?? 0) >= 5;
-      } catch { return false; }
+      } catch {
+        return false;
+      }
     },
   },
   {
@@ -136,9 +164,13 @@ const ACHIEVEMENTS: Achievement[] = [
     category: "luck",
     checkFn: (userId, db) => {
       try {
-        const row = db.prepare(`SELECT COUNT(*) as count FROM coin_flips WHERE user_id = ?`).get(userId) as { count: number };
+        const row = db
+          .prepare(`SELECT COUNT(*) as count FROM coin_flips WHERE user_id = ?`)
+          .get(userId) as { count: number };
         return row.count >= 100;
-      } catch { return false; }
+      } catch {
+        return false;
+      }
     },
   },
 
@@ -151,9 +183,13 @@ const ACHIEVEMENTS: Achievement[] = [
     category: "dedication",
     checkFn: (userId, db) => {
       try {
-        const row = db.prepare(`SELECT best_streak FROM daily_checkins WHERE user_id = ?`).get(userId) as { best_streak: number } | undefined;
+        const row = db
+          .prepare(`SELECT best_streak FROM daily_checkins WHERE user_id = ?`)
+          .get(userId) as { best_streak: number } | undefined;
         return (row?.best_streak ?? 0) >= 7;
-      } catch { return false; }
+      } catch {
+        return false;
+      }
     },
   },
   {
@@ -164,9 +200,13 @@ const ACHIEVEMENTS: Achievement[] = [
     category: "dedication",
     checkFn: (userId, db) => {
       try {
-        const row = db.prepare(`SELECT best_streak FROM daily_checkins WHERE user_id = ?`).get(userId) as { best_streak: number } | undefined;
+        const row = db
+          .prepare(`SELECT best_streak FROM daily_checkins WHERE user_id = ?`)
+          .get(userId) as { best_streak: number } | undefined;
         return (row?.best_streak ?? 0) >= 30;
-      } catch { return false; }
+      } catch {
+        return false;
+      }
     },
   },
   {
@@ -177,9 +217,13 @@ const ACHIEVEMENTS: Achievement[] = [
     category: "dedication",
     checkFn: (userId, db) => {
       try {
-        const row = db.prepare(`SELECT correct FROM trivia_stats WHERE user_id = ?`).get(userId) as { correct: number } | undefined;
+        const row = db
+          .prepare(`SELECT correct FROM trivia_stats WHERE user_id = ?`)
+          .get(userId) as { correct: number } | undefined;
         return (row?.correct ?? 0) >= 50;
-      } catch { return false; }
+      } catch {
+        return false;
+      }
     },
   },
   {
@@ -190,9 +234,13 @@ const ACHIEVEMENTS: Achievement[] = [
     category: "dedication",
     checkFn: (userId, db) => {
       try {
-        const row = db.prepare(`SELECT best_streak FROM trivia_stats WHERE user_id = ?`).get(userId) as { best_streak: number } | undefined;
+        const row = db
+          .prepare(`SELECT best_streak FROM trivia_stats WHERE user_id = ?`)
+          .get(userId) as { best_streak: number } | undefined;
         return (row?.best_streak ?? 0) >= 10;
-      } catch { return false; }
+      } catch {
+        return false;
+      }
     },
   },
   {
@@ -203,9 +251,13 @@ const ACHIEVEMENTS: Achievement[] = [
     category: "luck",
     checkFn: (userId, db) => {
       try {
-        const row = db.prepare(`SELECT spins FROM slots_stats WHERE user_id = ?`).get(userId) as { spins: number } | undefined;
+        const row = db
+          .prepare(`SELECT spins FROM slots_stats WHERE user_id = ?`)
+          .get(userId) as { spins: number } | undefined;
         return (row?.spins ?? 0) >= 100;
-      } catch { return false; }
+      } catch {
+        return false;
+      }
     },
   },
   {
@@ -216,9 +268,13 @@ const ACHIEVEMENTS: Achievement[] = [
     category: "games",
     checkFn: (userId, db) => {
       try {
-        const row = db.prepare(`SELECT won FROM wordle_stats WHERE user_id = ?`).get(userId) as { won: number } | undefined;
+        const row = db
+          .prepare(`SELECT won FROM wordle_stats WHERE user_id = ?`)
+          .get(userId) as { won: number } | undefined;
         return (row?.won ?? 0) >= 10;
-      } catch { return false; }
+      } catch {
+        return false;
+      }
     },
   },
   {
@@ -229,9 +285,13 @@ const ACHIEVEMENTS: Achievement[] = [
     category: "games",
     checkFn: (userId, db) => {
       try {
-        const row = db.prepare(`SELECT wins FROM hangman_stats WHERE user_id = ?`).get(userId) as { wins: number } | undefined;
+        const row = db
+          .prepare(`SELECT wins FROM hangman_stats WHERE user_id = ?`)
+          .get(userId) as { wins: number } | undefined;
         return (row?.wins ?? 0) >= 10;
-      } catch { return false; }
+      } catch {
+        return false;
+      }
     },
   },
   {
@@ -242,9 +302,13 @@ const ACHIEVEMENTS: Achievement[] = [
     category: "games",
     checkFn: (userId, db) => {
       try {
-        const row = db.prepare(`SELECT wins FROM blackjack_stats WHERE user_id = ?`).get(userId) as { wins: number } | undefined;
+        const row = db
+          .prepare(`SELECT wins FROM blackjack_stats WHERE user_id = ?`)
+          .get(userId) as { wins: number } | undefined;
         return (row?.wins ?? 0) >= 25;
-      } catch { return false; }
+      } catch {
+        return false;
+      }
     },
   },
   {
@@ -255,9 +319,13 @@ const ACHIEVEMENTS: Achievement[] = [
     category: "games",
     checkFn: (userId, db) => {
       try {
-        const row = db.prepare(`SELECT wins FROM connect4_stats WHERE user_id = ?`).get(userId) as { wins: number } | undefined;
+        const row = db
+          .prepare(`SELECT wins FROM connect4_stats WHERE user_id = ?`)
+          .get(userId) as { wins: number } | undefined;
         return (row?.wins ?? 0) >= 10;
-      } catch { return false; }
+      } catch {
+        return false;
+      }
     },
   },
   {
@@ -268,9 +336,13 @@ const ACHIEVEMENTS: Achievement[] = [
     category: "social",
     checkFn: (userId, db) => {
       try {
-        const row = db.prepare(`SELECT COUNT(*) as count FROM giveaways WHERE host_id = ?`).get(userId) as { count: number };
+        const row = db
+          .prepare(`SELECT COUNT(*) as count FROM giveaways WHERE host_id = ?`)
+          .get(userId) as { count: number };
         return row.count >= 3;
-      } catch { return false; }
+      } catch {
+        return false;
+      }
     },
   },
 
@@ -283,9 +355,13 @@ const ACHIEVEMENTS: Achievement[] = [
     category: "social",
     checkFn: (userId, db) => {
       try {
-        const row = db.prepare(`SELECT COUNT(*) as count FROM quotes WHERE author_id = ?`).get(userId) as { count: number };
+        const row = db
+          .prepare(`SELECT COUNT(*) as count FROM quotes WHERE author_id = ?`)
+          .get(userId) as { count: number };
         return row.count >= 1;
-      } catch { return false; }
+      } catch {
+        return false;
+      }
     },
   },
 ];
@@ -297,12 +373,8 @@ const ACHIEVEMENTS: Achievement[] = [
 export const data = new SlashCommandBuilder()
   .setName("achievements")
   .setDescription("View your achievements and progress")
-  .addUserOption((o) =>
-    o.setName("user").setDescription("User to view achievements for"),
-  )
-  .addBooleanOption((o) =>
-    o.setName("private").setDescription("Only show to you"),
-  );
+  .addUserOption((o) => o.setName("user").setDescription("User to view achievements for"))
+  .addBooleanOption((o) => o.setName("private").setDescription("Only show to you"));
 
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const ephemeral = interaction.options.getBoolean("private") ?? true;
@@ -334,7 +406,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
   // Group by category
   const categories = ["games", "luck", "dedication", "social"] as const;
-  const categoryNames: Record<typeof categories[number], string> = {
+  const categoryNames: Record<(typeof categories)[number], string> = {
     games: "🎮 Games",
     luck: "🍀 Luck",
     dedication: "💪 Dedication",
