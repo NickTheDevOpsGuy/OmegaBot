@@ -1,7 +1,7 @@
 // src/bot.ts
 import { initDatabase, closeDatabase } from "./services/database/db.js";
 
-import { Client, GatewayIntentBits, Events, Partials } from "discord.js";
+import { Client, GatewayIntentBits } from "discord.js";
 import { loadCommands, type CommandClient } from "./services/discord/commandLoader.js";
 import { handleInteraction } from "./services/discord/interactionHandler.js";
 import { pollPullRequestsOnce } from "./services/github/prPoller.js";
@@ -11,142 +11,25 @@ import { onGuildMemberAdd } from "./services/welcome/welcomeHandler.js";
 import { env } from "./config/env.js";
 import { logger } from "./utils/logger.js";
 import { createReminderScheduler } from "./services/reminders/index.js";
-import { getGuildConfig } from "./services/config/index.js";
-import { handleAfkMentions } from "./commands/afk/afk.js";
 
-/* -------------------------------------------------------------------------- */
-/* Process error handlers                                                      */
-/* -------------------------------------------------------------------------- */
-
-process.on("unhandledRejection", (reason, promise) => {
-  logger.error({ reason, promise }, "Unhandled Promise Rejection");
-});
-
-process.on("uncaughtException", (err) => {
-  logger.error({ err }, "Uncaught Exception - shutting down");
-  closeDatabase();
-  process.exit(1);
-});
-
-/* -------------------------------------------------------------------------- */
-/* Discord client setup                                                        */
-/* -------------------------------------------------------------------------- */
-
-/**
- * Create the Discord client.
- *
- * Required intents:
- * - Guilds: base guild access, slash commands
- * - GuildMembers: REQUIRED for guildMemberAdd (welcome messages)
- * - GuildMessages: REQUIRED for AFK mention detection
- * - MessageContent: REQUIRED for reading message content (AFK)
- */
 const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMembers,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-  ],
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
 }) as CommandClient;
 
-/**
- * Command registry populated by the command loader.
- */
 client.commands = new Map();
 
-/**
- * Start the database.
- */
 initDatabase();
 logger.info("Database initialized");
 
-/**
- * Load compiled slash command modules.
- */
 await loadCommands(client);
 
-/**
- * Reminder scheduler (SQLite-backed).
- *
- * We attach it to the client so commands can access it.
- * We start it on clientReady so channel fetching is reliable.
- */
 client.reminderScheduler = createReminderScheduler(client);
 
-/**
- * Handle slash command interactions.
- */
-client.on(Events.InteractionCreate, async (interaction) => {
+client.on("interactionCreate", async (interaction) => {
   await handleInteraction(interaction, client);
 });
 
-/* -------------------------------------------------------------------------- */
-/* Starboard                                                                   */
-/* -------------------------------------------------------------------------- */
-
-const starboardPosted = new Set<string>();
-
-client.on("messageReactionAdd", async (reaction, user) => {
-  try {
-    if (user.bot) return;
-    if (!reaction.message.guildId) return;
-
-    // With partials enabled, fetch when needed
-    if (reaction.partial) await reaction.fetch();
-    if (reaction.message.partial) await reaction.message.fetch();
-
-    const emoji = reaction.emoji.name;
-    if (emoji !== "⭐") return;
-
-    const cfg = getGuildConfig(reaction.message.guildId);
-    const channelId = cfg.starboardChannelId;
-    const threshold = cfg.starboardThreshold ?? 3;
-
-    if (!channelId) return;
-    if ((reaction.count ?? 0) < threshold) return;
-
-    const messageId = reaction.message.id;
-    if (starboardPosted.has(messageId)) return;
-    starboardPosted.add(messageId);
-
-    const starChannel = await reaction.message.guild?.channels
-      .fetch(channelId)
-      .catch(() => null);
-
-    if (!starChannel || !starChannel.isTextBased()) return;
-
-    const jump = reaction.message.url;
-    const content = (reaction.message.content ?? "").trim().slice(0, 1800);
-
-    await starChannel.send({
-      content: [
-        `⭐ **Starred message** (\`${reaction.count ?? 0}\` stars)`,
-        jump,
-        "",
-        content || "_(no text)_",
-      ].join("\n"),
-    });
-  } catch (err) {
-    logger.debug({ err }, "[starboard] reaction handler failed");
-  }
-});
-
-/**
- * Handle messages for AFK detection.
- */
-client.on(Events.MessageCreate, async (message) => {
-  try {
-    await handleAfkMentions(message);
-  } catch (err) {
-    logger.error({ err }, "[afk] handleAfkMentions failed");
-  }
-});
-
-/**
- * Welcome handler for new guild members.
- */
-client.on(Events.GuildMemberAdd, async (member) => {
+client.on("guildMemberAdd", async (member) => {
   logger.info(
     {
       guildId: member.guild.id,
@@ -160,22 +43,12 @@ client.on(Events.GuildMemberAdd, async (member) => {
   await onGuildMemberAdd(member);
 });
 
-/**
- * Optional GitHub polling.
- */
 const githubPrPollingEnabled = env.githubPrPollingEnabled;
 const githubAssigneePollingEnabled = env.githubAssigneePollingEnabled;
 
-let isReady = false;
-
-/**
- * Log once when the bot is ready.
- */
-client.once(Events.ClientReady, () => {
+client.once("clientReady", () => {
   logger.info("OmegaBot is online");
-  isReady = true;
 
-  // DEBUG: prove which bot/app is actually connected
   logger.info(
     {
       loggedInAs: client.user
@@ -190,7 +63,6 @@ client.once(Events.ClientReady, () => {
 
   logger.info({ commands: [...client.commands.keys()] }, "[startup] commands loaded");
 
-  // Start reminder scheduler now that client is ready
   try {
     client.reminderScheduler?.start();
     logger.info("Reminder scheduler started");
@@ -231,9 +103,6 @@ client.once(Events.ClientReady, () => {
   }
 });
 
-/**
- * Shutdown handler (graceful).
- */
 function shutdown(signal: string): void {
   logger.info({ signal }, "Shutting down...");
 
@@ -253,17 +122,8 @@ process.on("SIGTERM", () => shutdown("SIGTERM"));
 
 void client.login(env.token);
 
-/**
- * Schedule GitHub polling (if enabled).
- *
- * IMPORTANT:
- * Promises inside setInterval must be caught, or Node will emit unhandledRejection.
- */
 if (githubPrPollingEnabled || githubAssigneePollingEnabled) {
   setInterval(() => {
-    // Optional readiness guard: don't poll until Discord client is ready.
-    if (!isReady) return;
-
     if (githubPrPollingEnabled) {
       void pollPullRequestsOnce({
         client,
