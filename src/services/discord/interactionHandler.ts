@@ -5,6 +5,7 @@ import { MessageFlags } from "discord.js";
 import { logger } from "../../utils/logger.js";
 import type { CommandClient } from "./commandLoader.js";
 import type { CommandModule } from "./commandTypes.js";
+import { handleGiveawayButton } from "../../commands/giveaway/giveaway.js";
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return !!v && typeof v === "object";
@@ -107,6 +108,20 @@ export async function handleInteraction(
   interaction: Interaction,
   client: CommandClient,
 ): Promise<void> {
+  // Handle button interactions (giveaways, etc.)
+  if (interaction.isButton()) {
+    if (interaction.customId.startsWith("giveaway:")) {
+      try {
+        await handleGiveawayButton(interaction);
+      } catch (err) {
+        logger.error({ err, customId: interaction.customId }, "[interaction] giveaway button failed");
+      }
+      return;
+    }
+    // Other button interactions are handled by their respective collectors
+    return;
+  }
+
   if (!interaction.isChatInputCommand()) return;
 
   const start = performance.now();

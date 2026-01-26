@@ -17,7 +17,15 @@ export type FunCommandKey =
   | "trivia"
   | "quote"
   | "daily"
-  | "tictactoe";
+  | "tictactoe"
+  | "blackjack"
+  | "connect4"
+  | "would-you-rather"
+  | "fact"
+  | "hangman"
+  | "wordle"
+  | "slots"
+  | "stats";
 
 type FunUsageStoreV1 = {
   version: 1;
@@ -53,6 +61,14 @@ const ALL_COMMANDS: FunCommandKey[] = [
   "quote",
   "daily",
   "tictactoe",
+  "blackjack",
+  "connect4",
+  "would-you-rather",
+  "fact",
+  "hangman",
+  "wordle",
+  "slots",
+  "stats",
 ];
 
 function nowIso(): string {

@@ -29,6 +29,10 @@ import { run as runBlackjack } from "./subcommands/blackjack.js";
 import { run as runConnect4 } from "./subcommands/connect4.js";
 import { run as runWouldYouRather } from "./subcommands/wouldYouRather.js";
 import { run as runFact } from "./subcommands/fact.js";
+import { run as runHangman } from "./subcommands/hangman.js";
+import { run as runWordle } from "./subcommands/wordle.js";
+import { run as runSlots } from "./subcommands/slots.js";
+import { run as runStats } from "./subcommands/stats.js";
 
 import { recordFunUsage, type FunCommandKey } from "../../services/fun/funUsageStore.js";
 
@@ -59,6 +63,14 @@ function funKeyFromSub(sub: string): FunCommandKey | null {
     quote: "quote",
     daily: "daily",
     tictactoe: "tictactoe",
+    blackjack: "blackjack",
+    connect4: "connect4",
+    "would-you-rather": "would-you-rather",
+    fact: "fact",
+    hangman: "hangman",
+    wordle: "wordle",
+    slots: "slots",
+    stats: "stats",
   };
 
   return map[sub] ?? null;
@@ -239,6 +251,7 @@ export const data = new SlashCommandBuilder()
     s
       .setName("blackjack")
       .setDescription("Play a quick game of Blackjack (vs dealer)")
+      .addBooleanOption((o) => o.setName("stats").setDescription("Show your blackjack stats"))
       .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
   )
 
@@ -248,8 +261,9 @@ export const data = new SlashCommandBuilder()
       .setName("connect4")
       .setDescription("Play Connect 4 vs another user")
       .addUserOption((o) =>
-        o.setName("user").setDescription("Opponent (required)").setRequired(true),
+        o.setName("user").setDescription("Opponent").setRequired(false),
       )
+      .addBooleanOption((o) => o.setName("stats").setDescription("Show your Connect 4 stats"))
       .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
   )
 
@@ -266,6 +280,44 @@ export const data = new SlashCommandBuilder()
     s
       .setName("fact")
       .setDescription("Random interesting fact")
+      .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+  )
+
+  // /fun hangman
+  .addSubcommand((s) =>
+    s
+      .setName("hangman")
+      .setDescription("Play Hangman - guess the word!")
+      .addBooleanOption((o) => o.setName("stats").setDescription("Show your Hangman stats"))
+      .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+  )
+
+  // /fun wordle
+  .addSubcommand((s) =>
+    s
+      .setName("wordle")
+      .setDescription("Play the daily Wordle puzzle")
+      .addBooleanOption((o) => o.setName("stats").setDescription("Show your Wordle stats"))
+      .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+  )
+
+  // /fun slots
+  .addSubcommand((s) =>
+    s
+      .setName("slots")
+      .setDescription("Spin the slot machine!")
+      .addBooleanOption((o) => o.setName("stats").setDescription("Show your slots stats"))
+      .addBooleanOption((o) => o.setName("leaderboard").setDescription("Show jackpot leaderboard"))
+      .addBooleanOption((o) => o.setName("paytable").setDescription("Show payout table"))
+      .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+  )
+
+  // /fun stats
+  .addSubcommand((s) =>
+    s
+      .setName("stats")
+      .setDescription("View all your fun command stats in one place")
+      .addUserOption((o) => o.setName("user").setDescription("User to view stats for"))
       .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
   )
 
@@ -483,6 +535,30 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
     if (sub === "fact") {
       await runFact(interaction);
+      await maybeRecordUsage(interaction, sub);
+      return;
+    }
+
+    if (sub === "hangman") {
+      await runHangman(interaction);
+      await maybeRecordUsage(interaction, sub);
+      return;
+    }
+
+    if (sub === "wordle") {
+      await runWordle(interaction);
+      await maybeRecordUsage(interaction, sub);
+      return;
+    }
+
+    if (sub === "slots") {
+      await runSlots(interaction);
+      await maybeRecordUsage(interaction, sub);
+      return;
+    }
+
+    if (sub === "stats") {
+      await runStats(interaction);
       await maybeRecordUsage(interaction, sub);
       return;
     }

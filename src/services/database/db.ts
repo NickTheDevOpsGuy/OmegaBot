@@ -398,6 +398,112 @@ export function initDatabase(): Database.Database {
       updated_at INTEGER NOT NULL,
       PRIMARY KEY (user1_id, user2_id)
     );
+
+    /* -------------------------------------------------------------------- */
+    /* Blackjack                                                               */
+    /* -------------------------------------------------------------------- */
+    CREATE TABLE IF NOT EXISTS blackjack_stats (
+      user_id TEXT PRIMARY KEY,
+      wins INTEGER NOT NULL DEFAULT 0,
+      losses INTEGER NOT NULL DEFAULT 0,
+      ties INTEGER NOT NULL DEFAULT 0,
+      blackjacks INTEGER NOT NULL DEFAULT 0,
+      updated_at INTEGER NOT NULL
+    );
+
+    /* -------------------------------------------------------------------- */
+    /* Connect 4                                                               */
+    /* -------------------------------------------------------------------- */
+    CREATE TABLE IF NOT EXISTS connect4_stats (
+      user_id TEXT PRIMARY KEY,
+      wins INTEGER NOT NULL DEFAULT 0,
+      losses INTEGER NOT NULL DEFAULT 0,
+      ties INTEGER NOT NULL DEFAULT 0,
+      updated_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS connect4_h2h (
+      user1_id TEXT NOT NULL,
+      user2_id TEXT NOT NULL,
+      user1_wins INTEGER NOT NULL DEFAULT 0,
+      user2_wins INTEGER NOT NULL DEFAULT 0,
+      ties INTEGER NOT NULL DEFAULT 0,
+      updated_at INTEGER NOT NULL,
+      PRIMARY KEY (user1_id, user2_id)
+    );
+
+    /* -------------------------------------------------------------------- */
+    /* Hangman                                                                 */
+    /* -------------------------------------------------------------------- */
+    CREATE TABLE IF NOT EXISTS hangman_stats (
+      user_id TEXT PRIMARY KEY,
+      wins INTEGER NOT NULL DEFAULT 0,
+      losses INTEGER NOT NULL DEFAULT 0,
+      total_guesses INTEGER NOT NULL DEFAULT 0,
+      updated_at INTEGER NOT NULL
+    );
+
+    /* -------------------------------------------------------------------- */
+    /* Wordle                                                                  */
+    /* -------------------------------------------------------------------- */
+    CREATE TABLE IF NOT EXISTS wordle_games (
+      user_id TEXT NOT NULL,
+      date TEXT NOT NULL,
+      word TEXT NOT NULL,
+      guesses TEXT NOT NULL,
+      won INTEGER NOT NULL,
+      completed_at INTEGER NOT NULL,
+      PRIMARY KEY (user_id, date)
+    );
+
+    CREATE TABLE IF NOT EXISTS wordle_stats (
+      user_id TEXT PRIMARY KEY,
+      played INTEGER NOT NULL DEFAULT 0,
+      won INTEGER NOT NULL DEFAULT 0,
+      current_streak INTEGER NOT NULL DEFAULT 0,
+      max_streak INTEGER NOT NULL DEFAULT 0,
+      guess_distribution TEXT NOT NULL DEFAULT '{}',
+      updated_at INTEGER NOT NULL
+    );
+
+    /* -------------------------------------------------------------------- */
+    /* Slots                                                                   */
+    /* -------------------------------------------------------------------- */
+    CREATE TABLE IF NOT EXISTS slots_stats (
+      user_id TEXT PRIMARY KEY,
+      spins INTEGER NOT NULL DEFAULT 0,
+      wins INTEGER NOT NULL DEFAULT 0,
+      jackpots INTEGER NOT NULL DEFAULT 0,
+      biggest_win TEXT,
+      updated_at INTEGER NOT NULL
+    );
+
+    /* -------------------------------------------------------------------- */
+    /* Giveaways                                                               */
+    /* -------------------------------------------------------------------- */
+    CREATE TABLE IF NOT EXISTS giveaways (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      guild_id TEXT NOT NULL,
+      channel_id TEXT NOT NULL,
+      message_id TEXT,
+      host_id TEXT NOT NULL,
+      prize TEXT NOT NULL,
+      winner_count INTEGER NOT NULL DEFAULT 1,
+      ends_at INTEGER NOT NULL,
+      ended INTEGER NOT NULL DEFAULT 0,
+      winners TEXT,
+      created_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS giveaway_entries (
+      giveaway_id INTEGER NOT NULL,
+      user_id TEXT NOT NULL,
+      entered_at INTEGER NOT NULL,
+      PRIMARY KEY (giveaway_id, user_id),
+      FOREIGN KEY (giveaway_id) REFERENCES giveaways(id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_giveaways_ends ON giveaways(ends_at) WHERE ended = 0;
   `);
 
   // -------------------------------------------------------------------------

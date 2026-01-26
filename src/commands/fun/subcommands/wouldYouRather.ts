@@ -4,82 +4,186 @@ import {
   ButtonBuilder,
   ButtonStyle,
   ComponentType,
+  EmbedBuilder,
   type ChatInputCommandInteraction,
 } from "discord.js";
 import { logger } from "../../../utils/logger.js";
 
-type Wyr = { a: string; b: string };
+type Wyr = [string, string];
 
 const QUESTIONS: Wyr[] = [
-  { a: "Always be 10 minutes late", b: "Always be 20 minutes early" },
-  { a: "Speak all languages", b: "Talk to animals" },
-  { a: "Never need sleep", b: "Never need food" },
-  { a: "Have flight", b: "Have invisibility" },
-  { a: "Only listen to one song forever", b: "Only watch one movie forever" },
-  { a: "Fight one horse-sized duck", b: "Fight 100 duck-sized horses" },
-  { a: "Live on the beach", b: "Live in the mountains" },
-  {
-    a: "Teleport anywhere (but only once a day)",
-    b: "Read minds (but only for 5 minutes a day)",
-  },
+  // Classic
+  ["Be able to fly", "Be able to turn invisible"],
+  ["Have unlimited money", "Have unlimited time"],
+  ["Live without music", "Live without movies"],
+  ["Always be 10 minutes late", "Always be 20 minutes early"],
+  ["Know how you will die", "Know when you will die"],
+  ["Have no internet", "Have no air conditioning/heating"],
+  ["Be famous but hated", "Be unknown but loved"],
+  ["Read minds", "Predict the future"],
+  ["Speak every language fluently", "Play every instrument perfectly"],
+  ["Live in the wilderness", "Live in a big city forever"],
+
+  // Fun/Silly
+  ["Fight one horse-sized duck", "Fight 100 duck-sized horses"],
+  ["Have a dragon", "Be a dragon"],
+  ["Be Batman", "Be Iron Man"],
+  ["Have hands for feet", "Have feet for hands"],
+  ["Sneeze every time someone thinks about you", "Hiccup every time someone says your name"],
+  ["Have a rewind button for life", "Have a pause button for life"],
+  ["Only eat pizza forever", "Never eat pizza again"],
+  ["Have a pet dinosaur", "Have a pet alien"],
+  ["Have Alexa's voice", "Have Siri's voice"],
+  ["Live in Harry Potter world", "Live in Marvel universe"],
+
+  // Deep/Philosophical
+  ["Never use social media again", "Never watch TV/movies again"],
+  ["Have free WiFi everywhere", "Have free coffee everywhere"],
+  ["Be able to teleport", "Be able to time travel"],
+  ["Never age physically", "Never age mentally"],
+  ["Have a personal chef", "Have a personal chauffeur"],
+  ["Be incredibly funny", "Be incredibly smart"],
+  ["Live without your phone", "Live without your computer"],
+  ["Always speak your mind", "Never speak again"],
+  ["Know all languages", "Know how to code anything"],
+  ["Have a perfect memory", "Have the ability to forget anything"],
+
+  // Adventure
+  ["Explore space", "Explore the deep ocean"],
+  ["Live 100 years in the past", "Live 100 years in the future"],
+  ["Have a home in the mountains", "Have a home on the beach"],
+  ["Be a vampire", "Be a werewolf"],
+  ["Climb Mount Everest", "Walk across the Sahara Desert"],
+  ["Have free flights forever", "Have free hotels forever"],
+  ["Live in a haunted mansion", "Live in a tiny house"],
+  ["Have super strength", "Have super speed"],
+  ["Control fire", "Control water"],
+  ["Be the funniest person", "Be the smartest person"],
+
+  // Career/Life
+  ["Be a famous musician", "Be a famous actor"],
+  ["Work your dream job for minimum wage", "Work a boring job for 6 figures"],
+  ["Be extremely lucky", "Be extremely talented"],
+  ["Never have to sleep", "Never have to eat"],
+  ["Always know when people are lying", "Always get away with lying"],
+  ["Have all your texts read aloud", "Have all your search history public"],
+  ["Be stuck in an elevator", "Be stuck in traffic"],
+  ["Lose all your photos", "Lose all your music"],
+  ["Have a pause button", "Have a rewind button"],
+  ["Control time", "Control space"],
 ];
+
+const VOTE_TIMEOUT_MS = 60_000; // 60 seconds
 
 function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
 export async function run(interaction: ChatInputCommandInteraction): Promise<void> {
-  const q = pick(QUESTIONS);
+  const [optionA, optionB] = pick(QUESTIONS);
+  const gameId = `wyr-${Date.now()}`;
+  const votes = new Map<string, "A" | "B">();
 
-  const aId = `wyr:a:${interaction.id}`;
-  const bId = `wyr:b:${interaction.id}`;
+  const buildEmbed = (ended = false) => {
+    const votesA = [...votes.values()].filter((v) => v === "A").length;
+    const votesB = [...votes.values()].filter((v) => v === "B").length;
+    const totalVotes = votes.size;
 
-  let aVotes = 0;
-  let bVotes = 0;
+    const embed = new EmbedBuilder()
+      .setTitle("🤔 Would You Rather...")
+      .setColor(0x5865f2);
 
-  const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder().setCustomId(aId).setLabel("A").setStyle(ButtonStyle.Primary),
-    new ButtonBuilder().setCustomId(bId).setLabel("B").setStyle(ButtonStyle.Primary),
-  );
+    if (ended && totalVotes > 0) {
+      const pctA = Math.round((votesA / totalVotes) * 100);
+      const pctB = Math.round((votesB / totalVotes) * 100);
 
-  const render = () =>
-    [
-      "**Would you rather…**",
-      "",
-      `**A)** ${q.a}`,
-      `**B)** ${q.b}`,
-      "",
-      `Votes: A=${aVotes} | B=${bVotes}`,
-      "_Tap A or B to vote. (Votes close after 60s.)_",
-    ].join("\n");
+      const barLength = 10;
+      const barA = "█".repeat(Math.round((pctA / 100) * barLength)).padEnd(barLength, "░");
+      const barB = "█".repeat(Math.round((pctB / 100) * barLength)).padEnd(barLength, "░");
 
-  const msg = await interaction.editReply({ content: render(), components: [row] });
+      embed.addFields(
+        { name: "🅰️ Option A", value: `${optionA}\n\`${barA}\` ${pctA}% (${votesA})`, inline: false },
+        { name: "🅱️ Option B", value: `${optionB}\n\`${barB}\` ${pctB}% (${votesB})`, inline: false },
+      );
 
-  const collector = msg.createMessageComponentCollector({
-    componentType: ComponentType.Button,
-    time: 60_000,
+      let result = "";
+      if (votesA > votesB) {
+        result = "🏆 **Option A wins!**";
+      } else if (votesB > votesA) {
+        result = "🏆 **Option B wins!**";
+      } else {
+        result = "🤝 **It's a tie!**";
+      }
+      embed.setDescription(result);
+      embed.setFooter({ text: `Voting ended • ${totalVotes} total vote${totalVotes === 1 ? "" : "s"}` });
+    } else {
+      embed.addFields(
+        { name: "🅰️ Option A", value: optionA, inline: true },
+        { name: "🅱️ Option B", value: optionB, inline: true },
+      );
+      embed.setFooter({ text: `Vote within 60 seconds! • ${totalVotes} vote${totalVotes === 1 ? "" : "s"}` });
+    }
+
+    return embed;
+  };
+
+  const buildButtons = (disabled = false) => {
+    const votesA = [...votes.values()].filter((v) => v === "A").length;
+    const votesB = [...votes.values()].filter((v) => v === "B").length;
+
+    return new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`${gameId}:A`)
+        .setLabel(disabled ? `Option A (${votesA})` : "Option A")
+        .setStyle(ButtonStyle.Primary)
+        .setEmoji("🅰️")
+        .setDisabled(disabled),
+      new ButtonBuilder()
+        .setCustomId(`${gameId}:B`)
+        .setLabel(disabled ? `Option B (${votesB})` : "Option B")
+        .setStyle(ButtonStyle.Danger)
+        .setEmoji("🅱️")
+        .setDisabled(disabled),
+    );
+  };
+
+  const message = await interaction.editReply({
+    embeds: [buildEmbed()],
+    components: [buildButtons()],
   });
 
-  const voters = new Set<string>();
+  const collector = message.createMessageComponentCollector({
+    componentType: ComponentType.Button,
+    time: VOTE_TIMEOUT_MS,
+    filter: (i) => i.customId.startsWith(gameId),
+  });
 
-  collector.on("collect", async (btn) => {
+  collector.on("collect", async (buttonInteraction) => {
     try {
-      if (btn.user.bot) return;
+      const choice = buttonInteraction.customId.split(":")[1] as "A" | "B";
+      const previousVote = votes.get(buttonInteraction.user.id);
 
-      if (btn.customId !== aId && btn.customId !== bId) return;
-
-      // one vote per user
-      if (voters.has(btn.user.id)) {
-        await btn.reply({ content: "You already voted on this one.", ephemeral: true });
+      if (previousVote === choice) {
+        await buttonInteraction.reply({
+          content: `You already voted for Option ${choice}!`,
+          ephemeral: true,
+        });
         return;
       }
-      voters.add(btn.user.id);
 
-      if (btn.customId === aId) aVotes++;
-      else bVotes++;
+      votes.set(buttonInteraction.user.id, choice);
 
-      await btn.deferUpdate();
-      await interaction.editReply({ content: render() });
+      await buttonInteraction.deferUpdate();
+      await interaction.editReply({
+        embeds: [buildEmbed()],
+        components: [buildButtons()],
+      });
+
+      const changeText = previousVote ? " (changed vote)" : "";
+      await buttonInteraction.followUp({
+        content: `You voted for **Option ${choice}**!${changeText}`,
+        ephemeral: true,
+      });
     } catch (err) {
       logger.warn({ err }, "[fun/wouldYouRather] vote handler failed");
     }
@@ -87,22 +191,9 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
 
   collector.on("end", async () => {
     try {
-      const disabledRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
-        new ButtonBuilder()
-          .setCustomId(aId)
-          .setLabel("A")
-          .setStyle(ButtonStyle.Primary)
-          .setDisabled(true),
-        new ButtonBuilder()
-          .setCustomId(bId)
-          .setLabel("B")
-          .setStyle(ButtonStyle.Primary)
-          .setDisabled(true),
-      );
-
       await interaction.editReply({
-        content: render().replace("(Votes close after 60s.)", "(Voting closed.)"),
-        components: [disabledRow],
+        embeds: [buildEmbed(true)],
+        components: [buildButtons(true)],
       });
     } catch (err) {
       logger.debug({ err }, "[fun/wouldYouRather] end edit failed");

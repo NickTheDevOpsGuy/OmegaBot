@@ -28,7 +28,7 @@ OmegaBot is a modular Discord bot designed to support development projects with 
 
 ---
 
-## Current features
+## Current Features
 
 - Modular slash-command system with auto-loading from `dist/commands`
 - Centralized interaction routing with consistent, safe error handling
@@ -49,77 +49,112 @@ OmegaBot is a modular Discord bot designed to support development projects with 
 - **AFK system** – Set AFK status with auto-reply when mentioned
 - **Starboard system** – Automatically highlights starred messages once a reaction threshold is met
 - **Suggestion system** – Server members can submit ideas and vote on them
+- **Giveaway system** – Create and manage giveaways with automatic winner selection
+- **Achievement system** – Unlock achievements for games, streaks, and milestones
 - **Persistent storage** – SQLite via `better-sqlite3` for stats, reminders, fun usage, and configuration
 - **Safe interaction handling** – Gracefully handles expired or already-acknowledged interactions
 
-### Core commands
+### Core Commands
 
-- /help – Command discovery and getting started guide
-- /ping – Health check
-- /summary – Conversation summaries (local + LLM mode)
-- /history – Conversation history (DM + file fallback)
-- /playback – Transcript playback with button pagination
-- /pagination – Reusable inline paging helper
-- /timezone – Per-user IANA timezone support (set, show, compare, convert)
-- /changelog – Ephemeral release preview
-- /afk – Set AFK status with auto-reply
+| Command | Description |
+|---------|-------------|
+| `/help` | Command discovery and getting started guide |
+| `/ping` | Health check |
+| `/summary` | Conversation summaries (local + LLM mode) |
+| `/history` | Conversation history (DM + file fallback) |
+| `/playback` | Transcript playback with button pagination |
+| `/pagination` | Reusable inline paging helper |
+| `/timezone` | Per-user IANA timezone support (set, show, compare, convert) |
+| `/changelog` | Ephemeral release preview |
+| `/afk` | Set AFK status with auto-reply |
+| `/userinfo` | View detailed info about a user |
+| `/serverinfo` | View server statistics and info |
+| `/avatar` | View user avatars in multiple sizes |
+| `/achievements` | View your unlocked achievements |
 
-### FAQ system
+### FAQ System
 
-- /faq add – Create persistent FAQ entries
-- /faq get – Retrieve FAQs by key
-- /faq list – List FAQs with sorting and filtering
-- /faq remove – Remove FAQs with confirmation flow
+| Command | Description |
+|---------|-------------|
+| `/faq add` | Create persistent FAQ entries |
+| `/faq get` | Retrieve FAQs by key |
+| `/faq list` | List FAQs with sorting and filtering |
+| `/faq remove` | Remove FAQs with confirmation flow |
+
 - Persistent on-disk storage
 - Usage tracking for FAQs
 - Permission guardrails for destructive actions
 
-### Fun / utility commands
+### Fun Commands
 
 All fun commands are available under `/fun`.
 
 #### Games
 
-- `/fun 8ball` – Ask the magic 8-ball a question
-- `/fun rps` – Rock paper scissors (solo or `opponent:@user` for PvP)
-- `/fun tictactoe` – Tic Tac Toe (solo or `opponent:@user` for PvP)
-- `/fun trivia` – Trivia questions with points and streaks
-- `/fun coinflip` – Heads or tails
-- `/fun coinflipstats` – Coin flip statistics with emoji breakdowns
-- `/fun dice` – Custom dice rolls (2–100 sides, 1–10 dice)
-- `/fun poll` – Create polls with 2–4 options
-- `/fun blackjack` – Interactive blackjack game with buttons
-- `/fun connect4` – PvP Connect 4 game with interactive buttons
-- `/fun would-you-rather` – Vote on random WYR questions
+| Command | Description |
+|---------|-------------|
+| `/fun 8ball` | Ask the magic 8-ball a question |
+| `/fun rps` | Rock paper scissors (solo or PvP) |
+| `/fun tictactoe` | Tic Tac Toe (solo or PvP) |
+| `/fun trivia` | Trivia questions with points and streaks |
+| `/fun blackjack` | Interactive blackjack with Hit/Stand buttons |
+| `/fun connect4` | PvP Connect 4 with interactive buttons |
+| `/fun hangman` | Classic word guessing with letter buttons |
+| `/fun wordle` | Daily word puzzle (same word for everyone) |
+| `/fun slots` | Slot machine with jackpots and leaderboard |
+| `/fun would-you-rather` | Vote on random WYR questions |
+| `/fun coinflip` | Heads or tails |
+| `/fun dice` | Custom dice rolls (2–100 sides, 1–10 dice) |
+| `/fun poll` | Create polls with 2–4 options |
 
 #### Quotes & Jokes
 
-- `/fun quote add` – Save a memorable server quote
-- `/fun quote random` – Get a random quote
-- `/fun quote list` – Browse recent quotes
-- `/fun quote search` – Search quotes by text
-- `/fun joke` – Community jokes (random, add, list, remove)
+| Command | Description |
+|---------|-------------|
+| `/fun quote` | Save and view memorable server quotes |
+| `/fun joke` | Community jokes (random, add, list, remove) |
 
 #### Daily & Stats
 
-- `/fun daily` – Daily check-in for points and streaks
-- `/fun leaderboard` – Fun command usage and top users
+| Command | Description |
+|---------|-------------|
+| `/fun daily` | Daily check-in for points and streaks |
+| `/fun stats` | View all your game stats in one place |
+| `/fun leaderboard` | Fun command usage and top users |
+| `/fun coinflipstats` | Coin flip statistics with emoji breakdowns |
 
 #### Utility
 
-- `/fun remind` – Set reminders (1 minute to 7 days)
-- `/fun weather` – Current weather for a location
-- `/fun weather7` – 7-day forecast
-- `/fun fact` – Random interesting facts
+| Command | Description |
+|---------|-------------|
+| `/fun remind` | Set reminders (1 minute to 7 days) |
+| `/fun weather` | Current weather for a location |
+| `/fun weather7` | 7-day forecast |
+| `/fun fact` | Random interesting facts |
 
-## Planned features
+### Giveaway System
 
-- `/docs` command for documentation lookups
-- Expanded GitHub automation (labels, reviews, merge events)
-- Achievement system (games played, streaks, milestones)
-- Daily and weekly challenges
-- Improved summary output
-- (highlights, action items, structured sections)
+| Command | Description |
+|---------|-------------|
+| `/giveaway start` | Create a giveaway with prize, duration, and winner count |
+| `/giveaway end` | End a giveaway early |
+| `/giveaway reroll` | Pick new winners |
+| `/giveaway list` | List active giveaways |
+
+- Button-based entry system (Enter/Leave)
+- Automatic winner selection when time expires
+- Support for multiple winners
+
+### Achievement System
+
+Unlock achievements as you play! Categories include:
+
+- 🎮 **Games** – First Victory, Getting Good, Champion, Natural 21, Wordle Wizard
+- 🍀 **Luck** – Jackpot!, Lucky Streak, Coin Master
+- 💪 **Dedication** – Week Warrior, Month Master, Trivia Master, On Fire
+- 💬 **Social** – Quotable
+
+View your progress with `/achievements`.
 
 ---
 
@@ -248,7 +283,6 @@ OmegaBot uses discord.js v14 which includes:
 <summary>🗂 Click to expand file structure</summary>
 
 ```
-
 .
 ├── assets
 │   ├── banner.png
@@ -268,178 +302,72 @@ OmegaBot uses discord.js v14 which includes:
 ├── eslint.config.ts
 ├── .github
 │   ├── ISSUE_TEMPLATE
-│   │   ├── bug.yml
-│   │   ├── config.yml
-│   │   ├── documentation.yml
-│   │   ├── enhancement_refactor.yml
-│   │   ├── feature_request.yml
-│   │   └── question_discussion.yml
-│   ├── pull_request_template.md
 │   └── workflows
-│       └── OmegaBot.yml
 ├── .gitignore
 ├── .husky
-│   ├── pre-commit
-│   └── pre-push
 ├── LICENSE
 ├── migrations
-│   └── 001_rps_stats.sql
 ├── package.json
-├── .prettierignore
-├── .prettierrc.yml
 ├── README.md
 ├── scripts
-│   └── precheck.sh
 ├── src
 │   ├── bot.ts
 │   ├── commands
+│   │   ├── achievements
 │   │   ├── admin
-│   │   │   └── admin.ts
 │   │   ├── afk
-│   │   │   └── afk.ts
+│   │   ├── avatar
 │   │   ├── changelog
-│   │   │   └── changelog.ts
 │   │   ├── config
-│   │   │   └── config.ts
 │   │   ├── faq
-│   │   │   ├── faq.ts
-│   │   │   └── subcommands
-│   │   │       ├── add.ts
-│   │   │       ├── get.ts
-│   │   │       ├── list.ts
-│   │   │       └── remove.ts
 │   │   ├── fun
-│   │   │   ├── coinflipStore.test.ts
-│   │   │   ├── coinflipStore.ts
-│   │   │   ├── coinStore.ts
-│   │   │   ├── fun.ts
 │   │   │   └── subcommands
-│   │   │       ├── coinflipstats.ts
-│   │   │       ├── coinflip.ts
-│   │   │       ├── daily.ts
-│   │   │       ├── dice.ts
-│   │   │       ├── eightball.ts
-│   │   │       ├── joke
-│   │   │       │   ├── add.ts
-│   │   │       │   ├── index.ts
-│   │   │       │   ├── list.ts
-│   │   │       │   ├── random.ts
-│   │   │       │   └── remove.ts
-│   │   │       ├── leaderboard.ts
-│   │   │       ├── poll.ts
-│   │   │       ├── quote.ts
-│   │   │       ├── remind.ts
-│   │   │       ├── rps.ts
-│   │   │       ├── tictactoe.ts
-│   │   │       ├── trivia.ts
-│   │   │       └── weather.ts
+│   │   │       ├── blackjack.ts
+│   │   │       ├── connect4.ts
+│   │   │       ├── hangman.ts
+│   │   │       ├── slots.ts
+│   │   │       ├── stats.ts
+│   │   │       ├── wordle.ts
+│   │   │       └── ...
 │   │   ├── general
-│   │   │   └── ping.ts
+│   │   ├── giveaway
 │   │   ├── github
-│   │   │   ├── gh.ts
-│   │   │   ├── pr.ts
-│   │   │   └── status.ts
 │   │   ├── help
-│   │   │   ├── helpText.ts
-│   │   │   └── help.ts
 │   │   ├── history
-│   │   │   └── history.ts
 │   │   ├── pagination
-│   │   │   └── pagination.ts
 │   │   ├── playback
-│   │   │   └── playback.ts
+│   │   ├── serverinfo
+│   │   ├── starboard
+│   │   ├── suggestion
 │   │   ├── summary
-│   │   │   └── summary.ts
-│   │   └── timezone
-│   │       └── timezone.ts
+│   │   ├── timezone
+│   │   └── userinfo
 │   ├── config
-│   │   └── env.ts
 │   ├── registerCommands.ts
 │   ├── services
 │   │   ├── ai
-│   │   │   └── claudeService.ts
 │   │   ├── cache
-│   │   │   └── simpleCache.ts
 │   │   ├── config
-│   │   │   ├── guildConfigStore.ts
-│   │   │   ├── index.ts
-│   │   │   └── types.ts
 │   │   ├── database
-│   │   │   └── db.ts
 │   │   ├── discord
-│   │   │   ├── commandLoader.ts
-│   │   │   ├── commandMeta.ts
-│   │   │   ├── commandTypes.ts
-│   │   │   ├── cooldowns.ts
-│   │   │   ├── fetchChannelMessages.ts
-│   │   │   ├── interactionHandler.ts
-│   │   │   ├── safeReply.ts
-│   │   │   └── tracedInteractionHandler.ts
 │   │   ├── faq
-│   │   │   ├── faqService.ts
-│   │   │   ├── permissions.ts
-│   │   │   ├── services.test.ts
-│   │   │   ├── services.ts
-│   │   │   ├── _shared.ts
-│   │   │   ├── store.test.ts
-│   │   │   ├── store.ts
-│   │   │   └── types.ts
 │   │   ├── fun
-│   │   │   ├── funUsageStore.test.ts
-│   │   │   ├── funUsageStore.ts
-│   │   │   └── pollStore.ts
 │   │   ├── github
-│   │   │   ├── githubApi.ts
-│   │   │   ├── githubCache.ts
-│   │   │   ├── githubClient.ts
-│   │   │   ├── githubErrorMessage.ts
-│   │   │   ├── issueAssigneePollerState.ts
-│   │   │   ├── issueAssigneePoller.ts
-│   │   │   ├── lastSeenStore.ts
-│   │   │   ├── prFormatter.ts
-│   │   │   ├── prPoller.ts
-│   │   │   └── types.ts
 │   │   ├── joke
-│   │   │   └── jokeStore.ts
 │   │   ├── logging
-│   │   │   ├── index.ts
-│   │   │   └── requestContext.ts
 │   │   ├── reminders
-│   │   │   ├── index.ts
-│   │   │   ├── scheduler.ts
-│   │   │   ├── schema.ts
-│   │   │   └── store.ts
 │   │   ├── roles
-│   │   │   └── autoRoleHandler.ts
 │   │   ├── summary
-│   │   │   ├── llmSummary.ts
-│   │   │   ├── localSummary.ts
-│   │   │   └── summarizer.ts
 │   │   ├── time
-│   │   │   ├── formatTimestamp.ts
-│   │   │   └── validateTimezone.ts
 │   │   ├── timezone
-│   │   │   └── timezoneStore.ts
 │   │   ├── transcript
-│   │   │   ├── buildTranscript.ts
-│   │   │   └── defaults.ts
 │   │   ├── weather
-│   │   │   ├── forecast.ts
-│   │   │   └── types.ts
 │   │   └── welcome
-│   │       ├── welcomeHandler.ts
-│   │       └── welcomeMessage.ts
 │   ├── test
-│   │   └── dbTestUtils.ts
 │   ├── types
-│   │   └── discord-client.d.ts
 │   └── utils
-│       ├── colors.ts
-│       ├── interactions.ts
-│       └── logger.ts
 ├── tsconfig.json
 └── vitest.config.ts
-
 ```
 
 </details>
