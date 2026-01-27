@@ -91,7 +91,7 @@ function getStats(userId: string): {
   };
 }
 
-function recordGame(userId: string, won: boolean, guessCount: number): void {
+function recordGame(userId: string, won: boolean, _guessCount: number): void {
   ensureWordleTables();
   const db = getDb();
   const now = Date.now();

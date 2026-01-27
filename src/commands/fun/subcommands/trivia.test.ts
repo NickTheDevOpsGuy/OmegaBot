@@ -71,7 +71,6 @@ function recordCorrect(userId: string): number {
 
   const current = getStats(userId);
   const newStreak = current.streak + 1;
-  const newBest = Math.max(current.bestStreak, newStreak);
 
   db.prepare(
     `
