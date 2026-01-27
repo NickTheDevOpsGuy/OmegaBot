@@ -1,4 +1,16 @@
 // src/commands/achievements/achievements.ts
+//
+// Achievement system that rewards users for various activities.
+//
+// Achievement categories:
+// - Games (9): Win milestones, game-specific achievements
+// - Luck (4): Slots jackpots, coin flips
+// - Dedication (4): Daily streaks, trivia mastery
+// - Social (2): Quotes, giveaways
+//
+// Achievements are checked dynamically against the database when the
+// command is run, so they unlock automatically as users play.
+
 import {
   SlashCommandBuilder,
   EmbedBuilder,

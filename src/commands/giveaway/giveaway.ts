@@ -1,4 +1,8 @@
 // src/commands/giveaway/giveaway.ts
+//
+// Giveaway command handler.
+// Database operations are in giveawayStore.ts.
+
 import {
   SlashCommandBuilder,
   EmbedBuilder,
@@ -11,169 +15,20 @@ import {
   type TextChannel,
 } from "discord.js";
 import { logger } from "../../utils/logger.js";
-import { getDb } from "../../services/database/db.js";
-
-/* -------------------------------------------------------------------------- */
-/* Database                                                                    */
-/* -------------------------------------------------------------------------- */
-
-function ensureGiveawayTables(): void {
-  const db = getDb();
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS giveaways (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      guild_id TEXT NOT NULL,
-      channel_id TEXT NOT NULL,
-      message_id TEXT,
-      host_id TEXT NOT NULL,
-      prize TEXT NOT NULL,
-      winner_count INTEGER NOT NULL DEFAULT 1,
-      ends_at INTEGER NOT NULL,
-      ended INTEGER NOT NULL DEFAULT 0,
-      winners TEXT,
-      created_at INTEGER NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS giveaway_entries (
-      giveaway_id INTEGER NOT NULL,
-      user_id TEXT NOT NULL,
-      entered_at INTEGER NOT NULL,
-      PRIMARY KEY (giveaway_id, user_id),
-      FOREIGN KEY (giveaway_id) REFERENCES giveaways(id)
-    );
-
-    CREATE INDEX IF NOT EXISTS idx_giveaways_ends ON giveaways(ends_at) WHERE ended = 0;
-  `);
-}
-
-type Giveaway = {
-  id: number;
-  guild_id: string;
-  channel_id: string;
-  message_id: string | null;
-  host_id: string;
-  prize: string;
-  winner_count: number;
-  ends_at: number;
-  ended: number;
-  winners: string | null;
-  created_at: number;
-};
-
-function createGiveaway(data: {
-  guildId: string;
-  channelId: string;
-  hostId: string;
-  prize: string;
-  winnerCount: number;
-  endsAt: number;
-}): number {
-  ensureGiveawayTables();
-  const db = getDb();
-  const now = Date.now();
-
-  const result = db
-    .prepare(
-      `INSERT INTO giveaways (guild_id, channel_id, host_id, prize, winner_count, ends_at, ended, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, 0, ?)`,
-    )
-    .run(
-      data.guildId,
-      data.channelId,
-      data.hostId,
-      data.prize,
-      data.winnerCount,
-      data.endsAt,
-      now,
-    );
-
-  return Number(result.lastInsertRowid);
-}
-
-function setGiveawayMessage(giveawayId: number, messageId: string): void {
-  const db = getDb();
-  db.prepare(`UPDATE giveaways SET message_id = ? WHERE id = ?`).run(
-    messageId,
-    giveawayId,
-  );
-}
-
-function getGiveaway(giveawayId: number): Giveaway | null {
-  ensureGiveawayTables();
-  const db = getDb();
-  return db
-    .prepare(`SELECT * FROM giveaways WHERE id = ?`)
-    .get(giveawayId) as Giveaway | null;
-}
-
-function getGiveawayByMessage(messageId: string): Giveaway | null {
-  ensureGiveawayTables();
-  const db = getDb();
-  return db
-    .prepare(`SELECT * FROM giveaways WHERE message_id = ?`)
-    .get(messageId) as Giveaway | null;
-}
-
-function getActiveGiveaways(guildId: string): Giveaway[] {
-  ensureGiveawayTables();
-  const db = getDb();
-  return db
-    .prepare(
-      `SELECT * FROM giveaways WHERE guild_id = ? AND ended = 0 ORDER BY ends_at ASC`,
-    )
-    .all(guildId) as Giveaway[];
-}
-
-function addEntry(giveawayId: number, userId: string): boolean {
-  ensureGiveawayTables();
-  const db = getDb();
-  const now = Date.now();
-
-  try {
-    db.prepare(
-      `INSERT INTO giveaway_entries (giveaway_id, user_id, entered_at) VALUES (?, ?, ?)`,
-    ).run(giveawayId, userId, now);
-    return true;
-  } catch {
-    return false; // Already entered
-  }
-}
-
-function removeEntry(giveawayId: number, userId: string): boolean {
-  ensureGiveawayTables();
-  const db = getDb();
-  const result = db
-    .prepare(`DELETE FROM giveaway_entries WHERE giveaway_id = ? AND user_id = ?`)
-    .run(giveawayId, userId);
-  return result.changes > 0;
-}
-
-function getEntries(giveawayId: number): string[] {
-  ensureGiveawayTables();
-  const db = getDb();
-  const rows = db
-    .prepare(`SELECT user_id FROM giveaway_entries WHERE giveaway_id = ?`)
-    .all(giveawayId) as Array<{ user_id: string }>;
-  return rows.map((r) => r.user_id);
-}
-
-function getEntryCount(giveawayId: number): number {
-  ensureGiveawayTables();
-  const db = getDb();
-  const row = db
-    .prepare(`SELECT COUNT(*) as count FROM giveaway_entries WHERE giveaway_id = ?`)
-    .get(giveawayId) as { count: number };
-  return row.count;
-}
-
-function endGiveaway(giveawayId: number, winners: string[]): void {
-  ensureGiveawayTables();
-  const db = getDb();
-  db.prepare(`UPDATE giveaways SET ended = 1, winners = ? WHERE id = ?`).run(
-    JSON.stringify(winners),
-    giveawayId,
-  );
-}
+import {
+  type Giveaway,
+  createGiveaway,
+  setGiveawayMessage,
+  getGiveaway,
+  getGiveawayByMessage,
+  getActiveGiveaways,
+  getExpiredGiveaways,
+  endGiveaway,
+  addEntry,
+  removeEntry,
+  getEntryCount,
+  selectWinners,
+} from "./giveawayStore.js";
 
 /* -------------------------------------------------------------------------- */
 /* Helpers                                                                     */
@@ -201,11 +56,6 @@ function parseDuration(input: string): number | null {
   return ms;
 }
 
-function pickWinners(entries: string[], count: number): string[] {
-  const shuffled = [...entries].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, Math.min(count, shuffled.length));
-}
-
 function formatTimeLeft(endsAt: number): string {
   const diff = endsAt - Date.now();
   if (diff <= 0) return "Ended";
@@ -218,6 +68,10 @@ function formatTimeLeft(endsAt: number): string {
   if (hours > 0) return `${hours}h ${minutes}m`;
   return `${minutes}m`;
 }
+
+/* -------------------------------------------------------------------------- */
+/* UI Builders                                                                 */
+/* -------------------------------------------------------------------------- */
 
 function buildGiveawayEmbed(giveaway: Giveaway, entryCount: number): EmbedBuilder {
   const timeLeft = formatTimeLeft(giveaway.ends_at);
@@ -271,66 +125,13 @@ function buildGiveawayButtons(
 }
 
 /* -------------------------------------------------------------------------- */
-/* Button Handler (export for interactionHandler.ts)                           */
-/* -------------------------------------------------------------------------- */
-
-export async function handleGiveawayButton(
-  interaction: ButtonInteraction,
-): Promise<void> {
-  const [, giveawayIdStr, action] = interaction.customId.split(":");
-  const giveawayId = parseInt(giveawayIdStr, 10);
-
-  const giveaway = getGiveaway(giveawayId);
-
-  if (!giveaway || giveaway.ended === 1) {
-    await interaction.reply({ content: "This giveaway has ended!", ephemeral: true });
-    return;
-  }
-
-  if (Date.now() > giveaway.ends_at) {
-    await interaction.reply({ content: "This giveaway has ended!", ephemeral: true });
-    return;
-  }
-
-  if (action === "enter") {
-    const added = addEntry(giveawayId, interaction.user.id);
-    if (added) {
-      await interaction.reply({
-        content: "🎉 You've entered the giveaway! Good luck!",
-        ephemeral: true,
-      });
-    } else {
-      await interaction.reply({ content: "You're already entered!", ephemeral: true });
-    }
-  } else if (action === "leave") {
-    const removed = removeEntry(giveawayId, interaction.user.id);
-    if (removed) {
-      await interaction.reply({ content: "You've left the giveaway.", ephemeral: true });
-    } else {
-      await interaction.reply({
-        content: "You weren't entered in this giveaway.",
-        ephemeral: true,
-      });
-    }
-  }
-
-  // Update the embed with new entry count
-  try {
-    const entryCount = getEntryCount(giveawayId);
-    const embed = buildGiveawayEmbed(giveaway, entryCount);
-    await interaction.message.edit({ embeds: [embed] });
-  } catch (err) {
-    logger.debug({ err }, "[giveaway] failed to update embed");
-  }
-}
-
-/* -------------------------------------------------------------------------- */
-/* Command                                                                     */
+/* Command Definition                                                          */
 /* -------------------------------------------------------------------------- */
 
 export const data = new SlashCommandBuilder()
   .setName("giveaway")
   .setDescription("Create and manage giveaways")
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
   .addSubcommand((s) =>
     s
       .setName("start")
@@ -345,13 +146,13 @@ export const data = new SlashCommandBuilder()
       .addStringOption((o) =>
         o
           .setName("duration")
-          .setDescription("Duration (e.g., 1h, 30m, 1d)")
+          .setDescription("How long? (e.g., 1h, 30m, 1d)")
           .setRequired(true),
       )
       .addIntegerOption((o) =>
         o
           .setName("winners")
-          .setDescription("Number of winners (default: 1)")
+          .setDescription("Number of winners (default 1)")
           .setMinValue(1)
           .setMaxValue(10),
       ),
@@ -360,208 +161,294 @@ export const data = new SlashCommandBuilder()
     s
       .setName("end")
       .setDescription("End a giveaway early")
-      .addStringOption((o) =>
-        o
-          .setName("message_id")
-          .setDescription("Message ID of the giveaway")
-          .setRequired(true),
+      .addIntegerOption((o) =>
+        o.setName("id").setDescription("Giveaway ID").setRequired(true),
       ),
   )
   .addSubcommand((s) =>
     s
       .setName("reroll")
-      .setDescription("Reroll winners for a giveaway")
-      .addStringOption((o) =>
-        o
-          .setName("message_id")
-          .setDescription("Message ID of the giveaway")
-          .setRequired(true),
+      .setDescription("Pick new winners for an ended giveaway")
+      .addIntegerOption((o) =>
+        o.setName("id").setDescription("Giveaway ID").setRequired(true),
       ),
   )
-  .addSubcommand((s) => s.setName("list").setDescription("List active giveaways"))
-  .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild);
+  .addSubcommand((s) => s.setName("list").setDescription("List active giveaways"));
+
+/* -------------------------------------------------------------------------- */
+/* Command Execution                                                           */
+/* -------------------------------------------------------------------------- */
 
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
-  if (!interaction.guildId || !interaction.guild) {
+  const sub = interaction.options.getSubcommand();
+
+  if (sub === "start") {
+    await handleStart(interaction);
+  } else if (sub === "end") {
+    await handleEnd(interaction);
+  } else if (sub === "reroll") {
+    await handleReroll(interaction);
+  } else if (sub === "list") {
+    await handleList(interaction);
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Subcommand Handlers                                                         */
+/* -------------------------------------------------------------------------- */
+
+async function handleStart(interaction: ChatInputCommandInteraction): Promise<void> {
+  if (!interaction.guildId || !interaction.channel) {
     await interaction.reply({
-      content: "This command can only be used in a server!",
+      content: "This command must be used in a server.",
       ephemeral: true,
     });
     return;
   }
 
-  const sub = interaction.options.getSubcommand();
+  const prize = interaction.options.getString("prize", true);
+  const durationStr = interaction.options.getString("duration", true);
+  const winnerCount = interaction.options.getInteger("winners") ?? 1;
+
+  const durationMs = parseDuration(durationStr);
+  if (!durationMs) {
+    await interaction.reply({
+      content:
+        "Invalid duration. Use format like `10s`, `30m`, `1h`, or `1d`. Min 10s, max 30d.",
+      ephemeral: true,
+    });
+    return;
+  }
+
+  await interaction.deferReply();
+
+  const endsAt = Date.now() + durationMs;
+  const giveawayId = createGiveaway({
+    guildId: interaction.guildId,
+    channelId: interaction.channelId,
+    hostId: interaction.user.id,
+    prize,
+    winnerCount,
+    endsAt,
+  });
+
+  const giveaway = getGiveaway(giveawayId)!;
+  const embed = buildGiveawayEmbed(giveaway, 0);
+  const buttons = buildGiveawayButtons(giveawayId);
+
+  const reply = await interaction.editReply({ embeds: [embed], components: [buttons] });
+  setGiveawayMessage(giveawayId, reply.id);
+
+  logger.info({ giveawayId, prize, duration: durationStr }, "[giveaway] created");
+
+  // Schedule end
+  setTimeout(() => {
+    void autoEndGiveaway(giveawayId, interaction.channel as TextChannel);
+  }, durationMs);
+}
+
+async function handleEnd(interaction: ChatInputCommandInteraction): Promise<void> {
+  const giveawayId = interaction.options.getInteger("id", true);
+  const giveaway = getGiveaway(giveawayId);
+
+  if (!giveaway) {
+    await interaction.reply({ content: "Giveaway not found.", ephemeral: true });
+    return;
+  }
+
+  if (giveaway.ended === 1) {
+    await interaction.reply({
+      content: "That giveaway has already ended.",
+      ephemeral: true,
+    });
+    return;
+  }
+
+  // Check permission (host or admin)
+  if (giveaway.host_id !== interaction.user.id) {
+    const member = interaction.guild?.members.cache.get(interaction.user.id);
+    if (!member?.permissions.has(PermissionFlagsBits.ManageGuild)) {
+      await interaction.reply({
+        content: "Only the host or an admin can end this giveaway.",
+        ephemeral: true,
+      });
+      return;
+    }
+  }
+
   await interaction.deferReply({ ephemeral: true });
 
-  if (sub === "start") {
-    const prize = interaction.options.getString("prize", true);
-    const durationStr = interaction.options.getString("duration", true);
-    const winnerCount = interaction.options.getInteger("winners") ?? 1;
+  const winners = selectWinners(giveawayId, giveaway.winner_count);
+  endGiveaway(giveawayId, winners);
 
-    const durationMs = parseDuration(durationStr);
-    if (!durationMs) {
-      await interaction.editReply(
-        "Invalid duration. Use formats like: 10s, 30m, 1h, 1d (min 10s, max 30d)",
-      );
-      return;
-    }
-
-    const endsAt = Date.now() + durationMs;
-
-    const giveawayId = createGiveaway({
-      guildId: interaction.guildId,
-      channelId: interaction.channelId,
-      hostId: interaction.user.id,
-      prize,
-      winnerCount,
-      endsAt,
-    });
-
-    const giveaway = getGiveaway(giveawayId)!;
-    const embed = buildGiveawayEmbed(giveaway, 0);
-    const buttons = buildGiveawayButtons(giveawayId);
-
-    const channel = interaction.channel as TextChannel;
-    const message = await channel.send({
-      embeds: [embed],
-      components: [buttons],
-    });
-
-    setGiveawayMessage(giveawayId, message.id);
-
-    await interaction.editReply(`✅ Giveaway created! ID: ${giveawayId}`);
-
-    // Schedule auto-end
-    const delay = endsAt - Date.now();
-    if (delay > 0 && delay < 2147483647) {
-      setTimeout(async () => {
-        try {
-          const g = getGiveaway(giveawayId);
-          if (g && g.ended === 0) {
-            const entries = getEntries(giveawayId);
-            const winners = pickWinners(entries, g.winner_count);
-            endGiveaway(giveawayId, winners);
-
-            const updatedGiveaway = getGiveaway(giveawayId)!;
-            const embed = buildGiveawayEmbed(updatedGiveaway, entries.length);
-
-            await message.edit({
-              embeds: [embed],
-              components: [buildGiveawayButtons(giveawayId, true)],
-            });
-
-            if (winners.length > 0) {
-              await channel.send(
-                `🎉 Congratulations ${winners.map((w) => `<@${w}>`).join(", ")}! You won **${g.prize}**!`,
-              );
-            } else {
-              await channel.send(`😢 No one entered the giveaway for **${g.prize}**.`);
-            }
-          }
-        } catch (err) {
-          logger.error({ err, giveawayId }, "[giveaway] auto-end failed");
-        }
-      }, delay);
-    }
-
-    return;
-  }
-
-  if (sub === "end") {
-    const messageId = interaction.options.getString("message_id", true);
-    const giveaway = getGiveawayByMessage(messageId);
-
-    if (!giveaway || giveaway.guild_id !== interaction.guildId) {
-      await interaction.editReply("Giveaway not found.");
-      return;
-    }
-
-    if (giveaway.ended === 1) {
-      await interaction.editReply("This giveaway has already ended.");
-      return;
-    }
-
-    const entries = getEntries(giveaway.id);
-    const winners = pickWinners(entries, giveaway.winner_count);
-    endGiveaway(giveaway.id, winners);
-
-    try {
-      const channel = (await interaction.guild.channels.fetch(
-        giveaway.channel_id,
-      )) as TextChannel;
-      const message = await channel.messages.fetch(giveaway.message_id!);
-
-      const updatedGiveaway = getGiveaway(giveaway.id)!;
-      const embed = buildGiveawayEmbed(updatedGiveaway, entries.length);
-
+  // Update the original message
+  try {
+    const channel = interaction.guild?.channels.cache.get(giveaway.channel_id) as
+      | TextChannel
+      | undefined;
+    if (channel && giveaway.message_id) {
+      const message = await channel.messages.fetch(giveaway.message_id);
+      const updatedGiveaway = getGiveaway(giveawayId)!;
+      const embed = buildGiveawayEmbed(updatedGiveaway, getEntryCount(giveawayId));
       await message.edit({
         embeds: [embed],
-        components: [buildGiveawayButtons(giveaway.id, true)],
+        components: [buildGiveawayButtons(giveawayId, true)],
       });
-
-      if (winners.length > 0) {
-        await channel.send(
-          `🎉 Congratulations ${winners.map((w) => `<@${w}>`).join(", ")}! You won **${giveaway.prize}**!`,
-        );
-      }
-    } catch (err) {
-      logger.error({ err }, "[giveaway] failed to update message on end");
     }
+  } catch (err) {
+    logger.warn({ err, giveawayId }, "[giveaway] failed to update message");
+  }
 
-    await interaction.editReply("✅ Giveaway ended!");
+  await interaction.editReply({
+    content: `✅ Giveaway #${giveawayId} ended. Winners: ${winners.length > 0 ? winners.map((w) => `<@${w}>`).join(", ") : "No entries"}`,
+  });
+}
+
+async function handleReroll(interaction: ChatInputCommandInteraction): Promise<void> {
+  const giveawayId = interaction.options.getInteger("id", true);
+  const giveaway = getGiveaway(giveawayId);
+
+  if (!giveaway) {
+    await interaction.reply({ content: "Giveaway not found.", ephemeral: true });
     return;
   }
 
-  if (sub === "reroll") {
-    const messageId = interaction.options.getString("message_id", true);
-    const giveaway = getGiveawayByMessage(messageId);
-
-    if (!giveaway || giveaway.guild_id !== interaction.guildId) {
-      await interaction.editReply("Giveaway not found.");
-      return;
-    }
-
-    if (giveaway.ended !== 1) {
-      await interaction.editReply("This giveaway hasn't ended yet.");
-      return;
-    }
-
-    const entries = getEntries(giveaway.id);
-    const newWinners = pickWinners(entries, giveaway.winner_count);
-    endGiveaway(giveaway.id, newWinners);
-
-    try {
-      const channel = (await interaction.guild.channels.fetch(
-        giveaway.channel_id,
-      )) as TextChannel;
-
-      if (newWinners.length > 0) {
-        await channel.send(
-          `🎉 New winners: ${newWinners.map((w) => `<@${w}>`).join(", ")}! You won **${giveaway.prize}**!`,
-        );
-      }
-    } catch (err) {
-      logger.error({ err }, "[giveaway] failed to announce reroll");
-    }
-
-    await interaction.editReply("✅ Winners rerolled!");
-    return;
-  }
-
-  if (sub === "list") {
-    const giveaways = getActiveGiveaways(interaction.guildId);
-
-    if (giveaways.length === 0) {
-      await interaction.editReply("No active giveaways.");
-      return;
-    }
-
-    const lines = giveaways.map((g) => {
-      const timeLeft = formatTimeLeft(g.ends_at);
-      const entryCount = getEntryCount(g.id);
-      return `**${g.prize}** - ${entryCount} entries - Ends in ${timeLeft}`;
+  if (giveaway.ended !== 1) {
+    await interaction.reply({
+      content: "That giveaway hasn't ended yet.",
+      ephemeral: true,
     });
+    return;
+  }
 
-    await interaction.editReply(["**Active Giveaways**", "", ...lines].join("\n"));
+  const winners = selectWinners(giveawayId, giveaway.winner_count);
+  endGiveaway(giveawayId, winners);
+
+  await interaction.reply({
+    content: `🎲 Rerolled! New winners: ${winners.length > 0 ? winners.map((w) => `<@${w}>`).join(", ") : "No entries"}`,
+  });
+}
+
+async function handleList(interaction: ChatInputCommandInteraction): Promise<void> {
+  if (!interaction.guildId) {
+    await interaction.reply({
+      content: "This command must be used in a server.",
+      ephemeral: true,
+    });
+    return;
+  }
+
+  const active = getActiveGiveaways(interaction.guildId);
+
+  if (active.length === 0) {
+    await interaction.reply({ content: "No active giveaways.", ephemeral: true });
+    return;
+  }
+
+  const lines = active.map((g) => {
+    const timeLeft = formatTimeLeft(g.ends_at);
+    return `**#${g.id}** - ${g.prize} (${timeLeft}, ${getEntryCount(g.id)} entries)`;
+  });
+
+  const embed = new EmbedBuilder()
+    .setTitle("🎉 Active Giveaways")
+    .setDescription(lines.join("\n"))
+    .setColor(0x5865f2);
+
+  await interaction.reply({ embeds: [embed], ephemeral: true });
+}
+
+/* -------------------------------------------------------------------------- */
+/* Auto-End                                                                    */
+/* -------------------------------------------------------------------------- */
+
+async function autoEndGiveaway(giveawayId: number, channel: TextChannel): Promise<void> {
+  const giveaway = getGiveaway(giveawayId);
+  if (!giveaway || giveaway.ended === 1) return;
+
+  const winners = selectWinners(giveawayId, giveaway.winner_count);
+  endGiveaway(giveawayId, winners);
+
+  logger.info({ giveawayId, winners }, "[giveaway] auto-ended");
+
+  // Update message
+  try {
+    if (giveaway.message_id) {
+      const message = await channel.messages.fetch(giveaway.message_id);
+      const updatedGiveaway = getGiveaway(giveawayId)!;
+      const embed = buildGiveawayEmbed(updatedGiveaway, getEntryCount(giveawayId));
+      await message.edit({
+        embeds: [embed],
+        components: [buildGiveawayButtons(giveawayId, true)],
+      });
+    }
+  } catch (err) {
+    logger.warn({ err, giveawayId }, "[giveaway] failed to update message on auto-end");
+  }
+
+  // Announce winners
+  if (winners.length > 0) {
+    const winnerMentions = winners.map((w) => `<@${w}>`).join(", ");
+    await channel.send(
+      `🎉 Congratulations ${winnerMentions}! You won **${giveaway.prize}**!`,
+    );
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Button Handler                                                              */
+/* -------------------------------------------------------------------------- */
+
+export async function handleGiveawayButton(
+  interaction: ButtonInteraction,
+): Promise<void> {
+  const [, giveawayIdStr, action] = interaction.customId.split(":");
+  const giveawayId = parseInt(giveawayIdStr, 10);
+
+  const giveaway = getGiveaway(giveawayId);
+  if (!giveaway) {
+    await interaction.reply({ content: "Giveaway not found.", ephemeral: true });
+    return;
+  }
+
+  if (giveaway.ended === 1) {
+    await interaction.reply({ content: "This giveaway has ended.", ephemeral: true });
+    return;
+  }
+
+  if (action === "enter") {
+    // Can't enter own giveaway
+    if (giveaway.host_id === interaction.user.id) {
+      await interaction.reply({
+        content: "You can't enter your own giveaway!",
+        ephemeral: true,
+      });
+      return;
+    }
+
+    const success = addEntry(giveawayId, interaction.user.id);
+    if (success) {
+      await interaction.reply({
+        content: "🎉 You've entered the giveaway! Good luck!",
+        ephemeral: true,
+      });
+    } else {
+      await interaction.reply({ content: "You're already entered!", ephemeral: true });
+    }
+  } else if (action === "leave") {
+    const success = removeEntry(giveawayId, interaction.user.id);
+    if (success) {
+      await interaction.reply({ content: "You've left the giveaway.", ephemeral: true });
+    } else {
+      await interaction.reply({ content: "You weren't entered.", ephemeral: true });
+    }
+  }
+
+  // Update embed with new entry count
+  try {
+    const embed = buildGiveawayEmbed(giveaway, getEntryCount(giveawayId));
+    await interaction.message.edit({ embeds: [embed] });
+  } catch (err) {
+    logger.warn({ err, giveawayId }, "[giveaway] failed to update entry count");
   }
 }

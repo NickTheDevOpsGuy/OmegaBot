@@ -1,4 +1,18 @@
 // src/commands/fun/subcommands/wordle.ts
+//
+// Daily Wordle word puzzle - same word for everyone each day.
+//
+// Features:
+// - 200+ word dictionary
+// - Daily puzzle based on date seed
+// - Modal input for guesses
+// - Color feedback: 🟩 correct, 🟨 present, ⬛ absent
+// - Streak tracking
+// - Guess distribution stats
+// - Resume incomplete games
+//
+// Stats are persisted to wordle_games and wordle_stats tables.
+
 import {
   ActionRowBuilder,
   ButtonBuilder,
@@ -387,6 +401,17 @@ function saveGame(userId: string, guesses: string[], won: boolean): void {
 /* UI                                                                          */
 /* -------------------------------------------------------------------------- */
 
+/**
+ * Determine the result for a letter in a guess.
+ * - "correct": Letter is in the right position (🟩)
+ * - "present": Letter is in the word but wrong position (🟨)
+ * - "absent": Letter is not in the word (⬛)
+ *
+ * Note: This simple implementation doesn't handle duplicate letters
+ * perfectly (e.g., guessing "HELLO" for "WORLD" would show both L's
+ * as present even though there's only one L). This matches many
+ * casual Wordle implementations.
+ */
 function getLetterResult(
   guess: string,
   word: string,

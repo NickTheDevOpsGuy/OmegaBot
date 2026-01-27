@@ -1,4 +1,16 @@
 // src/commands/fun/subcommands/slots.ts
+//
+// Slot machine game with jackpots and leaderboard.
+//
+// Features:
+// - 8 symbols with weighted probabilities
+// - Payouts: 2x-100x (💎 jackpot)
+// - Jackpot leaderboard
+// - Paytable display
+// - Stats: spins, wins, jackpots, biggest_win
+//
+// Stats are persisted to slots_stats table.
+
 import { EmbedBuilder, type ChatInputCommandInteraction } from "discord.js";
 import { getDb } from "../../../services/database/db.js";
 
@@ -125,10 +137,17 @@ function getLeaderboard(limit = 10): Array<{ user_id: string; jackpots: number }
 /* Game Logic                                                                  */
 /* -------------------------------------------------------------------------- */
 
+/**
+ * Spin a single reel using weighted random selection.
+ * Higher weight = more likely to appear. Diamond (weight 1) is rarest.
+ */
 function spinReel(): (typeof SYMBOLS)[number] {
+  // Generate random number in range [0, TOTAL_WEIGHT)
   const roll = Math.random() * TOTAL_WEIGHT;
   let cumulative = 0;
 
+  // Walk through symbols, each "owns" a portion of the range
+  // proportional to its weight
   for (const symbol of SYMBOLS) {
     cumulative += symbol.weight;
     if (roll < cumulative) {
@@ -136,9 +155,14 @@ function spinReel(): (typeof SYMBOLS)[number] {
     }
   }
 
-  return SYMBOLS[0]; // Fallback
+  return SYMBOLS[0]; // Fallback (shouldn't happen)
 }
 
+/**
+ * Calculate payout based on the three reels.
+ * Three of a kind pays the symbol's payout multiplier.
+ * Two of a kind (adjacent) pays 2x.
+ */
 function calculatePayout(reels: Array<(typeof SYMBOLS)[number]>): {
   payout: number;
   type: string;

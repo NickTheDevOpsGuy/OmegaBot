@@ -1,3 +1,37 @@
+## [3.0.0] - 2026-01-27
+
+### Added
+
+- **New Games**: Hangman, Wordle (daily puzzle), Slots (with jackpots)
+- **Achievement System**: 19 achievements across 4 categories (Games, Luck, Dedication, Social)
+- **Giveaway System**: Create giveaways with automatic winner selection, enter/leave buttons
+- **Starboard**: Highlight popular messages with ⭐ reactions
+- **Suggestion System**: Server suggestion box with voting
+- **Combined Stats**: `/fun stats` shows all game stats in one place
+- **Blackjack**: Hit/Stand game vs dealer
+- **Connect 4**: PvP Connect 4 game
+- **Would You Rather**: Vote on WYR questions
+- **Random Facts**: `/fun fact` command
+- **14 test files** covering games, stores, and core functionality
+
+### Changed
+
+- **Command Consolidation**: Reduced from 24 to 15 slash commands
+  - `/userinfo`, `/serverinfo`, `/avatar` → `/info`
+  - `/afk`, `/timezone` → `/profile`
+  - `/starboard` → `/config starboard`
+- **Code Organization**: Extracted database logic into separate store files
+- **Reminders Enhanced**: Now supports set/list/cancel/clear subcommands
+- **Profile Command**: Now shows stats, achievements, daily streak, AFK status
+
+### Removed
+
+- `/pagination` (internal utility)
+- `/changelog` (rarely used)
+- Standalone `/userinfo`, `/serverinfo`, `/avatar`, `/afk`, `/timezone`, `/starboard` commands
+
+---
+
 ## [2.0.1] - 2026-01-20
 
 ### Added

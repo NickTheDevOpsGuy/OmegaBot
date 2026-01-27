@@ -20,9 +20,9 @@ function getDiscordErrorCode(err: unknown): number | null {
 const HELP_TOPICS: HelpTopic[] = [
   "overview",
   "fun",
+  "games",
+  "profile",
   "github",
-  "summary",
-  "timezone",
   "admin",
   "commands",
 ];

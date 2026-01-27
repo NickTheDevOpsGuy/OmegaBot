@@ -1,10 +1,21 @@
-import { MessageFlags } from "discord.js";
 // src/commands/config/config.ts
+//
+// Server configuration command for admins.
+//
+// Subcommand groups:
+// - /config view                    - View all server settings
+// - /config welcome set/clear       - Configure welcome messages
+// - /config starboard set/status/clear - Configure starboard
+//
+// Requires Manage Server permission.
+// This consolidates the old /starboard command into /config.
 
 import {
   SlashCommandBuilder,
   PermissionFlagsBits,
   ChannelType,
+  EmbedBuilder,
+  MessageFlags,
   type ChatInputCommandInteraction,
 } from "discord.js";
 import {
@@ -13,115 +24,239 @@ import {
 } from "../../services/config/guildConfigStore.js";
 import { logger } from "../../utils/logger.js";
 
-/**
- * Guild configuration command.
- *
- * This is intentionally small and focused:
- * - Set/clear the welcome channel for onboarding messages
- *
- * Notes:
- * - Requires "Manage Server" to prevent random users changing guild config
- * - Only allows guild text channels (not DMs, not threads)
- */
 export const data = new SlashCommandBuilder()
   .setName("config")
   .setDescription("Configure OmegaBot settings for this server")
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
+  // Welcome channel
   .addSubcommandGroup((group) =>
     group
-      .setName("welcome-channel")
-      .setDescription("Configure where welcome messages are posted")
+      .setName("welcome")
+      .setDescription("Configure welcome messages")
       .addSubcommand((sub) =>
         sub
           .setName("set")
-          .setDescription("Set the channel used for welcome messages")
+          .setDescription("Set the welcome channel")
           .addChannelOption((opt) =>
             opt
               .setName("channel")
-              .setDescription("Channel to post welcome messages in")
+              .setDescription("Channel for welcome messages")
               .setRequired(true)
-              // Only allow normal guild text channels.
               .addChannelTypes(ChannelType.GuildText),
           ),
       )
       .addSubcommand((sub) =>
-        sub.setName("clear").setDescription("Clear the configured welcome channel"),
+        sub.setName("clear").setDescription("Clear the welcome channel"),
       ),
+  )
+  // Starboard
+  .addSubcommandGroup((group) =>
+    group
+      .setName("starboard")
+      .setDescription("Configure the starboard")
+      .addSubcommand((sub) =>
+        sub
+          .setName("set")
+          .setDescription("Set up the starboard")
+          .addChannelOption((opt) =>
+            opt
+              .setName("channel")
+              .setDescription("Channel for starred messages")
+              .setRequired(true)
+              .addChannelTypes(ChannelType.GuildText),
+          )
+          .addIntegerOption((opt) =>
+            opt
+              .setName("threshold")
+              .setDescription("Stars required (default 3)")
+              .setMinValue(1)
+              .setMaxValue(25),
+          ),
+      )
+      .addSubcommand((sub) =>
+        sub.setName("status").setDescription("View current starboard settings"),
+      )
+      .addSubcommand((sub) =>
+        sub.setName("clear").setDescription("Disable the starboard"),
+      ),
+  )
+  // View all settings
+  .addSubcommand((sub) =>
+    sub.setName("view").setDescription("View all current settings"),
   );
 
-export async function execute(interaction: ChatInputCommandInteraction) {
-  // Only valid inside a guild.
+export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   if (!interaction.guildId) {
     await interaction.reply({
-      content: "This command can only be used in a server (not in DMs).",
+      content: "This command can only be used in a server.",
       flags: MessageFlags.Ephemeral,
     });
     return;
   }
 
-  const group = interaction.options.getSubcommandGroup();
+  const group = interaction.options.getSubcommandGroup(false);
   const sub = interaction.options.getSubcommand();
 
-  if (group !== "welcome-channel") {
-    await interaction.reply({
-      content: "Unknown config group.",
-      flags: MessageFlags.Ephemeral,
-    });
+  // /config view (no group)
+  if (!group && sub === "view") {
+    await handleView(interaction);
     return;
   }
 
+  if (group === "welcome") {
+    await handleWelcome(interaction, sub);
+  } else if (group === "starboard") {
+    await handleStarboard(interaction, sub);
+  } else {
+    await interaction.reply({
+      content: "Unknown config option.",
+      flags: MessageFlags.Ephemeral,
+    });
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* View Handler                                                                */
+/* -------------------------------------------------------------------------- */
+
+async function handleView(interaction: ChatInputCommandInteraction): Promise<void> {
+  const config = getGuildConfig(interaction.guildId!);
+
+  const embed = new EmbedBuilder().setTitle("⚙️ Server Configuration").setColor(0x5865f2);
+
+  // Welcome
+  const welcomeStatus = config.welcomeChannelId
+    ? `✅ Enabled - <#${config.welcomeChannelId}>`
+    : "❌ Not configured";
+
+  embed.addFields({
+    name: "👋 Welcome Messages",
+    value: welcomeStatus,
+    inline: false,
+  });
+
+  // Starboard
+  const starboardStatus = config.starboardChannelId
+    ? `✅ Enabled - <#${config.starboardChannelId}> (${config.starboardThreshold ?? 3}⭐ required)`
+    : "❌ Not configured";
+
+  embed.addFields({
+    name: "⭐ Starboard",
+    value: starboardStatus,
+    inline: false,
+  });
+
+  await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+}
+
+/* -------------------------------------------------------------------------- */
+/* Welcome Handler                                                             */
+/* -------------------------------------------------------------------------- */
+
+async function handleWelcome(
+  interaction: ChatInputCommandInteraction,
+  sub: string,
+): Promise<void> {
   if (sub === "set") {
     const channel = interaction.options.getChannel("channel", true);
 
-    // Extra safety: ensure it’s a guild text channel.
     if (channel.type !== ChannelType.GuildText) {
       await interaction.reply({
-        content: "Please choose a normal text channel (not a thread or DM).",
+        content: "Please choose a text channel.",
         flags: MessageFlags.Ephemeral,
       });
       return;
     }
 
-    const updated = setGuildConfig(interaction.guildId, {
+    setGuildConfig(interaction.guildId!, {
       welcomeChannelId: channel.id,
       welcomeEnabled: true,
     });
 
     logger.info(
       { guildId: interaction.guildId, welcomeChannelId: channel.id },
-      "Updated guild welcome channel",
+      "[config] welcome channel set",
     );
 
     await interaction.reply({
-      content: `✅ Welcome messages will be posted in <#${updated.welcomeChannelId}>.`,
+      content: `✅ Welcome messages will be posted in <#${channel.id}>.`,
       flags: MessageFlags.Ephemeral,
     });
-    return;
+  } else if (sub === "clear") {
+    setGuildConfig(interaction.guildId!, {
+      welcomeChannelId: null,
+      welcomeEnabled: false,
+    });
+
+    logger.info({ guildId: interaction.guildId }, "[config] welcome channel cleared");
+
+    await interaction.reply({
+      content: "✅ Welcome channel cleared. Using system channel as fallback.",
+      flags: MessageFlags.Ephemeral,
+    });
   }
+}
 
-  if (sub === "clear") {
-    const current = getGuildConfig(interaction.guildId);
+/* -------------------------------------------------------------------------- */
+/* Starboard Handler                                                           */
+/* -------------------------------------------------------------------------- */
 
-    // If nothing is set, still respond clearly.
-    if (!current.welcomeChannelId) {
+async function handleStarboard(
+  interaction: ChatInputCommandInteraction,
+  sub: string,
+): Promise<void> {
+  if (sub === "set") {
+    const channel = interaction.options.getChannel("channel", true);
+    const threshold = interaction.options.getInteger("threshold") ?? 3;
+
+    if (channel.type !== ChannelType.GuildText) {
       await interaction.reply({
-        content:
-          "Welcome channel is already not set. I will use the system channel or first text channel as a fallback.",
+        content: "Please choose a text channel.",
         flags: MessageFlags.Ephemeral,
       });
       return;
     }
 
-    // Clear configured channel and fall back to system/first text channel.
-    setGuildConfig(interaction.guildId, {
-      welcomeChannelId: null,
+    setGuildConfig(interaction.guildId!, {
+      starboardChannelId: channel.id,
+      starboardThreshold: threshold,
     });
 
-    logger.info({ guildId: interaction.guildId }, "Cleared guild welcome channel");
+    logger.info(
+      { guildId: interaction.guildId, starboardChannelId: channel.id, threshold },
+      "[config] starboard configured",
+    );
 
     await interaction.reply({
-      content:
-        "✅ Cleared the welcome channel. I will use the system channel or first text channel as a fallback.",
+      content: `✅ Starboard configured!\n• Channel: <#${channel.id}>\n• Threshold: ${threshold}⭐`,
+      flags: MessageFlags.Ephemeral,
+    });
+  } else if (sub === "status") {
+    const config = getGuildConfig(interaction.guildId!);
+
+    if (!config.starboardChannelId) {
+      await interaction.reply({
+        content:
+          "⭐ Starboard is not configured.\nUse `/config starboard set` to enable it.",
+        flags: MessageFlags.Ephemeral,
+      });
+      return;
+    }
+
+    await interaction.reply({
+      content: `⭐ **Starboard Status**\n• Channel: <#${config.starboardChannelId}>\n• Threshold: ${config.starboardThreshold ?? 3}⭐`,
+      flags: MessageFlags.Ephemeral,
+    });
+  } else if (sub === "clear") {
+    setGuildConfig(interaction.guildId!, {
+      starboardChannelId: null,
+      starboardThreshold: null,
+    });
+
+    logger.info({ guildId: interaction.guildId }, "[config] starboard disabled");
+
+    await interaction.reply({
+      content: "✅ Starboard disabled.",
       flags: MessageFlags.Ephemeral,
     });
   }

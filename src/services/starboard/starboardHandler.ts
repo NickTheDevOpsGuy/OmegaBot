@@ -1,4 +1,17 @@
 // src/services/starboard/starboardHandler.ts
+//
+// Handles ⭐ reactions to post highlighted messages to a starboard channel.
+//
+// How it works:
+// 1. Listens for messageReactionAdd/Remove events
+// 2. Counts ⭐ reactions (excluding message author)
+// 3. When threshold is met, posts to configured starboard channel
+// 4. Updates existing starboard posts when count changes
+// 5. Removes from starboard if count drops below threshold
+//
+// Requires guild config with starboardChannelId and starboardThreshold.
+// Bot needs GuildMessageReactions and GuildMessages intents.
+
 import {
   EmbedBuilder,
   type Client,

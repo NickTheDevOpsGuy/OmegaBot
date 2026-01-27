@@ -1,117 +1,139 @@
-// src/services/fun/coinflipStore.ts
-import { getDb } from "../../services/database/db.js";
+// src/commands/fun/coinflipStore.test.ts
+//
+// Tests for the coinflip persistence layer.
+//
+// Coverage:
+// - Recording flips
+// - Retrieving totals
+// - Recent flip history
+// - Leaderboard
 
-export type CoinFlipResult = "heads" | "tails";
+import { describe, expect, it, beforeEach } from "vitest";
+import { useInMemoryDb } from "../../test/dbTestUtils.js";
+import {
+  recordCoinFlip,
+  getCoinFlipTotals,
+  getRecentCoinFlips,
+  getCoinFlipLeaderboard,
+} from "./coinflipStore.js";
 
-export type CoinFlipTotals = {
-  total: number;
-  heads: number;
-  tails: number;
-};
+useInMemoryDb();
 
-export type CoinFlipRecentRow = {
-  result: CoinFlipResult;
-  timestamp: number;
-};
+describe("coinflipStore", () => {
+  describe("recordCoinFlip", () => {
+    it("records a heads flip", () => {
+      recordCoinFlip({ userId: "user1", result: "heads" });
 
-export type CoinFlipLeaderboardRow = {
-  userId: string;
-  total: number;
-  heads: number;
-  tails: number;
-};
+      const totals = getCoinFlipTotals("user1");
+      expect(totals.heads).toBe(1);
+      expect(totals.tails).toBe(0);
+      expect(totals.total).toBe(1);
+    });
 
-export function recordCoinFlip(args: {
-  userId: string;
-  result: CoinFlipResult;
-  timestamp?: number;
-}): void {
-  const db = getDb();
-  const ts = args.timestamp ?? Date.now();
+    it("records a tails flip", () => {
+      recordCoinFlip({ userId: "user1", result: "tails" });
 
-  db.prepare(
-    `
-    INSERT INTO coin_flips (user_id, result, timestamp)
-    VALUES (?, ?, ?)
-  `,
-  ).run(args.userId, args.result, ts);
-}
+      const totals = getCoinFlipTotals("user1");
+      expect(totals.heads).toBe(0);
+      expect(totals.tails).toBe(1);
+      expect(totals.total).toBe(1);
+    });
 
-export function getCoinFlipTotals(userId: string): CoinFlipTotals {
-  const db = getDb();
+    it("accumulates multiple flips", () => {
+      recordCoinFlip({ userId: "user1", result: "heads" });
+      recordCoinFlip({ userId: "user1", result: "heads" });
+      recordCoinFlip({ userId: "user1", result: "tails" });
 
-  const row = db
-    .prepare(
-      `
-      SELECT
-        COUNT(*) as total,
-        SUM(CASE WHEN result = 'heads' THEN 1 ELSE 0 END) as heads,
-        SUM(CASE WHEN result = 'tails' THEN 1 ELSE 0 END) as tails
-      FROM coin_flips
-      WHERE user_id = ?
-    `,
-    )
-    .get(userId) as
-    | { total: number; heads: number | null; tails: number | null }
-    | undefined;
+      const totals = getCoinFlipTotals("user1");
+      expect(totals.heads).toBe(2);
+      expect(totals.tails).toBe(1);
+      expect(totals.total).toBe(3);
+    });
+  });
 
-  if (!row) return { total: 0, heads: 0, tails: 0 };
+  describe("getCoinFlipTotals", () => {
+    it("returns zeros for unknown user", () => {
+      const totals = getCoinFlipTotals("unknown-user");
 
-  return {
-    total: row.total ?? 0,
-    heads: row.heads ?? 0,
-    tails: row.tails ?? 0,
-  };
-}
+      expect(totals.heads).toBe(0);
+      expect(totals.tails).toBe(0);
+      expect(totals.total).toBe(0);
+    });
 
-export function getRecentCoinFlips(userId: string, limit: number): CoinFlipRecentRow[] {
-  const db = getDb();
-  const lim = Math.min(Math.max(limit, 1), 25);
+    it("isolates totals per user", () => {
+      recordCoinFlip({ userId: "user1", result: "heads" });
+      recordCoinFlip({ userId: "user2", result: "tails" });
+      recordCoinFlip({ userId: "user2", result: "tails" });
 
-  const rows = db
-    .prepare(
-      `
-      SELECT result, timestamp
-      FROM coin_flips
-      WHERE user_id = ?
-      ORDER BY timestamp DESC
-      LIMIT ?
-    `,
-    )
-    .all(userId, lim) as Array<{ result: "heads" | "tails"; timestamp: number }>;
+      expect(getCoinFlipTotals("user1").total).toBe(1);
+      expect(getCoinFlipTotals("user2").total).toBe(2);
+    });
+  });
 
-  return rows.map((r) => ({ result: r.result, timestamp: r.timestamp }));
-}
+  describe("getRecentCoinFlips", () => {
+    it("returns empty array for unknown user", () => {
+      const recent = getRecentCoinFlips("unknown", 10);
+      expect(recent).toEqual([]);
+    });
 
-export function getCoinFlipLeaderboard(limit: number): CoinFlipLeaderboardRow[] {
-  const db = getDb();
-  const lim = Math.min(Math.max(limit, 1), 25);
+    it("returns flips in reverse chronological order", () => {
+      recordCoinFlip({ userId: "user1", result: "heads", timestamp: 1000 });
+      recordCoinFlip({ userId: "user1", result: "tails", timestamp: 2000 });
+      recordCoinFlip({ userId: "user1", result: "heads", timestamp: 3000 });
 
-  const rows = db
-    .prepare(
-      `
-      SELECT
-        user_id as userId,
-        COUNT(*) as total,
-        SUM(CASE WHEN result = 'heads' THEN 1 ELSE 0 END) as heads,
-        SUM(CASE WHEN result = 'tails' THEN 1 ELSE 0 END) as tails
-      FROM coin_flips
-      GROUP BY user_id
-      ORDER BY total DESC
-      LIMIT ?
-    `,
-    )
-    .all(lim) as Array<{
-    userId: string;
-    total: number;
-    heads: number | null;
-    tails: number | null;
-  }>;
+      const recent = getRecentCoinFlips("user1", 10);
 
-  return rows.map((r) => ({
-    userId: r.userId,
-    total: r.total ?? 0,
-    heads: r.heads ?? 0,
-    tails: r.tails ?? 0,
-  }));
-}
+      expect(recent.length).toBe(3);
+      expect(recent[0].result).toBe("heads"); // most recent
+      expect(recent[0].timestamp).toBe(3000);
+      expect(recent[2].result).toBe("heads"); // oldest
+      expect(recent[2].timestamp).toBe(1000);
+    });
+
+    it("respects limit parameter", () => {
+      for (let i = 0; i < 10; i++) {
+        recordCoinFlip({ userId: "user1", result: "heads" });
+      }
+
+      const recent = getRecentCoinFlips("user1", 5);
+      expect(recent.length).toBe(5);
+    });
+
+    it("clamps limit to valid range", () => {
+      for (let i = 0; i < 30; i++) {
+        recordCoinFlip({ userId: "user1", result: "heads" });
+      }
+
+      // Max is 25
+      const recent = getRecentCoinFlips("user1", 100);
+      expect(recent.length).toBe(25);
+    });
+  });
+
+  describe("getCoinFlipLeaderboard", () => {
+    it("returns empty array when no flips", () => {
+      const leaderboard = getCoinFlipLeaderboard(10);
+      expect(leaderboard).toEqual([]);
+    });
+
+    it("ranks users by total flips", () => {
+      // user2 has most flips
+      recordCoinFlip({ userId: "user1", result: "heads" });
+      recordCoinFlip({ userId: "user2", result: "heads" });
+      recordCoinFlip({ userId: "user2", result: "tails" });
+      recordCoinFlip({ userId: "user2", result: "heads" });
+      recordCoinFlip({ userId: "user3", result: "tails" });
+      recordCoinFlip({ userId: "user3", result: "tails" });
+
+      const leaderboard = getCoinFlipLeaderboard(10);
+
+      expect(leaderboard.length).toBe(3);
+      expect(leaderboard[0].userId).toBe("user2");
+      expect(leaderboard[0].total).toBe(3);
+      expect(leaderboard[1].userId).toBe("user3");
+      expect(leaderboard[1].total).toBe(2);
+      expect(leaderboard[2].userId).toBe("user1");
+      expect(leaderboard[2].total).toBe(1);
+    });
+  });
+});

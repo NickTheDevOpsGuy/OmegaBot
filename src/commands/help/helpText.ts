@@ -1,21 +1,25 @@
 // src/commands/help/helpText.ts
+//
+// Help text for the /help command. Organized by topic to stay under Discord's
+// message limits while providing comprehensive documentation.
 
 import type { CommandListItem } from "../../services/discord/commandMeta.js";
 
 export type HelpTopic =
   | "overview"
   | "fun"
+  | "games"
+  | "profile"
   | "github"
-  | "summary"
-  | "timezone"
   | "admin"
   | "commands";
 
 /**
- * Help text builder for /help.
+ * Builds help text for the specified topic.
  *
- * Goal: stay readable and under Discord limits by splitting into topics.
- * Style: no emojis on the left, no separators.
+ * @param isAdmin - Whether the user has admin permissions
+ * @param commands - List of registered commands
+ * @param topic - The help topic to display
  */
 export function buildHelpText(args: {
   isAdmin: boolean;
@@ -27,22 +31,16 @@ export function buildHelpText(args: {
   switch (topic) {
     case "fun":
       return buildFunHelp();
-
+    case "games":
+      return buildGamesHelp();
+    case "profile":
+      return buildProfileHelp();
     case "github":
       return buildGitHubHelp();
-
-    case "summary":
-      return buildSummaryHelp();
-
-    case "timezone":
-      return buildTimezoneHelp();
-
     case "admin":
       return buildAdminHelp({ isAdmin });
-
     case "commands":
       return buildCommandsHelp({ isAdmin, commands });
-
     case "overview":
     default:
       return buildOverviewHelp({ isAdmin });
@@ -50,7 +48,7 @@ export function buildHelpText(args: {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Sections                                                                   */
+/* Overview                                                                    */
 /* -------------------------------------------------------------------------- */
 
 function buildOverviewHelp(args: { isAdmin: boolean }): string {
@@ -59,133 +57,151 @@ function buildOverviewHelp(args: { isAdmin: boolean }): string {
   return [
     "**OmegaBot Help**",
     "",
-    "**Start here**",
-    "Run `/help` any time you forget what I can do.",
-    "Tip: type `/fun` or `/gh` and pick a subcommand from the menu.",
-    "",
-    "**Privacy option**",
-    "Many commands support `private:true` to only show the result to you.",
+    "**Getting Started**",
+    "Type `/` and pick a command from the menu.",
+    "Most commands support `private:true` to only show results to you.",
     "",
     "**Topics**",
-    "Use `/help topic:<topic>`",
-    `overview, fun, github, summary, timezone${isAdmin ? ", admin" : ""}, commands`,
+    "Use `/help topic:<topic>` for detailed help:",
+    `\`overview\`, \`fun\`, \`games\`, \`profile\`${isAdmin ? ", `admin`" : ""}, \`commands\``,
     "",
-    "**Quick picks**",
-    "`/fun 8ball`        Ask the magic 8-ball",
-    "`/fun trivia`       Answer trivia for points",
-    "`/fun daily`        Daily check-in for streaks",
-    "`/fun rps @user`    Challenge someone to RPS",
-    "`/fun quote random` Get a random server quote",
-    "`/gh status`        Check GitHub integration status",
-    "`/summary`          Summarize recent messages",
+    "**Quick Commands**",
+    "`/fun daily`       Daily check-in for points",
+    "`/fun trivia`      Answer trivia questions",
+    "`/fun slots`       Spin the slot machine",
+    "`/profile view`    See your stats & achievements",
+    "`/info user`       Look up user info",
+    "`/achievements`    View unlockable achievements",
     "",
-    "If new commands don't show up, an admin may need to run the register script.",
+    "**Popular Games**",
+    "`/fun blackjack`   Play blackjack",
+    "`/fun wordle`      Daily word puzzle",
+    "`/fun hangman`     Guess the word",
+    "`/fun rps @user`   Challenge to Rock Paper Scissors",
   ].join("\n");
 }
 
+/* -------------------------------------------------------------------------- */
+/* Fun Commands                                                                */
+/* -------------------------------------------------------------------------- */
+
 function buildFunHelp(): string {
   return [
-    "**Help: Fun**",
+    "**Help: Fun Commands**",
     "",
-    "All fun commands live under `/fun`.",
-    "Most support `private:true` to only show the result to you.",
-    "",
-    "**Games**",
-    "`/fun 8ball`          Ask the magic 8-ball a question",
-    "`/fun rps`            Rock paper scissors vs bot",
-    "`/fun rps opponent:@user`  Challenge another player!",
-    "`/fun tictactoe opponent:@user` Play Tic-Tac-Toe",
-    "`/fun blackjack`     Blackjack vs dealer",
-    "`/fun connect4 user:@user`  Connect 4 vs a user",
-    "`/fun would-you-rather` Vote with buttons",
-    "`/fun fact`          Random interesting fact",
-    "`/fun trivia`         Answer trivia questions for points",
-    "`/fun dice`           Roll dice (2-100 sides, 1-10 dice)",
-    "`/fun coinflip`       Flip a coin",
-    "`/fun poll`           Create a poll (2-4 options)",
-    "",
-    "**Quotes**",
-    "`/fun quote add`      Save a memorable quote",
-    "`/fun quote random`   Get a random quote",
-    "`/fun quote list`     List recent quotes",
-    "`/fun quote search`   Search quotes",
-    "",
-    "**Jokes**",
-    "`/fun joke random`    Random joke (optional category filter)",
-    "`/fun joke add`       Add a joke to the database",
-    "`/fun joke list`      Browse recent jokes",
-    "`/fun joke remove`    Remove a joke (moderators)",
+    "All fun commands are under `/fun`. Use `/help topic:games` for game details.",
     "",
     "**Daily & Stats**",
-    "`/fun daily`          Daily check-in for points & streaks",
-    "`/fun trivia stats:true`   View your trivia stats",
-    "`/fun coinflipstats`  Coin flip stats",
-    "`/fun leaderboard`    Fun command usage leaderboard",
+    "`/fun daily`          Check in for points & streaks",
+    "`/fun stats`          View all your game stats",
+    "`/fun leaderboard`    See top players",
     "",
-    "**Weather**",
-    "`/fun weather`        Current weather for a location",
-    "`/fun weather7`       7-day forecast for a location",
+    "**Quotes & Jokes**",
+    "`/fun quote add`      Save a memorable quote",
+    "`/fun quote random`   Get a random quote",
+    "`/fun joke random`    Get a random joke",
+    "`/fun joke add`       Add a joke",
+    "",
+    "**Reminders**",
+    "`/fun remind set`     Set a reminder (5m, 1h, 1d)",
+    "`/fun remind list`    View pending reminders",
+    "`/fun remind cancel`  Cancel a reminder",
     "",
     "**Utility**",
-    "`/fun remind`         Remind you in X minutes",
+    "`/fun weather`        Current weather",
+    "`/fun weather7`       7-day forecast",
+    "`/fun fact`           Random interesting fact",
+    "`/fun poll`           Create a poll",
   ].join("\n");
 }
+
+/* -------------------------------------------------------------------------- */
+/* Games                                                                       */
+/* -------------------------------------------------------------------------- */
+
+function buildGamesHelp(): string {
+  return [
+    "**Help: Games**",
+    "",
+    "OmegaBot has 13 games! Most track stats and have achievements.",
+    "",
+    "**Solo Games**",
+    "`/fun 8ball`          Ask the magic 8-ball",
+    "`/fun trivia`         Trivia with points & streaks",
+    "`/fun blackjack`      Blackjack vs dealer",
+    "`/fun hangman`        Guess the word",
+    "`/fun wordle`         Daily word puzzle",
+    "`/fun slots`          Slot machine (jackpots!)",
+    "`/fun coinflip`       Heads or tails",
+    "`/fun dice`           Roll dice",
+    "",
+    "**PvP Games**",
+    "`/fun rps opponent:@user`       Rock Paper Scissors",
+    "`/fun tictactoe opponent:@user` Tic Tac Toe",
+    "`/fun connect4 user:@user`      Connect 4",
+    "",
+    "**Other**",
+    "`/fun would-you-rather`   Vote on WYR questions",
+    "",
+    "**View Stats**",
+    "Most games support `stats:true` to see your record.",
+    "Example: `/fun blackjack stats:true`",
+  ].join("\n");
+}
+
+/* -------------------------------------------------------------------------- */
+/* Profile                                                                     */
+/* -------------------------------------------------------------------------- */
+
+function buildProfileHelp(): string {
+  return [
+    "**Help: Profile**",
+    "",
+    "Manage your profile, AFK status, and timezone.",
+    "",
+    "**Commands**",
+    "`/profile view`           View your or another user's profile",
+    "`/profile view user:@x`   View someone else's profile",
+    "`/profile afk message`    Set AFK status",
+    "`/profile afk`            Clear AFK status",
+    "`/profile timezone`       View your timezone",
+    "`/profile timezone zone:America/New_York`  Set timezone",
+    "",
+    "**Related Commands**",
+    "`/info user`       Detailed user info",
+    "`/info server`     Server statistics",
+    "`/info avatar`     View avatars",
+    "`/achievements`    View unlocked achievements",
+  ].join("\n");
+}
+
+/* -------------------------------------------------------------------------- */
+/* GitHub                                                                      */
+/* -------------------------------------------------------------------------- */
 
 function buildGitHubHelp(): string {
   return [
     "**Help: GitHub**",
     "",
-    "`/gh issue`     Fetch a GitHub issue",
-    "`/gh issues`    List open issues",
-    "`/gh prs`       List open pull requests",
-    "`/gh status`    Show integration status",
+    "`/gh issue`     Look up a GitHub issue",
+    "`/gh pr`        Look up a pull request",
+    "`/gh status`    Check integration status",
     "",
-    "If `/gh status` shows errors, check `.env` and setup docs.",
+    "GitHub integration requires configuration in `.env`.",
+    "If `/gh status` shows errors, check the setup docs.",
   ].join("\n");
 }
 
-function buildSummaryHelp(): string {
-  return [
-    "**Help: Summary & History**",
-    "",
-    "`/summary`    Summarize recent messages",
-    "`/history`    DM recent channel history",
-    "`/playback`   Page through messages",
-    "`/pagination` Demo pagination helper",
-  ].join("\n");
-}
-
-function buildTimezoneHelp(): string {
-  return [
-    "**Help: Timezone**",
-    "",
-    "Timezone commands support a `private` modifier for reply visibility.",
-    "Default behavior:",
-    "- `/timezone set` and `/timezone clear` default to private",
-    "- `/timezone show`, `/timezone compare`, `/timezone convert` default to public",
-    "",
-    "**Commands**",
-    "`/timezone set zone:<zone> [guild:true] [private:true]`",
-    "`/timezone show [guild:true] [private:true]`",
-    "`/timezone clear [guild:true] [private:true]`",
-    "`/timezone compare user:<user> [guild:true] [private:true]`",
-    "`/timezone convert time:<time> to:<zone> [from:<zone>] [guild:true] [private:true]`",
-    "",
-    "**Examples**",
-    '`/timezone set zone:"US Eastern"`',
-    "`/timezone show private:true`",
-    "`/timezone compare user:@Nick private:false`",
-    '`/timezone convert time:"7:30pm" to:PT private:false`',
-  ].join("\n");
-}
+/* -------------------------------------------------------------------------- */
+/* Admin                                                                       */
+/* -------------------------------------------------------------------------- */
 
 function buildAdminHelp(args: { isAdmin: boolean }): string {
   if (!args.isAdmin) {
     return [
       "**Help: Admin**",
       "",
-      "You do not have Manage Server permissions.",
-      "Ask an admin to configure server options.",
+      "You need Manage Server permissions to access admin commands.",
     ].join("\n");
   }
 
@@ -193,18 +209,27 @@ function buildAdminHelp(args: { isAdmin: boolean }): string {
     "**Help: Admin**",
     "",
     "**Server Configuration**",
-    "`/config welcome-channel set`    Set welcome channel",
-    "`/config welcome-channel clear`  Remove welcome channel",
+    "`/config view`                  View all settings",
+    "`/config welcome set`           Set welcome channel",
+    "`/config welcome clear`         Clear welcome channel",
+    "`/config starboard set`         Set up starboard",
+    "`/config starboard clear`       Disable starboard",
     "",
-    "**Role-Based Moderation**",
-    "`/admin timeout`   Timeout a user (requires role)",
-    "`/admin kick`      Kick a user (requires role)",
-    "`/admin ban`       Ban a user (requires role)",
+    "**Moderation**",
+    "`/admin timeout`    Timeout a user",
+    "`/admin kick`       Kick a user",
+    "`/admin ban`        Ban a user",
     "",
-    "You need Manage Server permissions to run these.",
-    "Moderation commands require specific roles set by server config.",
+    "**Other**",
+    "`/giveaway start`   Create a giveaway",
+    "`/giveaway end`     End giveaway early",
+    "`/suggestion`       Manage suggestions",
   ].join("\n");
 }
+
+/* -------------------------------------------------------------------------- */
+/* Commands List                                                               */
+/* -------------------------------------------------------------------------- */
 
 function buildCommandsHelp(args: {
   isAdmin: boolean;
@@ -216,18 +241,17 @@ function buildCommandsHelp(args: {
     return [
       "**Help: Commands**",
       "",
-      "No commands found.",
-      "If this seems wrong, check the command loader and build output.",
+      "No commands found. Check the command loader.",
     ].join("\n");
   }
 
+  // Sort by group, then name
   visible.sort((a, b) => {
     const g = a.group.localeCompare(b.group);
     return g !== 0 ? g : a.name.localeCompare(b.name);
   });
 
   const lines: string[] = ["**Help: Commands**", ""];
-
   let currentGroup: string | null = null;
 
   for (const cmd of visible) {
@@ -237,13 +261,14 @@ function buildCommandsHelp(args: {
       lines.push("");
       lines.push(`**${group}**`);
     }
-
-    lines.push(`/${cmd.name}${cmd.description ? `  ${cmd.description}` : ""}`);
+    lines.push(`\`/${cmd.name}\` ${cmd.description || ""}`);
   }
 
   return lines.join("\n");
 }
 
+/* -------------------------------------------------------------------------- */
+/* Utilities                                                                   */
 /* -------------------------------------------------------------------------- */
 
 function titleCase(s: string): string {

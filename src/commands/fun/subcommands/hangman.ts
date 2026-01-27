@@ -1,4 +1,16 @@
 // src/commands/fun/subcommands/hangman.ts
+//
+// Classic Hangman word guessing game with interactive button UI.
+//
+// Features:
+// - 48-word dictionary
+// - ASCII art gallows (7 stages)
+// - Letter button grid (A-Z)
+// - Stats tracking: wins, losses, total guesses
+// - 5-minute game timeout
+//
+// Stats are persisted to hangman_stats table.
+
 import {
   ActionRowBuilder,
   ButtonBuilder,
@@ -9,6 +21,13 @@ import {
 } from "discord.js";
 import { logger } from "../../../utils/logger.js";
 import { getDb } from "../../../services/database/db.js";
+
+/* -------------------------------------------------------------------------- */
+/* Constants                                                                   */
+/* -------------------------------------------------------------------------- */
+
+const MAX_WRONG_GUESSES = 6;
+const GAME_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 
 const WORDS = [
   "apple",
@@ -70,9 +89,6 @@ const HANGMAN_STAGES = [
   "```\n  +---+\n  O   |\n /|\\  |\n /    |\n      |\n=========```",
   "```\n  +---+\n  O   |\n /|\\  |\n / \\  |\n      |\n=========```",
 ];
-
-const MAX_WRONG = 6;
-const GAME_TIMEOUT_MS = 300_000; // 5 minutes
 
 /* -------------------------------------------------------------------------- */
 /* Database                                                                    */
@@ -206,7 +222,7 @@ function buildGameMessage(
     .join(", ")
     .toUpperCase();
   if (wrongLetters) {
-    lines.push(`Wrong: ${wrongLetters} (${wrongCount}/${MAX_WRONG})`);
+    lines.push(`Wrong: ${wrongLetters} (${wrongCount}/${MAX_WRONG_GUESSES})`);
   }
 
   if (status === "won") {
@@ -276,7 +292,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
 
     // Check win/lose
     const isWon = word.split("").every((c) => guessed.has(c));
-    const isLost = wrongCount >= MAX_WRONG;
+    const isLost = wrongCount >= MAX_WRONG_GUESSES;
 
     if (isWon || isLost) {
       collector.stop(isWon ? "won" : "lost");
