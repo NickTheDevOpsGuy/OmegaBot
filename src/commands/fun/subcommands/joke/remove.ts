@@ -1,4 +1,3 @@
-import { MessageFlags } from "discord.js";
 // src/commands/fun/subcommands/joke/remove.ts
 import type { ChatInputCommandInteraction } from "discord.js";
 import { removeJoke, getJoke } from "../../../../services/joke/jokeStore.js";
@@ -10,9 +9,8 @@ export async function handleJokeRemove(
 
   // Check if in guild
   if (!interaction.inGuild() || !interaction.member) {
-    await interaction.reply({
+    await interaction.editReply({
       content: "This command can only be used in a server.",
-      flags: MessageFlags.Ephemeral,
     });
     return;
   }
@@ -22,9 +20,8 @@ export async function handleJokeRemove(
 
   // Check if member is a GuildMember (not just a string ID)
   if (typeof member === "string") {
-    await interaction.reply({
+    await interaction.editReply({
       content: "Could not verify your permissions.",
-      flags: MessageFlags.Ephemeral,
     });
     return;
   }
@@ -37,9 +34,8 @@ export async function handleJokeRemove(
     modRoleId && "cache" in member.roles && member.roles.cache.has(modRoleId);
 
   if (!hasModRole) {
-    await interaction.reply({
+    await interaction.editReply({
       content: "❌ Only joke moderators can remove jokes.",
-      flags: MessageFlags.Ephemeral,
     });
     return;
   }
@@ -47,9 +43,8 @@ export async function handleJokeRemove(
   const joke = getJoke(jokeId);
 
   if (!joke) {
-    await interaction.reply({
+    await interaction.editReply({
       content: `Joke #${jokeId} not found.`,
-      flags: MessageFlags.Ephemeral,
     });
     return;
   }
@@ -57,19 +52,17 @@ export async function handleJokeRemove(
   const removed = removeJoke(jokeId);
 
   if (removed) {
-    await interaction.reply({
+    await interaction.editReply({
       content: [
         `✅ **Removed joke #${jokeId}**`,
         "",
         `Category: ${joke.category}`,
         `Text: ${joke.joke_text.substring(0, 100)}${joke.joke_text.length > 100 ? "..." : ""}`,
       ].join("\n"),
-      flags: MessageFlags.Ephemeral,
     });
   } else {
-    await interaction.reply({
+    await interaction.editReply({
       content: `Failed to remove joke #${jokeId}.`,
-      flags: MessageFlags.Ephemeral,
     });
   }
 }

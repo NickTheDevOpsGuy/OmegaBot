@@ -1,4 +1,3 @@
-import { MessageFlags } from "discord.js";
 // src/commands/fun/subcommands/joke/add.ts
 import type { ChatInputCommandInteraction } from "discord.js";
 import { addJoke, type JokeCategory } from "../../../../services/joke/jokeStore.js";
@@ -10,16 +9,15 @@ export async function handleJokeAdd(
   const category = interaction.options.getString("category", true) as JokeCategory;
 
   if (jokeText.length > 1000) {
-    await interaction.reply({
+    await interaction.editReply({
       content: "Joke is too long! Keep it under 1000 characters.",
-      flags: MessageFlags.Ephemeral,
     });
     return;
   }
 
   const joke = addJoke(jokeText, category, interaction.user.id);
 
-  await interaction.reply({
+  await interaction.editReply({
     content: [
       "✅ **Joke added!**",
       "",
@@ -28,6 +26,5 @@ export async function handleJokeAdd(
       "",
       joke.joke_text,
     ].join("\n"),
-    flags: MessageFlags.Ephemeral,
   });
 }

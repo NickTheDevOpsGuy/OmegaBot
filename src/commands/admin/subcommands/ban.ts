@@ -1,0 +1,80 @@
+// src/commands/admin/subcommands/ban.ts
+import type { ChatInputCommandInteraction, GuildMember } from "discord.js";
+import { logger } from "../../../utils/logger.js";
+import { safeReply, userFacingError } from "../utils.js";
+
+export async function handleBan(interaction: ChatInputCommandInteraction): Promise<void> {
+  const targetUser = interaction.options.getUser("user", true);
+  const reason = interaction.options.getString("reason") ?? "No reason provided";
+  const deleteDays = interaction.options.getInteger("delete_days") ?? 0;
+
+  if (!interaction.guild) {
+    await safeReply(interaction, {
+      content: "This command can only be used in a server.",
+      ephemeral: true,
+    });
+    return;
+  }
+
+  try {
+    const member = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
+
+    if (targetUser.id === interaction.user.id) {
+      await safeReply(interaction, {
+        content: "❌ You cannot ban yourself.",
+        ephemeral: true,
+      });
+      return;
+    }
+
+    if (member) {
+      if (member.user.bot) {
+        await safeReply(interaction, {
+          content: "❌ Cannot ban bots.",
+          ephemeral: true,
+        });
+        return;
+      }
+
+      const executor = interaction.member as GuildMember;
+      if (member.roles.highest.position >= executor.roles.highest.position) {
+        await safeReply(interaction, {
+          content: "❌ You cannot ban someone with an equal or higher role.",
+          ephemeral: true,
+        });
+        return;
+      }
+
+      if (!member.bannable) {
+        await safeReply(interaction, {
+          content:
+            "❌ I don't have permission to ban this user.\nCheck my role position and Ban Members permission.",
+          ephemeral: true,
+        });
+        return;
+      }
+    }
+
+    await interaction.guild.members.ban(targetUser.id, {
+      reason,
+      deleteMessageSeconds: deleteDays * 24 * 60 * 60,
+    });
+
+    await safeReply(interaction, {
+      content:
+        `✅ ${targetUser.tag} has been banned.\nReason: ${reason}` +
+        (deleteDays > 0 ? `\nMessages deleted: last ${deleteDays} day(s)` : ""),
+    });
+
+    logger.info(
+      { moderator: interaction.user.tag, target: targetUser.tag, reason, deleteDays },
+      "[admin] user banned",
+    );
+  } catch (err) {
+    logger.error({ err, targetUser: targetUser.id }, "[admin] ban failed");
+    await safeReply(interaction, {
+      content: userFacingError(err),
+      ephemeral: true,
+    });
+  }
+}

@@ -1,4 +1,3 @@
-import { MessageFlags } from "discord.js";
 // src/commands/fun/subcommands/joke/index.ts
 import {
   SlashCommandSubcommandBuilder,
@@ -86,9 +85,8 @@ export async function handleJoke(
       await handleJokeList(interaction);
       break;
     default:
-      await interaction.reply({
+      await interaction.editReply({
         content: "Unknown subcommand",
-        flags: MessageFlags.Ephemeral,
       });
   }
 }

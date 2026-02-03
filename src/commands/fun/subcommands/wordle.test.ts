@@ -16,6 +16,7 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import { useInMemoryDb } from "../../../test/dbTestUtils.js";
 import { getDb } from "../../../services/database/db.js";
+import { getLetterResult, formatGuessResults } from "./wordle/gameLogic.js";
 
 useInMemoryDb();
 
@@ -43,25 +44,6 @@ function ensureWordleTables(): void {
       updated_at INTEGER NOT NULL
     );
   `);
-}
-
-// Letter result calculation (core wordle logic)
-function getLetterResult(
-  guess: string,
-  word: string,
-  index: number,
-): "correct" | "present" | "absent" {
-  const letter = guess[index];
-  if (word[index] === letter) return "correct";
-  if (word.includes(letter)) return "present";
-  return "absent";
-}
-
-function formatGuessResults(
-  guess: string,
-  word: string,
-): Array<"correct" | "present" | "absent"> {
-  return guess.split("").map((_, i) => getLetterResult(guess, word, i));
 }
 
 // Simulated stats
@@ -149,16 +131,16 @@ describe("wordle game", () => {
 
     it("handles all letter states in one guess", () => {
       // guess "crane" for word "track"
-      // c: present (in track, wrong position)
-      // r: present (in track, wrong position)
-      // a: present (in track, wrong position)
+      // c: present (in track at pos 3, wrong position in guess)
+      // r: correct (in track at pos 1)
+      // a: correct (in track at pos 2)
       // n: absent
       // e: absent
       const results = formatGuessResults("crane", "track");
 
       expect(results[0]).toBe("present"); // c
-      expect(results[1]).toBe("present"); // r
-      expect(results[2]).toBe("present"); // a
+      expect(results[1]).toBe("correct"); // r
+      expect(results[2]).toBe("correct"); // a
       expect(results[3]).toBe("absent"); // n
       expect(results[4]).toBe("absent"); // e
     });

@@ -325,3 +325,5 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
     await interaction.editReply("Something went wrong with check-in.");
   }
 }
+
+export { doCheckIn };

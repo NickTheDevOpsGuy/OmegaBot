@@ -1,0 +1,64 @@
+// src/commands/fun/subcommands/connect4/ui.ts
+//
+// Connect 4 Discord UI: board rendering and button builders.
+
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
+import type { Cell } from "./gameLogic.js";
+import { ROWS, COLS } from "./gameLogic.js";
+
+export const EMOJI = {
+  empty: "⚫",
+  p1: "🔴",
+  p2: "🟡",
+};
+
+export function renderBoard(board: Cell[][]): string {
+  const lines: string[] = [];
+  for (let r = 0; r < ROWS; r++) {
+    const row = board[r]
+      .map((c) => (c === 0 ? EMOJI.empty : c === 1 ? EMOJI.p1 : EMOJI.p2))
+      .join("");
+    lines.push(row);
+  }
+  lines.push("1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣");
+  return lines.join("\n");
+}
+
+export function buildControls(args: {
+  gameId: string;
+  board: Cell[][];
+  disabled: boolean;
+}): ActionRowBuilder<ButtonBuilder>[] {
+  const { gameId, board, disabled } = args;
+
+  const mk = (col: number, label: string) =>
+    new ButtonBuilder()
+      .setCustomId(`c4:${col}:${gameId}`)
+      .setLabel(label)
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(disabled || board[0][col] !== 0);
+
+  return [
+    new ActionRowBuilder<ButtonBuilder>().addComponents(
+      mk(0, "1"),
+      mk(1, "2"),
+      mk(2, "3"),
+      mk(3, "4"),
+    ),
+    new ActionRowBuilder<ButtonBuilder>().addComponents(
+      mk(4, "5"),
+      mk(5, "6"),
+      mk(6, "7"),
+    ),
+  ];
+}
+
+export function buildHeader(
+  p1: { toString(): string },
+  p2: { toString(): string },
+  turn: 1 | 2,
+): string {
+  const who =
+    turn === 1 ? `${EMOJI.p1} ${p1.toString()}` : `${EMOJI.p2} ${p2.toString()}`;
+  return `🔴🟡 **Connect 4**\nTurn: ${who}`;
+}

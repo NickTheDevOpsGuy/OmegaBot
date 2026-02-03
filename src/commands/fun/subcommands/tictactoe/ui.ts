@@ -1,0 +1,46 @@
+// src/commands/fun/subcommands/tictactoe/ui.ts
+// Discord UI components for Tic-Tac-Toe
+
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
+import type { Board, CellValue } from "./gameLogic.js";
+
+export const CELL_EMOJI: Record<CellValue, string> = {
+  "": "⬜",
+  X: "❌",
+  O: "⭕",
+};
+
+export function buildBoardButtons(
+  gameId: string,
+  board: Board,
+  disabled = false,
+  winningCells: [number, number][] = [],
+): ActionRowBuilder<ButtonBuilder>[] {
+  const rows: ActionRowBuilder<ButtonBuilder>[] = [];
+
+  for (let r = 0; r < 3; r++) {
+    const row = new ActionRowBuilder<ButtonBuilder>();
+
+    for (let c = 0; c < 3; c++) {
+      const cell = board[r][c];
+      const isWinningCell = winningCells.some(([wr, wc]) => wr === r && wc === c);
+
+      let style = ButtonStyle.Secondary;
+      if (cell === "X") style = ButtonStyle.Primary;
+      else if (cell === "O") style = ButtonStyle.Danger;
+      if (isWinningCell) style = ButtonStyle.Success;
+
+      row.addComponents(
+        new ButtonBuilder()
+          .setCustomId(`ttt:${gameId}:${r}:${c}`)
+          .setEmoji(CELL_EMOJI[cell])
+          .setStyle(style)
+          .setDisabled(disabled || cell !== ""),
+      );
+    }
+
+    rows.push(row);
+  }
+
+  return rows;
+}

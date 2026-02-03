@@ -209,3 +209,42 @@ export function recordH2HTie(user1Id: string, user2Id: string): void {
   `,
   ).run(id1, id2, now, now);
 }
+
+/**
+ * Record a game result (win or tie). Updates both overall stats and head-to-head.
+ */
+export function recordResult(
+  winnerId: string | null,
+  loserId: string | null,
+  player1Id: string,
+  player2Id: string,
+): void {
+  if (winnerId && loserId) {
+    recordWin(winnerId, loserId);
+    recordH2HWin(winnerId, loserId);
+  } else {
+    recordTie(player1Id, player2Id);
+    recordH2HTie(player1Id, player2Id);
+  }
+}
+
+/**
+ * Get head-to-head stats for display (user1's wins, user2's wins, ties, total).
+ */
+export function getH2HStats(
+  userId1: string,
+  userId2: string,
+): {
+  user1Wins: number;
+  user2Wins: number;
+  ties: number;
+  total: number;
+} {
+  const h2h = getH2H(userId1, userId2);
+  return {
+    user1Wins: h2h.yourWins,
+    user2Wins: h2h.theirWins,
+    ties: h2h.ties,
+    total: h2h.yourWins + h2h.theirWins + h2h.ties,
+  };
+}

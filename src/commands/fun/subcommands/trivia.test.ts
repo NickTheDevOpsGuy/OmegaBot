@@ -13,14 +13,15 @@ import { getDb } from "../../../services/database/db.js";
 
 useInMemoryDb();
 
-// Database setup
+// Database setup - use same schema as trivia.ts (incorrect, not wrong)
 function ensureTriviaTable(): void {
   const db = getDb();
   db.exec(`
     CREATE TABLE IF NOT EXISTS trivia_stats (
       user_id TEXT PRIMARY KEY,
       correct INTEGER NOT NULL DEFAULT 0,
-      wrong INTEGER NOT NULL DEFAULT 0,
+      incorrect INTEGER NOT NULL DEFAULT 0,
+      points INTEGER NOT NULL DEFAULT 0,
       streak INTEGER NOT NULL DEFAULT 0,
       best_streak INTEGER NOT NULL DEFAULT 0,
       updated_at INTEGER NOT NULL
@@ -30,7 +31,7 @@ function ensureTriviaTable(): void {
 
 type TriviaStats = {
   correct: number;
-  wrong: number;
+  incorrect: number;
   streak: number;
   bestStreak: number;
   accuracy: number;
@@ -42,22 +43,22 @@ function getStats(userId: string): TriviaStats {
 
   const row = db
     .prepare(
-      `SELECT correct, wrong, streak, best_streak FROM trivia_stats WHERE user_id = ?`,
+      `SELECT correct, incorrect, streak, best_streak FROM trivia_stats WHERE user_id = ?`,
     )
     .get(userId) as
-    | { correct: number; wrong: number; streak: number; best_streak: number }
+    | { correct: number; incorrect: number; streak: number; best_streak: number }
     | undefined;
 
   if (!row) {
-    return { correct: 0, wrong: 0, streak: 0, bestStreak: 0, accuracy: 0 };
+    return { correct: 0, incorrect: 0, streak: 0, bestStreak: 0, accuracy: 0 };
   }
 
-  const total = row.correct + row.wrong;
+  const total = row.correct + row.incorrect;
   const accuracy = total > 0 ? Math.round((row.correct / total) * 100) : 0;
 
   return {
     correct: row.correct,
-    wrong: row.wrong,
+    incorrect: row.incorrect,
     streak: row.streak,
     bestStreak: row.best_streak,
     accuracy,
@@ -74,8 +75,8 @@ function recordCorrect(userId: string): number {
 
   db.prepare(
     `
-    INSERT INTO trivia_stats (user_id, correct, wrong, streak, best_streak, updated_at)
-    VALUES (?, 1, 0, 1, 1, ?)
+    INSERT INTO trivia_stats (user_id, correct, incorrect, points, streak, best_streak, updated_at)
+    VALUES (?, 1, 0, 10, 1, 1, ?)
     ON CONFLICT(user_id) DO UPDATE SET
       correct = correct + 1,
       streak = streak + 1,
@@ -94,10 +95,10 @@ function recordWrong(userId: string): void {
 
   db.prepare(
     `
-    INSERT INTO trivia_stats (user_id, correct, wrong, streak, best_streak, updated_at)
-    VALUES (?, 0, 1, 0, 0, ?)
+    INSERT INTO trivia_stats (user_id, correct, incorrect, points, streak, best_streak, updated_at)
+    VALUES (?, 0, 1, 0, 0, 0, ?)
     ON CONFLICT(user_id) DO UPDATE SET
-      wrong = wrong + 1,
+      incorrect = incorrect + 1,
       streak = 0,
       updated_at = ?
   `,
@@ -118,7 +119,7 @@ describe("trivia game", () => {
       const stats = getStats("user1");
 
       expect(stats.correct).toBe(3);
-      expect(stats.wrong).toBe(0);
+      expect(stats.incorrect).toBe(0);
     });
 
     it("tracks wrong answers", () => {
@@ -127,7 +128,7 @@ describe("trivia game", () => {
 
       const stats = getStats("user1");
 
-      expect(stats.wrong).toBe(2);
+      expect(stats.incorrect).toBe(2);
     });
 
     it("calculates accuracy", () => {
@@ -145,7 +146,7 @@ describe("trivia game", () => {
       const stats = getStats("unknown");
 
       expect(stats.correct).toBe(0);
-      expect(stats.wrong).toBe(0);
+      expect(stats.incorrect).toBe(0);
       expect(stats.streak).toBe(0);
       expect(stats.accuracy).toBe(0);
     });

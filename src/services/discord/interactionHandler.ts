@@ -37,6 +37,11 @@ function isDiscordAlreadyAcknowledged(err: unknown): boolean {
   return getDiscordErrorCode(err) === 40060;
 }
 
+function isDiscordUnknownMessage(err: unknown): boolean {
+  // 10008: Unknown message (e.g. ephemeral was dismissed before editReply)
+  return getDiscordErrorCode(err) === 10008;
+}
+
 function isCommandModule(cmd: unknown): cmd is CommandModule {
   return (
     isRecord(cmd) &&
@@ -91,15 +96,18 @@ async function safeRepliableReply(
       });
     }
   } catch (err) {
-    // Kill the log-spam classics
-    if (isDiscordUnknownInteraction(err) || isDiscordAlreadyAcknowledged(err)) {
+    // Kill the log-spam classics (expired interaction, already acked, or message dismissed)
+    if (
+      isDiscordUnknownInteraction(err) ||
+      isDiscordAlreadyAcknowledged(err) ||
+      isDiscordUnknownMessage(err)
+    ) {
       logger.debug(
         { err, interactionId: interaction.id },
-        "[interaction] reply skipped (expired/acknowledged)",
+        "[interaction] reply skipped (expired/acknowledged/message gone)",
       );
       return;
     }
-
     logger.warn({ err, interactionId: interaction.id }, "[interaction] failed to reply");
   }
 }
@@ -200,8 +208,15 @@ export async function handleInteraction(
     await command.execute(interaction);
   } catch (err) {
     // Drop noisy cases to debug so logs stay useful
-    if (isDiscordUnknownInteraction(err) || isDiscordAlreadyAcknowledged(err)) {
-      logger.debug({ ...meta, err }, "[interaction] skipped (expired/acknowledged)");
+    if (
+      isDiscordUnknownInteraction(err) ||
+      isDiscordAlreadyAcknowledged(err) ||
+      isDiscordUnknownMessage(err)
+    ) {
+      logger.debug(
+        { ...meta, err },
+        "[interaction] skipped (expired/acknowledged/message gone)",
+      );
       return;
     }
 
