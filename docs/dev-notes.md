@@ -176,6 +176,12 @@ When testing commands:
 
 ---
 
+## Troubleshooting
+
+See [troubleshooting.md](./troubleshooting.md) for debugging "failed to complete" errors and other common issues.
+
+---
+
 ## Future Improvements
 
 - Replace file stores with a database

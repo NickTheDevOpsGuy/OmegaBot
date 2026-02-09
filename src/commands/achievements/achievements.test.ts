@@ -20,13 +20,14 @@ useInMemoryDb();
 function setupTables(): void {
   const db = getDb();
 
-  // Game stats tables
+  // Game stats tables (match real schemas)
   db.exec(`
     CREATE TABLE IF NOT EXISTS rps_stats (
       user_id TEXT PRIMARY KEY,
       wins INTEGER DEFAULT 0,
       losses INTEGER DEFAULT 0,
-      ties INTEGER DEFAULT 0
+      ties INTEGER DEFAULT 0,
+      updated_at INTEGER NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS blackjack_stats (
@@ -34,7 +35,8 @@ function setupTables(): void {
       wins INTEGER DEFAULT 0,
       losses INTEGER DEFAULT 0,
       ties INTEGER DEFAULT 0,
-      blackjacks INTEGER DEFAULT 0
+      blackjacks INTEGER DEFAULT 0,
+      updated_at INTEGER NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS hangman_stats (
@@ -42,7 +44,7 @@ function setupTables(): void {
       wins INTEGER DEFAULT 0,
       losses INTEGER DEFAULT 0,
       total_guesses INTEGER DEFAULT 0,
-      updated_at INTEGER
+      updated_at INTEGER NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS slots_stats (
@@ -51,7 +53,7 @@ function setupTables(): void {
       wins INTEGER DEFAULT 0,
       jackpots INTEGER DEFAULT 0,
       biggest_win TEXT,
-      updated_at INTEGER
+      updated_at INTEGER NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS wordle_stats (
@@ -61,15 +63,17 @@ function setupTables(): void {
       current_streak INTEGER DEFAULT 0,
       max_streak INTEGER DEFAULT 0,
       guess_distribution TEXT DEFAULT '{}',
-      updated_at INTEGER
+      updated_at INTEGER NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS daily_checkins (
       user_id TEXT PRIMARY KEY,
-      last_checkin TEXT,
+      last_checkin INTEGER NOT NULL,
       streak INTEGER DEFAULT 0,
       best_streak INTEGER DEFAULT 0,
-      points INTEGER DEFAULT 0
+      total_checkins INTEGER DEFAULT 0,
+      points INTEGER DEFAULT 0,
+      updated_at INTEGER NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS trivia_stats (
@@ -84,19 +88,31 @@ function setupTables(): void {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id TEXT NOT NULL,
       result TEXT NOT NULL,
-      timestamp INTEGER
+      timestamp INTEGER NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS quotes (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      guild_id TEXT NOT NULL,
       author_id TEXT NOT NULL,
-      text TEXT NOT NULL
+      quote_text TEXT NOT NULL,
+      added_by TEXT NOT NULL,
+      added_at INTEGER NOT NULL,
+      context TEXT
     );
 
     CREATE TABLE IF NOT EXISTS giveaways (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      guild_id TEXT NOT NULL,
+      channel_id TEXT NOT NULL,
+      message_id TEXT,
       host_id TEXT NOT NULL,
-      prize TEXT
+      prize TEXT NOT NULL,
+      winner_count INTEGER DEFAULT 1,
+      ends_at INTEGER NOT NULL,
+      ended INTEGER DEFAULT 0,
+      winners TEXT,
+      created_at INTEGER NOT NULL
     );
   `);
 }
@@ -208,7 +224,9 @@ describe("achievement system", () => {
 
       expect(checkFirstWin("user1")).toBe(false);
 
-      db.prepare(`INSERT INTO rps_stats (user_id, wins) VALUES (?, 1)`).run("user1");
+      db.prepare(
+        `INSERT INTO rps_stats (user_id, wins, updated_at) VALUES (?, 1, ?)`,
+      ).run("user1", Date.now());
 
       expect(checkFirstWin("user1")).toBe(true);
     });
@@ -218,22 +236,30 @@ describe("achievement system", () => {
 
       expect(checkTenWins("user1")).toBe(false);
 
-      db.prepare(`INSERT INTO rps_stats (user_id, wins) VALUES (?, 5)`).run("user1");
-      db.prepare(`INSERT INTO blackjack_stats (user_id, wins) VALUES (?, 5)`).run(
-        "user1",
-      );
+      const now = Date.now();
+      db.prepare(
+        `INSERT INTO rps_stats (user_id, wins, updated_at) VALUES (?, 5, ?)`,
+      ).run("user1", now);
+      db.prepare(
+        `INSERT INTO blackjack_stats (user_id, wins, updated_at) VALUES (?, 5, ?)`,
+      ).run("user1", now);
 
       expect(checkTenWins("user1")).toBe(true);
     });
 
     it("counts wins across multiple games", () => {
       const db = getDb();
+      const now = Date.now();
 
-      db.prepare(`INSERT INTO rps_stats (user_id, wins) VALUES (?, 3)`).run("user1");
-      db.prepare(`INSERT INTO blackjack_stats (user_id, wins) VALUES (?, 4)`).run(
-        "user1",
-      );
-      db.prepare(`INSERT INTO hangman_stats (user_id, wins) VALUES (?, 2)`).run("user1");
+      db.prepare(
+        `INSERT INTO rps_stats (user_id, wins, updated_at) VALUES (?, 3, ?)`,
+      ).run("user1", now);
+      db.prepare(
+        `INSERT INTO blackjack_stats (user_id, wins, updated_at) VALUES (?, 4, ?)`,
+      ).run("user1", now);
+      db.prepare(
+        `INSERT INTO hangman_stats (user_id, wins, updated_at) VALUES (?, 2, ?)`,
+      ).run("user1", now);
 
       // 3 + 4 + 2 = 9 wins, not enough
       expect(checkTenWins("user1")).toBe(false);
@@ -265,17 +291,17 @@ describe("achievement system", () => {
 
       // Insert 99 flips
       for (let i = 0; i < 99; i++) {
-        db.prepare(`INSERT INTO coin_flips (user_id, result) VALUES (?, 'heads')`).run(
-          "user1",
-        );
+        db.prepare(
+          `INSERT INTO coin_flips (user_id, result, timestamp) VALUES (?, 'heads', ?)`,
+        ).run("user1", Date.now() + i);
       }
 
       expect(checkCoinMaster("user1")).toBe(false);
 
       // Add 100th flip
-      db.prepare(`INSERT INTO coin_flips (user_id, result) VALUES (?, 'tails')`).run(
-        "user1",
-      );
+      db.prepare(
+        `INSERT INTO coin_flips (user_id, result, timestamp) VALUES (?, 'tails', ?)`,
+      ).run("user1", Date.now());
 
       expect(checkCoinMaster("user1")).toBe(true);
     });
@@ -284,12 +310,13 @@ describe("achievement system", () => {
   describe("dedication achievements", () => {
     it("Week Warrior - unlocks at 7-day streak", () => {
       const db = getDb();
+      const now = Date.now();
 
       expect(checkDailyStreak7("user1")).toBe(false);
 
-      db.prepare(`INSERT INTO daily_checkins (user_id, best_streak) VALUES (?, 6)`).run(
-        "user1",
-      );
+      db.prepare(
+        `INSERT INTO daily_checkins (user_id, best_streak, last_checkin, updated_at) VALUES (?, 6, ?, ?)`,
+      ).run("user1", now, now);
       expect(checkDailyStreak7("user1")).toBe(false);
 
       db.prepare(`UPDATE daily_checkins SET best_streak = 7 WHERE user_id = ?`).run(
@@ -302,32 +329,34 @@ describe("achievement system", () => {
   describe("social achievements", () => {
     it("Quotable - unlocks when user has a quote", () => {
       const db = getDb();
+      const now = Date.now();
 
       expect(checkQuotable("user1")).toBe(false);
 
-      db.prepare(`INSERT INTO quotes (author_id, text) VALUES (?, 'Test quote')`).run(
-        "user1",
-      );
+      db.prepare(
+        `INSERT INTO quotes (guild_id, author_id, quote_text, added_by, added_at) VALUES (?, ?, 'Test quote', ?, ?)`,
+      ).run("guild1", "user1", "user1", now);
 
       expect(checkQuotable("user1")).toBe(true);
     });
 
     it("Generous - unlocks after hosting 3 giveaways", () => {
       const db = getDb();
+      const now = Date.now();
 
       expect(checkGenerous("user1")).toBe(false);
 
-      db.prepare(`INSERT INTO giveaways (host_id, prize) VALUES (?, 'Prize 1')`).run(
-        "user1",
-      );
-      db.prepare(`INSERT INTO giveaways (host_id, prize) VALUES (?, 'Prize 2')`).run(
-        "user1",
-      );
-      expect(checkGenerous("user1")).toBe(false);
+      const gw = (guildId: string) =>
+        db
+          .prepare(
+            `INSERT INTO giveaways (guild_id, channel_id, host_id, prize, winner_count, ends_at, created_at) VALUES (?, 'c1', ?, 'Prize', 1, ?, ?)`,
+          )
+          .run(guildId, "user1", Date.now() + 3600000, now);
 
-      db.prepare(`INSERT INTO giveaways (host_id, prize) VALUES (?, 'Prize 3')`).run(
-        "user1",
-      );
+      gw("guild1");
+      gw("guild1");
+      expect(checkGenerous("user1")).toBe(false);
+      gw("guild1");
       expect(checkGenerous("user1")).toBe(true);
     });
   });
@@ -335,9 +364,14 @@ describe("achievement system", () => {
   describe("user isolation", () => {
     it("achievements are per-user", () => {
       const db = getDb();
+      const now = Date.now();
 
-      db.prepare(`INSERT INTO rps_stats (user_id, wins) VALUES (?, 5)`).run("user1");
-      db.prepare(`INSERT INTO rps_stats (user_id, wins) VALUES (?, 0)`).run("user2");
+      db.prepare(
+        `INSERT INTO rps_stats (user_id, wins, updated_at) VALUES (?, 5, ?)`,
+      ).run("user1", now);
+      db.prepare(
+        `INSERT INTO rps_stats (user_id, wins, updated_at) VALUES (?, 0, ?)`,
+      ).run("user2", now);
 
       expect(checkFirstWin("user1")).toBe(true);
       expect(checkFirstWin("user2")).toBe(false);

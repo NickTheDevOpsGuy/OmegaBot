@@ -5,9 +5,14 @@ import {
   type ButtonInteraction,
 } from "discord.js";
 import { logger } from "../../../utils/logger.js";
+import {
+  checkBlackjackCooldown,
+  recordBlackjackGame,
+} from "../../../services/discord/rateLimit.js";
 import { getStats, recordResult } from "./blackjackStore.js";
 import { createDeck, handValue, isBlackjack, type Card } from "./blackjack/gameLogic.js";
 import { buildGameMessage, buildButtons, type GameStatus } from "./blackjack/ui.js";
+import { safeMessageEdit } from "../../../services/discord/safeReply.js";
 
 const GAME_TIMEOUT_MS = 120_000; // 2 minutes
 
@@ -48,6 +53,7 @@ async function playDealerTurn(
   }
 
   recordResult(userId, result);
+  logger.info({ gameId, userId, result }, "[blackjack] game ended");
 
   await buttonInteraction.update({
     content: buildGameMessage(playerHand, dealerHand, status, false),
@@ -60,7 +66,28 @@ async function playDealerTurn(
 /* -------------------------------------------------------------------------- */
 
 export async function run(interaction: ChatInputCommandInteraction): Promise<void> {
+  try {
+    return await runBlackjack(interaction);
+  } catch (err) {
+    logger.error({ err, userId: interaction.user.id }, "[blackjack] handler failed");
+    await interaction
+      .editReply("Something went wrong with blackjack. Try again.")
+      .catch(() => {});
+  }
+}
+
+async function runBlackjack(interaction: ChatInputCommandInteraction): Promise<void> {
   const showStatsFlag = interaction.options.getBoolean("stats") ?? false;
+
+  if (!showStatsFlag) {
+    const remaining = checkBlackjackCooldown(interaction.user.id);
+    if (remaining > 0) {
+      await interaction.editReply(
+        `⏱️ Slow down! Try again in **${Math.ceil(remaining / 1000)}** seconds.`,
+      );
+      return;
+    }
+  }
 
   if (showStatsFlag) {
     const stats = getStats(interaction.user.id);
@@ -80,12 +107,17 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
 
   const deck = createDeck();
   const gameId = `${Date.now()}-${interaction.user.id}`;
+  const userId = interaction.user.id;
+
+  recordBlackjackGame(userId);
+  logger.info({ gameId, userId }, "[blackjack] game started");
 
   const playerHand: Card[] = [deck.pop()!, deck.pop()!];
   const dealerHand: Card[] = [deck.pop()!, deck.pop()!];
 
   if (isBlackjack(playerHand)) {
-    recordResult(interaction.user.id, "win", true);
+    recordResult(userId, "win", true);
+    logger.info({ gameId, userId }, "[blackjack] blackjack");
     await interaction.editReply({
       content: buildGameMessage(playerHand, dealerHand, "blackjack", false),
       components: [],
@@ -114,7 +146,8 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
 
       if (playerValue > 21) {
         collector.stop("bust");
-        recordResult(interaction.user.id, "loss");
+        recordResult(userId, "loss");
+        logger.info({ gameId, userId }, "[blackjack] player bust");
         await buttonInteraction.update({
           content: buildGameMessage(playerHand, dealerHand, "player_bust", false),
           components: [buildButtons(gameId, true)],
@@ -130,7 +163,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
           dealerHand,
           deck,
           gameId,
-          interaction.user.id,
+          userId,
         );
         return;
       }
@@ -147,24 +180,25 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
         dealerHand,
         deck,
         gameId,
-        interaction.user.id,
+        userId,
       );
     }
   });
 
   collector.on("end", async (_, reason) => {
     if (reason === "time") {
-      recordResult(interaction.user.id, "loss");
-      try {
-        await message.edit({
+      recordResult(userId, "loss");
+      logger.warn({ gameId, userId }, "[blackjack] timed out");
+      await safeMessageEdit(
+        message,
+        {
           content:
             buildGameMessage(playerHand, dealerHand, "dealer_win", false) +
             "\n\n⏱️ *Timed out*",
           components: [buildButtons(gameId, true)],
-        });
-      } catch (err) {
-        logger.debug({ err }, "[blackjack] failed to update on timeout");
-      }
+        },
+        "blackjack.timeout",
+      );
     }
   });
 }

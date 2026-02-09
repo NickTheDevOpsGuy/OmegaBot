@@ -6,6 +6,7 @@ import {
   ComponentType,
   type ChatInputCommandInteraction,
 } from "discord.js";
+import { logger } from "../../../utils/logger.js";
 import {
   getStats,
   recordCorrect,
@@ -27,6 +28,17 @@ const TRIVIA_TIMEOUT_MS = 30_000; // 30 seconds
 /* -------------------------------------------------------------------------- */
 
 export async function run(interaction: ChatInputCommandInteraction): Promise<void> {
+  try {
+    return await runTrivia(interaction);
+  } catch (err) {
+    logger.error({ err, userId: interaction.user.id }, "[trivia] handler failed");
+    await interaction
+      .editReply("Something went wrong with trivia. Try again.")
+      .catch(() => {});
+  }
+}
+
+async function runTrivia(interaction: ChatInputCommandInteraction): Promise<void> {
   const showStats = interaction.options.getBoolean("stats") ?? false;
   const showLeaderboard = interaction.options.getBoolean("leaderboard") ?? false;
   const categoryInput = interaction.options.getString(
@@ -76,6 +88,9 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
   const question = getRandomQuestion(categoryInput ?? undefined);
   const allAnswers = shuffleArray([question.correctAnswer, ...question.wrongAnswers]);
   const triviaId = `trivia-${Date.now()}-${interaction.user.id}`;
+  const userId = interaction.user.id;
+
+  logger.info({ triviaId, userId, category: question.category }, "[trivia] game started");
 
   const points = DIFFICULTY_POINTS[question.difficulty];
   const emoji = CATEGORY_EMOJI[question.category];
@@ -129,7 +144,8 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
     );
 
     if (isCorrect) {
-      recordCorrect(interaction.user.id, points);
+      recordCorrect(userId, points);
+      logger.info({ triviaId, userId, points }, "[trivia] correct");
       const stats = getStats(interaction.user.id);
 
       await response.update({
@@ -144,7 +160,8 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
         components: [disabledButtons],
       });
     } else {
-      recordIncorrect(interaction.user.id);
+      recordIncorrect(userId);
+      logger.info({ triviaId, userId }, "[trivia] incorrect");
 
       await response.update({
         content: [
@@ -158,7 +175,10 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
         components: [disabledButtons],
       });
     }
-  } catch {
+  } catch (err) {
+    recordIncorrect(userId);
+    logger.warn({ triviaId, userId, err }, "[trivia] timed out");
+
     const disabledButtons = new ActionRowBuilder<ButtonBuilder>().addComponents(
       allAnswers.map((answer, i) =>
         new ButtonBuilder()
@@ -168,8 +188,6 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
           .setDisabled(true),
       ),
     );
-
-    recordIncorrect(interaction.user.id);
 
     await interaction.editReply({
       content: [

@@ -42,6 +42,12 @@ Not intended to be:
 - AFK and timezone management
 - GitHub PR and issue lookups
 - SQLite persistence for all data
+- **Resilient interaction handling** – safe reply wrappers, error logging, retry on transient API errors, and unhandled rejection catching (reduces "failed to complete" occurrences)
+- **Admin health dashboard** – `/admin health` shows database status, env vars, and interaction error counts
+- **Database integrity check** – `npm run db:check` to verify SQLite health
+- **Rate limiting** – slots (3s), blackjack (5s), dice (2s), hangman (10s) cooldowns to prevent spam
+- **Daily game metrics** – per-command, per-user play counts for analytics
+- **Timeout reminders** – Connect 4 and Tic Tac Toe warn 15 seconds before move timeout
 
 ---
 
@@ -71,9 +77,11 @@ npm start
 ## Documentation
 
 - [Command Reference](docs/commands.md)
+- [Analytics](docs/analytics.md) – Daily game metrics and `game_usage_daily` table
 - [Discord Bot Setup](docs/setup-discord.md)
 - [Environment Setup](docs/setup-env.md)
 - [Development Notes](docs/dev-notes.md)
+- [Troubleshooting](docs/troubleshooting.md) – Debugging "failed to complete" and common issues
 
 ---
 
@@ -89,6 +97,8 @@ npm start
 ---
 
 ## Project Structure
+
+Games use a modular layout: `gameLogic.ts` (pure rules), `ui.ts` (Discord components), and `*Store.ts` (database). Shared stats queries live in `services/gameStats/`.
 
 <details>
 <summary>📁 Click to expand file structure</summary>
@@ -116,14 +126,17 @@ npm start
 ├── data
 │   └── fun-usage.json
 ├── docs
+│   ├── analytics.md
 │   ├── commands.md
 │   ├── dev-notes.md
 │   ├── faq.md
 │   ├── setup-discord.md
 │   ├── setup-env.md
-│   └── transcripts.md
+│   ├── transcripts.md
+│   └── troubleshooting.md
 ├── migrations
 │   ├── 001_rps_stats.sql
+│   ├── 002_game_usage_daily.sql
 │   └── schema.sql
 ├── scripts
 │   ├── db-check.ts
@@ -173,7 +186,6 @@ npm start
 │   │   │   │   │   └── ui.ts
 │   │   │   │   ├── trivia
 │   │   │   │   │   └── questions.ts
-│   │   │   │   ├── ttt
 │   │   │   │   ├── wordle
 │   │   │   │   │   ├── gameLogic.ts
 │   │   │   │   │   └── ui.ts
@@ -185,6 +197,7 @@ npm start
 │   │   │   │   ├── connect4Store.ts
 │   │   │   │   ├── daily.test.ts
 │   │   │   │   ├── daily.ts
+│   │   │   │   ├── dice.integration.test.ts
 │   │   │   │   ├── dice.ts
 │   │   │   │   ├── eightball.ts
 │   │   │   │   ├── fact.ts
@@ -260,9 +273,15 @@ npm start
 │   │   │   ├── commandTypes.ts
 │   │   │   ├── cooldowns.ts
 │   │   │   ├── fetchChannelMessages.ts
+│   │   │   ├── interactionErrors.ts
 │   │   │   ├── interactionHandler.ts
+│   │   │   ├── rateLimit.test.ts
+│   │   │   ├── rateLimit.ts
 │   │   │   ├── safeReply.ts
 │   │   │   └── tracedInteractionHandler.ts
+│   │   ├── gameStats
+│   │   │   ├── gameStats.test.ts
+│   │   │   └── gameStats.ts
 │   │   ├── faq
 │   │   │   ├── _shared.ts
 │   │   │   ├── faqService.ts
@@ -275,6 +294,8 @@ npm start
 │   │   ├── fun
 │   │   │   ├── funUsageStore.test.ts
 │   │   │   ├── funUsageStore.ts
+│   │   │   ├── gameUsageMetrics.test.ts
+│   │   │   ├── gameUsageMetrics.ts
 │   │   │   └── pollStore.ts
 │   │   ├── github
 │   │   │   ├── githubApi.ts
@@ -364,12 +385,13 @@ npm start
 ## Testing
 
 ```bash
-npm test          # Run tests in watch mode
-npm run test:run  # Run tests once
-npm run test:coverage  # Run with coverage report
+npm test              # Run tests in watch mode
+npm run test:run      # Run tests once
+npm run test:coverage # Run with coverage report
+npm run db:check      # Verify SQLite database integrity
 ```
 
-14 test files covering games, stores, and core functionality.
+18+ test files covering games, stores, services, rate limiting, metrics, integration flows, and core functionality.
 
 ---
 

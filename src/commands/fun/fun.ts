@@ -2,6 +2,10 @@
 
 import { MessageFlags, type ChatInputCommandInteraction } from "discord.js";
 import { logger } from "../../utils/logger.js";
+import {
+  isKnownInteractionError,
+  logKnownInteractionError,
+} from "../../services/discord/interactionErrors.js";
 
 import { buildFunCommand } from "./funSubcommands.js";
 
@@ -33,6 +37,10 @@ import { run as runSlots } from "./subcommands/slots.js";
 import { run as runStats } from "./subcommands/stats.js";
 
 import { recordFunUsage, type FunCommandKey } from "../../services/fun/funUsageStore.js";
+import {
+  recordDailyPlay,
+  type GameCommand,
+} from "../../services/fun/gameUsageMetrics.js";
 
 /* -------------------------------------------------------------------------- */
 /* Helpers                                                                    */
@@ -73,6 +81,19 @@ function funKeyFromSub(sub: string): FunCommandKey | null {
   return map[sub] ?? null;
 }
 
+const USAGE_TO_METRIC: Partial<Record<FunCommandKey, GameCommand>> = {
+  slots: "slots",
+  blackjack: "blackjack",
+  rps: "rps",
+  trivia: "trivia",
+  hangman: "hangman",
+  wordle: "wordle",
+  connect4: "connect4",
+  tictactoe: "tictactoe",
+  dice: "dice",
+  coinflip: "coinflip",
+};
+
 async function maybeRecordUsage(
   interaction: ChatInputCommandInteraction,
   sub: string,
@@ -81,6 +102,11 @@ async function maybeRecordUsage(
     const key = funKeyFromSub(sub);
     if (!key) return;
     await recordFunUsage({ userId: interaction.user.id, command: key });
+
+    const metric = USAGE_TO_METRIC[key];
+    if (metric) {
+      recordDailyPlay(interaction.user.id, metric);
+    }
   } catch (err) {
     logger.warn({ err, sub }, "[fun] usage tracking failed");
   }
@@ -184,22 +210,18 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
     await interaction.editReply("Unknown fun subcommand.");
   } catch (err) {
-    const code =
-      typeof err === "object" && err !== null && "code" in err
-        ? (err as { code: number }).code
-        : null;
-    if (code === 10008 || code === 10062 || code === 40060) return;
+    if (isKnownInteractionError(err)) {
+      logKnownInteractionError(err, "fun.execute", { sub });
+      return;
+    }
     logger.error({ err, sub }, "[fun] command failed");
     try {
       await interaction.editReply("Something went wrong. Try again later.");
     } catch (editErr) {
-      if (
-        typeof editErr === "object" &&
-        editErr !== null &&
-        "code" in editErr &&
-        (editErr as { code: number }).code === 10008
-      )
+      if (isKnownInteractionError(editErr)) {
+        logKnownInteractionError(editErr, "fun.execute fallback edit", { sub });
         return;
+      }
       throw editErr;
     }
   }

@@ -20,6 +20,11 @@ import {
   type ButtonInteraction,
 } from "discord.js";
 import { logger } from "../../../utils/logger.js";
+import {
+  checkHangmanCooldown,
+  recordHangmanGame,
+} from "../../../services/discord/rateLimit.js";
+import { safeMessageEdit } from "../../../services/discord/safeReply.js";
 import { getDb } from "../../../services/database/db.js";
 
 /* -------------------------------------------------------------------------- */
@@ -239,7 +244,28 @@ function buildGameMessage(
 /* -------------------------------------------------------------------------- */
 
 export async function run(interaction: ChatInputCommandInteraction): Promise<void> {
+  try {
+    return await runHangman(interaction);
+  } catch (err) {
+    logger.error({ err, userId: interaction.user.id }, "[hangman] handler failed");
+    await interaction
+      .editReply("Something went wrong with hangman. Try again.")
+      .catch(() => {});
+  }
+}
+
+async function runHangman(interaction: ChatInputCommandInteraction): Promise<void> {
   const showStatsFlag = interaction.options.getBoolean("stats") ?? false;
+
+  if (!showStatsFlag) {
+    const remaining = checkHangmanCooldown(interaction.user.id);
+    if (remaining > 0) {
+      await interaction.editReply(
+        `⏱️ Slow down! Try again in **${Math.ceil(remaining / 1000)}** seconds.`,
+      );
+      return;
+    }
+  }
 
   if (showStatsFlag) {
     const stats = getStats(interaction.user.id);
@@ -259,9 +285,13 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
 
   const word = WORDS[Math.floor(Math.random() * WORDS.length)];
   const gameId = `${Date.now()}-${interaction.user.id}`;
+  const userId = interaction.user.id;
   const guessed = new Set<string>();
   let wrongCount = 0;
   let totalGuesses = 0;
+
+  recordHangmanGame(userId);
+  logger.info({ gameId, userId }, "[hangman] game started");
 
   const message = await interaction.editReply({
     content: buildGameMessage(word, guessed, wrongCount, "playing"),
@@ -296,7 +326,8 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
 
     if (isWon || isLost) {
       collector.stop(isWon ? "won" : "lost");
-      recordResult(interaction.user.id, isWon, totalGuesses);
+      recordResult(userId, isWon, totalGuesses);
+      logger.info({ gameId, userId, won: isWon, totalGuesses }, "[hangman] game ended");
 
       await buttonInteraction.update({
         content: buildGameMessage(word, guessed, wrongCount, isWon ? "won" : "lost"),
@@ -313,16 +344,17 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
 
   collector.on("end", async (_, reason) => {
     if (reason === "time") {
-      recordResult(interaction.user.id, false, totalGuesses);
-      try {
-        await message.edit({
+      recordResult(userId, false, totalGuesses);
+      logger.warn({ gameId, userId }, "[hangman] timed out");
+      await safeMessageEdit(
+        message,
+        {
           content:
             buildGameMessage(word, guessed, wrongCount, "lost") + "\n\n⏱️ *Timed out*",
           components: buildLetterButtons(gameId, guessed, true),
-        });
-      } catch (err) {
-        logger.debug({ err }, "[hangman] failed to update on timeout");
-      }
+        },
+        "hangman.timeout",
+      );
     }
   });
 }

@@ -15,60 +15,17 @@ import {
   type ChatInputCommandInteraction,
 } from "discord.js";
 import { getDb } from "../../services/database/db.js";
+import {
+  getTotalWins,
+  getTotalGamesPlayed,
+  getScalar,
+  getCount,
+} from "../../services/gameStats/gameStats.js";
 import { logger } from "../../utils/logger.js";
 
 /* -------------------------------------------------------------------------- */
 /* Stat Fetchers                                                               */
 /* -------------------------------------------------------------------------- */
-
-function getTotalGamesPlayed(db: ReturnType<typeof getDb>, userId: string): number {
-  let total = 0;
-  const tables = [
-    { table: "rps_stats", cols: ["wins", "losses", "ties"] },
-    { table: "ttt_stats", cols: ["wins", "losses", "ties"] },
-    { table: "blackjack_stats", cols: ["wins", "losses", "ties"] },
-    { table: "hangman_stats", cols: ["wins", "losses"] },
-    { table: "connect4_stats", cols: ["wins", "losses", "ties"] },
-  ];
-
-  for (const { table, cols } of tables) {
-    try {
-      const sumCols = cols.join(" + ");
-      const row = db
-        .prepare(`SELECT (${sumCols}) as total FROM ${table} WHERE user_id = ?`)
-        .get(userId) as { total: number } | undefined;
-      if (row?.total) total += row.total;
-    } catch {
-      // Table might not exist
-    }
-  }
-
-  return total;
-}
-
-function getTotalWins(db: ReturnType<typeof getDb>, userId: string): number {
-  let total = 0;
-  const tables = [
-    "rps_stats",
-    "ttt_stats",
-    "blackjack_stats",
-    "hangman_stats",
-    "connect4_stats",
-  ];
-
-  for (const table of tables) {
-    try {
-      const row = db
-        .prepare(`SELECT wins FROM ${table} WHERE user_id = ?`)
-        .get(userId) as { wins: number } | undefined;
-      if (row?.wins) total += row.wins;
-    } catch {
-      // Table might not exist
-    }
-  }
-
-  return total;
-}
 
 function getAchievementCount(
   db: ReturnType<typeof getDb>,
@@ -78,66 +35,16 @@ function getAchievementCount(
     () => getTotalWins(db, userId) >= 1,
     () => getTotalWins(db, userId) >= 10,
     () => getTotalWins(db, userId) >= 50,
-    () => {
-      const row = db
-        .prepare(`SELECT blackjacks FROM blackjack_stats WHERE user_id = ?`)
-        .get(userId) as { blackjacks: number } | undefined;
-      return (row?.blackjacks ?? 0) >= 1;
-    },
-    () => {
-      const row = db
-        .prepare(`SELECT max_streak FROM wordle_stats WHERE user_id = ?`)
-        .get(userId) as { max_streak: number } | undefined;
-      return (row?.max_streak ?? 0) >= 7;
-    },
-    () => {
-      const row = db
-        .prepare(`SELECT jackpots FROM slots_stats WHERE user_id = ?`)
-        .get(userId) as { jackpots: number } | undefined;
-      return (row?.jackpots ?? 0) >= 1;
-    },
-    () => {
-      const row = db
-        .prepare(`SELECT wins FROM slots_stats WHERE user_id = ?`)
-        .get(userId) as { wins: number } | undefined;
-      return (row?.wins ?? 0) >= 5;
-    },
-    () => {
-      const row = db
-        .prepare(`SELECT COUNT(*) as count FROM coin_flips WHERE user_id = ?`)
-        .get(userId) as { count: number };
-      return row.count >= 100;
-    },
-    () => {
-      const row = db
-        .prepare(`SELECT best_streak FROM daily_checkins WHERE user_id = ?`)
-        .get(userId) as { best_streak: number } | undefined;
-      return (row?.best_streak ?? 0) >= 7;
-    },
-    () => {
-      const row = db
-        .prepare(`SELECT best_streak FROM daily_checkins WHERE user_id = ?`)
-        .get(userId) as { best_streak: number } | undefined;
-      return (row?.best_streak ?? 0) >= 30;
-    },
-    () => {
-      const row = db
-        .prepare(`SELECT correct FROM trivia_stats WHERE user_id = ?`)
-        .get(userId) as { correct: number } | undefined;
-      return (row?.correct ?? 0) >= 50;
-    },
-    () => {
-      const row = db
-        .prepare(`SELECT best_streak FROM trivia_stats WHERE user_id = ?`)
-        .get(userId) as { best_streak: number } | undefined;
-      return (row?.best_streak ?? 0) >= 10;
-    },
-    () => {
-      const row = db
-        .prepare(`SELECT COUNT(*) as count FROM quotes WHERE author_id = ?`)
-        .get(userId) as { count: number };
-      return row.count >= 1;
-    },
+    () => getScalar(db, userId, "blackjack_stats", "blackjacks") >= 1,
+    () => getScalar(db, userId, "wordle_stats", "max_streak") >= 7,
+    () => getScalar(db, userId, "slots_stats", "jackpots") >= 1,
+    () => getScalar(db, userId, "slots_stats", "wins") >= 5,
+    () => getCount(db, "coin_flips", "user_id", userId) >= 100,
+    () => getScalar(db, userId, "daily_checkins", "best_streak") >= 7,
+    () => getScalar(db, userId, "daily_checkins", "best_streak") >= 30,
+    () => getScalar(db, userId, "trivia_stats", "correct") >= 50,
+    () => getScalar(db, userId, "trivia_stats", "best_streak") >= 10,
+    () => getCount(db, "quotes", "author_id", userId) >= 1,
   ];
 
   let earned = 0;

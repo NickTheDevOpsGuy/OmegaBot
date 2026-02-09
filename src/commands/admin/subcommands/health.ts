@@ -2,6 +2,7 @@
 import { EmbedBuilder, type ChatInputCommandInteraction } from "discord.js";
 import { logger } from "../../../utils/logger.js";
 import { getDb } from "../../../services/database/db.js";
+import { getInteractionErrorCounts } from "../../../services/discord/interactionErrors.js";
 import { EmbedColors } from "../../../utils/colors.js";
 import { safeReply } from "../utils.js";
 
@@ -20,6 +21,20 @@ export async function handleHealth(
         name: "Database",
         status: "❌ Error",
         details: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+
+    const interactionErrors = getInteractionErrorCounts();
+    const totalErrors = Object.values(interactionErrors).reduce((a, b) => a + b, 0);
+    if (totalErrors > 0) {
+      const details = Object.entries(interactionErrors)
+        .filter(([, v]) => v > 0)
+        .map(([k, v]) => `${k}: ${v}`)
+        .join(", ");
+      checks.push({
+        name: "Interaction errors (since startup)",
+        status: totalErrors > 10 ? "⚠️ Elevated" : "ℹ️ Counts",
+        details,
       });
     }
 

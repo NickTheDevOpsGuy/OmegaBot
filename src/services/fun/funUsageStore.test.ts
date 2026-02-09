@@ -9,13 +9,24 @@
 // - Aggregation by command
 // - Aggregation by user
 
-import { describe, expect, it } from "vitest";
+import path from "node:path";
+import os from "node:os";
+import { promises as fs } from "node:fs";
+import { describe, expect, it, beforeEach } from "vitest";
 import { useInMemoryDb } from "../../test/dbTestUtils.js";
 import { getFunUsageSnapshot, recordFunUsage } from "./funUsageStore.js";
 
 useInMemoryDb();
 
 describe("funUsageStore", () => {
+  let testStorePath: string;
+
+  beforeEach(async () => {
+    const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "fun-usage-test-"));
+    testStorePath = path.join(tmpDir, "fun-usage.json");
+    process.env.FUN_USAGE_STORE_PATH = testStorePath;
+  });
+
   it("aggregates totals by command", async () => {
     // Record multiple uses of different commands
     await recordFunUsage({ userId: "u1", command: "dice" });

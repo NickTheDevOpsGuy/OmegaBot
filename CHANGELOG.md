@@ -1,3 +1,29 @@
+## [3.1.0] - 2026-02-09
+
+### Added
+
+- **Rate limiting**: Slots (3s), blackjack (5s), dice (2s), hangman (10s) cooldowns to prevent spam
+- **Tests**: rateLimit.test.ts, gameUsageMetrics.test.ts
+- **Daily game metrics**: `game_usage_daily` table for per-command, per-user play counts
+- **Timeout reminders**: Connect 4 and Tic Tac Toe warn 15 seconds before move timeout
+- **Retry logic**: `safeEditReply` and `safeMessageEdit` retry on transient API errors (rate limit, 5xx)
+- **Integration tests**: Full dice command flow with mocked interaction
+- **Top-level error handling**: Blackjack, hangman, trivia, slots wrap handlers in try/catch with user-friendly fallback
+- **Expanded logging**: All game commands log start, outcome, and errors
+
+### Changed
+
+- **README**: Updated features, structure, and test count
+- **Resilient interaction handling**: Retry on transient failures in addition to known error logging
+
+### Fixed
+
+- **Achievement tests**: Schema alignment with real tables (updated_at, timestamp, quote_text, etc.)
+- **funUsageStore tests**: Isolated temp paths via `FUN_USAGE_STORE_PATH`
+- **giveawayStore**: `getGiveaway` returns `null` instead of `undefined` for non-existent ID
+
+---
+
 ## [3.0.0] - 2026-01-27
 
 ### Added

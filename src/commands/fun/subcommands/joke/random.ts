@@ -1,5 +1,6 @@
 // src/commands/fun/subcommands/joke/random.ts
 import type { ChatInputCommandInteraction } from "discord.js";
+import { logger } from "../../../../utils/logger.js";
 import { getRandomJoke, type JokeCategory } from "../../../../services/joke/jokeStore.js";
 
 const categoryEmoji: Record<JokeCategory, string> = {
@@ -22,6 +23,7 @@ export async function handleJokeRandom(
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   const category = interaction.options.getString("category") as JokeCategory | null;
+  logger.info({ userId: interaction.user.id, category }, "[joke] random");
 
   const joke = getRandomJoke(category || undefined);
 

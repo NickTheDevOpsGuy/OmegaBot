@@ -279,3 +279,12 @@ CREATE TABLE IF NOT EXISTS starboard_posts (
 );
 
 CREATE INDEX IF NOT EXISTS idx_starboard_guild ON starboard_posts(guild_id);
+
+CREATE TABLE IF NOT EXISTS game_usage_daily (
+  date TEXT NOT NULL,
+  command TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  count INTEGER NOT NULL DEFAULT 1,
+  PRIMARY KEY (date, command, user_id)
+);
+CREATE INDEX IF NOT EXISTS idx_game_usage_daily_date ON game_usage_daily(date);

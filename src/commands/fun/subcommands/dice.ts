@@ -1,5 +1,9 @@
 import type { ChatInputCommandInteraction } from "discord.js";
 import { logger } from "../../../utils/logger.js";
+import {
+  checkDiceCooldown,
+  recordDiceRoll,
+} from "../../../services/discord/rateLimit.js";
 
 /**
  * Dice faces for a standard d6.
@@ -59,6 +63,14 @@ async function rollAnimation(
 }
 
 export async function run(interaction: ChatInputCommandInteraction): Promise<void> {
+  const remaining = checkDiceCooldown(interaction.user.id);
+  if (remaining > 0) {
+    await interaction.editReply(
+      `⏱️ Slow down! Try again in **${Math.ceil(remaining / 1000)}** seconds.`,
+    );
+    return;
+  }
+
   const sidesRaw = interaction.options.getInteger("sides") ?? 6;
   const countRaw = interaction.options.getInteger("count") ?? 1;
 
@@ -67,6 +79,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
 
   try {
     await rollAnimation(interaction, sides, count);
+    recordDiceRoll(interaction.user.id);
 
     const rolls: number[] = [];
     for (let i = 0; i < count; i += 1) {
@@ -87,9 +100,9 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
 
     await interaction.editReply(lines.join("\n"));
 
-    logger.debug(
+    logger.info(
       { userId: interaction.user.id, sides, count, rolls, total },
-      "[fun/dice] roll complete",
+      "[dice] roll complete",
     );
   } catch (err) {
     logger.error({ err }, "[fun/dice] failed");

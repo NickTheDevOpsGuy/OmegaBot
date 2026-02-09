@@ -1,11 +1,17 @@
 // src/commands/fun/subcommands/connect4.ts
-import { ComponentType, type ChatInputCommandInteraction, type User } from "discord.js";
+import { ComponentType, type ChatInputCommandInteraction } from "discord.js";
 import { logger } from "../../../utils/logger.js";
+import {
+  safeReplyToButton,
+  safeDeferUpdate,
+  safeEditReply,
+} from "../../../services/discord/safeReply.js";
 import { getStats, recordResult } from "./connect4Store.js";
 import { newBoard, drop, has4, full, type Cell } from "./connect4/gameLogic.js";
 import { renderBoard, buildControls, buildHeader, EMOJI } from "./connect4/ui.js";
 
 const MOVE_TIMEOUT_MS = 60_000;
+const WARNING_BEFORE_MS = 15_000; // Remind 15s before timeout
 
 /* -------------------------------------------------------------------------- */
 /* Command Handler                                                             */
@@ -49,6 +55,8 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
   let turn: 1 | 2 = 1;
   const gameId = interaction.id;
 
+  logger.info({ gameId, p1Id: p1.id, p2Id: p2.id }, "[connect4] game started");
+
   const render = (statusLine?: string) =>
     [
       buildHeader(p1, p2, turn),
@@ -68,19 +76,35 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
     time: MOVE_TIMEOUT_MS,
   });
 
+  let warningTimer: ReturnType<typeof setTimeout> | null = null;
+  const scheduleWarning = () => {
+    if (warningTimer) clearTimeout(warningTimer);
+    warningTimer = setTimeout(() => {
+      void safeEditReply(
+        interaction,
+        {
+          content: render("⏱️ **15 seconds left!** Pick a column."),
+          components: buildControls({ gameId, board, disabled: false }),
+        },
+        "connect4.warning",
+      );
+    }, MOVE_TIMEOUT_MS - WARNING_BEFORE_MS);
+  };
+  scheduleWarning();
+
   collector.on("collect", async (btn) => {
     try {
       const isP1 = btn.user.id === p1.id;
       const isP2 = btn.user.id === p2.id;
 
       if (!isP1 && !isP2) {
-        await btn.reply({ content: "You're not in this game.", ephemeral: true });
+        await safeReplyToButton(btn, "You're not in this game.");
         return;
       }
 
       const expectedUserId = turn === 1 ? p1.id : p2.id;
       if (btn.user.id !== expectedUserId) {
-        await btn.reply({ content: "Not your turn.", ephemeral: true });
+        await safeReplyToButton(btn, "Not your turn.");
         return;
       }
 
@@ -94,14 +118,11 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       const placed = drop(board, col, who);
 
       if (!placed.ok) {
-        await btn.reply({
-          content: "That column is full. Pick another.",
-          ephemeral: true,
-        });
+        await safeReplyToButton(btn, "That column is full. Pick another.");
         return;
       }
 
-      await btn.deferUpdate();
+      if (!(await safeDeferUpdate(btn))) return;
 
       if (has4(board, who)) {
         const winnerId = turn === 1 ? p1.id : p2.id;
@@ -114,15 +135,19 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
         }
 
         collector.stop("win");
-        await interaction.editReply({
-          content: [
-            "🏁 **Game over**",
-            `${turn === 1 ? EMOJI.p1 : EMOJI.p2} ${btn.user.toString()} wins!`,
-            "",
-            renderBoard(board),
-          ].join("\n"),
-          components: buildControls({ gameId, board, disabled: true }),
-        });
+        await safeEditReply(
+          interaction,
+          {
+            content: [
+              "🏁 **Game over**",
+              `${turn === 1 ? EMOJI.p1 : EMOJI.p2} ${btn.user.toString()} wins!`,
+              "",
+              renderBoard(board),
+            ].join("\n"),
+            components: buildControls({ gameId, board, disabled: true }),
+          },
+          "connect4.win",
+        );
         return;
       }
 
@@ -134,41 +159,52 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
         }
 
         collector.stop("draw");
-        await interaction.editReply({
-          content: ["🏁 **Game over**", "It's a draw.", "", renderBoard(board)].join(
-            "\n",
-          ),
-          components: buildControls({ gameId, board, disabled: true }),
-        });
+        await safeEditReply(
+          interaction,
+          {
+            content: ["🏁 **Game over**", "It's a draw.", "", renderBoard(board)].join(
+              "\n",
+            ),
+            components: buildControls({ gameId, board, disabled: true }),
+          },
+          "connect4.draw",
+        );
         return;
       }
 
       turn = turn === 1 ? 2 : 1;
       collector.resetTimer();
+      scheduleWarning();
 
-      await interaction.editReply({
-        content: render(),
-        components: buildControls({ gameId, board, disabled: false }),
-      });
+      await safeEditReply(
+        interaction,
+        {
+          content: render(),
+          components: buildControls({ gameId, board, disabled: false }),
+        },
+        "connect4.turn",
+      );
     } catch (err) {
       logger.warn({ err }, "[fun/connect4] handler failed");
     }
   });
 
   collector.on("end", async (_c, reason) => {
+    if (warningTimer) clearTimeout(warningTimer);
+    if (reason === "win" || reason === "draw") return;
+
+    const timeoutLoser = turn === 1 ? p1 : p2;
+    const timeoutWinner = turn === 1 ? p2 : p1;
+
     try {
-      if (reason === "win" || reason === "draw") return;
+      recordResult(timeoutWinner.id, timeoutLoser.id, p1.id, p2.id);
+    } catch (err) {
+      logger.error({ err }, "[connect4] failed to record timeout result");
+    }
 
-      const timeoutLoser = turn === 1 ? p1 : p2;
-      const timeoutWinner = turn === 1 ? p2 : p1;
-
-      try {
-        recordResult(timeoutWinner.id, timeoutLoser.id, p1.id, p2.id);
-      } catch (err) {
-        logger.error({ err }, "[connect4] failed to record timeout result");
-      }
-
-      await interaction.editReply({
+    await safeEditReply(
+      interaction,
+      {
         content: [
           "⏱️ **Connect 4 expired**",
           `${timeoutLoser.toString()} ran out of time!`,
@@ -177,9 +213,8 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
           renderBoard(board),
         ].join("\n"),
         components: buildControls({ gameId, board, disabled: true }),
-      });
-    } catch (err) {
-      logger.debug({ err }, "[fun/connect4] end edit failed");
-    }
+      },
+      "connect4.timeout",
+    );
   });
 }

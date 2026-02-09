@@ -101,9 +101,10 @@ export function setGiveawayMessage(giveawayId: number, messageId: string): void 
 export function getGiveaway(giveawayId: number): Giveaway | null {
   ensureGiveawayTables();
   const db = getDb();
-  return db
-    .prepare(`SELECT * FROM giveaways WHERE id = ?`)
-    .get(giveawayId) as Giveaway | null;
+  const row = db.prepare(`SELECT * FROM giveaways WHERE id = ?`).get(giveawayId) as
+    | Giveaway
+    | undefined;
+  return row ?? null;
 }
 
 export function getGiveawayByMessage(messageId: string): Giveaway | null {

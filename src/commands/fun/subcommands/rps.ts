@@ -6,6 +6,11 @@ import {
   type User,
 } from "discord.js";
 import { logger } from "../../../utils/logger.js";
+import { safeReplyToButton } from "../../../services/discord/safeReply.js";
+import {
+  isKnownInteractionError,
+  logKnownInteractionError,
+} from "../../../services/discord/interactionErrors.js";
 import {
   recordSoloResult,
   getSoloStats,
@@ -53,6 +58,11 @@ async function handleChallenge(
 
   const challengeId = `${Date.now()}-${challenger.id}`;
 
+  logger.info(
+    { challengeId, challengerId: challenger.id, opponentId: opponent.id },
+    "[rps] challenge started",
+  );
+
   const h2h = getH2HStats(challenger.id, opponent.id);
   const h2hText =
     h2h.total > 0
@@ -85,10 +95,7 @@ async function handleChallenge(
     const playerId = buttonInteraction.user.id;
 
     if (!allowedPlayers.has(playerId)) {
-      await buttonInteraction.reply({
-        content: "This challenge isn't for you!",
-        ephemeral: true,
-      });
+      await safeReplyToButton(buttonInteraction, "This challenge isn't for you!");
       return;
     }
 
@@ -115,10 +122,10 @@ async function handleChallenge(
     if (CHOICES.includes(action)) {
       choices.set(playerId, action);
 
-      await buttonInteraction.reply({
-        content: `You chose ${EMOJI[action]} **${CHOICE_LABELS[action]}**! Waiting for your opponent...`,
-        ephemeral: true,
-      });
+      await safeReplyToButton(
+        buttonInteraction,
+        `You chose ${EMOJI[action]} **${CHOICE_LABELS[action]}**! Waiting for your opponent...`,
+      );
 
       if (choices.has(challenger.id) && choices.has(opponent.id)) {
         collector.stop("complete");
@@ -154,20 +161,31 @@ async function handleChallenge(
 
       try {
         recordPvpResult(winnerId, loserId, challenger.id, opponent.id);
+        logger.info({ challengeId, winnerId, loserId }, "[rps] PvP complete");
       } catch (err) {
         logger.error({ err }, "[fun/rps] failed to record PvP result");
       }
 
-      await challengeMessage.edit({
-        content: [
-          `⚔️ **Rock Paper Scissors Result!**`,
-          ``,
-          `${EMOJI[challengerChoice]} ${challenger} vs ${opponent} ${EMOJI[opponentChoice]}`,
-          ``,
-          resultText,
-        ].join("\n"),
-        components: [buildChoiceButtons(challengeId, true)],
-      });
+      try {
+        await challengeMessage.edit({
+          content: [
+            `⚔️ **Rock Paper Scissors Result!**`,
+            ``,
+            `${EMOJI[challengerChoice]} ${challenger} vs ${opponent} ${EMOJI[opponentChoice]}`,
+            ``,
+            resultText,
+          ].join("\n"),
+          components: [buildChoiceButtons(challengeId, true)],
+        });
+      } catch (err) {
+        if (isKnownInteractionError(err)) {
+          logKnownInteractionError(err, "rps.challengeMessage.edit", {
+            challengeId,
+          });
+        } else {
+          throw err;
+        }
+      }
     } else {
       const challengerChose = choices.has(challenger.id);
       const opponentChose = choices.has(opponent.id);
@@ -181,10 +199,21 @@ async function handleChallenge(
         timeoutText = `${opponent} didn't make a choice in time.`;
       }
 
-      await challengeMessage.edit({
-        content: `⏱️ **Challenge timed out!**\n\n${timeoutText}`,
-        components: [buildChoiceButtons(challengeId, true)],
-      });
+      try {
+        await challengeMessage.edit({
+          content: `⏱️ **Challenge timed out!**\n\n${timeoutText}`,
+          components: [buildChoiceButtons(challengeId, true)],
+        });
+        logger.warn({ challengeId }, "[rps] challenge timed out");
+      } catch (err) {
+        if (isKnownInteractionError(err)) {
+          logKnownInteractionError(err, "rps.challengeMessage.timeout", {
+            challengeId,
+          });
+        } else {
+          throw err;
+        }
+      }
     }
   });
 }
@@ -247,6 +276,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
   }
 
   const choice = choiceInput.toLowerCase();
+  const userId = interaction.user.id;
 
   if (!CHOICES.includes(choice as Choice)) {
     await interaction.editReply("Invalid choice! Pick `rock`, `paper`, or `scissors`.");
@@ -259,7 +289,9 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
     const botChoice = getBotChoice();
     const result = getResult(playerChoice, botChoice);
 
-    recordSoloResult(interaction.user.id, result);
+    logger.info({ userId, result }, "[rps] solo game");
+
+    recordSoloResult(userId, result);
 
     const lines: string[] = [];
     lines.push(`${EMOJI[playerChoice]} **You** vs **Bot** ${EMOJI[botChoice]}`);
@@ -268,7 +300,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
 
     await interaction.editReply(lines.join("\n"));
   } catch (err) {
-    logger.error({ err, userId: interaction.user.id }, "[fun/rps] failed");
+    logger.error({ err, userId }, "[fun/rps] failed");
     await interaction.editReply("Something went wrong. Try again!");
   }
 }

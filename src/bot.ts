@@ -2,6 +2,7 @@
 import { initDatabase, closeDatabase } from "./services/database/db.js";
 
 import { Client, GatewayIntentBits, Partials } from "discord.js";
+import { getDiscordErrorCode } from "./services/discord/interactionErrors.js";
 import { loadCommands, type CommandClient } from "./services/discord/commandLoader.js";
 import { handleInteraction } from "./services/discord/interactionHandler.js";
 import { pollPullRequestsOnce } from "./services/github/prPoller.js";
@@ -27,6 +28,19 @@ client.commands = new Map();
 
 initDatabase();
 logger.info("Database initialized");
+
+// Catch unhandled promise rejections (e.g. from collectors or async handlers)
+process.on("unhandledRejection", (reason, promise) => {
+  const code = getDiscordErrorCode(reason);
+  if (code === 10008 || code === 10062 || code === 40060) {
+    logger.info(
+      { reason, code },
+      "[unhandledRejection] Discord interaction error (user may see 'failed to complete')",
+    );
+  } else {
+    logger.error({ reason, promise }, "[unhandledRejection] uncaught promise rejection");
+  }
+});
 
 await loadCommands(client);
 

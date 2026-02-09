@@ -17,6 +17,7 @@ import {
   type ChatInputCommandInteraction,
 } from "discord.js";
 import { getDb } from "../../services/database/db.js";
+import { getTotalWins, getScalar, getCount } from "../../services/gameStats/gameStats.js";
 
 /* -------------------------------------------------------------------------- */
 /* Achievement Definitions                                                     */
@@ -39,20 +40,7 @@ const ACHIEVEMENTS: Achievement[] = [
     description: "Win your first game",
     emoji: "🏆",
     category: "games",
-    checkFn: (userId, db) => {
-      const tables = ["rps_stats", "ttt_stats", "blackjack_stats", "hangman_stats"];
-      for (const table of tables) {
-        try {
-          const row = db
-            .prepare(`SELECT wins FROM ${table} WHERE user_id = ?`)
-            .get(userId) as { wins: number } | undefined;
-          if (row && row.wins > 0) return true;
-        } catch {
-          /* table might not exist */
-        }
-      }
-      return false;
-    },
+    checkFn: (u, db) => getTotalWins(db, u) >= 1,
   },
   {
     id: "ten_wins",
@@ -60,21 +48,7 @@ const ACHIEVEMENTS: Achievement[] = [
     description: "Win 10 games total",
     emoji: "⭐",
     category: "games",
-    checkFn: (userId, db) => {
-      let total = 0;
-      const tables = ["rps_stats", "ttt_stats", "blackjack_stats", "hangman_stats"];
-      for (const table of tables) {
-        try {
-          const row = db
-            .prepare(`SELECT wins FROM ${table} WHERE user_id = ?`)
-            .get(userId) as { wins: number } | undefined;
-          if (row) total += row.wins;
-        } catch {
-          /* table might not exist */
-        }
-      }
-      return total >= 10;
-    },
+    checkFn: (u, db) => getTotalWins(db, u) >= 10,
   },
   {
     id: "fifty_wins",
@@ -82,21 +56,7 @@ const ACHIEVEMENTS: Achievement[] = [
     description: "Win 50 games total",
     emoji: "🥇",
     category: "games",
-    checkFn: (userId, db) => {
-      let total = 0;
-      const tables = ["rps_stats", "ttt_stats", "blackjack_stats", "hangman_stats"];
-      for (const table of tables) {
-        try {
-          const row = db
-            .prepare(`SELECT wins FROM ${table} WHERE user_id = ?`)
-            .get(userId) as { wins: number } | undefined;
-          if (row) total += row.wins;
-        } catch {
-          /* table might not exist */
-        }
-      }
-      return total >= 50;
-    },
+    checkFn: (u, db) => getTotalWins(db, u) >= 50,
   },
   {
     id: "blackjack_natural",
@@ -104,16 +64,7 @@ const ACHIEVEMENTS: Achievement[] = [
     description: "Get a blackjack (natural 21)",
     emoji: "🃏",
     category: "games",
-    checkFn: (userId, db) => {
-      try {
-        const row = db
-          .prepare(`SELECT blackjacks FROM blackjack_stats WHERE user_id = ?`)
-          .get(userId) as { blackjacks: number } | undefined;
-        return (row?.blackjacks ?? 0) >= 1;
-      } catch {
-        return false;
-      }
-    },
+    checkFn: (u, db) => getScalar(db, u, "blackjack_stats", "blackjacks") >= 1,
   },
   {
     id: "wordle_streak_7",
@@ -121,156 +72,7 @@ const ACHIEVEMENTS: Achievement[] = [
     description: "Get a 7-day Wordle streak",
     emoji: "🟩",
     category: "games",
-    checkFn: (userId, db) => {
-      try {
-        const row = db
-          .prepare(`SELECT max_streak FROM wordle_stats WHERE user_id = ?`)
-          .get(userId) as { max_streak: number } | undefined;
-        return (row?.max_streak ?? 0) >= 7;
-      } catch {
-        return false;
-      }
-    },
-  },
-
-  // Luck
-  {
-    id: "jackpot",
-    name: "Jackpot!",
-    description: "Hit a slot machine jackpot",
-    emoji: "💎",
-    category: "luck",
-    checkFn: (userId, db) => {
-      try {
-        const row = db
-          .prepare(`SELECT jackpots FROM slots_stats WHERE user_id = ?`)
-          .get(userId) as { jackpots: number } | undefined;
-        return (row?.jackpots ?? 0) >= 1;
-      } catch {
-        return false;
-      }
-    },
-  },
-  {
-    id: "lucky_streak",
-    name: "Lucky Streak",
-    description: "Win slots 5 times",
-    emoji: "🎰",
-    category: "luck",
-    checkFn: (userId, db) => {
-      try {
-        const row = db
-          .prepare(`SELECT wins FROM slots_stats WHERE user_id = ?`)
-          .get(userId) as { wins: number } | undefined;
-        return (row?.wins ?? 0) >= 5;
-      } catch {
-        return false;
-      }
-    },
-  },
-  {
-    id: "coin_master",
-    name: "Coin Master",
-    description: "Flip 100 coins",
-    emoji: "🪙",
-    category: "luck",
-    checkFn: (userId, db) => {
-      try {
-        const row = db
-          .prepare(`SELECT COUNT(*) as count FROM coin_flips WHERE user_id = ?`)
-          .get(userId) as { count: number };
-        return row.count >= 100;
-      } catch {
-        return false;
-      }
-    },
-  },
-
-  // Dedication
-  {
-    id: "daily_7",
-    name: "Week Warrior",
-    description: "Get a 7-day daily check-in streak",
-    emoji: "📅",
-    category: "dedication",
-    checkFn: (userId, db) => {
-      try {
-        const row = db
-          .prepare(`SELECT best_streak FROM daily_checkins WHERE user_id = ?`)
-          .get(userId) as { best_streak: number } | undefined;
-        return (row?.best_streak ?? 0) >= 7;
-      } catch {
-        return false;
-      }
-    },
-  },
-  {
-    id: "daily_30",
-    name: "Month Master",
-    description: "Get a 30-day daily check-in streak",
-    emoji: "🔥",
-    category: "dedication",
-    checkFn: (userId, db) => {
-      try {
-        const row = db
-          .prepare(`SELECT best_streak FROM daily_checkins WHERE user_id = ?`)
-          .get(userId) as { best_streak: number } | undefined;
-        return (row?.best_streak ?? 0) >= 30;
-      } catch {
-        return false;
-      }
-    },
-  },
-  {
-    id: "trivia_master",
-    name: "Trivia Master",
-    description: "Answer 50 trivia questions correctly",
-    emoji: "🧠",
-    category: "dedication",
-    checkFn: (userId, db) => {
-      try {
-        const row = db
-          .prepare(`SELECT correct FROM trivia_stats WHERE user_id = ?`)
-          .get(userId) as { correct: number } | undefined;
-        return (row?.correct ?? 0) >= 50;
-      } catch {
-        return false;
-      }
-    },
-  },
-  {
-    id: "trivia_streak",
-    name: "On Fire",
-    description: "Get a 10-question trivia streak",
-    emoji: "💯",
-    category: "dedication",
-    checkFn: (userId, db) => {
-      try {
-        const row = db
-          .prepare(`SELECT best_streak FROM trivia_stats WHERE user_id = ?`)
-          .get(userId) as { best_streak: number } | undefined;
-        return (row?.best_streak ?? 0) >= 10;
-      } catch {
-        return false;
-      }
-    },
-  },
-  {
-    id: "high_roller",
-    name: "High Roller",
-    description: "Spin the slots 100 times",
-    emoji: "🎲",
-    category: "luck",
-    checkFn: (userId, db) => {
-      try {
-        const row = db
-          .prepare(`SELECT spins FROM slots_stats WHERE user_id = ?`)
-          .get(userId) as { spins: number } | undefined;
-        return (row?.spins ?? 0) >= 100;
-      } catch {
-        return false;
-      }
-    },
+    checkFn: (u, db) => getScalar(db, u, "wordle_stats", "max_streak") >= 7,
   },
   {
     id: "word_nerd",
@@ -278,16 +80,7 @@ const ACHIEVEMENTS: Achievement[] = [
     description: "Win 10 Wordle games",
     emoji: "📚",
     category: "games",
-    checkFn: (userId, db) => {
-      try {
-        const row = db
-          .prepare(`SELECT won FROM wordle_stats WHERE user_id = ?`)
-          .get(userId) as { won: number } | undefined;
-        return (row?.won ?? 0) >= 10;
-      } catch {
-        return false;
-      }
-    },
+    checkFn: (u, db) => getScalar(db, u, "wordle_stats", "won") >= 10,
   },
   {
     id: "hangman_hero",
@@ -295,16 +88,7 @@ const ACHIEVEMENTS: Achievement[] = [
     description: "Win 10 Hangman games",
     emoji: "🎯",
     category: "games",
-    checkFn: (userId, db) => {
-      try {
-        const row = db
-          .prepare(`SELECT wins FROM hangman_stats WHERE user_id = ?`)
-          .get(userId) as { wins: number } | undefined;
-        return (row?.wins ?? 0) >= 10;
-      } catch {
-        return false;
-      }
-    },
+    checkFn: (u, db) => getScalar(db, u, "hangman_stats", "wins") >= 10,
   },
   {
     id: "card_shark",
@@ -312,16 +96,7 @@ const ACHIEVEMENTS: Achievement[] = [
     description: "Win 25 Blackjack games",
     emoji: "🦈",
     category: "games",
-    checkFn: (userId, db) => {
-      try {
-        const row = db
-          .prepare(`SELECT wins FROM blackjack_stats WHERE user_id = ?`)
-          .get(userId) as { wins: number } | undefined;
-        return (row?.wins ?? 0) >= 25;
-      } catch {
-        return false;
-      }
-    },
+    checkFn: (u, db) => getScalar(db, u, "blackjack_stats", "wins") >= 25,
   },
   {
     id: "connect_master",
@@ -329,52 +104,90 @@ const ACHIEVEMENTS: Achievement[] = [
     description: "Win 10 Connect 4 games",
     emoji: "🔴",
     category: "games",
-    checkFn: (userId, db) => {
-      try {
-        const row = db
-          .prepare(`SELECT wins FROM connect4_stats WHERE user_id = ?`)
-          .get(userId) as { wins: number } | undefined;
-        return (row?.wins ?? 0) >= 10;
-      } catch {
-        return false;
-      }
-    },
+    checkFn: (u, db) => getScalar(db, u, "connect4_stats", "wins") >= 10,
   },
+  // Luck
+  {
+    id: "jackpot",
+    name: "Jackpot!",
+    description: "Hit a slot machine jackpot",
+    emoji: "💎",
+    category: "luck",
+    checkFn: (u, db) => getScalar(db, u, "slots_stats", "jackpots") >= 1,
+  },
+  {
+    id: "lucky_streak",
+    name: "Lucky Streak",
+    description: "Win slots 5 times",
+    emoji: "🎰",
+    category: "luck",
+    checkFn: (u, db) => getScalar(db, u, "slots_stats", "wins") >= 5,
+  },
+  {
+    id: "coin_master",
+    name: "Coin Master",
+    description: "Flip 100 coins",
+    emoji: "🪙",
+    category: "luck",
+    checkFn: (u, db) => getCount(db, "coin_flips", "user_id", u) >= 100,
+  },
+  {
+    id: "high_roller",
+    name: "High Roller",
+    description: "Spin the slots 100 times",
+    emoji: "🎲",
+    category: "luck",
+    checkFn: (u, db) => getScalar(db, u, "slots_stats", "spins") >= 100,
+  },
+  // Dedication
+  {
+    id: "daily_7",
+    name: "Week Warrior",
+    description: "Get a 7-day daily check-in streak",
+    emoji: "📅",
+    category: "dedication",
+    checkFn: (u, db) => getScalar(db, u, "daily_checkins", "best_streak") >= 7,
+  },
+  {
+    id: "daily_30",
+    name: "Month Master",
+    description: "Get a 30-day daily check-in streak",
+    emoji: "🔥",
+    category: "dedication",
+    checkFn: (u, db) => getScalar(db, u, "daily_checkins", "best_streak") >= 30,
+  },
+  {
+    id: "trivia_master",
+    name: "Trivia Master",
+    description: "Answer 50 trivia questions correctly",
+    emoji: "🧠",
+    category: "dedication",
+    checkFn: (u, db) => getScalar(db, u, "trivia_stats", "correct") >= 50,
+  },
+  {
+    id: "trivia_streak",
+    name: "On Fire",
+    description: "Get a 10-question trivia streak",
+    emoji: "💯",
+    category: "dedication",
+    checkFn: (u, db) => getScalar(db, u, "trivia_stats", "best_streak") >= 10,
+  },
+  // Social
   {
     id: "generous",
     name: "Generous",
     description: "Host 3 giveaways",
     emoji: "🎁",
     category: "social",
-    checkFn: (userId, db) => {
-      try {
-        const row = db
-          .prepare(`SELECT COUNT(*) as count FROM giveaways WHERE host_id = ?`)
-          .get(userId) as { count: number };
-        return row.count >= 3;
-      } catch {
-        return false;
-      }
-    },
+    checkFn: (u, db) => getCount(db, "giveaways", "host_id", u) >= 3,
   },
-
-  // Social
   {
     id: "quotable",
     name: "Quotable",
     description: "Have one of your quotes saved",
     emoji: "💬",
     category: "social",
-    checkFn: (userId, db) => {
-      try {
-        const row = db
-          .prepare(`SELECT COUNT(*) as count FROM quotes WHERE author_id = ?`)
-          .get(userId) as { count: number };
-        return row.count >= 1;
-      } catch {
-        return false;
-      }
-    },
+    checkFn: (u, db) => getCount(db, "quotes", "author_id", u) >= 1,
   },
 ];
 

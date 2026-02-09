@@ -26,6 +26,15 @@ The main hub for all games and fun features.
 | `/fun dice`             | Custom dice rolls                 |
 | `/fun poll`             | Create polls                      |
 
+**Rate limits** (per user, to prevent spam):
+
+- Slots: 3 seconds between spins
+- Blackjack: 5 seconds between games
+- Dice: 2 seconds between rolls
+- Hangman: 10 seconds between games
+
+Stats and leaderboard views are not rate limited.
+
 ### Stats & Daily
 
 | Command            | Description               |

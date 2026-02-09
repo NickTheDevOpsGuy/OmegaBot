@@ -45,7 +45,13 @@ type FunUsageStoreV1 = {
 export type FunUsageSnapshot = FunUsageStoreV1;
 
 const DATA_DIR = path.join(process.cwd(), "data");
-const STORE_PATH = path.join(DATA_DIR, "fun-usage.json");
+
+function getStorePath(): string {
+  if (process.env.FUN_USAGE_STORE_PATH) {
+    return process.env.FUN_USAGE_STORE_PATH;
+  }
+  return path.join(DATA_DIR, "fun-usage.json");
+}
 
 const ALL_COMMANDS: FunCommandKey[] = [
   "8ball",
@@ -92,10 +98,6 @@ function emptyStore(): FunUsageStoreV1 {
     totalsByCommand: emptyTotalsByCommand(),
     byUserByCommand: {},
   };
-}
-
-async function ensureDataDir(): Promise<void> {
-  await fs.mkdir(DATA_DIR, { recursive: true });
 }
 
 function isRecord(v: unknown): v is Record<string, unknown> {
@@ -151,7 +153,7 @@ function sanitizeByUserByCommand(
 
 async function loadStore(): Promise<FunUsageStoreV1> {
   try {
-    const raw = await fs.readFile(STORE_PATH, "utf8");
+    const raw = await fs.readFile(getStorePath(), "utf8");
     const parsed = JSON.parse(raw) as unknown;
 
     if (!isRecord(parsed)) return emptyStore();
@@ -191,8 +193,10 @@ async function loadStore(): Promise<FunUsageStoreV1> {
 }
 
 async function saveStore(store: FunUsageStoreV1): Promise<void> {
-  await ensureDataDir();
-  await fs.writeFile(STORE_PATH, JSON.stringify(store, null, 2), "utf8");
+  const storePath = getStorePath();
+  const dir = path.dirname(storePath);
+  await fs.mkdir(dir, { recursive: true });
+  await fs.writeFile(storePath, JSON.stringify(store, null, 2), "utf8");
 }
 
 export async function recordFunUsage(args: {

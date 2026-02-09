@@ -6,15 +6,14 @@ import { logger } from "../../utils/logger.js";
 import type { CommandClient } from "./commandLoader.js";
 import type { CommandModule } from "./commandTypes.js";
 import { handleGiveawayButton } from "../../commands/giveaway/giveaway.js";
+import {
+  getDiscordErrorCode,
+  isKnownInteractionError,
+  logKnownInteractionError,
+} from "./interactionErrors.js";
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return !!v && typeof v === "object";
-}
-
-function getDiscordErrorCode(err: unknown): number | null {
-  if (!isRecord(err)) return null;
-  const code = err["code"];
-  return typeof code === "number" ? code : null;
 }
 
 function getDiscordErrorMessage(err: unknown): string | null {
@@ -25,21 +24,6 @@ function getDiscordErrorMessage(err: unknown): string | null {
     return typeof msg === "string" ? msg : null;
   }
   return null;
-}
-
-function isDiscordUnknownInteraction(err: unknown): boolean {
-  // 10062: Unknown interaction
-  return getDiscordErrorCode(err) === 10062;
-}
-
-function isDiscordAlreadyAcknowledged(err: unknown): boolean {
-  // 40060: Interaction has already been acknowledged
-  return getDiscordErrorCode(err) === 40060;
-}
-
-function isDiscordUnknownMessage(err: unknown): boolean {
-  // 10008: Unknown message (e.g. ephemeral was dismissed before editReply)
-  return getDiscordErrorCode(err) === 10008;
 }
 
 function isCommandModule(cmd: unknown): cmd is CommandModule {
@@ -96,16 +80,10 @@ async function safeRepliableReply(
       });
     }
   } catch (err) {
-    // Kill the log-spam classics (expired interaction, already acked, or message dismissed)
-    if (
-      isDiscordUnknownInteraction(err) ||
-      isDiscordAlreadyAcknowledged(err) ||
-      isDiscordUnknownMessage(err)
-    ) {
-      logger.debug(
-        { err, interactionId: interaction.id },
-        "[interaction] reply skipped (expired/acknowledged/message gone)",
-      );
+    if (isKnownInteractionError(err)) {
+      logKnownInteractionError(err, "safeRepliableReply", {
+        interactionId: interaction.id,
+      });
       return;
     }
     logger.warn({ err, interactionId: interaction.id }, "[interaction] failed to reply");
@@ -207,16 +185,8 @@ export async function handleInteraction(
 
     await command.execute(interaction);
   } catch (err) {
-    // Drop noisy cases to debug so logs stay useful
-    if (
-      isDiscordUnknownInteraction(err) ||
-      isDiscordAlreadyAcknowledged(err) ||
-      isDiscordUnknownMessage(err)
-    ) {
-      logger.debug(
-        { ...meta, err },
-        "[interaction] skipped (expired/acknowledged/message gone)",
-      );
+    if (isKnownInteractionError(err)) {
+      logKnownInteractionError(err, "command.execute", meta);
       return;
     }
 

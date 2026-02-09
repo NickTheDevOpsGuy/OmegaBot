@@ -1,5 +1,6 @@
 // src/commands/fun/subcommands/fact.ts
 import { EmbedBuilder, type ChatInputCommandInteraction } from "discord.js";
+import { logger } from "../../../utils/logger.js";
 
 const FACTS = [
   // Animals
@@ -120,13 +121,21 @@ function pick<T>(arr: T[]): T {
 }
 
 export async function run(interaction: ChatInputCommandInteraction): Promise<void> {
-  const fact = pick(FACTS);
+  const userId = interaction.user.id;
+  logger.info({ userId }, "[fact] command");
 
-  const embed = new EmbedBuilder()
-    .setTitle("💡 Did You Know?")
-    .setDescription(fact)
-    .setColor(0x5865f2)
-    .setFooter({ text: "Use /fun fact for another random fact!" });
+  try {
+    const fact = pick(FACTS);
 
-  await interaction.editReply({ embeds: [embed] });
+    const embed = new EmbedBuilder()
+      .setTitle("💡 Did You Know?")
+      .setDescription(fact)
+      .setColor(0x5865f2)
+      .setFooter({ text: "Use /fun fact for another random fact!" });
+
+    await interaction.editReply({ embeds: [embed] });
+  } catch (err) {
+    logger.error({ err, userId }, "[fact] failed");
+    await interaction.editReply("Something went wrong fetching a fact. Try again.");
+  }
 }

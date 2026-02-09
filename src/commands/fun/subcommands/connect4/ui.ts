@@ -4,7 +4,7 @@
 
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
 import type { Cell } from "./gameLogic.js";
-import { ROWS, COLS } from "./gameLogic.js";
+import { ROWS } from "./gameLogic.js";
 
 export const EMOJI = {
   empty: "⚫",

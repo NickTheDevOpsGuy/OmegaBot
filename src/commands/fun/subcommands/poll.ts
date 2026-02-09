@@ -118,6 +118,11 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
     options: opts.map((o: PollOption) => o.label),
   });
 
+  logger.info(
+    { messageId, userId: interaction.user.id, question: question.slice(0, 50) },
+    "[poll] created",
+  );
+
   let latestPoll: StoredPoll = poll;
 
   await interaction.editReply({

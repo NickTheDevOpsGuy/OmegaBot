@@ -6,6 +6,14 @@ import {
   type User,
 } from "discord.js";
 import { logger } from "../../../utils/logger.js";
+import {
+  isKnownInteractionError,
+  logKnownInteractionError,
+} from "../../../services/discord/interactionErrors.js";
+import {
+  safeReplyToButton,
+  safeMessageEdit,
+} from "../../../services/discord/safeReply.js";
 
 import {
   createEmptyBoard,
@@ -19,21 +27,15 @@ import { buildBoardButtons } from "./tictactoe/ui.js";
 import { getStats, recordResult, getH2HStats } from "./tictactoeStore.js";
 
 const MOVE_TIMEOUT_MS = 60_000; // 60 seconds per move
-
-function isUnknownMessageError(err: unknown): boolean {
-  return (
-    typeof err === "object" &&
-    err !== null &&
-    "code" in err &&
-    (err as { code: number }).code === 10008
-  );
-}
+const WARNING_BEFORE_MS = 15_000; // Remind 15s before timeout
 
 async function playVsBot(interaction: ChatInputCommandInteraction): Promise<void> {
   const gameId = `${Date.now()}-${interaction.user.id}`;
   const board = createEmptyBoard();
   const playerSymbol: CellValue = "X";
   const botSymbol: CellValue = "O";
+
+  logger.info({ gameId, userId: interaction.user.id }, "[tictactoe] vsBot started");
 
   const message = await interaction.editReply({
     content: `🎮 **Tic Tac Toe** — You (❌) vs Bot (⭕)\n\nYour turn! Click a square.`,
@@ -48,79 +50,80 @@ async function playVsBot(interaction: ChatInputCommandInteraction): Promise<void
   });
 
   collector.on("collect", async (buttonInteraction: ButtonInteraction) => {
-    const [, , rowStr, colStr] = buttonInteraction.customId.split(":");
-    const row = parseInt(rowStr, 10);
-    const col = parseInt(colStr, 10);
+    try {
+      const [, , rowStr, colStr] = buttonInteraction.customId.split(":");
+      const row = parseInt(rowStr, 10);
+      const col = parseInt(colStr, 10);
 
-    // Player move
-    board[row][col] = playerSymbol;
+      board[row][col] = playerSymbol;
 
-    // Check for player win
-    let winner = checkWinner(board);
-    if (winner === playerSymbol) {
-      const winningCells = getWinningCells(board);
-      collector.stop("player_win");
+      let winner = checkWinner(board);
+      if (winner === playerSymbol) {
+        const winningCells = getWinningCells(board);
+        collector.stop("player_win");
+        await buttonInteraction.update({
+          content: `🎮 **Tic Tac Toe** — You (❌) vs Bot (⭕)\n\n🎉 **You win!**`,
+          components: buildBoardButtons(gameId, board, true, winningCells),
+        });
+        return;
+      }
+
+      if (isBoardFull(board)) {
+        collector.stop("tie");
+        await buttonInteraction.update({
+          content: `🎮 **Tic Tac Toe** — You (❌) vs Bot (⭕)\n\n🤝 **It's a tie!**`,
+          components: buildBoardButtons(gameId, board, true),
+        });
+        return;
+      }
+
+      const [botRow, botCol] = getBotMove(board);
+      board[botRow][botCol] = botSymbol;
+
+      winner = checkWinner(board);
+      if (winner === botSymbol) {
+        const winningCells = getWinningCells(board);
+        collector.stop("bot_win");
+        await buttonInteraction.update({
+          content: `🎮 **Tic Tac Toe** — You (❌) vs Bot (⭕)\n\n😢 **Bot wins!**`,
+          components: buildBoardButtons(gameId, board, true, winningCells),
+        });
+        return;
+      }
+
+      if (isBoardFull(board)) {
+        collector.stop("tie");
+        await buttonInteraction.update({
+          content: `🎮 **Tic Tac Toe** — You (❌) vs Bot (⭕)\n\n🤝 **It's a tie!**`,
+          components: buildBoardButtons(gameId, board, true),
+        });
+        return;
+      }
+
       await buttonInteraction.update({
-        content: `🎮 **Tic Tac Toe** — You (❌) vs Bot (⭕)\n\n🎉 **You win!**`,
-        components: buildBoardButtons(gameId, board, true, winningCells),
+        content: `🎮 **Tic Tac Toe** — You (❌) vs Bot (⭕)\n\nYour turn! Click a square.`,
+        components: buildBoardButtons(gameId, board),
       });
-      return;
+    } catch (err) {
+      if (isKnownInteractionError(err)) {
+        logKnownInteractionError(err, "tictactoe.vsBot.collect", { gameId });
+      } else {
+        logger.warn({ err, gameId }, "[tictactoe] vsBot collect failed");
+      }
     }
-
-    // Check for tie
-    if (isBoardFull(board)) {
-      collector.stop("tie");
-      await buttonInteraction.update({
-        content: `🎮 **Tic Tac Toe** — You (❌) vs Bot (⭕)\n\n🤝 **It's a tie!**`,
-        components: buildBoardButtons(gameId, board, true),
-      });
-      return;
-    }
-
-    // Bot move
-    const [botRow, botCol] = getBotMove(board);
-    board[botRow][botCol] = botSymbol;
-
-    // Check for bot win
-    winner = checkWinner(board);
-    if (winner === botSymbol) {
-      const winningCells = getWinningCells(board);
-      collector.stop("bot_win");
-      await buttonInteraction.update({
-        content: `🎮 **Tic Tac Toe** — You (❌) vs Bot (⭕)\n\n😢 **Bot wins!**`,
-        components: buildBoardButtons(gameId, board, true, winningCells),
-      });
-      return;
-    }
-
-    // Check for tie after bot move
-    if (isBoardFull(board)) {
-      collector.stop("tie");
-      await buttonInteraction.update({
-        content: `🎮 **Tic Tac Toe** — You (❌) vs Bot (⭕)\n\n🤝 **It's a tie!**`,
-        components: buildBoardButtons(gameId, board, true),
-      });
-      return;
-    }
-
-    // Continue game
-    await buttonInteraction.update({
-      content: `🎮 **Tic Tac Toe** — You (❌) vs Bot (⭕)\n\nYour turn! Click a square.`,
-      components: buildBoardButtons(gameId, board),
-    });
   });
 
   collector.on("end", async (_, reason) => {
     if (reason === "time") {
-      try {
-        await message.edit({
+      logger.warn({ gameId, userId: interaction.user.id }, "[tictactoe] vsBot timed out");
+      await safeMessageEdit(
+        message,
+        {
           content: `🎮 **Tic Tac Toe** — You (❌) vs Bot (⭕)\n\n⏱️ **Game timed out!**`,
           components: buildBoardButtons(gameId, board, true),
-        });
-      } catch (err) {
-        if (isUnknownMessageError(err)) return;
-        throw err;
-      }
+        },
+        "tictactoe.vsBot.timeout",
+      );
     }
   });
 }
@@ -145,6 +148,11 @@ async function playVsPlayer(
 
   const gameId = `${Date.now()}-${challenger.id}-${opponent.id}`;
   const board = createEmptyBoard();
+
+  logger.info(
+    { gameId, challengerId: challenger.id, opponentId: opponent.id },
+    "[tictactoe] vsPlayer started",
+  );
 
   // Randomly decide who goes first
   const xPlayer = Math.random() < 0.5 ? challenger : opponent;
@@ -176,91 +184,120 @@ async function playVsPlayer(
     filter: (i) => i.customId.startsWith(`ttt:${gameId}:`),
   });
 
+  let warningTimer: ReturnType<typeof setTimeout> | null = null;
+  const scheduleWarning = () => {
+    if (warningTimer) clearTimeout(warningTimer);
+    warningTimer = setTimeout(() => {
+      const nextSymbol = currentPlayer.id === xPlayer.id ? "❌" : "⭕";
+      void safeMessageEdit(
+        message,
+        {
+          content: [
+            `🎮 **Tic Tac Toe**`,
+            `❌ ${xPlayer} vs ⭕ ${oPlayer}`,
+            ``,
+            `⏱️ **15 seconds left!** ${currentPlayer}'s turn (${nextSymbol})`,
+            `⏱️ 60 seconds per move`,
+          ].join("\n"),
+          components: buildBoardButtons(gameId, board),
+        },
+        "tictactoe.warning",
+      );
+    }, MOVE_TIMEOUT_MS - WARNING_BEFORE_MS);
+  };
+  scheduleWarning();
+
   collector.on("collect", async (buttonInteraction: ButtonInteraction) => {
-    // Only current player can move
-    if (buttonInteraction.user.id !== currentPlayer.id) {
-      await buttonInteraction.reply({
-        content: "It's not your turn!",
-        ephemeral: true,
-      });
-      return;
-    }
-
-    const [, , rowStr, colStr] = buttonInteraction.customId.split(":");
-    const row = parseInt(rowStr, 10);
-    const col = parseInt(colStr, 10);
-
-    const symbol: CellValue = currentPlayer.id === xPlayer.id ? "X" : "O";
-    board[row][col] = symbol;
-
-    // Check for win
-    const winner = checkWinner(board);
-    if (winner) {
-      const winningCells = getWinningCells(board);
-      const winnerUser = winner === "X" ? xPlayer : oPlayer;
-      const loserUser = winner === "X" ? oPlayer : xPlayer;
-
-      try {
-        recordResult(winnerUser.id, loserUser.id, challenger.id, opponent.id);
-      } catch (err) {
-        logger.error({ err }, "[fun/tictactoe] failed to record result");
+    try {
+      if (buttonInteraction.user.id !== currentPlayer.id) {
+        await safeReplyToButton(buttonInteraction, "It's not your turn!");
+        return;
       }
 
-      collector.stop("win");
+      const [, , rowStr, colStr] = buttonInteraction.customId.split(":");
+      const row = parseInt(rowStr, 10);
+      const col = parseInt(colStr, 10);
+
+      const symbol: CellValue = currentPlayer.id === xPlayer.id ? "X" : "O";
+      board[row][col] = symbol;
+
+      const winner = checkWinner(board);
+      if (winner) {
+        const winningCells = getWinningCells(board);
+        const winnerUser = winner === "X" ? xPlayer : oPlayer;
+        const loserUser = winner === "X" ? oPlayer : xPlayer;
+
+        try {
+          recordResult(winnerUser.id, loserUser.id, challenger.id, opponent.id);
+        } catch (err) {
+          logger.error({ err }, "[fun/tictactoe] failed to record result");
+        }
+
+        collector.stop("win");
+        await buttonInteraction.update({
+          content: [
+            `🎮 **Tic Tac Toe**`,
+            `❌ ${xPlayer} vs ⭕ ${oPlayer}`,
+            ``,
+            `🎉 **${winnerUser} wins!**`,
+          ].join("\n"),
+          components: buildBoardButtons(gameId, board, true, winningCells),
+        });
+        return;
+      }
+
+      if (isBoardFull(board)) {
+        try {
+          recordResult(null, null, challenger.id, opponent.id);
+        } catch (err) {
+          logger.error({ err }, "[fun/tictactoe] failed to record tie");
+        }
+
+        collector.stop("tie");
+        await buttonInteraction.update({
+          content: [
+            `🎮 **Tic Tac Toe**`,
+            `❌ ${xPlayer} vs ⭕ ${oPlayer}`,
+            ``,
+            `🤝 **It's a tie!**`,
+          ].join("\n"),
+          components: buildBoardButtons(gameId, board, true),
+        });
+        return;
+      }
+
+      currentPlayer = currentPlayer.id === xPlayer.id ? oPlayer : xPlayer;
+      const nextSymbol = currentPlayer.id === xPlayer.id ? "❌" : "⭕";
+
+      collector.resetTimer();
+      scheduleWarning();
+
       await buttonInteraction.update({
         content: [
           `🎮 **Tic Tac Toe**`,
           `❌ ${xPlayer} vs ⭕ ${oPlayer}`,
           ``,
-          `🎉 **${winnerUser} wins!**`,
+          `${currentPlayer}'s turn (${nextSymbol})`,
+          `⏱️ 60 seconds per move`,
         ].join("\n"),
-        components: buildBoardButtons(gameId, board, true, winningCells),
+        components: buildBoardButtons(gameId, board),
       });
-      return;
-    }
-
-    // Check for tie
-    if (isBoardFull(board)) {
-      try {
-        recordResult(null, null, challenger.id, opponent.id);
-      } catch (err) {
-        logger.error({ err }, "[fun/tictactoe] failed to record tie");
+    } catch (err) {
+      if (isKnownInteractionError(err)) {
+        logKnownInteractionError(err, "tictactoe.vsPlayer.collect", { gameId });
+      } else {
+        logger.warn({ err, gameId }, "[tictactoe] vsPlayer collect failed");
       }
-
-      collector.stop("tie");
-      await buttonInteraction.update({
-        content: [
-          `🎮 **Tic Tac Toe**`,
-          `❌ ${xPlayer} vs ⭕ ${oPlayer}`,
-          ``,
-          `🤝 **It's a tie!**`,
-        ].join("\n"),
-        components: buildBoardButtons(gameId, board, true),
-      });
-      return;
     }
-
-    // Switch turns
-    currentPlayer = currentPlayer.id === xPlayer.id ? oPlayer : xPlayer;
-    const nextSymbol = currentPlayer.id === xPlayer.id ? "❌" : "⭕";
-
-    // Reset timeout
-    collector.resetTimer();
-
-    await buttonInteraction.update({
-      content: [
-        `🎮 **Tic Tac Toe**`,
-        `❌ ${xPlayer} vs ⭕ ${oPlayer}`,
-        ``,
-        `${currentPlayer}'s turn (${nextSymbol})`,
-        `⏱️ 60 seconds per move`,
-      ].join("\n"),
-      components: buildBoardButtons(gameId, board),
-    });
   });
 
   collector.on("end", async (_, reason) => {
+    if (warningTimer) clearTimeout(warningTimer);
     if (reason === "time") {
+      logger.warn(
+        { gameId, timeoutLoserId: currentPlayer.id },
+        "[tictactoe] vsPlayer timed out",
+      );
       const timeoutLoser = currentPlayer;
       const timeoutWinner = currentPlayer.id === xPlayer.id ? oPlayer : xPlayer;
 
@@ -270,8 +307,9 @@ async function playVsPlayer(
         logger.error({ err }, "[fun/tictactoe] failed to record timeout result");
       }
 
-      try {
-        await message.edit({
+      await safeMessageEdit(
+        message,
+        {
           content: [
             `🎮 **Tic Tac Toe**`,
             `❌ ${xPlayer} vs ⭕ ${oPlayer}`,
@@ -280,11 +318,9 @@ async function playVsPlayer(
             `🎉 **${timeoutWinner} wins by timeout!**`,
           ].join("\n"),
           components: buildBoardButtons(gameId, board, true),
-        });
-      } catch (err) {
-        if (isUnknownMessageError(err)) return;
-        throw err;
-      }
+        },
+        "tictactoe.vsPlayer.timeout",
+      );
     }
   });
 }

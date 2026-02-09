@@ -15,7 +15,6 @@
 
 import {
   ActionRowBuilder,
-  ButtonBuilder,
   ModalBuilder,
   TextInputBuilder,
   TextInputStyle,
@@ -32,6 +31,7 @@ import {
 } from "./wordleStore.js";
 import { getTodayWord } from "./wordle/gameLogic.js";
 import { buildGameMessage, buildGuessButton } from "./wordle/ui.js";
+import { safeMessageEdit } from "../../../services/discord/safeReply.js";
 
 /* -------------------------------------------------------------------------- */
 /* Command Handler                                                             */
@@ -85,7 +85,10 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
   }
 
   const gameId = `${Date.now()}-${interaction.user.id}`;
+  const userId = interaction.user.id;
   const guesses: string[] = existingGame?.guesses ?? [];
+
+  logger.info({ gameId, userId }, "[wordle] game started");
 
   const message = await interaction.editReply({
     content: buildGameMessage(guesses, word, "playing"),
@@ -141,7 +144,11 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
 
       if (won || lost) {
         collector.stop(won ? "won" : "lost");
-        saveGame(interaction.user.id, guesses, won, word);
+        saveGame(userId, guesses, won, word);
+        logger.info(
+          { gameId, userId, won, guesses: guesses.length },
+          "[wordle] game ended",
+        );
 
         await modalSubmit.deferUpdate();
         await interaction.editReply({
@@ -151,7 +158,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
         return;
       }
 
-      saveGame(interaction.user.id, guesses, false, word);
+      saveGame(userId, guesses, false, word);
 
       await modalSubmit.deferUpdate();
       await interaction.editReply({
@@ -165,16 +172,17 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
 
   collector.on("end", async (_, reason) => {
     if (reason === "time" && guesses.length < MAX_GUESSES) {
-      try {
-        await message.edit({
+      logger.warn({ gameId, userId }, "[wordle] session expired");
+      await safeMessageEdit(
+        message,
+        {
           content:
             buildGameMessage(guesses, word, "playing") +
             "\n\n⏱️ *Session expired. Use `/fun wordle` to continue.*",
           components: [buildGuessButton(gameId, true)],
-        });
-      } catch (err) {
-        logger.debug({ err }, "[wordle] failed to update on timeout");
-      }
+        },
+        "wordle.timeout",
+      );
     }
   });
 }

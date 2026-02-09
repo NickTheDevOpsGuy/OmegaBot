@@ -12,7 +12,12 @@
 // Stats are persisted to slots_stats table.
 
 import { EmbedBuilder, type ChatInputCommandInteraction } from "discord.js";
+import { logger } from "../../../utils/logger.js";
 import { getDb } from "../../../services/database/db.js";
+import {
+  checkSlotsCooldown,
+  recordSlotsSpin,
+} from "../../../services/discord/rateLimit.js";
 
 // Symbols with weights (higher = more common)
 const SYMBOLS = [
@@ -194,9 +199,31 @@ function calculatePayout(reels: Array<(typeof SYMBOLS)[number]>): {
 /* -------------------------------------------------------------------------- */
 
 export async function run(interaction: ChatInputCommandInteraction): Promise<void> {
+  try {
+    return await runSlots(interaction);
+  } catch (err) {
+    logger.error({ err, userId: interaction.user.id }, "[slots] handler failed");
+    await interaction
+      .editReply("Something went wrong with slots. Try again.")
+      .catch(() => {});
+  }
+}
+
+async function runSlots(interaction: ChatInputCommandInteraction): Promise<void> {
   const showStatsFlag = interaction.options.getBoolean("stats") ?? false;
   const showLeaderboard = interaction.options.getBoolean("leaderboard") ?? false;
   const showPaytable = interaction.options.getBoolean("paytable") ?? false;
+
+  // Rate limit spins only (not stats/leaderboard/paytable)
+  if (!showStatsFlag && !showLeaderboard && !showPaytable) {
+    const remaining = checkSlotsCooldown(interaction.user.id);
+    if (remaining > 0) {
+      await interaction.editReply(
+        `⏱️ Slow down! Try again in **${Math.ceil(remaining / 1000)}** seconds.`,
+      );
+      return;
+    }
+  }
 
   if (showPaytable) {
     const paytableLines = SYMBOLS.map(
@@ -254,12 +281,16 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
   }
 
   // Spin the reels!
+  const userId = interaction.user.id;
   const reels = [spinReel(), spinReel(), spinReel()];
   const { payout, type } = calculatePayout(reels);
   const isWin = payout > 0;
   const isJackpot = payout >= 100;
 
-  recordSpin(interaction.user.id, isWin, isJackpot, payout);
+  logger.info({ userId, payout, isJackpot }, "[slots] spin");
+
+  recordSpin(userId, isWin, isJackpot, payout);
+  recordSlotsSpin(userId);
 
   const reelDisplay = reels.map((r) => r.emoji).join(" | ");
 
@@ -288,5 +319,10 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
 
   embed.setFooter({ text: "Use /fun slots stats to see your record" });
 
-  await interaction.editReply({ embeds: [embed] });
+  try {
+    await interaction.editReply({ embeds: [embed] });
+  } catch (err) {
+    logger.error({ err, userId }, "[slots] failed to reply");
+    throw err;
+  }
 }
