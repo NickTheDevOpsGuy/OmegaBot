@@ -105,7 +105,10 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       // Only the game starter (p1) can extend time
       if (btn.customId === `c4:extend:${gameId}`) {
         if (btn.user.id !== p1.id) {
-          await safeReplyToButton(btn, "Only the person who started the game can extend time.");
+          await safeReplyToButton(
+            btn,
+            "Only the person who started the game can extend time.",
+          );
           return;
         }
         collector.resetTimer();

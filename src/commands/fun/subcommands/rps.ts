@@ -28,11 +28,7 @@ import {
   getResultText,
   type Choice,
 } from "./rps/gameLogic.js";
-import {
-  buildChoiceButtons,
-  buildDeclineButton,
-  buildExtendButton,
-} from "./rps/ui.js";
+import { buildChoiceButtons, buildDeclineButton, buildExtendButton } from "./rps/ui.js";
 
 const CHALLENGE_TIMEOUT_MS = 3_600_000; // 1 hour
 
@@ -107,11 +103,17 @@ async function handleChallenge(
       return;
     }
 
-    const action = buttonInteraction.customId.split(":")[2] as Choice | "decline" | "extend";
+    const action = buttonInteraction.customId.split(":")[2] as
+      | Choice
+      | "decline"
+      | "extend";
 
     if (action === "extend") {
       if (playerId !== challenger.id) {
-        await safeReplyToButton(buttonInteraction, "Only the person who started the challenge can extend time.");
+        await safeReplyToButton(
+          buttonInteraction,
+          "Only the person who started the challenge can extend time.",
+        );
         return;
       }
       collector.resetTimer();

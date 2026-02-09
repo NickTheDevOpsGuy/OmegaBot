@@ -56,8 +56,7 @@ async function playVsBot(interaction: ChatInputCommandInteraction): Promise<void
         collector.resetTimer();
         await buttonInteraction.deferUpdate();
         await message.edit({
-          content:
-            `🎮 **Tic Tac Toe** — You (❌) vs Bot (⭕)\n\nYour turn! Click a square.\n\n⏱️ *Time extended!*`,
+          content: `🎮 **Tic Tac Toe** — You (❌) vs Bot (⭕)\n\nYour turn! Click a square.\n\n⏱️ *Time extended!*`,
           components: [...buildBoardButtons(gameId, board), buildExtendRow(gameId)],
         });
         return;
@@ -75,7 +74,10 @@ async function playVsBot(interaction: ChatInputCommandInteraction): Promise<void
         collector.stop("player_win");
         await buttonInteraction.update({
           content: `🎮 **Tic Tac Toe** — You (❌) vs Bot (⭕)\n\n🎉 **You win!**`,
-          components: [...buildBoardButtons(gameId, board, true, winningCells), buildExtendRow(gameId, true)],
+          components: [
+            ...buildBoardButtons(gameId, board, true, winningCells),
+            buildExtendRow(gameId, true),
+          ],
         });
         return;
       }
@@ -84,7 +86,10 @@ async function playVsBot(interaction: ChatInputCommandInteraction): Promise<void
         collector.stop("tie");
         await buttonInteraction.update({
           content: `🎮 **Tic Tac Toe** — You (❌) vs Bot (⭕)\n\n🤝 **It's a tie!**`,
-          components: [...buildBoardButtons(gameId, board, true), buildExtendRow(gameId, true)],
+          components: [
+            ...buildBoardButtons(gameId, board, true),
+            buildExtendRow(gameId, true),
+          ],
         });
         return;
       }
@@ -98,7 +103,10 @@ async function playVsBot(interaction: ChatInputCommandInteraction): Promise<void
         collector.stop("bot_win");
         await buttonInteraction.update({
           content: `🎮 **Tic Tac Toe** — You (❌) vs Bot (⭕)\n\n😢 **Bot wins!**`,
-          components: [...buildBoardButtons(gameId, board, true, winningCells), buildExtendRow(gameId, true)],
+          components: [
+            ...buildBoardButtons(gameId, board, true, winningCells),
+            buildExtendRow(gameId, true),
+          ],
         });
         return;
       }
@@ -107,7 +115,10 @@ async function playVsBot(interaction: ChatInputCommandInteraction): Promise<void
         collector.stop("tie");
         await buttonInteraction.update({
           content: `🎮 **Tic Tac Toe** — You (❌) vs Bot (⭕)\n\n🤝 **It's a tie!**`,
-          components: [...buildBoardButtons(gameId, board, true), buildExtendRow(gameId, true)],
+          components: [
+            ...buildBoardButtons(gameId, board, true),
+            buildExtendRow(gameId, true),
+          ],
         });
         return;
       }
@@ -132,7 +143,10 @@ async function playVsBot(interaction: ChatInputCommandInteraction): Promise<void
         message,
         {
           content: `🎮 **Tic Tac Toe** — You (❌) vs Bot (⭕)\n\n⏱️ **Game timed out!**`,
-          components: [...buildBoardButtons(gameId, board, true), buildExtendRow(gameId, true)],
+          components: [
+            ...buildBoardButtons(gameId, board, true),
+            buildExtendRow(gameId, true),
+          ],
         },
         "tictactoe.vsBot.timeout",
       );
@@ -224,7 +238,10 @@ async function playVsPlayer(
       const action = buttonInteraction.customId.split(":")[2];
       if (action === "extend") {
         if (buttonInteraction.user.id !== challenger.id) {
-          await safeReplyToButton(buttonInteraction, "Only the person who started the game can extend time.");
+          await safeReplyToButton(
+            buttonInteraction,
+            "Only the person who started the game can extend time.",
+          );
           return;
         }
         collector.resetTimer();
@@ -279,7 +296,10 @@ async function playVsPlayer(
             ``,
             `🎉 **${winnerUser} wins!**`,
           ].join("\n"),
-          components: [...buildBoardButtons(gameId, board, true, winningCells), buildExtendRow(gameId, true)],
+          components: [
+            ...buildBoardButtons(gameId, board, true, winningCells),
+            buildExtendRow(gameId, true),
+          ],
         });
         return;
       }
@@ -299,7 +319,10 @@ async function playVsPlayer(
             ``,
             `🤝 **It's a tie!**`,
           ].join("\n"),
-          components: [...buildBoardButtons(gameId, board, true), buildExtendRow(gameId, true)],
+          components: [
+            ...buildBoardButtons(gameId, board, true),
+            buildExtendRow(gameId, true),
+          ],
         });
         return;
       }
@@ -355,7 +378,10 @@ async function playVsPlayer(
             `⏱️ **${timeoutLoser} ran out of time!**`,
             `🎉 **${timeoutWinner} wins by timeout!**`,
           ].join("\n"),
-          components: [...buildBoardButtons(gameId, board, true), buildExtendRow(gameId, true)],
+          components: [
+            ...buildBoardButtons(gameId, board, true),
+            buildExtendRow(gameId, true),
+          ],
         },
         "tictactoe.vsPlayer.timeout",
       );

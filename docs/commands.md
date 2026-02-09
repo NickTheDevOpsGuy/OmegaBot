@@ -174,14 +174,14 @@ Requires **Manage Server** permission.
 
 ## Other Commands
 
-| Command     | Description         |
-| ----------- | ------------------- |
+| Command     | Description                                        |
+| ----------- | -------------------------------------------------- |
 | `/help`     | Command help (use `topic:changelog` for changelog) |
-| `/ping`     | Health check        |
-| `/summary`  | Summarize chat      |
-| `/history`  | View chat history   |
-| `/playback` | Transcript playback |
-| `/admin`    | Admin tools         |
+| `/ping`     | Health check                                       |
+| `/summary`  | Summarize chat                                     |
+| `/history`  | View chat history                                  |
+| `/playback` | Transcript playback                                |
+| `/admin`    | Admin tools                                        |
 
 ---
 
