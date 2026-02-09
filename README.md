@@ -47,7 +47,9 @@ Not intended to be:
 - **Database integrity check** – `npm run db:check` to verify SQLite health
 - **Rate limiting** – slots (3s), blackjack (5s), dice (2s), hangman (10s) cooldowns to prevent spam
 - **Daily game metrics** – per-command, per-user play counts for analytics
-- **Timeout reminders** – Connect 4 and Tic Tac Toe warn 15 seconds before move timeout
+- **Long game timeouts** – Blackjack, Hangman, Wordle, and RPS challenges: 1 hour; Connect 4 and Tic Tac Toe: 10 min per move (starter can extend)
+- **Extend time** – The person who started the game can add more time via an "Extend time" button (Blackjack, Connect 4, Tic Tac Toe, Wordle, RPS challenge)
+- **Timeout reminders** – Connect 4 and Tic Tac Toe warn 1 minute before move timeout
 
 ---
 

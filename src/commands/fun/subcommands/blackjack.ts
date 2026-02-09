@@ -11,10 +11,15 @@ import {
 } from "../../../services/discord/rateLimit.js";
 import { getStats, recordResult } from "./blackjackStore.js";
 import { createDeck, handValue, isBlackjack, type Card } from "./blackjack/gameLogic.js";
-import { buildGameMessage, buildButtons, type GameStatus } from "./blackjack/ui.js";
+import {
+  buildGameMessage,
+  buildButtons,
+  buildExtendRow,
+  type GameStatus,
+} from "./blackjack/ui.js";
 import { safeMessageEdit } from "../../../services/discord/safeReply.js";
 
-const GAME_TIMEOUT_MS = 120_000; // 2 minutes
+const GAME_TIMEOUT_MS = 3_600_000; // 1 hour
 
 /* -------------------------------------------------------------------------- */
 /* Dealer turn logic                                                          */
@@ -57,7 +62,7 @@ async function playDealerTurn(
 
   await buttonInteraction.update({
     content: buildGameMessage(playerHand, dealerHand, status, false),
-    components: [buildButtons(gameId, true)],
+    components: [buildButtons(gameId, true), buildExtendRow(gameId, true)],
   });
 }
 
@@ -127,7 +132,7 @@ async function runBlackjack(interaction: ChatInputCommandInteraction): Promise<v
 
   const message = await interaction.editReply({
     content: buildGameMessage(playerHand, dealerHand, "playing"),
-    components: [buildButtons(gameId)],
+    components: [buildButtons(gameId), buildExtendRow(gameId)],
   });
 
   const collector = message.createMessageComponentCollector({
@@ -150,7 +155,7 @@ async function runBlackjack(interaction: ChatInputCommandInteraction): Promise<v
         logger.info({ gameId, userId }, "[blackjack] player bust");
         await buttonInteraction.update({
           content: buildGameMessage(playerHand, dealerHand, "player_bust", false),
-          components: [buildButtons(gameId, true)],
+          components: [buildButtons(gameId, true), buildExtendRow(gameId, true)],
         });
         return;
       }
@@ -170,7 +175,7 @@ async function runBlackjack(interaction: ChatInputCommandInteraction): Promise<v
 
       await buttonInteraction.update({
         content: buildGameMessage(playerHand, dealerHand, "playing"),
-        components: [buildButtons(gameId)],
+        components: [buildButtons(gameId), buildExtendRow(gameId)],
       });
     } else if (action === "stand") {
       collector.stop("stand");
@@ -182,6 +187,15 @@ async function runBlackjack(interaction: ChatInputCommandInteraction): Promise<v
         gameId,
         userId,
       );
+    } else if (action === "extend") {
+      collector.resetTimer();
+      await buttonInteraction.deferUpdate();
+      await message.edit({
+        content:
+          buildGameMessage(playerHand, dealerHand, "playing") +
+          "\n\n⏱️ *Time extended! You have another hour.*",
+        components: [buildButtons(gameId), buildExtendRow(gameId)],
+      });
     }
   });
 
@@ -195,7 +209,7 @@ async function runBlackjack(interaction: ChatInputCommandInteraction): Promise<v
           content:
             buildGameMessage(playerHand, dealerHand, "dealer_win", false) +
             "\n\n⏱️ *Timed out*",
-          components: [buildButtons(gameId, true)],
+          components: [buildButtons(gameId, true), buildExtendRow(gameId, true)],
         },
         "blackjack.timeout",
       );

@@ -50,6 +50,14 @@ export function buildControls(args: {
       mk(5, "6"),
       mk(6, "7"),
     ),
+    new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`c4:extend:${gameId}`)
+        .setLabel("Extend time")
+        .setStyle(ButtonStyle.Secondary)
+        .setEmoji("⏱️")
+        .setDisabled(disabled),
+    ),
   ];
 }
 

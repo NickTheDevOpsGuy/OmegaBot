@@ -1,3 +1,17 @@
+## [3.2.0] - 2026-02-09
+
+### Added
+
+- **Longer game timeouts**: Blackjack, Hangman, Wordle, and RPS challenges now have 1-hour timeouts; Connect 4 and Tic Tac Toe use 10 minutes per move (was 1–2 minutes)
+- **Extend time**: The person who started the game can add more time via an "Extend time" button (Blackjack, Connect 4, Tic Tac Toe, Wordle, RPS challenge)
+- **Docs**: README and [commands.md](docs/commands.md) updated with game timeouts and extend-time behavior
+
+### Changed
+
+- **Timeout reminders**: Connect 4 and Tic Tac Toe now warn 1 minute before move timeout (was 15 seconds)
+
+---
+
 ## [3.1.0] - 2026-02-09
 
 ### Added

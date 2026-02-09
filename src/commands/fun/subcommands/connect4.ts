@@ -10,8 +10,8 @@ import { getStats, recordResult } from "./connect4Store.js";
 import { newBoard, drop, has4, full, type Cell } from "./connect4/gameLogic.js";
 import { renderBoard, buildControls, buildHeader, EMOJI } from "./connect4/ui.js";
 
-const MOVE_TIMEOUT_MS = 60_000;
-const WARNING_BEFORE_MS = 15_000; // Remind 15s before timeout
+const MOVE_TIMEOUT_MS = 600_000; // 10 minutes per move
+const WARNING_BEFORE_MS = 60_000; // Remind 1 min before timeout
 
 /* -------------------------------------------------------------------------- */
 /* Command Handler                                                             */
@@ -63,7 +63,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       "",
       renderBoard(board),
       "",
-      statusLine ?? "Pick a column. ⏱️ 60s per move",
+      statusLine ?? "Pick a column. ⏱️ 10 min per move (starter can extend)",
     ].join("\n");
 
   const msg = await interaction.editReply({
@@ -83,7 +83,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       void safeEditReply(
         interaction,
         {
-          content: render("⏱️ **15 seconds left!** Pick a column."),
+          content: render("⏱️ **1 minute left!** Pick a column."),
           components: buildControls({ gameId, board, disabled: false }),
         },
         "connect4.warning",
@@ -99,6 +99,27 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
 
       if (!isP1 && !isP2) {
         await safeReplyToButton(btn, "You're not in this game.");
+        return;
+      }
+
+      // Only the game starter (p1) can extend time
+      if (btn.customId === `c4:extend:${gameId}`) {
+        if (btn.user.id !== p1.id) {
+          await safeReplyToButton(btn, "Only the person who started the game can extend time.");
+          return;
+        }
+        collector.resetTimer();
+        scheduleWarning();
+        if (await safeDeferUpdate(btn)) {
+          await safeEditReply(
+            interaction,
+            {
+              content: render("⏱️ **Time extended!** +10 min for this move."),
+              components: buildControls({ gameId, board, disabled: false }),
+            },
+            "connect4.extend",
+          );
+        }
         return;
       }
 

@@ -44,3 +44,17 @@ export function buildBoardButtons(
 
   return rows;
 }
+
+export function buildExtendRow(
+  gameId: string,
+  disabled = false,
+): ActionRowBuilder<ButtonBuilder> {
+  return new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`ttt:${gameId}:extend`)
+      .setLabel("Extend time")
+      .setStyle(ButtonStyle.Secondary)
+      .setEmoji("⏱️")
+      .setDisabled(disabled),
+  );
+}

@@ -25,6 +25,7 @@ const HELP_TOPICS: HelpTopic[] = [
   "github",
   "admin",
   "commands",
+  "changelog",
 ];
 
 function parseHelpTopic(raw: string | null): HelpTopic {
@@ -48,6 +49,7 @@ export const data = new SlashCommandBuilder()
         { name: "timezone", value: "timezone" },
         { name: "admin", value: "admin" },
         { name: "commands", value: "commands" },
+        { name: "changelog", value: "changelog" },
       ),
   )
   .addBooleanOption((opt) =>

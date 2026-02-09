@@ -7,7 +7,7 @@
 // - ASCII art gallows (7 stages)
 // - Letter button grid (A-Z)
 // - Stats tracking: wins, losses, total guesses
-// - 5-minute game timeout
+// - 1-hour game timeout
 //
 // Stats are persisted to hangman_stats table.
 
@@ -32,7 +32,7 @@ import { getDb } from "../../../services/database/db.js";
 /* -------------------------------------------------------------------------- */
 
 const MAX_WRONG_GUESSES = 6;
-const GAME_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+const GAME_TIMEOUT_MS = 3_600_000; // 1 hour
 
 const WORDS = [
   "apple",

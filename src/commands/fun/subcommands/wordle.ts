@@ -97,12 +97,25 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
 
   const collector = message.createMessageComponentCollector({
     componentType: ComponentType.Button,
-    time: 600_000, // 10 minutes
+    time: 3_600_000, // 1 hour
     filter: (i) =>
       i.user.id === interaction.user.id && i.customId.startsWith(`wordle:${gameId}:`),
   });
 
   collector.on("collect", async (buttonInteraction) => {
+    const action = buttonInteraction.customId.split(":")[2];
+    if (action === "extend") {
+      collector.resetTimer();
+      await buttonInteraction.deferUpdate();
+      await interaction.editReply({
+        content:
+          buildGameMessage(guesses, word, "playing") +
+          "\n\n⏱️ *Time extended! You have another hour.*",
+        components: [buildGuessButton(gameId)],
+      });
+      return;
+    }
+
     const modal = new ModalBuilder()
       .setCustomId(`wordle-modal:${gameId}`)
       .setTitle("Wordle - Enter Your Guess")

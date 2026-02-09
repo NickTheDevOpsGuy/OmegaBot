@@ -35,6 +35,13 @@ The main hub for all games and fun features.
 
 Stats and leaderboard views are not rate limited.
 
+**Game timeouts & extend time**
+
+- **Blackjack, Hangman, Wordle, RPS challenge**: 1 hour per game/session; the player who started can use **Extend time** to add another hour.
+- **Connect 4, Tic Tac Toe (PvP)**: 10 minutes per move; the person who started the game can use **Extend time** to add 10 more minutes for the current turn. A reminder appears 1 minute before timeout.
+- **Tic Tac Toe (vs bot)**: Up to 90 minutes total; the player can extend time.
+- **Trivia**: 30 seconds per question (unchanged).
+
 ### Stats & Daily
 
 | Command            | Description               |
@@ -169,7 +176,7 @@ Requires **Manage Server** permission.
 
 | Command     | Description         |
 | ----------- | ------------------- |
-| `/help`     | Command help        |
+| `/help`     | Command help (use `topic:changelog` for changelog) |
 | `/ping`     | Health check        |
 | `/summary`  | Summarize chat      |
 | `/history`  | View chat history   |

@@ -28,9 +28,13 @@ import {
   getResultText,
   type Choice,
 } from "./rps/gameLogic.js";
-import { buildChoiceButtons, buildDeclineButton } from "./rps/ui.js";
+import {
+  buildChoiceButtons,
+  buildDeclineButton,
+  buildExtendButton,
+} from "./rps/ui.js";
 
-const CHALLENGE_TIMEOUT_MS = 60_000; // 60 seconds
+const CHALLENGE_TIMEOUT_MS = 3_600_000; // 1 hour
 
 /* -------------------------------------------------------------------------- */
 /* Challenge handler                                                           */
@@ -77,9 +81,13 @@ async function handleChallenge(
       `${h2hText}`,
       ``,
       `Both players: click your choice below.`,
-      `⏱️ You have 60 seconds!`,
+      `⏱️ You have 1 hour! (Starter can extend)`,
     ].join("\n"),
-    components: [buildChoiceButtons(challengeId), buildDeclineButton(challengeId)],
+    components: [
+      buildChoiceButtons(challengeId),
+      buildDeclineButton(challengeId),
+      buildExtendButton(challengeId),
+    ],
   });
 
   const choices: Map<string, Choice> = new Map();
@@ -99,7 +107,33 @@ async function handleChallenge(
       return;
     }
 
-    const action = buttonInteraction.customId.split(":")[2] as Choice | "decline";
+    const action = buttonInteraction.customId.split(":")[2] as Choice | "decline" | "extend";
+
+    if (action === "extend") {
+      if (playerId !== challenger.id) {
+        await safeReplyToButton(buttonInteraction, "Only the person who started the challenge can extend time.");
+        return;
+      }
+      collector.resetTimer();
+      await buttonInteraction.deferUpdate();
+      await interaction.editReply({
+        content: [
+          `⚔️ **Rock Paper Scissors Challenge!**`,
+          ``,
+          `${challenger} challenges ${opponent} to a duel!`,
+          `${h2hText}`,
+          ``,
+          `Both players: click your choice below.`,
+          `⏱️ **Time extended!** You have another hour.`,
+        ].join("\n"),
+        components: [
+          buildChoiceButtons(challengeId),
+          buildDeclineButton(challengeId),
+          buildExtendButton(challengeId),
+        ],
+      });
+      return;
+    }
 
     if (action === "decline") {
       if (playerId === opponent.id) {

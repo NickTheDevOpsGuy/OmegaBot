@@ -42,3 +42,17 @@ export function buildDeclineButton(
       .setDisabled(disabled),
   );
 }
+
+export function buildExtendButton(
+  challengeId: string,
+  disabled = false,
+): ActionRowBuilder<ButtonBuilder> {
+  return new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`rps:${challengeId}:extend`)
+      .setLabel("Extend time (starter only)")
+      .setStyle(ButtonStyle.Secondary)
+      .setEmoji("⏱️")
+      .setDisabled(disabled),
+  );
+}

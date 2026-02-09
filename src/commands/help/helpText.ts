@@ -12,7 +12,8 @@ export type HelpTopic =
   | "profile"
   | "github"
   | "admin"
-  | "commands";
+  | "commands"
+  | "changelog";
 
 /**
  * Builds help text for the specified topic.
@@ -41,6 +42,8 @@ export function buildHelpText(args: {
       return buildAdminHelp({ isAdmin });
     case "commands":
       return buildCommandsHelp({ isAdmin, commands });
+    case "changelog":
+      return buildChangelogHelp();
     case "overview":
     default:
       return buildOverviewHelp({ isAdmin });
@@ -63,7 +66,7 @@ function buildOverviewHelp(args: { isAdmin: boolean }): string {
     "",
     "**Topics**",
     "Use `/help topic:<topic>` for detailed help:",
-    `\`overview\`, \`fun\`, \`games\`, \`profile\`${isAdmin ? ", `admin`" : ""}, \`commands\``,
+    `\`overview\`, \`fun\`, \`games\`, \`profile\`${isAdmin ? ", `admin`" : ""}, \`commands\`, \`changelog\``,
     "",
     "**Quick Commands**",
     "`/fun daily`       Daily check-in for points",
@@ -265,6 +268,33 @@ function buildCommandsHelp(args: {
   }
 
   return lines.join("\n");
+}
+
+/* -------------------------------------------------------------------------- */
+/* Changelog                                                                   */
+/* -------------------------------------------------------------------------- */
+
+function buildChangelogHelp(): string {
+  return [
+    "**OmegaBot Changelog**",
+    "",
+    "**3.2.0** (2026-02-09)",
+    "• Longer game timeouts: 1 hour for Blackjack, Hangman, Wordle, RPS; 10 min per move for Connect 4 & Tic Tac Toe",
+    "• **Extend time** button: whoever started the game can add more time",
+    "• Timeout reminder: Connect 4 & Tic Tac Toe warn 1 min before move timeout",
+    "",
+    "**3.1.0** (2026-02-09)",
+    "• Rate limiting: slots (3s), blackjack (5s), dice (2s), hangman (10s)",
+    "• Daily game metrics & timeout reminders (Connect 4, Tic Tac Toe)",
+    "• Retry on API errors; better error handling and logging",
+    "",
+    "**3.0.0** (2026-01-27)",
+    "• New games: Hangman, Wordle, Slots; Blackjack, Connect 4, Would You Rather",
+    "• 19 achievements, giveaways, starboard, suggestion system",
+    "• 15 slash commands (consolidated from 24)",
+    "",
+    "Full changelog: GitHub repo → CHANGELOG.md",
+  ].join("\n");
 }
 
 /* -------------------------------------------------------------------------- */
