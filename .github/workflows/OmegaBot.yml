@@ -34,7 +34,7 @@ jobs:
         run: npm ci
 
       - name: 🧪 Run Tests
-        run: npm run test
+        run: npm run test:run
 
       - name: 🧹 ESLint
         run: npm run lint
@@ -44,3 +44,7 @@ jobs:
 
       - name: 🎨 Prettier check
         run: npm run format:check
+
+      - name: 🔒 npm audit
+        run: npm audit --audit-level=high
+        continue-on-error: true

@@ -132,7 +132,7 @@ function buildGamesHelp(): string {
     "`/fun 8ball`          Ask the magic 8-ball",
     "`/fun trivia`         Trivia with points & streaks",
     "`/fun blackjack`      Blackjack vs dealer",
-    "`/fun hangman`        Guess the word",
+    "`/fun hangman play`   Guess the word (dropdown letters, pick difficulty)",
     "`/fun wordle`         Daily word puzzle",
     "`/fun slots`          Slot machine (jackpots!)",
     "`/fun coinflip`       Heads or tails",
@@ -277,6 +277,12 @@ function buildCommandsHelp(args: {
 function buildChangelogHelp(): string {
   return [
     "**OmegaBot Changelog**",
+    "",
+    "**3.3.0** (2026-02-10)",
+    "• Hangman: dropdown letters (A–M / N–Z), difficulty, words in SQLite, solve-time stats",
+    "• Admin words: HANGMAN_ADMIN_ROLE_ID can add/list words",
+    "• New achievement: Speed Demon (solve Hangman in ≤60s)",
+    "• Changelog in Discord: /help topic:changelog",
     "",
     "**3.2.0** (2026-02-09)",
     "• Longer game timeouts: 1 hour for Blackjack, Hangman, Wordle, RPS; 10 min per move for Connect 4 & Tic Tac Toe",

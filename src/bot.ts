@@ -87,6 +87,18 @@ client.once("clientReady", () => {
 
   logger.info({ commands: [...client.commands.keys()] }, "[startup] commands loaded");
 
+  // Optional features (so misconfig is obvious from logs)
+  logger.info(
+    {
+      weather: Boolean(env.weatherApiKey),
+      summary: env.summaryMode,
+      hangmanAdmin: Boolean(process.env.HANGMAN_ADMIN_ROLE_ID?.trim()),
+      jokeModerator: Boolean(process.env.JOKE_MODERATOR_ROLE_ID?.trim()),
+      autoRole: Boolean(env.discordAutoRoleId),
+    },
+    "[startup] optional features",
+  );
+
   try {
     client.reminderScheduler?.start();
     logger.info("Reminder scheduler started");

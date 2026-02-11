@@ -24,9 +24,26 @@ describe("FAQ service", () => {
       ).toThrow();
     });
 
-    // TODO: Add more tests
-    // - Valid creation
-    // - Duplicate key handling
-    // - Title/body validation
+    it("throws when title is empty or whitespace", () => {
+      expect(() =>
+        create({
+          key: "valid-key",
+          title: "   ",
+          body: "Test body",
+          actor: "test-user",
+        }),
+      ).toThrow();
+    });
+
+    it("throws when body is empty or whitespace", () => {
+      expect(() =>
+        create({
+          key: "valid-key",
+          title: "Test title",
+          body: "   ",
+          actor: "test-user",
+        }),
+      ).toThrow();
+    });
   });
 });

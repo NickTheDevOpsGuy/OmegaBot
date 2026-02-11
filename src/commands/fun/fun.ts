@@ -128,7 +128,6 @@ const HANDLERS: Record<string, FunHandler> = {
   connect4: runConnect4,
   "would-you-rather": runWouldYouRather,
   fact: runFact,
-  hangman: runHangman,
   wordle: runWordle,
   slots: runSlots,
   stats: runStats,
@@ -166,6 +165,11 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     }
     if (group === "remind") {
       await runReminders(interaction, sub as "set" | "list" | "cancel" | "clear");
+      return;
+    }
+    if (group === "hangman") {
+      await runHangman(interaction);
+      await maybeRecordUsage(interaction, "hangman");
       return;
     }
 

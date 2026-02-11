@@ -136,3 +136,17 @@ Recommended setup:
 ```env
 JOKE_MODERATOR_ROLE_ID=
 ```
+
+### Hangman Word Management (Optional)
+
+Users with this role can add and list Hangman words via `/fun hangman words add` and `/fun hangman words list`.
+
+1. Create a role (e.g. "Hangman Admin") in your Discord server
+2. Assign it to trusted members
+3. Add the role ID here
+
+```env
+HANGMAN_ADMIN_ROLE_ID=
+```
+
+If unset, only the built-in word list is used and no one can add words.

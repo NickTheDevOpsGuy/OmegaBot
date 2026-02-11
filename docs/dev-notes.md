@@ -77,6 +77,7 @@ Guidelines:
 - Use logger.error inside catch blocks
 - Avoid logging inside pure helpers
 - Prefer logging at command boundaries and service entry points
+- **Never log secrets**: Do not log `DISCORD_TOKEN`, API keys, or other env vars that contain secrets (e.g. `env.token`, `process.env.WEATHERAPI_KEY`). Log only that a feature is enabled/disabled (e.g. `weather: true`) or use redacted placeholders.
 
 ---
 
@@ -104,6 +105,7 @@ Examples:
 - GitHub polling is enabled only when all required GitHub env vars are present
 - Auto-role assignment is enabled only when DISCORD_AUTO_ROLE_ID is set
 - LLM summaries are enabled only when SUMMARY_MODE=llm and OPENAI_API_KEY is present
+- Hangman word management (add/list) is available only to users with the role in HANGMAN_ADMIN_ROLE_ID
 
 This allows:
 

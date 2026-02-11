@@ -74,4 +74,9 @@ printf "🛠️ TypeScript — type check\n"
 npx --no-install tsc --noEmit --pretty false
 printf "✅ TypeScript passed.\n"
 
+# -------- Tests --------
+printf "🧪 Tests (single run)\n"
+npm run test:run
+printf "✅ Tests passed.\n"
+
 printf "🚀 All checks passed. Ready to push!\n"

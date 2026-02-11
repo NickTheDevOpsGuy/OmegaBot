@@ -10,21 +10,24 @@ The main hub for all games and fun features.
 
 ### Games (13)
 
-| Command                 | Description                       |
-| ----------------------- | --------------------------------- |
-| `/fun 8ball`            | Ask the magic 8-ball              |
-| `/fun rps`              | Rock paper scissors (solo or PvP) |
-| `/fun tictactoe`        | Tic Tac Toe (solo or PvP)         |
-| `/fun trivia`           | Trivia with points and streaks    |
-| `/fun blackjack`        | Interactive blackjack             |
-| `/fun connect4`         | PvP Connect 4                     |
-| `/fun hangman`          | Word guessing                     |
-| `/fun wordle`           | Daily word puzzle                 |
-| `/fun slots`            | Slot machine with jackpots        |
-| `/fun would-you-rather` | WYR questions                     |
-| `/fun coinflip`         | Heads or tails                    |
-| `/fun dice`             | Custom dice rolls                 |
-| `/fun poll`             | Create polls                      |
+| Command                   | Description                            |
+| ------------------------- | -------------------------------------- |
+| `/fun 8ball`              | Ask the magic 8-ball                   |
+| `/fun rps`                | Rock paper scissors (solo or PvP)      |
+| `/fun tictactoe`          | Tic Tac Toe (solo or PvP)              |
+| `/fun trivia`             | Trivia with points and streaks         |
+| `/fun blackjack`          | Interactive blackjack                  |
+| `/fun connect4`           | PvP Connect 4                          |
+| `/fun hangman play`       | Hangman (dropdown letters, difficulty) |
+| `/fun hangman stats`      | Hangman stats (wins, fastest time)     |
+| `/fun hangman words add`  | (Admin) Add word to list               |
+| `/fun hangman words list` | (Admin) List words                     |
+| `/fun wordle`             | Daily word puzzle                      |
+| `/fun slots`              | Slot machine with jackpots             |
+| `/fun would-you-rather`   | WYR questions                          |
+| `/fun coinflip`           | Heads or tails                         |
+| `/fun dice`               | Custom dice rolls                      |
+| `/fun poll`               | Create polls                           |
 
 **Rate limits** (per user, to prevent spam):
 
@@ -34,6 +37,13 @@ The main hub for all games and fun features.
 - Hangman: 10 seconds between games
 
 Stats and leaderboard views are not rate limited.
+
+**Hangman**
+
+- Words are stored in SQLite; choose **difficulty** (easy / medium / hard) when starting a game.
+- Letter selection uses **dropdowns** (A–M and N–Z) so every letter (including Z) is available.
+- Stats include **fastest win** and **average solve time**.
+- Users with the role set in **`HANGMAN_ADMIN_ROLE_ID`** (in `.env`) can add and list words via `/fun hangman words add` and `/fun hangman words list`.
 
 **Game timeouts & extend time**
 

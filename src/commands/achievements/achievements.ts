@@ -91,6 +91,17 @@ const ACHIEVEMENTS: Achievement[] = [
     checkFn: (u, db) => getScalar(db, u, "hangman_stats", "wins") >= 10,
   },
   {
+    id: "hangman_speed_demon",
+    name: "Speed Demon",
+    description: "Solve a Hangman game in 60 seconds or less",
+    emoji: "⚡",
+    category: "games",
+    checkFn: (u, db) => {
+      const best = getScalar(db, u, "hangman_stats", "best_time_seconds");
+      return best > 0 && best <= 60;
+    },
+  },
+  {
     id: "card_shark",
     name: "Card Shark",
     description: "Win 25 Blackjack games",

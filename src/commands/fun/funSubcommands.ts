@@ -1,68 +1,169 @@
 // src/commands/fun/funSubcommands.ts
 // Slash command definition for /fun - extracted for readability
 
-import type { SlashCommandBuilder } from "discord.js";
+import type { SlashCommandBuilder, SlashCommandSubcommandGroupBuilder } from "discord.js";
 import { SlashCommandBuilder as SlashCommandBuilderClass } from "discord.js";
 import { buildJokeSubcommands } from "./subcommands/joke/index.js";
+
+function buildQuoteGroup(g: SlashCommandSubcommandGroupBuilder) {
+  return g
+    .setName("quote")
+    .setDescription("Save and view memorable server quotes")
+    .addSubcommand((s) =>
+      s
+        .setName("add")
+        .setDescription("Add a new quote")
+        .addUserOption((o) =>
+          o.setName("author").setDescription("Who said it").setRequired(true),
+        )
+        .addStringOption((o) =>
+          o
+            .setName("text")
+            .setDescription("The quote")
+            .setRequired(true)
+            .setMaxLength(500),
+        )
+        .addStringOption((o) =>
+          o.setName("context").setDescription("Optional context").setMaxLength(200),
+        ),
+    )
+    .addSubcommand((s) =>
+      s
+        .setName("random")
+        .setDescription("Get a random quote")
+        .addUserOption((o) => o.setName("author").setDescription("Filter by author")),
+    )
+    .addSubcommand((s) =>
+      s
+        .setName("list")
+        .setDescription("List recent quotes")
+        .addUserOption((o) => o.setName("author").setDescription("Filter by author")),
+    )
+    .addSubcommand((s) =>
+      s
+        .setName("remove")
+        .setDescription("Remove a quote")
+        .addIntegerOption((o) =>
+          o.setName("id").setDescription("Quote ID to remove").setRequired(true),
+        ),
+    )
+    .addSubcommand((s) =>
+      s
+        .setName("search")
+        .setDescription("Search quotes")
+        .addStringOption((o) =>
+          o.setName("query").setDescription("Search text").setRequired(true),
+        ),
+    );
+}
+
+function buildHangmanGroup(g: SlashCommandSubcommandGroupBuilder) {
+  return g
+    .setName("hangman")
+    .setDescription("Hangman word game: play, stats, or manage words (admin)")
+    .addSubcommand((s) =>
+      s
+        .setName("play")
+        .setDescription("Play Hangman - guess the word!")
+        .addStringOption((o) =>
+          o
+            .setName("difficulty")
+            .setDescription("Word difficulty")
+            .addChoices(
+              { name: "Easy", value: "easy" },
+              { name: "Medium", value: "medium" },
+              { name: "Hard", value: "hard" },
+            ),
+        )
+        .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+    )
+    .addSubcommand((s) =>
+      s
+        .setName("stats")
+        .setDescription("Show your Hangman stats")
+        .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+    )
+    .addSubcommand((s) =>
+      s
+        .setName("words_add")
+        .setDescription("(Admin) Add a word to the Hangman list")
+        .addStringOption((o) =>
+          o
+            .setName("word")
+            .setDescription("Word to add (letters only)")
+            .setRequired(true),
+        )
+        .addStringOption((o) =>
+          o
+            .setName("difficulty")
+            .setDescription("Difficulty")
+            .setRequired(true)
+            .addChoices(
+              { name: "Easy", value: "easy" },
+              { name: "Medium", value: "medium" },
+              { name: "Hard", value: "hard" },
+            ),
+        )
+        .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+    )
+    .addSubcommand((s) =>
+      s
+        .setName("words_list")
+        .setDescription("(Admin) List Hangman words")
+        .addStringOption((o) =>
+          o
+            .setName("difficulty")
+            .setDescription("Filter by difficulty")
+            .addChoices(
+              { name: "Easy", value: "easy" },
+              { name: "Medium", value: "medium" },
+              { name: "Hard", value: "hard" },
+            ),
+        )
+        .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+    );
+}
+
+function buildRemindGroup(g: SlashCommandSubcommandGroupBuilder) {
+  return g
+    .setName("remind")
+    .setDescription("Set and manage reminders")
+    .addSubcommand((s) =>
+      s
+        .setName("set")
+        .setDescription("Set a new reminder")
+        .addStringOption((o) =>
+          o
+            .setName("time")
+            .setDescription("When (e.g., 5m, 1h, 1d, 1h30m)")
+            .setRequired(true),
+        )
+        .addStringOption((o) =>
+          o
+            .setName("message")
+            .setDescription("Reminder message")
+            .setRequired(true)
+            .setMaxLength(500),
+        ),
+    )
+    .addSubcommand((s) => s.setName("list").setDescription("View your pending reminders"))
+    .addSubcommand((s) =>
+      s
+        .setName("cancel")
+        .setDescription("Cancel a reminder")
+        .addIntegerOption((o) =>
+          o.setName("id").setDescription("Reminder ID to cancel").setRequired(true),
+        ),
+    )
+    .addSubcommand((s) => s.setName("clear").setDescription("Cancel all your reminders"));
+}
 
 export function buildFunCommand(): SlashCommandBuilder {
   return new SlashCommandBuilderClass()
     .setName("fun")
     .setDescription("Fun and utility commands")
-
     .addSubcommandGroup(buildJokeSubcommands)
-
-    .addSubcommandGroup((g) =>
-      g
-        .setName("quote")
-        .setDescription("Save and view memorable server quotes")
-        .addSubcommand((s) =>
-          s
-            .setName("add")
-            .setDescription("Add a new quote")
-            .addUserOption((o) =>
-              o.setName("author").setDescription("Who said it").setRequired(true),
-            )
-            .addStringOption((o) =>
-              o
-                .setName("text")
-                .setDescription("The quote")
-                .setRequired(true)
-                .setMaxLength(500),
-            )
-            .addStringOption((o) =>
-              o.setName("context").setDescription("Optional context").setMaxLength(200),
-            ),
-        )
-        .addSubcommand((s) =>
-          s
-            .setName("random")
-            .setDescription("Get a random quote")
-            .addUserOption((o) => o.setName("author").setDescription("Filter by author")),
-        )
-        .addSubcommand((s) =>
-          s
-            .setName("list")
-            .setDescription("List recent quotes")
-            .addUserOption((o) => o.setName("author").setDescription("Filter by author")),
-        )
-        .addSubcommand((s) =>
-          s
-            .setName("remove")
-            .setDescription("Remove a quote")
-            .addIntegerOption((o) =>
-              o.setName("id").setDescription("Quote ID to remove").setRequired(true),
-            ),
-        )
-        .addSubcommand((s) =>
-          s
-            .setName("search")
-            .setDescription("Search quotes")
-            .addStringOption((o) =>
-              o.setName("query").setDescription("Search text").setRequired(true),
-            ),
-        ),
-    )
+    .addSubcommandGroup(buildQuoteGroup)
 
     .addSubcommand((s) =>
       s
@@ -189,17 +290,7 @@ export function buildFunCommand(): SlashCommandBuilder {
         .setDescription("Random interesting fact")
         .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
     )
-
-    .addSubcommand((s) =>
-      s
-        .setName("hangman")
-        .setDescription("Play Hangman - guess the word!")
-        .addBooleanOption((o) =>
-          o.setName("stats").setDescription("Show your Hangman stats"),
-        )
-        .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
-    )
-
+    .addSubcommandGroup(buildHangmanGroup)
     .addSubcommand((s) =>
       s
         .setName("wordle")
@@ -296,45 +387,7 @@ export function buildFunCommand(): SlashCommandBuilder {
         .addStringOption((o) => o.setName("option3").setDescription("Option 3"))
         .addStringOption((o) => o.setName("option4").setDescription("Option 4")),
     )
-
-    .addSubcommandGroup((g) =>
-      g
-        .setName("remind")
-        .setDescription("Set and manage reminders")
-        .addSubcommand((s) =>
-          s
-            .setName("set")
-            .setDescription("Set a new reminder")
-            .addStringOption((o) =>
-              o
-                .setName("time")
-                .setDescription("When (e.g., 5m, 1h, 1d, 1h30m)")
-                .setRequired(true),
-            )
-            .addStringOption((o) =>
-              o
-                .setName("message")
-                .setDescription("Reminder message")
-                .setRequired(true)
-                .setMaxLength(500),
-            ),
-        )
-        .addSubcommand((s) =>
-          s.setName("list").setDescription("View your pending reminders"),
-        )
-        .addSubcommand((s) =>
-          s
-            .setName("cancel")
-            .setDescription("Cancel a reminder")
-            .addIntegerOption((o) =>
-              o.setName("id").setDescription("Reminder ID to cancel").setRequired(true),
-            ),
-        )
-        .addSubcommand((s) =>
-          s.setName("clear").setDescription("Cancel all your reminders"),
-        ),
-    )
-
+    .addSubcommandGroup(buildRemindGroup)
     .addSubcommand((s) =>
       s
         .setName("weather")

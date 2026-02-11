@@ -213,8 +213,20 @@ CREATE TABLE IF NOT EXISTS hangman_stats (
   wins INTEGER NOT NULL DEFAULT 0,
   losses INTEGER NOT NULL DEFAULT 0,
   total_guesses INTEGER NOT NULL DEFAULT 0,
+  best_time_seconds INTEGER,
+  total_win_time_seconds INTEGER NOT NULL DEFAULT 0,
   updated_at INTEGER NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS hangman_words (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  word TEXT NOT NULL,
+  difficulty TEXT NOT NULL CHECK (difficulty IN ('easy','medium','hard')),
+  added_by TEXT,
+  created_at INTEGER NOT NULL,
+  UNIQUE(word)
+);
+CREATE INDEX IF NOT EXISTS idx_hangman_words_difficulty ON hangman_words(difficulty);
 
 CREATE TABLE IF NOT EXISTS wordle_games (
   user_id TEXT NOT NULL,

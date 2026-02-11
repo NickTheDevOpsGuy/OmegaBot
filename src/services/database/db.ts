@@ -216,6 +216,27 @@ export function initDatabase(): Database.Database {
 
   ensureCoinFlipsSchema();
 
+  function ensureHangmanStatsSchema(): void {
+    try {
+      const cols = db!.prepare("PRAGMA table_info(hangman_stats)").all() as Array<{
+        name: string;
+      }>;
+      if (!cols.some((c) => c.name === "best_time_seconds")) {
+        logger.warn("[db] migrating hangman_stats: adding best_time_seconds");
+        db!.exec("ALTER TABLE hangman_stats ADD COLUMN best_time_seconds INTEGER;");
+      }
+      if (!cols.some((c) => c.name === "total_win_time_seconds")) {
+        logger.warn("[db] migrating hangman_stats: adding total_win_time_seconds");
+        db!.exec(
+          "ALTER TABLE hangman_stats ADD COLUMN total_win_time_seconds INTEGER NOT NULL DEFAULT 0;",
+        );
+      }
+    } catch (err) {
+      logger.error({ err }, "[db] hangman_stats migration failed");
+    }
+  }
+  ensureHangmanStatsSchema();
+
   logger.info("Database tables created");
   return db;
 }

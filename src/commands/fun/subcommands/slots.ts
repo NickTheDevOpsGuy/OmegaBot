@@ -219,7 +219,7 @@ async function runSlots(interaction: ChatInputCommandInteraction): Promise<void>
     const remaining = checkSlotsCooldown(interaction.user.id);
     if (remaining > 0) {
       await interaction.editReply(
-        `⏱️ Slow down! Try again in **${Math.ceil(remaining / 1000)}** seconds.`,
+        `⏱️ Slow down! Try again in **${Math.ceil(remaining / 1000)}** seconds (rate limit: 3s).`,
       );
       return;
     }

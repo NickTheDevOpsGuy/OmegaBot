@@ -6,9 +6,6 @@
 import {
   SlashCommandBuilder,
   EmbedBuilder,
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
   PermissionFlagsBits,
   type ChatInputCommandInteraction,
   type ButtonInteraction,
@@ -16,7 +13,6 @@ import {
 } from "discord.js";
 import { logger } from "../../utils/logger.js";
 import {
-  type Giveaway,
   createGiveaway,
   setGiveawayMessage,
   getGiveaway,
@@ -27,100 +23,8 @@ import {
   getEntryCount,
   selectWinners,
 } from "./giveawayStore.js";
-
-/* -------------------------------------------------------------------------- */
-/* Helpers                                                                     */
-/* -------------------------------------------------------------------------- */
-
-function parseDuration(input: string): number | null {
-  const match = input.match(/^(\d+)(s|m|h|d)$/i);
-  if (!match) return null;
-
-  const value = parseInt(match[1], 10);
-  const unit = match[2].toLowerCase();
-
-  const multipliers: Record<string, number> = {
-    s: 1000,
-    m: 60 * 1000,
-    h: 60 * 60 * 1000,
-    d: 24 * 60 * 60 * 1000,
-  };
-
-  const ms = value * multipliers[unit];
-
-  // Min 10 seconds, max 30 days
-  if (ms < 10_000 || ms > 30 * 24 * 60 * 60 * 1000) return null;
-
-  return ms;
-}
-
-function formatTimeLeft(endsAt: number): string {
-  const diff = endsAt - Date.now();
-  if (diff <= 0) return "Ended";
-
-  const days = Math.floor(diff / (24 * 60 * 60 * 1000));
-  const hours = Math.floor((diff % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
-  const minutes = Math.floor((diff % (60 * 60 * 1000)) / (60 * 1000));
-
-  if (days > 0) return `${days}d ${hours}h`;
-  if (hours > 0) return `${hours}h ${minutes}m`;
-  return `${minutes}m`;
-}
-
-/* -------------------------------------------------------------------------- */
-/* UI Builders                                                                 */
-/* -------------------------------------------------------------------------- */
-
-function buildGiveawayEmbed(giveaway: Giveaway, entryCount: number): EmbedBuilder {
-  const timeLeft = formatTimeLeft(giveaway.ends_at);
-  const ended = giveaway.ended === 1;
-
-  const embed = new EmbedBuilder()
-    .setTitle("🎉 GIVEAWAY")
-    .setDescription(`**${giveaway.prize}**`)
-    .setColor(ended ? 0x808080 : 0x5865f2)
-    .addFields(
-      { name: "Hosted by", value: `<@${giveaway.host_id}>`, inline: true },
-      { name: "Winners", value: `${giveaway.winner_count}`, inline: true },
-      { name: "Entries", value: `${entryCount}`, inline: true },
-    )
-    .setFooter({ text: ended ? "Giveaway ended" : `Ends in ${timeLeft}` })
-    .setTimestamp(giveaway.ends_at);
-
-  if (ended && giveaway.winners) {
-    const winners = JSON.parse(giveaway.winners) as string[];
-    if (winners.length > 0) {
-      embed.addFields({
-        name: "🏆 Winners",
-        value: winners.map((w) => `<@${w}>`).join(", "),
-        inline: false,
-      });
-    } else {
-      embed.addFields({ name: "🏆 Winners", value: "No entries", inline: false });
-    }
-  }
-
-  return embed;
-}
-
-function buildGiveawayButtons(
-  giveawayId: number,
-  disabled = false,
-): ActionRowBuilder<ButtonBuilder> {
-  return new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder()
-      .setCustomId(`giveaway:${giveawayId}:enter`)
-      .setLabel("Enter")
-      .setStyle(ButtonStyle.Success)
-      .setEmoji("🎉")
-      .setDisabled(disabled),
-    new ButtonBuilder()
-      .setCustomId(`giveaway:${giveawayId}:leave`)
-      .setLabel("Leave")
-      .setStyle(ButtonStyle.Secondary)
-      .setDisabled(disabled),
-  );
-}
+import { parseDuration, formatTimeLeft } from "./utils.js";
+import { buildGiveawayEmbed, buildGiveawayButtons } from "./ui.js";
 
 /* -------------------------------------------------------------------------- */
 /* Command Definition                                                          */

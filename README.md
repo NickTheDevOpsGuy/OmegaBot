@@ -50,6 +50,8 @@ Not intended to be:
 - **Long game timeouts** – Blackjack, Hangman, Wordle, and RPS challenges: 1 hour; Connect 4 and Tic Tac Toe: 10 min per move (starter can extend)
 - **Extend time** – The person who started the game can add more time via an "Extend time" button (Blackjack, Connect 4, Tic Tac Toe, Wordle, RPS challenge)
 - **Timeout reminders** – Connect 4 and Tic Tac Toe warn 1 minute before move timeout
+- **Hangman** – Dropdown letter pick (A–M / N–Z), difficulty levels, words in SQLite, solve-time stats; admins (role in `HANGMAN_ADMIN_ROLE_ID`) can add words
+- **Changelog in Discord** – `/help topic:changelog` for recent release notes
 
 ---
 
@@ -73,6 +75,7 @@ npm start
 - Safe to restart (state persisted in SQLite)
 - Background pollers never crash the process
 - Optional features auto-disable when misconfigured
+- **Backup**: Back up `data/omegabot.db` (or your `DATABASE_PATH`) periodically; see [Runbook](docs/runbook.md)
 
 ---
 
@@ -84,6 +87,9 @@ npm start
 - [Environment Setup](docs/setup-env.md)
 - [Development Notes](docs/dev-notes.md)
 - [Troubleshooting](docs/troubleshooting.md) – Debugging "failed to complete" and common issues
+- [Runbook](docs/runbook.md) – Deploy, restart, backup, health
+- [FAQ for server admins](docs/faq-admins.md) – Common questions when running the bot
+- [Improvement ideas](docs/improvements.md) – Optional next steps (beyond new commands)
 
 ---
 

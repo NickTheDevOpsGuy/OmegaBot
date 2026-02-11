@@ -66,7 +66,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
   const remaining = checkDiceCooldown(interaction.user.id);
   if (remaining > 0) {
     await interaction.editReply(
-      `⏱️ Slow down! Try again in **${Math.ceil(remaining / 1000)}** seconds.`,
+      `⏱️ Slow down! Try again in **${Math.ceil(remaining / 1000)}** seconds (rate limit: 2s).`,
     );
     return;
   }

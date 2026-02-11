@@ -1,3 +1,45 @@
+## [3.4.0] - 2026-02-10
+
+### Added
+
+- **Runbook** – [docs/runbook.md](docs/runbook.md): deploy, restart, DB backup, health, security (no secrets in logs)
+- **FAQ for server admins** – [docs/faq-admins.md](docs/faq-admins.md): Hangman words, interaction failed, backup, optional features, rate limits
+- **Startup optional-features log** – Bot logs `[startup] optional features` (weather, summary, hangmanAdmin, jokeModerator, autoRole) so misconfig is obvious
+- **Improvement ideas doc** – [docs/improvements.md](docs/improvements.md) with optional next steps (no new commands)
+
+### Changed
+
+- **Pre-push** – `scripts/precheck.sh` now runs `npm run test:run` (use `[skip-precheck]` to skip)
+- **CI** – Uses `npm run test:run`; added `npm audit --audit-level=high` (continue-on-error)
+- **Rate limit replies** – Hangman, blackjack, slots, dice cooldown messages now include “(rate limit: Xs)”
+- **README** – Backup reminder in Operational Notes; doc links to runbook, faq-admins, improvements
+- **Dev-notes** – Never log secrets; runbook Security section
+
+### Fixed
+
+- **FAQ services tests** – Added title/body empty validation tests; removed TODO
+
+---
+
+## [3.3.0] - 2026-02-10
+
+### Added
+
+- **Hangman overhaul**:
+  - Letter selection via **dropdowns** (A–M and N–Z) so all letters including Z are available (fixes Discord cutting off buttons)
+  - Words stored in **SQLite** (`hangman_words` table) with difficulty (easy/medium/hard); seed words included
+  - **Difficulty** option when starting a game (`/fun hangman play`)
+  - **Solve-time tracking**: fastest win and average win time in stats; new **Speed Demon** achievement (solve in ≤60s)
+  - **Admin word management**: `/fun hangman words add` and `/fun hangman words list` for users with role in `HANGMAN_ADMIN_ROLE_ID`
+- **Changelog in Discord**: `/help topic:changelog` shows recent release notes
+
+### Changed
+
+- **Hangman** is now a subcommand group: `play`, `stats`, `words add`, `words list`
+- **hangman_stats** schema: added `best_time_seconds`, `total_win_time_seconds` (migration in db init)
+
+---
+
 ## [3.2.0] - 2026-02-09
 
 ### Added
