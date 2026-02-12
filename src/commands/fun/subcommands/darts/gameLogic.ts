@@ -10,14 +10,15 @@ export type DartHit =
   | { kind: "innerBull"; value: 50 }
   | { kind: "miss"; value: 0 };
 
-const SEGMENT_WEIGHTS: Array<{ kind: DartHit["kind"]; weight: number; value?: number }> = [
-  { kind: "single", weight: 60 },
-  { kind: "double", weight: 40 },
-  { kind: "triple", weight: 40 },
-  { kind: "outerBull", weight: 4, value: 25 },
-  { kind: "innerBull", weight: 2, value: 50 },
-  { kind: "miss", weight: 3, value: 0 },
-];
+const SEGMENT_WEIGHTS: Array<{ kind: DartHit["kind"]; weight: number; value?: number }> =
+  [
+    { kind: "single", weight: 60 },
+    { kind: "double", weight: 40 },
+    { kind: "triple", weight: 40 },
+    { kind: "outerBull", weight: 4, value: 25 },
+    { kind: "innerBull", weight: 2, value: 50 },
+    { kind: "miss", weight: 3, value: 0 },
+  ];
 
 const TOTAL_WEIGHT = SEGMENT_WEIGHTS.reduce((sum, s) => sum + s.weight, 0);
 

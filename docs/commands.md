@@ -10,25 +10,25 @@ The main hub for all games and fun features.
 
 ### Games (14)
 
-| Command                   | Description                            |
-| ------------------------- | -------------------------------------- |
-| `/fun 8ball`              | Ask the magic 8-ball                   |
-| `/fun rps`                | Rock paper scissors (solo or PvP)      |
-| `/fun tictactoe`          | Tic Tac Toe (solo or PvP)              |
-| `/fun trivia`             | Trivia with points and streaks         |
-| `/fun blackjack`          | Interactive blackjack                  |
-| `/fun connect4`           | PvP Connect 4                          |
-| `/fun hangman play`       | Hangman (dropdown letters, difficulty) |
-| `/fun hangman stats`      | Hangman stats (wins, fastest time)     |
-| `/fun hangman words add`  | (Admin) Add word to list               |
-| `/fun hangman words list` | (Admin) List words                     |
-| `/fun wordle`             | Daily word puzzle                      |
-| `/fun slots`              | Slot machine with jackpots             |
+| Command                   | Description                                                     |
+| ------------------------- | --------------------------------------------------------------- |
+| `/fun 8ball`              | Ask the magic 8-ball                                            |
+| `/fun rps`                | Rock paper scissors (solo or PvP)                               |
+| `/fun tictactoe`          | Tic Tac Toe (solo or PvP)                                       |
+| `/fun trivia`             | Trivia with points and streaks                                  |
+| `/fun blackjack`          | Interactive blackjack                                           |
+| `/fun connect4`           | PvP Connect 4                                                   |
+| `/fun hangman play`       | Hangman (dropdown letters, difficulty)                          |
+| `/fun hangman stats`      | Hangman stats (wins, fastest time)                              |
+| `/fun hangman words add`  | (Admin) Add word to list                                        |
+| `/fun hangman words list` | (Admin) List words                                              |
+| `/fun wordle`             | Daily word puzzle                                               |
+| `/fun slots`              | Slot machine with jackpots                                      |
 | `/fun darts`              | Throw 3 darts (solo or PvP), stats, leaderboards (best/180/PvP) |
-| `/fun would-you-rather`   | WYR questions                          |
-| `/fun coinflip`           | Heads or tails                         |
-| `/fun dice`               | Custom dice rolls                      |
-| `/fun poll`               | Create polls                           |
+| `/fun would-you-rather`   | WYR questions                                                   |
+| `/fun coinflip`           | Heads or tails                                                  |
+| `/fun dice`               | Custom dice rolls                                               |
+| `/fun poll`               | Create polls                                                    |
 
 **Rate limits** (per user, to prevent spam):
 

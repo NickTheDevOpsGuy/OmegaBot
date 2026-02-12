@@ -84,15 +84,7 @@ export function recordSoloThrow(userId: string, score: number, is180: boolean): 
        best_round = ?,
        count_180 = count_180 + ?,
        updated_at = ?`,
-  ).run(
-    userId,
-    newBest,
-    is180 ? 1 : 0,
-    now,
-    newBest,
-    is180 ? 1 : 0,
-    now,
-  );
+  ).run(userId, newBest, is180 ? 1 : 0, now, newBest, is180 ? 1 : 0, now);
 }
 
 /* -------------------------------------------------------------------------- */

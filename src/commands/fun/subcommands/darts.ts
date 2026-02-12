@@ -28,16 +28,8 @@ import {
   getPvpStats,
   getH2HStats,
 } from "./dartsStore.js";
-import {
-  DARTBOARD_ART,
-  doThrow,
-  formatThrowLines,
-} from "./darts/gameLogic.js";
-import {
-  buildThrowButton,
-  buildDeclineButton,
-  buildExtendButton,
-} from "./darts/ui.js";
+import { DARTBOARD_ART, doThrow, formatThrowLines } from "./darts/gameLogic.js";
+import { buildThrowButton, buildDeclineButton, buildExtendButton } from "./darts/ui.js";
 
 const CHALLENGE_TIMEOUT_MS = 3_600_000; // 1 hour
 
@@ -93,9 +85,7 @@ async function showLeaderboard(
       (l, i) =>
         `${i + 1}. <@${l.user_id}> – **${l.count_180}** 180${l.count_180 === 1 ? "" : "s"}`,
     );
-    await interaction.editReply(
-      ["🎯 **180 Leaderboard**", "", ...lines].join("\n"),
-    );
+    await interaction.editReply(["🎯 **180 Leaderboard**", "", ...lines].join("\n"));
   } else {
     const leaders = getPvpWinsLeaderboard(10);
     if (leaders.length === 0) {
@@ -103,8 +93,7 @@ async function showLeaderboard(
       return;
     }
     const lines = leaders.map(
-      (l, i) =>
-        `${i + 1}. <@${l.user_id}> – **${l.wins}** win${l.wins === 1 ? "" : "s"}`,
+      (l, i) => `${i + 1}. <@${l.user_id}> – **${l.wins}** win${l.wins === 1 ? "" : "s"}`,
     );
     await interaction.editReply(
       ["🎯 **Darts PvP Wins Leaderboard**", "", ...lines].join("\n"),
@@ -129,13 +118,7 @@ async function runSoloThrow(interaction: ChatInputCommandInteraction): Promise<v
   recordDartsThrow(interaction.user.id);
   recordSoloThrow(interaction.user.id, score, is180);
 
-  const lines = [
-    "🎯 **Darts**",
-    "",
-    DARTBOARD_ART,
-    "",
-    ...formatThrowLines(hits, score),
-  ];
+  const lines = ["🎯 **Darts**", "", DARTBOARD_ART, "", ...formatThrowLines(hits, score)];
 
   await interaction.editReply(lines.join("\n"));
 
@@ -247,7 +230,11 @@ async function handleChallenge(
         ``,
         DARTBOARD_ART,
         ``,
-        ...formatThrowLines(challengerHits, challengerScore, `${challenger.username}'s throw`),
+        ...formatThrowLines(
+          challengerHits,
+          challengerScore,
+          `${challenger.username}'s throw`,
+        ),
         ``,
         `${opponent} – click **Throw my darts** to take your turn!`,
         `⏱️ **Time extended!** You have another hour.`,
@@ -317,7 +304,11 @@ async function handleChallenge(
         "[darts] PvP complete",
       );
 
-      const oppLines = formatThrowLines(oppHits, oppScore, `${opponent.username}'s throw`);
+      const oppLines = formatThrowLines(
+        oppHits,
+        oppScore,
+        `${opponent.username}'s throw`,
+      );
 
       try {
         await buttonInteraction.update({
@@ -326,7 +317,11 @@ async function handleChallenge(
             ``,
             `${challenger} **${challengerScore}** vs **${oppScore}** ${opponent}`,
             ``,
-            ...formatThrowLines(challengerHits, challengerScore, `${challenger.username}`),
+            ...formatThrowLines(
+              challengerHits,
+              challengerScore,
+              `${challenger.username}`,
+            ),
             ``,
             ...oppLines,
             ``,
@@ -387,7 +382,11 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
     return;
   }
 
-  if (leaderboardView === "best" || leaderboardView === "180" || leaderboardView === "pvp") {
+  if (
+    leaderboardView === "best" ||
+    leaderboardView === "180" ||
+    leaderboardView === "pvp"
+  ) {
     await showLeaderboard(interaction, leaderboardView);
     return;
   }

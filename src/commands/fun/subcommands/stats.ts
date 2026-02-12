@@ -133,7 +133,9 @@ function getDartsStats(db: ReturnType<typeof getDb>, userId: string): DartsRow |
   return safeQuery(
     () =>
       db
-        .prepare(`SELECT throws, best_round, count_180 FROM darts_stats WHERE user_id = ?`)
+        .prepare(
+          `SELECT throws, best_round, count_180 FROM darts_stats WHERE user_id = ?`,
+        )
         .get(userId) as DartsRow,
   );
 }
