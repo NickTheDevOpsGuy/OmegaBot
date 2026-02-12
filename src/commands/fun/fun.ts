@@ -7,7 +7,7 @@ import {
   logKnownInteractionError,
 } from "../../services/discord/interactionErrors.js";
 
-import { buildFunCommand } from "./funSubcommands.js";
+import { buildFunCommand } from "./funSubcommands/index.js";
 
 import { run as runDice } from "./subcommands/dice.js";
 import { run as runCoinflip } from "./subcommands/coinflip.js";

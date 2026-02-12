@@ -76,7 +76,9 @@ const QUESTIONS: Wyr[] = [
   ["Control time", "Control space"],
 ];
 
-const VOTE_TIMEOUT_MS = 60_000; // 60 seconds
+import { SHORT_TIMEOUT_MS } from "../../../constants.js";
+
+const VOTE_TIMEOUT_MS = SHORT_TIMEOUT_MS;
 
 function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];

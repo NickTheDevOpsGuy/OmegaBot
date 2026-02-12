@@ -11,6 +11,7 @@ export type HelpTopic =
   | "games"
   | "profile"
   | "github"
+  | "status"
   | "admin"
   | "commands"
   | "changelog";
@@ -38,6 +39,8 @@ export function buildHelpText(args: {
       return buildProfileHelp();
     case "github":
       return buildGitHubHelp();
+    case "status":
+      return buildStatusHelp();
     case "admin":
       return buildAdminHelp({ isAdmin });
     case "commands":
@@ -66,7 +69,7 @@ function buildOverviewHelp(args: { isAdmin: boolean }): string {
     "",
     "**Topics**",
     "Use `/help topic:<topic>` for detailed help:",
-    `\`overview\`, \`fun\`, \`games\`, \`profile\`${isAdmin ? ", `admin`" : ""}, \`commands\`, \`changelog\``,
+    `\`overview\`, \`fun\`, \`games\`, \`profile\`, \`status\`${isAdmin ? ", `admin`" : ""}, \`commands\`, \`changelog\``,
     "",
     "**Quick Commands**",
     "`/fun daily`       Daily check-in for points",
@@ -198,6 +201,25 @@ function buildGitHubHelp(): string {
 }
 
 /* -------------------------------------------------------------------------- */
+/* Service Status                                                             */
+/* -------------------------------------------------------------------------- */
+
+function buildStatusHelp(): string {
+  return [
+    "**Help: Service Status**",
+    "",
+    "Check external platform status (Vercel, Supabase).",
+    "",
+    "**Commands**",
+    "`/status vercel`     Vercel platform status (builds, deploy, edge)",
+    "`/status supabase`   Supabase platform status (API, DB, auth)",
+    "",
+    "Shows overall status, degraded components, and active incidents.",
+    "Uses public Statuspage APIs—no API keys required.",
+  ].join("\n");
+}
+
+/* -------------------------------------------------------------------------- */
 /* Admin                                                                       */
 /* -------------------------------------------------------------------------- */
 
@@ -279,6 +301,11 @@ function buildCommandsHelp(args: {
 function buildChangelogHelp(): string {
   return [
     "**OmegaBot Changelog**",
+    "",
+    "**3.5.0** (2026-02-12)",
+    "• `/status vercel` – Check Vercel platform status",
+    "• `/status supabase` – Check Supabase platform status",
+    "• Uses Statuspage API; shows incidents and degraded components",
     "",
     "**3.3.0** (2026-02-10)",
     "• Hangman: dropdown letters (A–M / N–Z), difficulty, words in SQLite, solve-time stats",

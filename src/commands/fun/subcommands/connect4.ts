@@ -10,8 +10,7 @@ import { getStats, recordResult } from "./connect4Store.js";
 import { newBoard, drop, has4, full, type Cell } from "./connect4/gameLogic.js";
 import { renderBoard, buildControls, buildHeader, EMOJI } from "./connect4/ui.js";
 
-const MOVE_TIMEOUT_MS = 600_000; // 10 minutes per move
-const WARNING_BEFORE_MS = 60_000; // Remind 1 min before timeout
+import { MOVE_TIMEOUT_MS, WARNING_BEFORE_MS } from "../../../constants.js";
 
 /* -------------------------------------------------------------------------- */
 /* Command Handler                                                             */

@@ -19,7 +19,7 @@ import {
 } from "./blackjack/ui.js";
 import { safeMessageEdit } from "../../../services/discord/safeReply.js";
 
-const GAME_TIMEOUT_MS = 3_600_000; // 1 hour
+import { GAME_TIMEOUT_MS } from "../../../constants.js";
 
 /* -------------------------------------------------------------------------- */
 /* Dealer turn logic                                                          */

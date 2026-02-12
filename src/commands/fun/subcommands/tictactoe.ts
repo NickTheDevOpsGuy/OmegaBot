@@ -26,8 +26,11 @@ import {
 import { buildBoardButtons, buildExtendRow } from "./tictactoe/ui.js";
 import { getStats, recordResult, getH2HStats } from "./tictactoeStore.js";
 
-const MOVE_TIMEOUT_MS = 600_000; // 10 minutes per move
-const WARNING_BEFORE_MS = 60_000; // Remind 1 min before timeout
+import {
+  MOVE_TIMEOUT_MS,
+  WARNING_BEFORE_MS,
+  TICTACTOE_VS_BOT_TIMEOUT_MS,
+} from "../../../constants.js";
 
 async function playVsBot(interaction: ChatInputCommandInteraction): Promise<void> {
   const gameId = `${Date.now()}-${interaction.user.id}`;
@@ -44,7 +47,7 @@ async function playVsBot(interaction: ChatInputCommandInteraction): Promise<void
 
   const collector = message.createMessageComponentCollector({
     componentType: ComponentType.Button,
-    time: MOVE_TIMEOUT_MS * 9, // Max 9 moves
+    time: TICTACTOE_VS_BOT_TIMEOUT_MS,
     filter: (i) =>
       i.user.id === interaction.user.id && i.customId.startsWith(`ttt:${gameId}:`),
   });

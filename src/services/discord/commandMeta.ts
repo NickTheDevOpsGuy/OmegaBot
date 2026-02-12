@@ -102,9 +102,9 @@ function safeToJson(data: unknown): { name?: string; description?: string } | nu
 
 function inferGroupFromName(name: string): string {
   // Minimal inference, keeps output readable until the loader tags groups.
-  if (name === "help" || name === "ping" || name === "status") return "general";
+  if (name === "help" || name === "ping") return "general";
+  if (name === "status" || name === "gh") return "integration";
   if (name === "config" || name === "admin") return "admin";
-  if (name === "gh" || name === "pr") return "github";
   if (name === "fun") return "fun";
   if (name === "timezone") return "timezone";
   if (

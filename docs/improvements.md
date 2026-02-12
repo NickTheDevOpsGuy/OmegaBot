@@ -32,7 +32,7 @@ Suggestions to make OmegaBot more maintainable, observable, and operator-friendl
 
 - ~~**Resolve TODOs**~~ – Done: FAQ services.test.ts now has title/body empty tests; TODO removed.
 - **Stricter typings** – Where you use `as` or `any`, consider narrowing types or adding small interfaces to avoid regressions.
-- **Shared constants** – If the same magic number or string appears in multiple places (e.g. timeouts), centralize in a `constants.ts` or config.
+- ~~**Shared constants**~~ – Done: `src/constants.ts` centralizes game timeouts, move timeouts, and rate limit cooldowns.
 
 ---
 

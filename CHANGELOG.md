@@ -1,3 +1,43 @@
+## [3.5.0] - 2026-02-12
+
+### Added
+
+- **`/status` command** – Check Vercel and Supabase platform status
+
+### Changed
+
+- **Profile refactor** – `/profile` now uses subcommands (view, afk, timezone) in separate files, matching the `/faq` pattern
+- **Fun subcommands** – Extracted quote, hangman, and remind groups from `funSubcommands.ts` into `funSubcommands/*.ts`
+- **Shared constants** – New `src/constants.ts` for game timeouts (GAME_TIMEOUT_MS, MOVE_TIMEOUT_MS, etc.) and rate limit cooldowns
+
+### Fixed
+
+- **general/ping loading** – Added `general/general.ts` so the loader finds the ping command
+- **github/gh loading** – Added `github/github.ts` so the loader finds the gh command
+
+---
+
+## [3.6.0] - 2026-02-12
+
+### Changed
+
+- **README** – Updated project structure (profile subcommands, funSubcommands, status, constants, ping folder, docs)
+- **TypeScript** – Enabled strict mode: `strict`, `strictNullChecks`, `noImplicitAny`, `useUnknownInCatchVariables`
+- **Ping command** – Moved from `general/ping.ts` to `ping/ping.ts` for consistency
+
+### Fixed
+
+- **config** – `starboardThreshold` uses default (3) when clearing instead of null
+- **info** – Permission checks now use `PermissionFlagsBits` constants
+- **suggestion** – Channel send uses type guard for `TextBasedChannel`
+- **Catch callbacks** – Added explicit `(): null => null` return types for `noImplicitAny`
+  - `/status vercel` – Vercel status (builds, deploy, edge network)
+  - `/status supabase` – Supabase status (API, database, auth, storage)
+  - Uses public Statuspage v2 API; shows degraded components and active incidents
+  - Ephemeral replies; no API keys required
+
+---
+
 ## [3.4.0] - 2026-02-10
 
 ### Added

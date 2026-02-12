@@ -34,7 +34,7 @@ import {
   buildLetterDropdowns,
 } from "./hangman/ui.js";
 
-const GAME_TIMEOUT_MS = 3_600_000; // 1 hour
+import { GAME_TIMEOUT_MS } from "../../../constants.js";
 
 /* -------------------------------------------------------------------------- */
 /* Database (stats)                                                           */

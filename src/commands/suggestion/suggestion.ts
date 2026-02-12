@@ -41,10 +41,12 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     .addFields({ name: "From", value: interaction.user.toString(), inline: true })
     .setTimestamp(new Date());
 
-  const sent = await interaction.channel?.send({ embeds: [embed] });
+  const channel = interaction.channel;
+  const sent =
+    channel && "send" in channel ? await channel.send({ embeds: [embed] }) : null;
   if (sent) {
-    await sent.react("👍").catch(() => null);
-    await sent.react("👎").catch(() => null);
+    await sent.react("👍").catch((): null => null);
+    await sent.react("👎").catch((): null => null);
   }
 
   await interaction.editReply("✅ Suggestion posted.");

@@ -12,6 +12,7 @@
 import {
   SlashCommandBuilder,
   EmbedBuilder,
+  PermissionFlagsBits,
   type ChatInputCommandInteraction,
   type GuildMember,
   ChannelType,
@@ -105,13 +106,18 @@ async function handleUserInfo(interaction: ChatInputCommandInteraction): Promise
     });
 
     // Permissions (key ones)
-    const keyPerms = [];
-    if (member.permissions.has("Administrator")) keyPerms.push("Administrator");
-    else {
-      if (member.permissions.has("ManageGuild")) keyPerms.push("Manage Server");
-      if (member.permissions.has("ManageMessages")) keyPerms.push("Manage Messages");
-      if (member.permissions.has("BanMembers")) keyPerms.push("Ban Members");
-      if (member.permissions.has("KickMembers")) keyPerms.push("Kick Members");
+    const keyPerms: string[] = [];
+    if (member.permissions.has(PermissionFlagsBits.Administrator)) {
+      keyPerms.push("Administrator");
+    } else {
+      if (member.permissions.has(PermissionFlagsBits.ManageGuild))
+        keyPerms.push("Manage Server");
+      if (member.permissions.has(PermissionFlagsBits.ManageMessages))
+        keyPerms.push("Manage Messages");
+      if (member.permissions.has(PermissionFlagsBits.BanMembers))
+        keyPerms.push("Ban Members");
+      if (member.permissions.has(PermissionFlagsBits.KickMembers))
+        keyPerms.push("Kick Members");
     }
 
     if (keyPerms.length > 0) {
@@ -139,16 +145,16 @@ async function handleServerInfo(interaction: ChatInputCommandInteraction): Promi
   }
 
   // Fetch more data
-  await guild.members.fetch().catch(() => null);
+  await guild.members.fetch().catch((): null => null);
 
   const textChannels = guild.channels.cache.filter(
-    (c) => c.type === ChannelType.GuildText,
+    (c): boolean => c.type === ChannelType.GuildText,
   ).size;
   const voiceChannels = guild.channels.cache.filter(
-    (c) => c.type === ChannelType.GuildVoice,
+    (c): boolean => c.type === ChannelType.GuildVoice,
   ).size;
   const categories = guild.channels.cache.filter(
-    (c) => c.type === ChannelType.GuildCategory,
+    (c): boolean => c.type === ChannelType.GuildCategory,
   ).size;
 
   const totalMembers = guild.memberCount;

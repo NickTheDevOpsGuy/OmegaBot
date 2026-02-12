@@ -31,7 +31,9 @@ import {
 import { DARTBOARD_ART, doThrow, formatThrowLines } from "./darts/gameLogic.js";
 import { buildThrowButton, buildDeclineButton, buildExtendButton } from "./darts/ui.js";
 
-const CHALLENGE_TIMEOUT_MS = 3_600_000; // 1 hour
+import { GAME_TIMEOUT_MS } from "../../../constants.js";
+
+const CHALLENGE_TIMEOUT_MS = GAME_TIMEOUT_MS;
 
 /* -------------------------------------------------------------------------- */
 /* Stats & Leaderboard                                                         */

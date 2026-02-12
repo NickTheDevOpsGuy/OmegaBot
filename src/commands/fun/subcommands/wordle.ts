@@ -22,6 +22,7 @@ import {
   type ChatInputCommandInteraction,
 } from "discord.js";
 import { logger } from "../../../utils/logger.js";
+import { SHORT_TIMEOUT_MS } from "../../../constants.js";
 import {
   getStats,
   getTodayGame,
@@ -136,7 +137,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
 
     try {
       const modalSubmit = await buttonInteraction.awaitModalSubmit({
-        time: 60_000,
+        time: SHORT_TIMEOUT_MS,
         filter: (i) => i.customId === `wordle-modal:${gameId}`,
       });
 

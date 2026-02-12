@@ -209,7 +209,7 @@ export async function handleStarboardReaction(
     // Get the starboard channel
     const starboardChannel = await message.guild.channels
       .fetch(starboardChannelId)
-      .catch(() => null);
+      .catch((): null => null);
 
     if (!starboardChannel || !starboardChannel.isTextBased()) {
       logger.warn(
@@ -228,7 +228,7 @@ export async function handleStarboardReaction(
         try {
           const starboardMessage = await textChannel.messages
             .fetch(existingPost.starboard_message_id)
-            .catch(() => null);
+            .catch((): null => null);
           if (starboardMessage) {
             await starboardMessage.delete();
           }
@@ -245,7 +245,7 @@ export async function handleStarboardReaction(
         try {
           const starboardMessage = await textChannel.messages
             .fetch(existingPost.starboard_message_id)
-            .catch(() => null);
+            .catch((): null => null);
 
           if (starboardMessage) {
             const embed = buildStarboardEmbed(reaction as MessageReaction, starCount);

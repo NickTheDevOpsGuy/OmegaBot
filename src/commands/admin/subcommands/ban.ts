@@ -17,7 +17,9 @@ export async function handleBan(interaction: ChatInputCommandInteraction): Promi
   }
 
   try {
-    const member = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
+    const member = await interaction.guild.members
+      .fetch(targetUser.id)
+      .catch((): null => null);
 
     if (targetUser.id === interaction.user.id) {
       await safeReply(interaction, {

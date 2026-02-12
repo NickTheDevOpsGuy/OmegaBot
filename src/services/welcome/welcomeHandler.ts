@@ -32,7 +32,7 @@ async function resolveWelcomeChannel(guild: Guild): Promise<TextBasedChannel | n
 
   // Prefer configured welcome channel.
   if (cfg.welcomeChannelId) {
-    const ch = await guild.channels.fetch(cfg.welcomeChannelId).catch(() => null);
+    const ch = await guild.channels.fetch(cfg.welcomeChannelId).catch((): null => null);
     if (ch?.isTextBased()) return ch;
   }
 
@@ -42,7 +42,7 @@ async function resolveWelcomeChannel(guild: Guild): Promise<TextBasedChannel | n
   }
 
   // Final fallback: first text-based channel found.
-  const channels = await guild.channels.fetch().catch(() => null);
+  const channels = await guild.channels.fetch().catch((): null => null);
   if (!channels) return null;
 
   for (const [, ch] of channels) {

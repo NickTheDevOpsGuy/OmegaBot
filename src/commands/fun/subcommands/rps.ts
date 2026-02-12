@@ -30,7 +30,9 @@ import {
 } from "./rps/gameLogic.js";
 import { buildChoiceButtons, buildDeclineButton, buildExtendButton } from "./rps/ui.js";
 
-const CHALLENGE_TIMEOUT_MS = 3_600_000; // 1 hour
+import { GAME_TIMEOUT_MS } from "../../../constants.js";
+
+const CHALLENGE_TIMEOUT_MS = GAME_TIMEOUT_MS;
 
 /* -------------------------------------------------------------------------- */
 /* Challenge handler                                                           */

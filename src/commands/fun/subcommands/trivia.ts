@@ -21,7 +21,9 @@ import {
   type TriviaCategory,
 } from "./trivia/questions.js";
 
-const TRIVIA_TIMEOUT_MS = 30_000; // 30 seconds
+import { TRIVIA_QUESTION_TIMEOUT_MS } from "../../../constants.js";
+
+const TRIVIA_TIMEOUT_MS = TRIVIA_QUESTION_TIMEOUT_MS;
 
 /* -------------------------------------------------------------------------- */
 /* Command handler                                                             */

@@ -3,13 +3,15 @@
 // Simple in-memory rate limiter for commands that can be spammed.
 // Resets on bot restart.
 
-const RATE_LIMITS = new Map<string, number>();
+import {
+  SLOTS_COOLDOWN_MS,
+  BLACKJACK_COOLDOWN_MS,
+  DICE_COOLDOWN_MS,
+  DARTS_COOLDOWN_MS,
+  HANGMAN_COOLDOWN_MS,
+} from "../../constants.js";
 
-const SLOTS_COOLDOWN_MS = 3_000; // 3 seconds between spins
-const BLACKJACK_COOLDOWN_MS = 5_000; // 5 seconds between games
-const DICE_COOLDOWN_MS = 2_000; // 2 seconds between rolls
-const DARTS_COOLDOWN_MS = 2_000; // 2 seconds between throws
-const HANGMAN_COOLDOWN_MS = 10_000; // 10 seconds between games
+const RATE_LIMITS = new Map<string, number>();
 
 const SLOTS_KEY_PREFIX = "slots:";
 const BLACKJACK_KEY_PREFIX = "blackjack:";

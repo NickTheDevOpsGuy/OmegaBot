@@ -250,7 +250,7 @@ async function handleStarboard(
   } else if (sub === "clear") {
     setGuildConfig(interaction.guildId!, {
       starboardChannelId: null,
-      starboardThreshold: null,
+      starboardThreshold: 3,
     });
 
     logger.info({ guildId: interaction.guildId }, "[config] starboard disabled");

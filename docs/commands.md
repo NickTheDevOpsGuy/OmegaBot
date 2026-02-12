@@ -184,12 +184,24 @@ Requires **Manage Server** permission.
 
 ---
 
+## `/status` - Service Status
+
+Check external service status (Vercel, Supabase).
+
+| Command            | Description              |
+| ------------------ | ------------------------ |
+| `/status vercel`   | Vercel platform status   |
+| `/status supabase` | Supabase platform status |
+
+---
+
 ## Other Commands
 
 | Command     | Description                                        |
 | ----------- | -------------------------------------------------- |
 | `/help`     | Command help (use `topic:changelog` for changelog) |
 | `/ping`     | Health check                                       |
+| `/status`   | Vercel / Supabase status                           |
 | `/summary`  | Summarize chat                                     |
 | `/history`  | View chat history                                  |
 | `/playback` | Transcript playback                                |
@@ -205,7 +217,7 @@ Requires **Manage Server** permission.
 | Fun               | 1 (with 25+ subcommands)                           |
 | Server Management | 3 (config, giveaway, suggestion)                   |
 | Content           | 4 (faq, summary, history, playback)                |
-| Integration       | 1 (gh)                                             |
-| **Total**         | **15 slash commands**                              |
+| Integration       | 2 (gh, status)                                     |
+| **Total**         | **16 slash commands**                              |
 
 ---

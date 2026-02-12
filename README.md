@@ -34,13 +34,14 @@ Not intended to be:
 
 ## Features at a Glance
 
-- 15 slash commands with logical grouping
+- 16 slash commands with logical grouping
 - 14 interactive games
 - 19 unlockable achievements
 - Giveaway system with automatic winners
 - Starboard message highlights
 - AFK and timezone management
 - GitHub PR and issue lookups
+- Vercel and Supabase status checks (`/status vercel`, `/status supabase`)
 - SQLite persistence for all data
 - **Resilient interaction handling** – safe reply wrappers, error logging, retry on transient API errors, and unhandled rejection catching (reduces "failed to complete" occurrences)
 - **Admin health dashboard** – `/admin health` shows database status, env vars, and interaction error counts
@@ -106,7 +107,7 @@ npm start
 
 ## Project Structure
 
-Games use a modular layout: `gameLogic.ts` (pure rules), `ui.ts` (Discord components), and `*Store.ts` (database). Shared stats queries live in `services/gameStats/`.
+Games use a modular layout: `gameLogic.ts` (pure rules), `ui.ts` (Discord components), and `*Store.ts` (database). Shared stats queries live in `services/gameStats/`. Timeouts and rate limits are in `src/constants.ts`.
 
 <details>
 <summary>📁 Click to expand file structure</summary>
@@ -137,7 +138,10 @@ Games use a modular layout: `gameLogic.ts` (pure rules), `ui.ts` (Discord compon
 │   ├── analytics.md
 │   ├── commands.md
 │   ├── dev-notes.md
+│   ├── faq-admins.md
 │   ├── faq.md
+│   ├── improvements.md
+│   ├── runbook.md
 │   ├── setup-discord.md
 │   ├── setup-env.md
 │   ├── transcripts.md
@@ -145,6 +149,7 @@ Games use a modular layout: `gameLogic.ts` (pure rules), `ui.ts` (Discord compon
 ├── migrations
 │   ├── 001_rps_stats.sql
 │   ├── 002_game_usage_daily.sql
+│   ├── 003_darts_stats.sql
 │   └── schema.sql
 ├── scripts
 │   ├── db-check.ts
@@ -241,11 +246,14 @@ Games use a modular layout: `gameLogic.ts` (pure rules), `ui.ts` (Discord compon
 │   │   │   ├── coinflipStore.ts
 │   │   │   ├── coinStore.ts
 │   │   │   ├── fun.ts
-│   │   │   └── funSubcommands.ts
-│   │   ├── general
-│   │   │   └── ping.ts
+│   │   │   └── funSubcommands
+│   │   │       ├── hangmanGroup.ts
+│   │   │       ├── index.ts
+│   │   │       ├── quoteGroup.ts
+│   │   │       └── remindGroup.ts
 │   │   ├── github
 │   │   │   ├── gh.ts
+│   │   │   ├── github.ts
 │   │   │   ├── pr.ts
 │   │   │   └── status.ts
 │   │   ├── giveaway
@@ -259,10 +267,19 @@ Games use a modular layout: `gameLogic.ts` (pure rules), `ui.ts` (Discord compon
 │   │   │   └── history.ts
 │   │   ├── info
 │   │   │   └── info.ts
+│   │   ├── ping
+│   │   │   └── ping.ts
 │   │   ├── playback
 │   │   │   └── playback.ts
 │   │   ├── profile
-│   │   │   └── profile.ts
+│   │   │   ├── profile.ts
+│   │   │   ├── profileHelpers.ts
+│   │   │   └── subcommands
+│   │   │       ├── afk.ts
+│   │   │       ├── timezone.ts
+│   │   │       └── view.ts
+│   │   ├── status
+│   │   │   └── status.ts
 │   │   ├── suggestion
 │   │   │   └── suggestion.ts
 │   │   └── summary
@@ -354,6 +371,7 @@ Games use a modular layout: `gameLogic.ts` (pure rules), `ui.ts` (Discord compon
 │   │   └── welcome
 │   │       ├── welcomeHandler.ts
 │   │       └── welcomeMessage.ts
+│   ├── constants.ts
 │   ├── test
 │   │   └── dbTestUtils.ts
 │   ├── types
