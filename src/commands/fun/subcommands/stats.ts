@@ -37,6 +37,8 @@ type WordleRow = {
   max_streak: number;
 };
 type SlotsRow = { spins: number; wins: number; jackpots: number };
+type DartsRow = { throws: number; best_round: number; count_180: number };
+type DartsPvpRow = { wins: number; losses: number; ties: number };
 type CoinRow = { heads: number; tails: number };
 
 function getRPSStats(db: ReturnType<typeof getDb>, userId: string): RPSRow | null {
@@ -127,6 +129,27 @@ function getSlotsStats(db: ReturnType<typeof getDb>, userId: string): SlotsRow |
   );
 }
 
+function getDartsStats(db: ReturnType<typeof getDb>, userId: string): DartsRow | null {
+  return safeQuery(
+    () =>
+      db
+        .prepare(`SELECT throws, best_round, count_180 FROM darts_stats WHERE user_id = ?`)
+        .get(userId) as DartsRow,
+  );
+}
+
+function getDartsPvpStats(
+  db: ReturnType<typeof getDb>,
+  userId: string,
+): DartsPvpRow | null {
+  return safeQuery(
+    () =>
+      db
+        .prepare(`SELECT wins, losses, ties FROM darts_pvp_stats WHERE user_id = ?`)
+        .get(userId) as DartsPvpRow,
+  );
+}
+
 function getCoinStats(db: ReturnType<typeof getDb>, userId: string): CoinRow | null {
   return safeQuery(() => {
     const heads = db
@@ -159,6 +182,8 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
   const hangman = getHangmanStats(db, targetUser.id);
   const wordle = getWordleStats(db, targetUser.id);
   const slots = getSlotsStats(db, targetUser.id);
+  const darts = getDartsStats(db, targetUser.id);
+  const dartsPvp = getDartsPvpStats(db, targetUser.id);
   const coins = getCoinStats(db, targetUser.id);
 
   const embed = new EmbedBuilder()
@@ -219,6 +244,16 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
     );
   }
 
+  if (darts && darts.throws > 0) {
+    const pvpPart =
+      dartsPvp && dartsPvp.wins + dartsPvp.losses + dartsPvp.ties > 0
+        ? ` | PvP: ${dartsPvp.wins}W/${dartsPvp.losses}L/${dartsPvp.ties}T`
+        : "";
+    funLines.push(
+      `🎯 **Darts:** ${darts.throws} throws, best ${darts.best_round} | 🔥 ${darts.count_180} 180s${pvpPart}`,
+    );
+  }
+
   if (coins && (coins.heads > 0 || coins.tails > 0)) {
     const total = coins.heads + coins.tails;
     funLines.push(`🪙 **Coins:** ${total} flips (${coins.heads}H / ${coins.tails}T)`);
@@ -258,6 +293,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
     !hangman &&
     !wordle &&
     !slots &&
+    !darts &&
     !coins
   ) {
     embed.setDescription("No stats yet! Start playing some games!");

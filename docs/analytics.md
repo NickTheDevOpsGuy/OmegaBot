@@ -23,7 +23,7 @@ CREATE TABLE game_usage_daily (
 ### Commands Tracked
 
 - `slots`, `blackjack`, `rps`, `trivia`, `hangman`, `wordle`
-- `connect4`, `tictactoe`, `dice`, `coinflip`
+- `connect4`, `tictactoe`, `dice`, `coinflip`, `darts`
 
 ### Usage
 

@@ -8,11 +8,13 @@ const RATE_LIMITS = new Map<string, number>();
 const SLOTS_COOLDOWN_MS = 3_000; // 3 seconds between spins
 const BLACKJACK_COOLDOWN_MS = 5_000; // 5 seconds between games
 const DICE_COOLDOWN_MS = 2_000; // 2 seconds between rolls
+const DARTS_COOLDOWN_MS = 2_000; // 2 seconds between throws
 const HANGMAN_COOLDOWN_MS = 10_000; // 10 seconds between games
 
 const SLOTS_KEY_PREFIX = "slots:";
 const BLACKJACK_KEY_PREFIX = "blackjack:";
 const DICE_KEY_PREFIX = "dice:";
+const DARTS_KEY_PREFIX = "darts:";
 const HANGMAN_KEY_PREFIX = "hangman:";
 
 function checkCooldown(userId: string, prefix: string, cooldownMs: number): number {
@@ -74,6 +76,21 @@ export function checkDiceCooldown(userId: string): number {
  */
 export function recordDiceRoll(userId: string): void {
   recordUse(userId, DICE_KEY_PREFIX);
+}
+
+/**
+ * Check if user is rate limited for darts.
+ * Returns remaining ms if limited, 0 if ok to proceed.
+ */
+export function checkDartsCooldown(userId: string): number {
+  return checkCooldown(userId, DARTS_KEY_PREFIX, DARTS_COOLDOWN_MS);
+}
+
+/**
+ * Record a darts throw (call after successful throw).
+ */
+export function recordDartsThrow(userId: string): void {
+  recordUse(userId, DARTS_KEY_PREFIX);
 }
 
 /**

@@ -41,4 +41,4 @@ Use **`/admin health`** (requires Manage Server). It shows DB status, env summar
 
 ## Rate limits / cooldowns
 
-Slots (3s), blackjack (5s), dice (2s), and hangman (10s) have per-user cooldowns. Stats and leaderboard views are not rate limited. See [Command Reference – Rate limits](commands.md#rate-limits-per-user-to-prevent-spam).
+Slots (3s), blackjack (5s), dice (2s), darts (2s), and hangman (10s) have per-user cooldowns. Stats and leaderboard views are not rate limited. See [Command Reference – Rate limits](commands.md#rate-limits-per-user-to-prevent-spam).

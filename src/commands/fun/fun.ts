@@ -33,6 +33,7 @@ import { run as runWouldYouRather } from "./subcommands/wouldYouRather.js";
 import { run as runFact } from "./subcommands/fact.js";
 import { run as runHangman } from "./subcommands/hangman.js";
 import { run as runWordle } from "./subcommands/wordle.js";
+import { run as runDarts } from "./subcommands/darts.js";
 import { run as runSlots } from "./subcommands/slots.js";
 import { run as runStats } from "./subcommands/stats.js";
 
@@ -76,6 +77,7 @@ function funKeyFromSub(sub: string): FunCommandKey | null {
     hangman: "hangman",
     wordle: "wordle",
     slots: "slots",
+    darts: "darts",
     stats: "stats",
   };
   return map[sub] ?? null;
@@ -92,6 +94,7 @@ const USAGE_TO_METRIC: Partial<Record<FunCommandKey, GameCommand>> = {
   tictactoe: "tictactoe",
   dice: "dice",
   coinflip: "coinflip",
+  darts: "darts",
 };
 
 async function maybeRecordUsage(
@@ -134,6 +137,7 @@ const HANDLERS: Record<string, FunHandler> = {
   dice: runDice,
   coinflip: runCoinflip,
   coinflipstats: runCoinflipStats,
+  darts: runDarts,
   poll: runPoll,
 };
 

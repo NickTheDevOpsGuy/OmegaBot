@@ -25,6 +25,7 @@ export type FunCommandKey =
   | "hangman"
   | "wordle"
   | "slots"
+  | "darts"
   | "stats";
 
 type FunUsageStoreV1 = {
@@ -74,6 +75,7 @@ const ALL_COMMANDS: FunCommandKey[] = [
   "hangman",
   "wordle",
   "slots",
+  "darts",
   "stats",
 ];
 

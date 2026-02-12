@@ -8,7 +8,7 @@ OmegaBot has **15 slash commands** organized into logical groups.
 
 The main hub for all games and fun features.
 
-### Games (13)
+### Games (14)
 
 | Command                   | Description                            |
 | ------------------------- | -------------------------------------- |
@@ -24,6 +24,7 @@ The main hub for all games and fun features.
 | `/fun hangman words list` | (Admin) List words                     |
 | `/fun wordle`             | Daily word puzzle                      |
 | `/fun slots`              | Slot machine with jackpots             |
+| `/fun darts`              | Throw 3 darts (solo or PvP), stats, leaderboards (best/180/PvP) |
 | `/fun would-you-rather`   | WYR questions                          |
 | `/fun coinflip`           | Heads or tails                         |
 | `/fun dice`               | Custom dice rolls                      |
@@ -34,6 +35,7 @@ The main hub for all games and fun features.
 - Slots: 3 seconds between spins
 - Blackjack: 5 seconds between games
 - Dice: 2 seconds between rolls
+- Darts: 2 seconds between throws
 - Hangman: 10 seconds between games
 
 Stats and leaderboard views are not rate limited.

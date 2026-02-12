@@ -117,6 +117,22 @@ const ACHIEVEMENTS: Achievement[] = [
     category: "games",
     checkFn: (u, db) => getScalar(db, u, "connect4_stats", "wins") >= 10,
   },
+  {
+    id: "one_eighty",
+    name: "One Eighty!",
+    description: "Hit a 180 in darts",
+    emoji: "🎯",
+    category: "luck",
+    checkFn: (u, db) => getScalar(db, u, "darts_stats", "count_180") >= 1,
+  },
+  {
+    id: "ton_of_fun",
+    name: "Ton of Fun",
+    description: "Score 100+ in a darts round",
+    emoji: "💯",
+    category: "games",
+    checkFn: (u, db) => getScalar(db, u, "darts_stats", "best_round") >= 100,
+  },
   // Luck
   {
     id: "jackpot",

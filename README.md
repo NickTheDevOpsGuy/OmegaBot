@@ -35,7 +35,7 @@ Not intended to be:
 ## Features at a Glance
 
 - 15 slash commands with logical grouping
-- 13 interactive games
+- 14 interactive games
 - 19 unlockable achievements
 - Giveaway system with automatic winners
 - Starboard message highlights
@@ -45,7 +45,7 @@ Not intended to be:
 - **Resilient interaction handling** – safe reply wrappers, error logging, retry on transient API errors, and unhandled rejection catching (reduces "failed to complete" occurrences)
 - **Admin health dashboard** – `/admin health` shows database status, env vars, and interaction error counts
 - **Database integrity check** – `npm run db:check` to verify SQLite health
-- **Rate limiting** – slots (3s), blackjack (5s), dice (2s), hangman (10s) cooldowns to prevent spam
+- **Rate limiting** – slots (3s), blackjack (5s), dice (2s), darts (2s), hangman (10s) cooldowns to prevent spam
 - **Daily game metrics** – per-command, per-user play counts for analytics
 - **Long game timeouts** – Blackjack, Hangman, Wordle, and RPS challenges: 1 hour; Connect 4 and Tic Tac Toe: 10 min per move (starter can extend)
 - **Extend time** – The person who started the game can add more time via an "Extend time" button (Blackjack, Connect 4, Tic Tac Toe, Wordle, RPS challenge)
@@ -205,6 +205,11 @@ Games use a modular layout: `gameLogic.ts` (pure rules), `ui.ts` (Discord compon
 │   │   │   │   ├── connect4Store.ts
 │   │   │   │   ├── daily.test.ts
 │   │   │   │   ├── daily.ts
+│   │   │   │   ├── darts
+│   │   │   │   │   ├── gameLogic.ts
+│   │   │   │   │   └── ui.ts
+│   │   │   │   ├── darts.ts
+│   │   │   │   ├── dartsStore.ts
 │   │   │   │   ├── dice.integration.test.ts
 │   │   │   │   ├── dice.ts
 │   │   │   │   ├── eightball.ts

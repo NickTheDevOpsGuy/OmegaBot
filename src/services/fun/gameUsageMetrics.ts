@@ -15,7 +15,8 @@ export type GameCommand =
   | "connect4"
   | "tictactoe"
   | "dice"
-  | "coinflip";
+  | "coinflip"
+  | "darts";
 
 function ensureTable(): void {
   const db = getDb();

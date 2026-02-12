@@ -303,6 +303,29 @@ export function buildFunCommand(): SlashCommandBuilder {
 
     .addSubcommand((s) =>
       s
+        .setName("darts")
+        .setDescription("Throw 3 darts at the board!")
+        .addUserOption((o) =>
+          o.setName("opponent").setDescription("Challenge another player to darts"),
+        )
+        .addBooleanOption((o) =>
+          o.setName("stats").setDescription("Show your darts stats"),
+        )
+        .addStringOption((o) =>
+          o
+            .setName("leaderboard")
+            .setDescription("Show leaderboard")
+            .addChoices(
+              { name: "Best round", value: "best" },
+              { name: "Most 180s", value: "180" },
+              { name: "PvP wins", value: "pvp" },
+            ),
+        )
+        .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+    )
+
+    .addSubcommand((s) =>
+      s
         .setName("slots")
         .setDescription("Spin the slot machine!")
         .addBooleanOption((o) =>

@@ -13,6 +13,7 @@ const WIN_TABLES = [
   "blackjack_stats",
   "hangman_stats",
   "connect4_stats",
+  "darts_pvp_stats",
 ] as const;
 
 const GAME_COUNT_TABLES = [
@@ -21,6 +22,7 @@ const GAME_COUNT_TABLES = [
   { table: "blackjack_stats", cols: ["wins", "losses", "ties"] },
   { table: "hangman_stats", cols: ["wins", "losses"] },
   { table: "connect4_stats", cols: ["wins", "losses", "ties"] },
+  { table: "darts_pvp_stats", cols: ["wins", "losses", "ties"] },
 ] as const;
 
 /**
