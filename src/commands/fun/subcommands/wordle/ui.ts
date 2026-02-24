@@ -29,7 +29,8 @@ function getLetterStatuses(guesses: string[], word: string): Map<string, LetterS
       const result = getLetterResult(guess, word, i);
       const current = status.get(letter);
       if (!current || result === "correct") status.set(letter, result);
-      else if (current !== "correct" && result === "present") status.set(letter, "present");
+      else if (current !== "correct" && result === "present")
+        status.set(letter, "present");
       else if (current === "absent" && result !== "absent") status.set(letter, result);
     }
   }
