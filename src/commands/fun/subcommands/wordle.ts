@@ -133,7 +133,22 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
         ),
       );
 
-    await buttonInteraction.showModal(modal);
+    try {
+      await buttonInteraction.showModal(modal);
+    } catch (err) {
+      logger.warn({ err, gameId }, "[wordle] failed to show modal");
+      await safeMessageEdit(
+        message,
+        {
+          content:
+            buildGameMessage(guesses, word, "playing") +
+            "\n\n⚠️ Couldn't open the guess form. Click the button again.",
+          components: [buildGuessButton(gameId)],
+        },
+        "wordle.showModal",
+      ).catch(() => {});
+      return;
+    }
 
     try {
       const modalSubmit = await buttonInteraction.awaitModalSubmit({
@@ -151,6 +166,9 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
         return;
       }
 
+      // Defer immediately — gives us time to process without hitting Discord's 3s limit
+      await modalSubmit.deferUpdate();
+
       guesses.push(guess);
 
       const won = guess === word;
@@ -164,7 +182,6 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
           "[wordle] game ended",
         );
 
-        await modalSubmit.deferUpdate();
         await interaction.editReply({
           content: buildGameMessage(guesses, word, won ? "won" : "lost"),
           components: [buildGuessButton(gameId, true)],
@@ -174,13 +191,23 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
 
       saveGame(userId, guesses, false, word);
 
-      await modalSubmit.deferUpdate();
       await interaction.editReply({
         content: buildGameMessage(guesses, word, "playing"),
         components: [buildGuessButton(gameId)],
       });
     } catch (err) {
-      logger.debug({ err }, "[wordle] modal timeout or error");
+      logger.debug({ err, gameId }, "[wordle] modal timeout or error");
+      // Modal expired or user closed it — update message so they know to try again
+      await safeMessageEdit(
+        message,
+        {
+          content:
+            buildGameMessage(guesses, word, "playing") +
+            "\n\n⏱️ *Guess timed out or cancelled. Click the button to guess again.*",
+          components: [buildGuessButton(gameId)],
+        },
+        "wordle.modalTimeout",
+      ).catch(() => {});
     }
   });
 
