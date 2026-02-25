@@ -52,7 +52,6 @@ jobs:
   e2e:
     name: 🧪 E2E (Discord)
     runs-on: ubuntu-latest
-    if: ${{ secrets.DISCORD_TOKEN != '' && secrets.DISCORD_APP_ID != '' }}
 
     defaults:
       run:
