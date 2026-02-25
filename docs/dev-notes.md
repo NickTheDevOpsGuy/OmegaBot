@@ -81,6 +81,40 @@ Guidelines:
 
 ---
 
+## Autocomplete & Interaction Handling
+
+### Autocomplete
+
+When adding autocomplete to a slash command option (`setAutocomplete(true)`), implement the optional `autocomplete` handler on the command module. The handler must call `interaction.respond(choices)` within ~3 seconds.
+
+```typescript
+// In your command module
+export const data = new SlashCommandBuilder()
+  .addStringOption((o) =>
+    o.setName("zone").setDescription("Timezone").setAutocomplete(true),
+  );
+
+export async function autocomplete(interaction: AutocompleteInteraction) {
+  const focused = interaction.options.getFocused();
+  const choices = getMatchingTimezones(focused).slice(0, 25);
+  await interaction.respond(choices.map((z) => ({ name: z, value: z })));
+}
+```
+
+If a command has no autocomplete handler, the interaction handler responds with `[]` so Discord does not show an error.
+
+### "Interaction Failed" Prevention
+
+Collectors and button handlers should:
+
+1. **Defer early** – Call `deferUpdate()` or `reply()` before any heavy work (DB, file I/O, game logic).
+2. **Use `message.edit()` after defer** – Once deferred, update the message via `message.edit()`, not `interaction.update()`.
+3. **Catch and recover** – Wrap handlers in try/catch; on error, call `deferUpdate().catch(() => {})` if the interaction was never acked.
+
+Logs include `interactionFailedRecovery: true` when we recover from an error to prevent "interaction failed". Use this field when monitoring or alerting on interaction issues.
+
+---
+
 ## Environment Variables
 
 See [.env.example](../.env.example) for the full list of required and optional

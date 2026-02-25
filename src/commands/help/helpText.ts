@@ -302,6 +302,11 @@ function buildChangelogHelp(): string {
   return [
     "**OmegaBot Changelog**",
     "",
+    "**3.7.0** (2026-02-12)",
+    "• Interaction handling: defer early, try/catch with fallback, reduces 'interaction failed'",
+    "• Autocomplete support for slash commands",
+    "• Logs `interactionFailedRecovery: true` when recovering from collector/button errors",
+    "",
     "**3.5.0** (2026-02-12)",
     "• `/status vercel` – Check Vercel platform status",
     "• `/status supabase` – Check Supabase platform status",

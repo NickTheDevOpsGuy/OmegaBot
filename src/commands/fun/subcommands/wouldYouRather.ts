@@ -192,9 +192,10 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
         return;
       }
 
-      votes.set(buttonInteraction.user.id, choice);
-
+      // Acknowledge immediately so we don't hit Discord's 3s limit
       await buttonInteraction.deferUpdate();
+
+      votes.set(buttonInteraction.user.id, choice);
       await interaction.editReply({
         embeds: [buildEmbed()],
         components: [buildButtons()],
@@ -206,7 +207,13 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
         ephemeral: true,
       });
     } catch (err) {
-      logger.warn({ err }, "[fun/wouldYouRather] vote handler failed");
+      logger.warn(
+        { err, interactionFailedRecovery: true },
+        "[fun/wouldYouRather] vote handler failed",
+      );
+      if (!buttonInteraction.replied && !buttonInteraction.deferred) {
+        await buttonInteraction.deferUpdate().catch(() => {});
+      }
     }
   });
 

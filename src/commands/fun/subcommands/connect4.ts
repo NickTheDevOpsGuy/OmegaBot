@@ -132,10 +132,16 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       }
 
       const m = btn.customId.match(/^c4:(\d+):(.+)$/);
-      if (!m) return;
+      if (!m) {
+        await btn.deferUpdate().catch(() => {});
+        return;
+      }
 
       const col = Number(m[1]);
-      if (!Number.isFinite(col)) return;
+      if (!Number.isFinite(col)) {
+        await btn.deferUpdate().catch(() => {});
+        return;
+      }
 
       const who: Cell = turn === 1 ? 1 : 2;
       const placed = drop(board, col, who);
@@ -208,7 +214,10 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
         "connect4.turn",
       );
     } catch (err) {
-      logger.warn({ err }, "[fun/connect4] handler failed");
+      logger.warn(
+        { err, interactionFailedRecovery: true },
+        "[fun/connect4] handler failed",
+      );
     }
   });
 
@@ -238,6 +247,6 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
         components: buildControls({ gameId, board, disabled: true }),
       },
       "connect4.timeout",
-    );
+    ).catch(() => {});
   });
 }

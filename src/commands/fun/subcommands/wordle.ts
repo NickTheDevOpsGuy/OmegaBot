@@ -104,110 +104,121 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
   });
 
   collector.on("collect", async (buttonInteraction) => {
-    const action = buttonInteraction.customId.split(":")[2];
-    if (action === "extend") {
-      collector.resetTimer();
-      await buttonInteraction.deferUpdate();
-      await interaction.editReply({
-        content:
-          buildGameMessage(guesses, word, "playing") +
-          "\n\n⏱️ *Time extended! You have another hour.*",
-        components: [buildGuessButton(gameId)],
-      });
-      return;
-    }
-
-    const modal = new ModalBuilder()
-      .setCustomId(`wordle-modal:${gameId}`)
-      .setTitle("Wordle - Enter Your Guess")
-      .addComponents(
-        new ActionRowBuilder<TextInputBuilder>().addComponents(
-          new TextInputBuilder()
-            .setCustomId("guess")
-            .setLabel("Your 5-letter guess")
-            .setStyle(TextInputStyle.Short)
-            .setMinLength(5)
-            .setMaxLength(5)
-            .setPlaceholder("Enter a 5-letter word")
-            .setRequired(true),
-        ),
-      );
-
     try {
-      await buttonInteraction.showModal(modal);
-    } catch (err) {
-      logger.warn({ err, gameId }, "[wordle] failed to show modal");
-      await safeMessageEdit(
-        message,
-        {
+      const action = buttonInteraction.customId.split(":")[2];
+      if (action === "extend") {
+        collector.resetTimer();
+        await buttonInteraction.deferUpdate();
+        await interaction.editReply({
           content:
             buildGameMessage(guesses, word, "playing") +
-            "\n\n⚠️ Couldn't open the guess form. Click the button again.",
+            "\n\n⏱️ *Time extended! You have another hour.*",
           components: [buildGuessButton(gameId)],
-        },
-        "wordle.showModal",
-      ).catch(() => {});
-      return;
-    }
-
-    try {
-      const modalSubmit = await buttonInteraction.awaitModalSubmit({
-        time: SHORT_TIMEOUT_MS,
-        filter: (i) => i.customId === `wordle-modal:${gameId}`,
-      });
-
-      const guess = modalSubmit.fields.getTextInputValue("guess").toLowerCase().trim();
-
-      if (guess.length !== WORD_LENGTH || !/^[a-z]+$/.test(guess)) {
-        await modalSubmit.reply({
-          content: "Please enter a valid 5-letter word!",
-          ephemeral: true,
         });
         return;
       }
 
-      // Defer immediately — gives us time to process without hitting Discord's 3s limit
-      await modalSubmit.deferUpdate();
-
-      guesses.push(guess);
-
-      const won = guess === word;
-      const lost = !won && guesses.length >= MAX_GUESSES;
-
-      if (won || lost) {
-        collector.stop(won ? "won" : "lost");
-        saveGame(userId, guesses, won, word);
-        logger.info(
-          { gameId, userId, won, guesses: guesses.length },
-          "[wordle] game ended",
+      const modal = new ModalBuilder()
+        .setCustomId(`wordle-modal:${gameId}`)
+        .setTitle("Wordle - Enter Your Guess")
+        .addComponents(
+          new ActionRowBuilder<TextInputBuilder>().addComponents(
+            new TextInputBuilder()
+              .setCustomId("guess")
+              .setLabel("Your 5-letter guess")
+              .setStyle(TextInputStyle.Short)
+              .setMinLength(5)
+              .setMaxLength(5)
+              .setPlaceholder("Enter a 5-letter word")
+              .setRequired(true),
+          ),
         );
 
-        await interaction.editReply({
-          content: buildGameMessage(guesses, word, won ? "won" : "lost"),
-          components: [buildGuessButton(gameId, true)],
-        });
+      try {
+        await buttonInteraction.showModal(modal);
+      } catch (err) {
+        logger.warn({ err, gameId }, "[wordle] failed to show modal");
+        await buttonInteraction.deferUpdate().catch(() => {});
+        await safeMessageEdit(
+          message,
+          {
+            content:
+              buildGameMessage(guesses, word, "playing") +
+              "\n\n⚠️ Couldn't open the guess form. Click the button again.",
+            components: [buildGuessButton(gameId)],
+          },
+          "wordle.showModal",
+        ).catch(() => {});
         return;
       }
 
-      saveGame(userId, guesses, false, word);
+      try {
+        const modalSubmit = await buttonInteraction.awaitModalSubmit({
+          time: SHORT_TIMEOUT_MS,
+          filter: (i) => i.customId === `wordle-modal:${gameId}`,
+        });
 
-      await interaction.editReply({
-        content: buildGameMessage(guesses, word, "playing"),
-        components: [buildGuessButton(gameId)],
-      });
-    } catch (err) {
-      logger.debug({ err, gameId }, "[wordle] modal timeout or error");
-      // Modal expired or user closed it — update message so they know to try again
-      await safeMessageEdit(
-        message,
-        {
-          content:
-            buildGameMessage(guesses, word, "playing") +
-            "\n\n⏱️ *Guess timed out or cancelled. Click the button to guess again.*",
+        const guess = modalSubmit.fields.getTextInputValue("guess").toLowerCase().trim();
+
+        if (guess.length !== WORD_LENGTH || !/^[a-z]+$/.test(guess)) {
+          await modalSubmit.reply({
+            content: "Please enter a valid 5-letter word!",
+            ephemeral: true,
+          });
+          return;
+        }
+
+        // Defer immediately — gives us time to process without hitting Discord's 3s limit
+        await modalSubmit.deferUpdate();
+
+        guesses.push(guess);
+
+        const won = guess === word;
+        const lost = !won && guesses.length >= MAX_GUESSES;
+
+        if (won || lost) {
+          collector.stop(won ? "won" : "lost");
+          saveGame(userId, guesses, won, word);
+          logger.info(
+            { gameId, userId, won, guesses: guesses.length },
+            "[wordle] game ended",
+          );
+
+          await interaction.editReply({
+            content: buildGameMessage(guesses, word, won ? "won" : "lost"),
+            components: [buildGuessButton(gameId, true)],
+          });
+          return;
+        }
+
+        saveGame(userId, guesses, false, word);
+
+        await interaction.editReply({
+          content: buildGameMessage(guesses, word, "playing"),
           components: [buildGuessButton(gameId)],
-        },
-        "wordle.modalTimeout",
-      ).catch(() => {});
+        });
+      } catch (err) {
+        logger.debug({ err, gameId }, "[wordle] modal timeout or error");
+        // Modal expired or user closed it — update message so they know to try again
+        await safeMessageEdit(
+          message,
+          {
+            content:
+              buildGameMessage(guesses, word, "playing") +
+              "\n\n⏱️ *Guess timed out or cancelled. Click the button to guess again.*",
+            components: [buildGuessButton(gameId)],
+          },
+          "wordle.modalTimeout",
+        ).catch(() => {});
+      }
+    } catch (err) {
+      logger.warn(
+        { err, gameId, interactionFailedRecovery: true },
+        "[wordle] collect handler failed",
+      );
+      if (!buttonInteraction.replied && !buttonInteraction.deferred) {
+        await buttonInteraction.deferUpdate().catch(() => {});
+      }
     }
   });
 
@@ -223,7 +234,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
           components: [buildGuessButton(gameId, true)],
         },
         "wordle.timeout",
-      );
+      ).catch(() => {});
     }
   });
 }

@@ -43,7 +43,8 @@ Not intended to be:
 - GitHub PR and issue lookups
 - Vercel and Supabase status checks (`/status vercel`, `/status supabase`)
 - SQLite persistence for all data
-- **Resilient interaction handling** – safe reply wrappers, error logging, retry on transient API errors, and unhandled rejection catching (reduces "failed to complete" occurrences)
+- **Resilient interaction handling** – Defer early before heavy work, try/catch with fallback defer, safe reply wrappers, retry on transient API errors; logs include `interactionFailedRecovery: true` when recovering from errors (reduces "failed to complete" occurrences)
+- **Autocomplete support** – Optional `autocomplete` handler on commands; responds with `[]` by default so Discord never shows autocomplete errors
 - **Admin health dashboard** – `/admin health` shows database status, env vars, and interaction error counts
 - **Database integrity check** – `npm run db:check` to verify SQLite health
 - **Rate limiting** – slots (3s), blackjack (5s), dice (2s), darts (2s), hangman (10s) cooldowns to prevent spam

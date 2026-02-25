@@ -137,7 +137,10 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
 
   collector.on("collect", async (btn: ButtonInteraction) => {
     try {
-      if (!btn.customId.startsWith("funpoll:")) return;
+      if (!btn.customId.startsWith("funpoll:")) {
+        await btn.deferUpdate().catch(() => {});
+        return;
+      }
 
       const parts = btn.customId.split(":");
       // funpoll:<messageId>:<idx>
@@ -145,7 +148,10 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       const idxStr = parts[2] ?? "";
       const optionIndex = Number(idxStr);
 
-      if (pollId !== messageId) return;
+      if (pollId !== messageId) {
+        await btn.deferUpdate().catch(() => {});
+        return;
+      }
 
       if (
         !Number.isFinite(optionIndex) ||
@@ -159,6 +165,9 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
         return;
       }
 
+      // Acknowledge immediately so recordVote (file I/O) doesn't cause "interaction failed"
+      await btn.deferUpdate();
+
       const result = await recordVote({
         messageId: pollId,
         userId: btn.user.id,
@@ -166,7 +175,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       });
 
       if (result.kind === "alreadyVoted") {
-        await btn.reply({
+        await btn.followUp({
           content: `You already voted: **${
             latestPoll.options[result.previousOptionIndex] ?? "Unknown"
           }**`,
@@ -176,7 +185,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       }
 
       if (result.kind === "notFound") {
-        await btn.reply({
+        await btn.followUp({
           content: "Poll not found (maybe it expired).",
           flags: MessageFlags.Ephemeral,
         });
@@ -186,7 +195,6 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       // Updated poll snapshot
       latestPoll = result.poll;
 
-      await btn.deferUpdate(); // avoid “interaction failed” and extra message spam
       await interaction.editReply({
         embeds: [buildPollEmbed(latestPoll)],
         components: buildPollButtons(latestPoll),

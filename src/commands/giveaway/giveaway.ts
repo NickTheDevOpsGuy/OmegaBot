@@ -304,53 +304,63 @@ async function autoEndGiveaway(giveawayId: number, channel: TextChannel): Promis
 export async function handleGiveawayButton(
   interaction: ButtonInteraction,
 ): Promise<void> {
-  const [, giveawayIdStr, action] = interaction.customId.split(":");
-  const giveawayId = parseInt(giveawayIdStr, 10);
+  try {
+    const [, giveawayIdStr, action] = interaction.customId.split(":");
+    const giveawayId = parseInt(giveawayIdStr, 10);
 
-  const giveaway = getGiveaway(giveawayId);
-  if (!giveaway) {
+    const giveaway = getGiveaway(giveawayId);
+    if (!giveaway) {
     await interaction.reply({ content: "Giveaway not found.", ephemeral: true });
     return;
   }
 
   if (giveaway.ended === 1) {
-    await interaction.reply({ content: "This giveaway has ended.", ephemeral: true });
-    return;
-  }
-
-  if (action === "enter") {
-    // Can't enter own giveaway
-    if (giveaway.host_id === interaction.user.id) {
-      await interaction.reply({
-        content: "You can't enter your own giveaway!",
-        ephemeral: true,
-      });
+      await interaction.reply({ content: "This giveaway has ended.", ephemeral: true });
       return;
     }
 
-    const success = addEntry(giveawayId, interaction.user.id);
-    if (success) {
-      await interaction.reply({
-        content: "🎉 You've entered the giveaway! Good luck!",
-        ephemeral: true,
-      });
-    } else {
-      await interaction.reply({ content: "You're already entered!", ephemeral: true });
-    }
-  } else if (action === "leave") {
-    const success = removeEntry(giveawayId, interaction.user.id);
-    if (success) {
-      await interaction.reply({ content: "You've left the giveaway.", ephemeral: true });
-    } else {
-      await interaction.reply({ content: "You weren't entered.", ephemeral: true });
-    }
-  }
+    if (action === "enter") {
+      // Can't enter own giveaway
+      if (giveaway.host_id === interaction.user.id) {
+        await interaction.reply({
+          content: "You can't enter your own giveaway!",
+          ephemeral: true,
+        });
+        return;
+      }
 
-  // Update embed with new entry count
-  try {
-    const embed = buildGiveawayEmbed(giveaway, getEntryCount(giveawayId));
-    await interaction.message.edit({ embeds: [embed] });
+      const success = addEntry(giveawayId, interaction.user.id);
+      if (success) {
+        await interaction.reply({
+          content: "🎉 You've entered the giveaway! Good luck!",
+          ephemeral: true,
+        });
+      } else {
+        await interaction.reply({ content: "You're already entered!", ephemeral: true });
+      }
+    } else if (action === "leave") {
+      const success = removeEntry(giveawayId, interaction.user.id);
+      if (success) {
+        await interaction.reply({ content: "You've left the giveaway.", ephemeral: true });
+      } else {
+        await interaction.reply({ content: "You weren't entered.", ephemeral: true });
+      }
+    }
+
+    // Update embed with new entry count
+    try {
+      const embed = buildGiveawayEmbed(giveaway, getEntryCount(giveawayId));
+      await interaction.message.edit({ embeds: [embed] });
+    } catch (err) {
+      logger.warn({ err, giveawayId }, "[giveaway] failed to update entry count");
+    }
   } catch (err) {
-    logger.warn({ err, giveawayId }, "[giveaway] failed to update entry count");
+    logger.warn(
+      { err, interactionFailedRecovery: true },
+      "[giveaway] button handler failed",
+    );
+    if (!interaction.replied && !interaction.deferred) {
+      await interaction.deferUpdate().catch(() => {});
+    }
   }
 }

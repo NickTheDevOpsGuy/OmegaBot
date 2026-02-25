@@ -142,9 +142,12 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         });
       } catch (err) {
         logger.warn(
-          { err, userId: interaction.user.id },
+          { err, userId: interaction.user.id, interactionFailedRecovery: true },
           "[playback] button update failed",
         );
+        if (!btn.replied && !btn.deferred) {
+          await btn.deferUpdate().catch(() => {});
+        }
       }
     });
 

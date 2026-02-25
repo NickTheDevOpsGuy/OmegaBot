@@ -98,14 +98,15 @@ async function handleChallenge(
   });
 
   collector.on("collect", async (buttonInteraction: ButtonInteraction) => {
-    const playerId = buttonInteraction.user.id;
+    try {
+      const playerId = buttonInteraction.user.id;
 
-    if (!allowedPlayers.has(playerId)) {
-      await safeReplyToButton(buttonInteraction, "This challenge isn't for you!");
-      return;
-    }
+      if (!allowedPlayers.has(playerId)) {
+        await safeReplyToButton(buttonInteraction, "This challenge isn't for you!");
+        return;
+      }
 
-    const action = buttonInteraction.customId.split(":")[2] as
+      const action = buttonInteraction.customId.split(":")[2] as
       | Choice
       | "decline"
       | "extend";
@@ -169,6 +170,15 @@ async function handleChallenge(
         collector.stop("complete");
       }
     }
+    } catch (err) {
+      logger.warn(
+        { err, challengeId, interactionFailedRecovery: true },
+        "[rps] collect handler failed",
+      );
+      if (!buttonInteraction.replied && !buttonInteraction.deferred) {
+        await buttonInteraction.deferUpdate().catch(() => {});
+      }
+    }
   });
 
   collector.on("end", async (_, reason) => {
@@ -221,7 +231,7 @@ async function handleChallenge(
             challengeId,
           });
         } else {
-          throw err;
+          logger.warn({ err, challengeId }, "[rps] failed to edit challenge message");
         }
       }
     } else {
@@ -249,7 +259,7 @@ async function handleChallenge(
             challengeId,
           });
         } else {
-          throw err;
+          logger.warn({ err, challengeId }, "[rps] failed to edit timeout message");
         }
       }
     }

@@ -65,6 +65,9 @@ async function playVsBot(interaction: ChatInputCommandInteraction): Promise<void
         return;
       }
 
+      // Acknowledge immediately so game logic doesn't cause "interaction failed"
+      await buttonInteraction.deferUpdate();
+
       const [, , rowStr, colStr] = buttonInteraction.customId.split(":");
       const row = parseInt(rowStr, 10);
       const col = parseInt(colStr, 10);
@@ -75,7 +78,7 @@ async function playVsBot(interaction: ChatInputCommandInteraction): Promise<void
       if (winner === playerSymbol) {
         const winningCells = getWinningCells(board);
         collector.stop("player_win");
-        await buttonInteraction.update({
+        await message.edit({
           content: `🎮 **Tic Tac Toe** — You (❌) vs Bot (⭕)\n\n🎉 **You win!**`,
           components: [
             ...buildBoardButtons(gameId, board, true, winningCells),
@@ -87,7 +90,7 @@ async function playVsBot(interaction: ChatInputCommandInteraction): Promise<void
 
       if (isBoardFull(board)) {
         collector.stop("tie");
-        await buttonInteraction.update({
+        await message.edit({
           content: `🎮 **Tic Tac Toe** — You (❌) vs Bot (⭕)\n\n🤝 **It's a tie!**`,
           components: [
             ...buildBoardButtons(gameId, board, true),
@@ -104,7 +107,7 @@ async function playVsBot(interaction: ChatInputCommandInteraction): Promise<void
       if (winner === botSymbol) {
         const winningCells = getWinningCells(board);
         collector.stop("bot_win");
-        await buttonInteraction.update({
+        await message.edit({
           content: `🎮 **Tic Tac Toe** — You (❌) vs Bot (⭕)\n\n😢 **Bot wins!**`,
           components: [
             ...buildBoardButtons(gameId, board, true, winningCells),
@@ -116,7 +119,7 @@ async function playVsBot(interaction: ChatInputCommandInteraction): Promise<void
 
       if (isBoardFull(board)) {
         collector.stop("tie");
-        await buttonInteraction.update({
+        await message.edit({
           content: `🎮 **Tic Tac Toe** — You (❌) vs Bot (⭕)\n\n🤝 **It's a tie!**`,
           components: [
             ...buildBoardButtons(gameId, board, true),
@@ -126,7 +129,7 @@ async function playVsBot(interaction: ChatInputCommandInteraction): Promise<void
         return;
       }
 
-      await buttonInteraction.update({
+      await message.edit({
         content: `🎮 **Tic Tac Toe** — You (❌) vs Bot (⭕)\n\nYour turn! Click a square.`,
         components: [...buildBoardButtons(gameId, board), buildExtendRow(gameId)],
       });
@@ -152,7 +155,7 @@ async function playVsBot(interaction: ChatInputCommandInteraction): Promise<void
           ],
         },
         "tictactoe.vsBot.timeout",
-      );
+      ).catch(() => {});
     }
   });
 }
@@ -272,6 +275,9 @@ async function playVsPlayer(
         return;
       }
 
+      // Acknowledge immediately so game logic doesn't cause "interaction failed"
+      await buttonInteraction.deferUpdate();
+
       const [, , rowStr, colStr] = buttonInteraction.customId.split(":");
       const row = parseInt(rowStr, 10);
       const col = parseInt(colStr, 10);
@@ -292,18 +298,22 @@ async function playVsPlayer(
         }
 
         collector.stop("win");
-        await buttonInteraction.update({
-          content: [
-            `🎮 **Tic Tac Toe**`,
-            `❌ ${xPlayer} vs ⭕ ${oPlayer}`,
-            ``,
-            `🎉 **${winnerUser} wins!**`,
-          ].join("\n"),
-          components: [
-            ...buildBoardButtons(gameId, board, true, winningCells),
-            buildExtendRow(gameId, true),
-          ],
-        });
+        await safeMessageEdit(
+          message,
+          {
+            content: [
+              `🎮 **Tic Tac Toe**`,
+              `❌ ${xPlayer} vs ⭕ ${oPlayer}`,
+              ``,
+              `🎉 **${winnerUser} wins!**`,
+            ].join("\n"),
+            components: [
+              ...buildBoardButtons(gameId, board, true, winningCells),
+              buildExtendRow(gameId, true),
+            ],
+          },
+          "tictactoe.vsPlayer.win",
+        );
         return;
       }
 
@@ -315,18 +325,22 @@ async function playVsPlayer(
         }
 
         collector.stop("tie");
-        await buttonInteraction.update({
-          content: [
-            `🎮 **Tic Tac Toe**`,
-            `❌ ${xPlayer} vs ⭕ ${oPlayer}`,
-            ``,
-            `🤝 **It's a tie!**`,
-          ].join("\n"),
-          components: [
-            ...buildBoardButtons(gameId, board, true),
-            buildExtendRow(gameId, true),
-          ],
-        });
+        await safeMessageEdit(
+          message,
+          {
+            content: [
+              `🎮 **Tic Tac Toe**`,
+              `❌ ${xPlayer} vs ⭕ ${oPlayer}`,
+              ``,
+              `🤝 **It's a tie!**`,
+            ].join("\n"),
+            components: [
+              ...buildBoardButtons(gameId, board, true),
+              buildExtendRow(gameId, true),
+            ],
+          },
+          "tictactoe.vsPlayer.tie",
+        );
         return;
       }
 
@@ -336,16 +350,20 @@ async function playVsPlayer(
       collector.resetTimer();
       scheduleWarning();
 
-      await buttonInteraction.update({
-        content: [
-          `🎮 **Tic Tac Toe**`,
-          `❌ ${xPlayer} vs ⭕ ${oPlayer}`,
-          ``,
-          `${currentPlayer}'s turn (${nextSymbol})`,
-          `⏱️ 10 min per move (starter can extend)`,
-        ].join("\n"),
-        components: [...buildBoardButtons(gameId, board), buildExtendRow(gameId)],
-      });
+      await safeMessageEdit(
+        message,
+        {
+          content: [
+            `🎮 **Tic Tac Toe**`,
+            `❌ ${xPlayer} vs ⭕ ${oPlayer}`,
+            ``,
+            `${currentPlayer}'s turn (${nextSymbol})`,
+            `⏱️ 10 min per move (starter can extend)`,
+          ].join("\n"),
+          components: [...buildBoardButtons(gameId, board), buildExtendRow(gameId)],
+        },
+        "tictactoe.vsPlayer.turn",
+      );
     } catch (err) {
       if (isKnownInteractionError(err)) {
         logKnownInteractionError(err, "tictactoe.vsPlayer.collect", { gameId });
@@ -387,7 +405,7 @@ async function playVsPlayer(
           ],
         },
         "tictactoe.vsPlayer.timeout",
-      );
+      ).catch(() => {});
     }
   });
 }

@@ -1,3 +1,17 @@
+## [3.7.0] - 2026-02-12
+
+### Added
+
+- **Autocomplete handling** – Interaction handler supports optional `autocomplete` on command modules; responds with `[]` when no handler
+- **Monitoring tag** – Catch blocks that recover from collector/button errors log `interactionFailedRecovery: true` for log aggregation and alerting
+
+### Changed
+
+- **Interaction failed prevention** – All game collectors (wordle, blackjack, hangman, rps, darts, connect4, tictactoe, poll, wouldYouRather, playback) and giveaway buttons now defer immediately before heavy work, use `message.edit()` after defer, and wrap in try/catch with fallback `deferUpdate()` on error
+- **Dev notes** – Added "Autocomplete & Interaction Handling" section with patterns and monitoring guidance
+
+---
+
 ## [3.5.0] - 2026-02-12
 
 ### Added

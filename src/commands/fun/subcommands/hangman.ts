@@ -210,61 +210,74 @@ export async function runPlay(
   });
 
   collector.on("collect", async (selectInteraction: StringSelectMenuInteraction) => {
-    const value = selectInteraction.values[0];
-    if (!value || value.endsWith(":noop")) {
+    try {
+      const value = selectInteraction.values[0];
+      if (!value || value.endsWith(":noop")) {
+        await selectInteraction.deferUpdate();
+        return;
+      }
+      const letter = value.split(":")[2]?.toLowerCase();
+      if (!letter || letter.length !== 1) {
+        await selectInteraction.deferUpdate();
+        return;
+      }
+
+      if (guessed.has(letter)) {
+        await selectInteraction.deferUpdate();
+        return;
+      }
+
+      // Acknowledge immediately so game logic doesn't cause "interaction failed"
       await selectInteraction.deferUpdate();
-      return;
-    }
-    const letter = value.split(":")[2]?.toLowerCase();
-    if (!letter || letter.length !== 1) {
-      await selectInteraction.deferUpdate();
-      return;
-    }
 
-    if (guessed.has(letter)) {
-      await selectInteraction.deferUpdate();
-      return;
-    }
+      guessed.add(letter);
+      totalGuesses++;
 
-    guessed.add(letter);
-    totalGuesses++;
+      if (!word.includes(letter)) {
+        wrongCount++;
+      }
 
-    if (!word.includes(letter)) {
-      wrongCount++;
-    }
+      const isWon = word.split("").every((c) => guessed.has(c));
+      const isLost = wrongCount >= MAX_WRONG_GUESSES;
 
-    const isWon = word.split("").every((c) => guessed.has(c));
-    const isLost = wrongCount >= MAX_WRONG_GUESSES;
+      if (isWon || isLost) {
+        collector.stop(isWon ? "won" : "lost");
+        const solveTimeSeconds = isWon
+          ? Math.round((Date.now() - startTime) / 1000)
+          : undefined;
+        recordResult(userId, isWon, totalGuesses, solveTimeSeconds);
+        logger.info(
+          { gameId, userId, won: isWon, totalGuesses, solveTimeSeconds },
+          "[hangman] game ended",
+        );
 
-    if (isWon || isLost) {
-      collector.stop(isWon ? "won" : "lost");
-      const solveTimeSeconds = isWon
-        ? Math.round((Date.now() - startTime) / 1000)
-        : undefined;
-      recordResult(userId, isWon, totalGuesses, solveTimeSeconds);
-      logger.info(
-        { gameId, userId, won: isWon, totalGuesses, solveTimeSeconds },
-        "[hangman] game ended",
-      );
+        await message.edit({
+          content: buildGameMessage(
+            word,
+            guessed,
+            wrongCount,
+            isWon ? "won" : "lost",
+            difficulty,
+            solveTimeSeconds,
+          ),
+          components: buildLetterDropdowns(gameId, guessed, true),
+        });
+        return;
+      }
 
-      await selectInteraction.update({
-        content: buildGameMessage(
-          word,
-          guessed,
-          wrongCount,
-          isWon ? "won" : "lost",
-          difficulty,
-          solveTimeSeconds,
-        ),
-        components: buildLetterDropdowns(gameId, guessed, true),
+      await message.edit({
+        content: buildGameMessage(word, guessed, wrongCount, "playing", difficulty),
+        components: buildLetterDropdowns(gameId, guessed),
       });
-      return;
+    } catch (err) {
+      logger.warn(
+        { err, gameId, interactionFailedRecovery: true },
+        "[hangman] collect handler failed",
+      );
+      if (!selectInteraction.replied && !selectInteraction.deferred) {
+        await selectInteraction.deferUpdate().catch(() => {});
+      }
     }
-
-    await selectInteraction.update({
-      content: buildGameMessage(word, guessed, wrongCount, "playing", difficulty),
-      components: buildLetterDropdowns(gameId, guessed),
-    });
   });
 
   collector.on("end", async (_, reason) => {
@@ -280,7 +293,7 @@ export async function runPlay(
           components: buildLetterDropdowns(gameId, guessed, true),
         },
         "hangman.timeout",
-      );
+      ).catch(() => {});
     }
   });
 }

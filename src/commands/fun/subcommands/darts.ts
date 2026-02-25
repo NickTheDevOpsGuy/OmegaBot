@@ -208,23 +208,24 @@ async function handleChallenge(
   });
 
   collector.on("collect", async (buttonInteraction: ButtonInteraction) => {
-    const playerId = buttonInteraction.user.id;
-    const action = buttonInteraction.customId.split(":")[2] as
-      | "throw"
-      | "decline"
-      | "extend";
+    try {
+      const playerId = buttonInteraction.user.id;
+      const action = buttonInteraction.customId.split(":")[2] as
+        | "throw"
+        | "decline"
+        | "extend";
 
-    if (action === "extend") {
-      if (playerId !== challenger.id) {
-        await safeReplyToButton(
+      if (action === "extend") {
+        if (playerId !== challenger.id) {
+          await safeReplyToButton(
           buttonInteraction,
-          "Only the person who started the challenge can extend time.",
-        );
-        return;
-      }
-      collector.resetTimer();
-      await buttonInteraction.deferUpdate();
-      const content = [
+            "Only the person who started the challenge can extend time.",
+          );
+          return;
+        }
+        collector.resetTimer();
+        await buttonInteraction.deferUpdate();
+        const content = [
         `🎯 **Darts Challenge!**`,
         ``,
         `${challenger} challenges ${opponent}!`,
@@ -239,111 +240,123 @@ async function handleChallenge(
         ),
         ``,
         `${opponent} – click **Throw my darts** to take your turn!`,
-        `⏱️ **Time extended!** You have another hour.`,
-      ].join("\n");
-      await challengeMessage.edit({
-        content,
-        components: [
-          buildThrowButton(challengeId),
-          buildDeclineButton(challengeId),
-          buildExtendButton(challengeId),
-        ],
-      });
-      return;
-    }
+          `⏱️ **Time extended!** You have another hour.`,
+        ].join("\n");
+        await challengeMessage.edit({
+          content,
+          components: [
+            buildThrowButton(challengeId),
+            buildDeclineButton(challengeId),
+            buildExtendButton(challengeId),
+          ],
+        });
+        return;
+      }
 
-    if (action === "decline") {
-      if (playerId === opponent.id) {
+      if (action === "decline") {
+        if (playerId === opponent.id) {
         collector.stop("declined");
-        await buttonInteraction.update({
-          content: `❌ ${opponent} declined the darts challenge.`,
-          components: [],
-        });
-        return;
-      } else {
-        collector.stop("cancelled");
-        await buttonInteraction.update({
-          content: `❌ ${challenger} cancelled the challenge.`,
-          components: [],
-        });
-        return;
-      }
-    }
-
-    if (action === "throw" && playerId === allowedOpponent) {
-      const remainingOpp = checkDartsCooldown(opponent.id);
-      if (remainingOpp > 0) {
-        await safeReplyToButton(
-          buttonInteraction,
-          `⏱️ Slow down! Try again in **${Math.ceil(remainingOpp / 1000)}** seconds.`,
-        );
-        return;
-      }
-
-      const { hits: oppHits, score: oppScore, is180: opp180 } = doThrow();
-      recordDartsThrow(opponent.id);
-      recordSoloThrow(opponent.id, oppScore, opp180);
-
-      let winnerId: string | null = null;
-      let loserId: string | null = null;
-      let resultText: string;
-
-      if (oppScore > challengerScore) {
-        winnerId = opponent.id;
-        loserId = challenger.id;
-        resultText = `🎉 **${opponent.username} wins!** ${oppScore}–${challengerScore}`;
-      } else if (oppScore < challengerScore) {
-        winnerId = challenger.id;
-        loserId = opponent.id;
-        resultText = `🎉 **${challenger.username} wins!** ${challengerScore}–${oppScore}`;
-      } else {
-        resultText = `🤝 **It's a tie!** ${challengerScore}–${oppScore}`;
-      }
-
-      recordPvpResult(winnerId, loserId, challenger.id, opponent.id);
-      logger.info(
-        { challengeId, challengerScore, oppScore, winnerId },
-        "[darts] PvP complete",
-      );
-
-      const oppLines = formatThrowLines(
-        oppHits,
-        oppScore,
-        `${opponent.username}'s throw`,
-      );
-
-      try {
-        await buttonInteraction.update({
-          content: [
-            `🎯 **Darts Result!**`,
-            ``,
-            `${challenger} **${challengerScore}** vs **${oppScore}** ${opponent}`,
-            ``,
-            ...formatThrowLines(
-              challengerHits,
-              challengerScore,
-              `${challenger.username}`,
-            ),
-            ``,
-            ...oppLines,
-            ``,
-            resultText,
-          ].join("\n"),
-          components: [buildThrowButton(challengeId, true)],
-        });
-      } catch (err) {
-        if (isKnownInteractionError(err)) {
-          logKnownInteractionError(err, "darts.challengeResult", { challengeId });
+          await buttonInteraction.update({
+            content: `❌ ${opponent} declined the darts challenge.`,
+            components: [],
+          });
+          return;
         } else {
-          throw err;
+          collector.stop("cancelled");
+          await buttonInteraction.update({
+            content: `❌ ${challenger} cancelled the challenge.`,
+            components: [],
+          });
+          return;
         }
       }
-      collector.stop("complete");
-    } else if (action === "throw") {
+
+      if (action === "throw" && playerId === allowedOpponent) {
+        const remainingOpp = checkDartsCooldown(opponent.id);
+        if (remainingOpp > 0) {
+          await safeReplyToButton(
+            buttonInteraction,
+            `⏱️ Slow down! Try again in **${Math.ceil(remainingOpp / 1000)}** seconds.`,
+          );
+          return;
+        }
+
+        // Acknowledge immediately so game logic doesn't cause "interaction failed"
+        await buttonInteraction.deferUpdate();
+
+        const { hits: oppHits, score: oppScore, is180: opp180 } = doThrow();
+        recordDartsThrow(opponent.id);
+        recordSoloThrow(opponent.id, oppScore, opp180);
+
+        let winnerId: string | null = null;
+        let loserId: string | null = null;
+        let resultText: string;
+
+        if (oppScore > challengerScore) {
+          winnerId = opponent.id;
+          loserId = challenger.id;
+          resultText = `🎉 **${opponent.username} wins!** ${oppScore}–${challengerScore}`;
+        } else if (oppScore < challengerScore) {
+          winnerId = challenger.id;
+          loserId = opponent.id;
+          resultText = `🎉 **${challenger.username} wins!** ${challengerScore}–${oppScore}`;
+        } else {
+          resultText = `🤝 **It's a tie!** ${challengerScore}–${oppScore}`;
+        }
+
+        recordPvpResult(winnerId, loserId, challenger.id, opponent.id);
+        logger.info(
+          { challengeId, challengerScore, oppScore, winnerId },
+          "[darts] PvP complete",
+        );
+
+        const oppLines = formatThrowLines(
+          oppHits,
+          oppScore,
+          `${opponent.username}'s throw`,
+        );
+
+        try {
+          await challengeMessage.edit({
+            content: [
+              `🎯 **Darts Result!**`,
+              ``,
+              `${challenger} **${challengerScore}** vs **${oppScore}** ${opponent}`,
+              ``,
+              ...formatThrowLines(
+                challengerHits,
+                challengerScore,
+                `${challenger.username}`,
+              ),
+              ``,
+              ...oppLines,
+              ``,
+              resultText,
+            ].join("\n"),
+            components: [buildThrowButton(challengeId, true)],
+          });
+        } catch (err) {
+          if (isKnownInteractionError(err)) {
+            logKnownInteractionError(err, "darts.challengeResult", { challengeId });
+          } else {
+            logger.warn({ err, challengeId }, "[darts] failed to edit challenge result");
+          }
+        }
+        collector.stop("complete");
+      } else if (action === "throw") {
       await safeReplyToButton(
         buttonInteraction,
         "Only the challenged player can throw here!",
       );
+    }
+    } catch (err) {
+      logger.warn(
+        { err, challengeId, interactionFailedRecovery: true },
+        "[darts] collect handler failed",
+      );
+      if (!buttonInteraction.replied && !buttonInteraction.deferred) {
+        await buttonInteraction.deferUpdate().catch(() => {});
+      }
     }
   });
 
@@ -364,7 +377,7 @@ async function handleChallenge(
       if (isKnownInteractionError(err)) {
         logKnownInteractionError(err, "darts.challengeTimeout", { challengeId });
       } else {
-        throw err;
+        logger.warn({ err, challengeId }, "[darts] failed to edit timeout message");
       }
     }
   });

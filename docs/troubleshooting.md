@@ -28,6 +28,12 @@ When users see "This interaction failed" or "Application did not respond" in Dis
    [interaction] Discord error (user may see 'failed to complete'): unknown_interaction
    ```
 
+   When we recover from collector or button errors without the user seeing "interaction failed", logs include `interactionFailedRecovery: true`. Use this to filter or alert on interaction issues:
+
+   ```bash
+   grep "interactionFailedRecovery" /path/to/logs
+   ```
+
 2. **Admin health** – Run `/admin health` to see interaction error counts since startup. Elevated counts suggest network or latency issues.
 
 3. **Unhandled rejections** – If failures still occur with no logs, an unhandled promise rejection may be escaping. Check for:
