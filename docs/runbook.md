@@ -69,6 +69,14 @@ docker compose up -d
 
 ---
 
+## E2E Tests
+
+Run `npm run test:e2e` to start the bot and verify it connects to Discord. Requires `DISCORD_TOKEN` and `DISCORD_APP_ID` in `.env`. Uses in-memory DB. The script starts the bot, waits for "ready", then shuts down.
+
+In CI (GitHub Actions), the e2e job runs only when `DISCORD_TOKEN` and `DISCORD_APP_ID` are set as repository secrets.
+
+---
+
 ## Optional: Pre-push Checks
 
 - `git push` runs `precheck` (Prettier, ESLint, TypeScript, tests). To skip: put `[skip-precheck]` in the last commit message.

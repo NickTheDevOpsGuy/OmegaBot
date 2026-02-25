@@ -1,5 +1,5 @@
 // src/commands/fun/subcommands/hangman/hangmanStats.test.ts
-import { describe, expect, it, beforeEach } from "vitest";
+import { describe, expect, it } from "vitest";
 import { useInMemoryDb } from "../../../../test/dbTestUtils.js";
 import { getStats, recordResult } from "./hangmanStats.js";
 

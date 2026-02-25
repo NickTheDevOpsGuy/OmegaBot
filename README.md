@@ -492,6 +492,7 @@ docker compose up -d
 npm test              # Run tests in watch mode
 npm run test:run      # Run tests once
 npm run test:coverage # Run with coverage report
+npm run test:e2e      # E2E: start bot, wait for Discord ready (needs DISCORD_TOKEN, DISCORD_APP_ID)
 npm run db:check      # Verify SQLite database integrity
 npm run db:backup     # Backup database to data/backups/
 npm run db:seed       # Seed dev DB with sample FAQs/timezone (DATABASE_PATH=data/dev.db)

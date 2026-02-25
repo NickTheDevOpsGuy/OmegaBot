@@ -43,4 +43,14 @@ export default [
       "no-unused-vars": "off",
     },
   },
+
+  // Node.js scripts (.mjs) need node globals
+  {
+    files: ["scripts/**/*.mjs"],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+    },
+  },
 ];

@@ -1,5 +1,5 @@
 // src/services/quotes/quoteStore.test.ts
-import { describe, expect, it, beforeEach } from "vitest";
+import { describe, expect, it } from "vitest";
 import { useInMemoryDb } from "../../test/dbTestUtils.js";
 import { addQuote, listRecentQuotesForAutocomplete } from "./quoteStore.js";
 
