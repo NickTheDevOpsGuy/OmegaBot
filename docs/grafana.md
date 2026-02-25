@@ -23,11 +23,11 @@ OmegaBot exposes Prometheus metrics when `METRICS_PORT` is set. Import the pre-b
 
 ## Panels
 
-| Panel | Description |
-|-------|-------------|
-| Uptime (seconds) | Bot process uptime |
-| Commands (rate) | Per-command execution rate (5m window) |
-| Interaction recoveries (rate) | Collector/button error recovery rate |
+| Panel                         | Description                            |
+| ----------------------------- | -------------------------------------- |
+| Uptime (seconds)              | Bot process uptime                     |
+| Commands (rate)               | Per-command execution rate (5m window) |
+| Interaction recoveries (rate) | Collector/button error recovery rate   |
 
 ---
 

@@ -26,7 +26,9 @@ export const data = new ContextMenuCommandBuilder()
   .setName("Summarize")
   .setType(ApplicationCommandType.Message);
 
-export async function execute(interaction: MessageContextMenuCommandInteraction): Promise<void> {
+export async function execute(
+  interaction: MessageContextMenuCommandInteraction,
+): Promise<void> {
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   try {
@@ -84,7 +86,10 @@ export async function execute(interaction: MessageContextMenuCommandInteraction)
       }
       await interaction.editReply("✅ Summary sent to your DMs.");
     } catch (dmErr) {
-      logger.warn({ dmErr, userId: interaction.user.id }, "[summarize-message] DM failed");
+      logger.warn(
+        { dmErr, userId: interaction.user.id },
+        "[summarize-message] DM failed",
+      );
       await interaction.editReply(
         "I generated the summary, but I could not DM you. Your DMs may be closed.",
       );

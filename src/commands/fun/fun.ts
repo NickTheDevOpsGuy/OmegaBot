@@ -160,7 +160,9 @@ export async function autocomplete(interaction: AutocompleteInteraction): Promis
 
   if (group === "remind" && sub === "cancel" && focused.name === "id") {
     const reminders = listPendingRemindersByUser(interaction.user.id);
-    const needle = String(focused.value || "").trim().toLowerCase();
+    const needle = String(focused.value || "")
+      .trim()
+      .toLowerCase();
     const choices = reminders
       .filter(
         (r) =>
@@ -185,7 +187,9 @@ export async function autocomplete(interaction: AutocompleteInteraction): Promis
       return;
     }
     const quotes = listRecentQuotesForAutocomplete(interaction.guildId);
-    const needle = String(focused.value || "").trim().toLowerCase();
+    const needle = String(focused.value || "")
+      .trim()
+      .toLowerCase();
     const choices = quotes
       .filter(
         (q) =>

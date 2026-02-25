@@ -73,6 +73,7 @@ npm start
 ```
 
 **Docker (alternative):**
+
 ```bash
 cp .env.example .env   # Add your DISCORD_TOKEN, DISCORD_APP_ID, DISCORD_GUILD_ID
 docker compose up -d

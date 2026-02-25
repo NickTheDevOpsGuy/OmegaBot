@@ -55,7 +55,9 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
   await interaction.showModal(modal);
 }
 
-export async function handleModalSubmit(interaction: ModalSubmitInteraction): Promise<void> {
+export async function handleModalSubmit(
+  interaction: ModalSubmitInteraction,
+): Promise<void> {
   const customId = interaction.customId;
   if (!customId.startsWith(MODAL_CUSTOM_ID_PREFIX)) return;
 
@@ -93,7 +95,10 @@ export async function handleModalSubmit(interaction: ModalSubmitInteraction): Pr
     await interaction.editReply("✅ Suggestion posted.");
   } catch (err) {
     const msg =
-      err && typeof err === "object" && "code" in err && (err as { code: number }).code === 50013
+      err &&
+      typeof err === "object" &&
+      "code" in err &&
+      (err as { code: number }).code === 50013
         ? "Couldn't post the suggestion. The bot may lack **Send Messages** or **Embed Links** in this channel."
         : "Couldn't post the suggestion. Please try again or check channel permissions.";
     await interaction.editReply(msg);

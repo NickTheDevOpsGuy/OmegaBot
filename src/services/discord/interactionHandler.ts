@@ -163,9 +163,14 @@ export async function handleInteraction(
   // Handle user context menus (right-click user → View Profile, View Achievements)
   if (interaction.isUserContextMenuCommand()) {
     const cmd = client.commands.get(interaction.commandName);
-    if (cmd && typeof (cmd as { execute?: (i: unknown) => Promise<void> }).execute === "function") {
+    if (
+      cmd &&
+      typeof (cmd as { execute?: (i: unknown) => Promise<void> }).execute === "function"
+    ) {
       try {
-        await (cmd as { execute: (i: typeof interaction) => Promise<void> }).execute(interaction);
+        await (cmd as { execute: (i: typeof interaction) => Promise<void> }).execute(
+          interaction,
+        );
         commandsExecutedTotal.inc({ command: interaction.commandName });
       } catch (err) {
         if (isKnownInteractionError(err)) {
@@ -175,8 +180,15 @@ export async function handleInteraction(
           });
           return;
         }
-        logger.error({ err, command: interaction.commandName }, "[interaction] context menu failed");
-        await safeRepliableReply(interaction, "Something went wrong. Try again later.", true);
+        logger.error(
+          { err, command: interaction.commandName },
+          "[interaction] context menu failed",
+        );
+        await safeRepliableReply(
+          interaction,
+          "Something went wrong. Try again later.",
+          true,
+        );
       }
     }
     return;
@@ -185,9 +197,14 @@ export async function handleInteraction(
   // Handle message context menus (right-click message → Summarize, Quote)
   if (interaction.isMessageContextMenuCommand()) {
     const cmd = client.commands.get(interaction.commandName);
-    if (cmd && typeof (cmd as { execute?: (i: unknown) => Promise<void> }).execute === "function") {
+    if (
+      cmd &&
+      typeof (cmd as { execute?: (i: unknown) => Promise<void> }).execute === "function"
+    ) {
       try {
-        await (cmd as { execute: (i: typeof interaction) => Promise<void> }).execute(interaction);
+        await (cmd as { execute: (i: typeof interaction) => Promise<void> }).execute(
+          interaction,
+        );
         commandsExecutedTotal.inc({ command: interaction.commandName });
       } catch (err) {
         if (isKnownInteractionError(err)) {
@@ -197,8 +214,15 @@ export async function handleInteraction(
           });
           return;
         }
-        logger.error({ err, command: interaction.commandName }, "[interaction] context menu failed");
-        await safeRepliableReply(interaction, "Something went wrong. Try again later.", true);
+        logger.error(
+          { err, command: interaction.commandName },
+          "[interaction] context menu failed",
+        );
+        await safeRepliableReply(
+          interaction,
+          "Something went wrong. Try again later.",
+          true,
+        );
       }
     }
     return;

@@ -64,8 +64,8 @@ Stats and leaderboard views are not rate limited.
 
 ### Reminders
 
-| Command              | Description                            |
-| -------------------- | -------------------------------------- |
+| Command              | Description                             |
+| -------------------- | --------------------------------------- |
 | `/fun remind set`    | Set a reminder (5m, 1h, 1d)             |
 | `/fun remind list`   | View pending reminders                  |
 | `/fun remind cancel` | Cancel a reminder (ID has autocomplete) |
@@ -73,14 +73,14 @@ Stats and leaderboard views are not rate limited.
 
 ### Quotes & Jokes
 
-| Command            | Description                                      |
-| ------------------ | ------------------------------------------------ |
-| `/fun quote add`   | Add a quote                                      |
-| `/fun quote random`| Get a random quote                               |
-| `/fun quote list`  | List recent quotes (limit: 5, 10, 25; default: 25) |
-| `/fun quote remove`| Remove a quote (ID has autocomplete)             |
-| `/fun quote search`| Search quotes (limit: 5, 10, 25)                |
-| `/fun joke`        | Community jokes                                 |
+| Command             | Description                                        |
+| ------------------- | -------------------------------------------------- |
+| `/fun quote add`    | Add a quote                                        |
+| `/fun quote random` | Get a random quote                                 |
+| `/fun quote list`   | List recent quotes (limit: 5, 10, 25; default: 25) |
+| `/fun quote remove` | Remove a quote (ID has autocomplete)               |
+| `/fun quote search` | Search quotes (limit: 5, 10, 25)                   |
+| `/fun joke`         | Community jokes                                    |
 
 ### Utility
 
@@ -96,10 +96,10 @@ Stats and leaderboard views are not rate limited.
 
 Manage your profile, AFK status, and timezone.
 
-| Command             | Description                         |
-| ------------------- | ----------------------------------- |
-| `/profile view`     | View your or another user's profile |
-| `/profile afk`      | Set/clear AFK status                |
+| Command             | Description                               |
+| ------------------- | ----------------------------------------- |
+| `/profile view`     | View your or another user's profile       |
+| `/profile afk`      | Set/clear AFK status                      |
 | `/profile timezone` | Set/view timezone (zone has autocomplete) |
 
 ---
@@ -108,10 +108,10 @@ Manage your profile, AFK status, and timezone.
 
 Get info about users or the server.
 
-| Command        | Description                                               |
-| -------------- | --------------------------------------------------------- |
-| `/info user`   | View user information                                     |
-| `/info server` | View server statistics                                    |
+| Command        | Description                                                   |
+| -------------- | ------------------------------------------------------------- |
+| `/info user`   | View user information                                         |
+| `/info server` | View server statistics                                        |
 | `/info avatar` | View user's avatar (size: 128–4096, format: png/jpg/webp/gif) |
 
 ---
@@ -131,12 +131,12 @@ View your unlocked achievements (19 total).
 
 ## `/giveaway` - Giveaway System
 
-| Command            | Description                                      |
-| ------------------ | ------------------------------------------------ |
-| `/giveaway start`  | Create a giveaway                                |
-| `/giveaway end`    | End early (ID has autocomplete)                   |
+| Command            | Description                                           |
+| ------------------ | ----------------------------------------------------- |
+| `/giveaway start`  | Create a giveaway                                     |
+| `/giveaway end`    | End early (ID has autocomplete)                       |
 | `/giveaway reroll` | Pick new winners for ended giveaway (ID autocomplete) |
-| `/giveaway list`   | List active giveaways                            |
+| `/giveaway list`   | List active giveaways                                 |
 
 ---
 
@@ -144,13 +144,13 @@ View your unlocked achievements (19 total).
 
 Use `/suggestion` to submit an idea. A modal opens for multi-line input (up to 1000 characters).
 
-| Command                 | Description      |
-| ----------------------- | ---------------- |
+| Command                 | Description                  |
+| ----------------------- | ---------------------------- |
 | `/suggestion`           | Submit an idea (opens modal) |
-| `/suggestion approve`   | Approve (mods)   |
-| `/suggestion deny`      | Deny (mods)      |
-| `/suggestion implement` | Mark implemented |
-| `/suggestion list`      | View suggestions |
+| `/suggestion approve`   | Approve (mods)               |
+| `/suggestion deny`      | Deny (mods)                  |
+| `/suggestion implement` | Mark implemented             |
+| `/suggestion list`      | View suggestions             |
 
 ---
 
@@ -171,12 +171,12 @@ Requires **Manage Server** permission.
 
 ## `/faq` - FAQ System
 
-| Command       | Description                       |
-| ------------- | --------------------------------- |
-| `/faq add`    | Create FAQ entry                   |
+| Command       | Description                         |
+| ------------- | ----------------------------------- |
+| `/faq add`    | Create FAQ entry                    |
 | `/faq get`    | Retrieve FAQ (key has autocomplete) |
-| `/faq list`   | List all FAQs                     |
-| `/faq remove` | Remove FAQ (key has autocomplete) |
+| `/faq list`   | List all FAQs                       |
+| `/faq remove` | Remove FAQ (key has autocomplete)   |
 
 ---
 
@@ -205,31 +205,31 @@ Check external service status (Vercel, Supabase).
 
 ### Right-click User
 
-| Menu               | Description              |
-| ------------------ | ------------------------ |
-| **View Profile**   | View user profile, stats, achievements |
-| **View Achievements** | View user's achievements   |
+| Menu                  | Description                            |
+| --------------------- | -------------------------------------- |
+| **View Profile**      | View user profile, stats, achievements |
+| **View Achievements** | View user's achievements               |
 
 ### Right-click Message
 
-| Menu        | Description                                                     |
-| ----------- | --------------------------------------------------------------- |
-| **Summarize** | Summarize messages up to that one; DM you the result          |
-| **Quote**     | Save the message as a quote (text or embed; human or bot)        |
+| Menu          | Description                                               |
+| ------------- | --------------------------------------------------------- |
+| **Summarize** | Summarize messages up to that one; DM you the result      |
+| **Quote**     | Save the message as a quote (text or embed; human or bot) |
 
 ---
 
 ## Other Commands
 
-| Command     | Description                                        |
-| ----------- | -------------------------------------------------- |
-| `/help`     | Command help (use `topic:changelog` for changelog) |
-| `/ping`     | Health check                                       |
-| `/status`   | Vercel / Supabase status                           |
-| `/summary`  | Summarize chat                                     |
-| `/history`  | View chat history                                  |
+| Command     | Description                                                               |
+| ----------- | ------------------------------------------------------------------------- |
+| `/help`     | Command help (use `topic:changelog` for changelog)                        |
+| `/ping`     | Health check                                                              |
+| `/status`   | Vercel / Supabase status                                                  |
+| `/summary`  | Summarize chat                                                            |
+| `/history`  | View chat history                                                         |
 | `/playback` | Transcript playback (`private`, `before`, `after` message IDs for paging) |
-| `/admin`    | Admin tools                                        |
+| `/admin`    | Admin tools                                                               |
 
 ---
 

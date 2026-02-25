@@ -52,7 +52,8 @@ export function recordInteractionRecovery(handler: string): void {
   interactionFailedRecoveryTotal.inc({ handler });
 }
 
-const startTime = (globalThis as { __omegabotStartTime?: number }).__omegabotStartTime ?? Date.now();
+const startTime =
+  (globalThis as { __omegabotStartTime?: number }).__omegabotStartTime ?? Date.now();
 
 function checkDatabase(): boolean {
   try {
@@ -111,10 +112,7 @@ function requireDashboardAuth(req: http.IncomingMessage): boolean {
   return params.get("token") === token;
 }
 
-function handleDashboard(
-  req: http.IncomingMessage,
-  res: http.ServerResponse,
-): void {
+function handleDashboard(req: http.IncomingMessage, res: http.ServerResponse): void {
   if (!requireDashboardAuth(req)) {
     res.writeHead(401, { "Content-Type": "text/plain" });
     res.end("Unauthorized. Set ?token=<ADMIN_DASHBOARD_TOKEN> to access.");
@@ -127,10 +125,7 @@ function handleDashboard(
   res.end(html);
 }
 
-function handleRequest(
-  req: http.IncomingMessage,
-  res: http.ServerResponse,
-): void {
+function handleRequest(req: http.IncomingMessage, res: http.ServerResponse): void {
   const url = req.url?.split("?")[0] ?? "/";
 
   if (url === "/health" || url === "/healthz") {

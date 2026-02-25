@@ -70,7 +70,10 @@ async function registerCommands(): Promise<void> {
       const moduleUrl = pathToFileURL(file).href;
       const imported = (await import(moduleUrl)) as Partial<CommandModule>;
 
-      if (!imported.data || typeof (imported.data as { toJSON?: unknown }).toJSON !== "function") {
+      if (
+        !imported.data ||
+        typeof (imported.data as { toJSON?: unknown }).toJSON !== "function"
+      ) {
         logger.warn({ folder, file: relFile }, "[register] skip (missing exported data)");
         continue;
       }

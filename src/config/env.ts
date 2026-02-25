@@ -119,7 +119,9 @@ export const env = {
   requireWeatherApiKey(): string {
     const key = process.env.WEATHERAPI_KEY?.trim();
     if (!key) {
-      throw new Error("WEATHERAPI_KEY is required for weather. Set it in .env (see .env.example)");
+      throw new Error(
+        "WEATHERAPI_KEY is required for weather. Set it in .env (see .env.example)",
+      );
     }
     return key;
   },

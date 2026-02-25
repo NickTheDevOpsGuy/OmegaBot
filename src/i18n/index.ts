@@ -21,7 +21,11 @@ const translations: Record<Locale, Record<string, string>> = {
  * Get a translated string for the given key.
  * Falls back to English if locale or key is missing.
  */
-export function t(key: string, locale: Locale = DEFAULT_LOCALE, vars?: Record<string, string | number>): string {
+export function t(
+  key: string,
+  locale: Locale = DEFAULT_LOCALE,
+  vars?: Record<string, string | number>,
+): string {
   const localeMap = translations[locale] ?? translations.en;
   let str = localeMap[key] ?? translations.en[key] ?? key;
 

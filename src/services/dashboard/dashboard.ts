@@ -21,7 +21,8 @@ export function getDashboardContext(client: Client | null): DashboardContext {
     dbOk = false;
   }
 
-  const start = (globalThis as { __omegabotStartTime?: number }).__omegabotStartTime ?? Date.now();
+  const start =
+    (globalThis as { __omegabotStartTime?: number }).__omegabotStartTime ?? Date.now();
   const uptimeSeconds = Math.floor((Date.now() - start) / 1000);
 
   return {

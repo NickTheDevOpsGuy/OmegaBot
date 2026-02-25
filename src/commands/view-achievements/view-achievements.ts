@@ -13,7 +13,9 @@ export const data = new ContextMenuCommandBuilder()
   .setName("View Achievements")
   .setType(ApplicationCommandType.User);
 
-export async function execute(interaction: UserContextMenuCommandInteraction): Promise<void> {
+export async function execute(
+  interaction: UserContextMenuCommandInteraction,
+): Promise<void> {
   await interaction.deferReply({ ephemeral: true });
 
   const targetUser = interaction.targetUser;

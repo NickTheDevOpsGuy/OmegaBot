@@ -73,7 +73,11 @@ export const data = new SlashCommandBuilder()
       .setName("get")
       .setDescription("Get a FAQ entry by key")
       .addStringOption((o) =>
-        o.setName("key").setDescription("Key to fetch").setRequired(true).setAutocomplete(true),
+        o
+          .setName("key")
+          .setDescription("Key to fetch")
+          .setRequired(true)
+          .setAutocomplete(true),
       )
       .addBooleanOption((o) =>
         o.setName("full").setDescription("Show the full answer text").setRequired(false),
@@ -98,7 +102,11 @@ export const data = new SlashCommandBuilder()
           .setRequired(false),
       )
       .addStringOption((o) =>
-        o.setName("tag").setDescription("Filter by tag (optional)").setRequired(false).setAutocomplete(true),
+        o
+          .setName("tag")
+          .setDescription("Filter by tag (optional)")
+          .setRequired(false)
+          .setAutocomplete(true),
       )
       .addBooleanOption((o) =>
         o
@@ -120,7 +128,11 @@ export const data = new SlashCommandBuilder()
       .setName("remove")
       .setDescription("Remove a FAQ entry by key")
       .addStringOption((o) =>
-        o.setName("key").setDescription("Key to remove").setRequired(true).setAutocomplete(true),
+        o
+          .setName("key")
+          .setDescription("Key to remove")
+          .setRequired(true)
+          .setAutocomplete(true),
       )
       .addBooleanOption((o) =>
         o
@@ -181,9 +193,7 @@ export async function autocomplete(interaction: AutocompleteInteraction): Promis
 
   if (focused.name === "key") {
     const keys = entries.map((e) => e.key);
-    const filtered = needle
-      ? keys.filter((k) => k.toLowerCase().includes(needle))
-      : keys;
+    const filtered = needle ? keys.filter((k) => k.toLowerCase().includes(needle)) : keys;
     const choices = filtered.slice(0, 25).map((key) => ({ name: key, value: key }));
     await interaction.respond(choices);
     return;

@@ -41,7 +41,9 @@ export function filterTimezones(input: string, limit = 25): string[] {
   const needle = input.trim().toLowerCase();
   if (!needle) return COMMON_TIMEZONES.slice(0, limit);
 
-  return COMMON_TIMEZONES.filter((tz) =>
-    tz.toLowerCase().includes(needle) || tz.toLowerCase().replace(/_/g, " ").includes(needle),
+  return COMMON_TIMEZONES.filter(
+    (tz) =>
+      tz.toLowerCase().includes(needle) ||
+      tz.toLowerCase().replace(/_/g, " ").includes(needle),
   ).slice(0, limit);
 }

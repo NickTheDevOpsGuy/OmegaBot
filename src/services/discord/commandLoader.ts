@@ -23,8 +23,7 @@ function isCommandModule(mod: unknown): mod is CommandModule {
   // Support both SlashCommandBuilder and ContextMenuCommandBuilder
   const hasData = "data" in mod && isRecord((mod as { data?: unknown }).data);
   const hasName =
-    hasData &&
-    typeof ((mod as { data?: { name?: unknown } }).data?.name) === "string";
+    hasData && typeof (mod as { data?: { name?: unknown } }).data?.name === "string";
   return (
     hasData &&
     hasName &&

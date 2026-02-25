@@ -223,7 +223,10 @@ const ACHIEVEMENTS: Achievement[] = [
 /* Shared embed builder                                                        */
 /* -------------------------------------------------------------------------- */
 
-export function buildAchievementsEmbed(targetUser: User, db: ReturnType<typeof getDb>): EmbedBuilder {
+export function buildAchievementsEmbed(
+  targetUser: User,
+  db: ReturnType<typeof getDb>,
+): EmbedBuilder {
   const earned: Achievement[] = [];
   const locked: Achievement[] = [];
 

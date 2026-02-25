@@ -15,16 +15,15 @@ import {
   getTimezone,
   formatTimeInZone,
 } from "../profile/profileHelpers.js";
-import {
-  getTotalWins,
-  getTotalGamesPlayed,
-} from "../../services/gameStats/gameStats.js";
+import { getTotalWins, getTotalGamesPlayed } from "../../services/gameStats/gameStats.js";
 
 export const data = new ContextMenuCommandBuilder()
   .setName("View Profile")
   .setType(ApplicationCommandType.User);
 
-export async function execute(interaction: UserContextMenuCommandInteraction): Promise<void> {
+export async function execute(
+  interaction: UserContextMenuCommandInteraction,
+): Promise<void> {
   await interaction.deferReply({ ephemeral: true });
 
   const targetUser = interaction.targetUser;
@@ -63,7 +62,9 @@ export async function execute(interaction: UserContextMenuCommandInteraction): P
   if (totalGames > 0) {
     embed.addFields({
       name: "🎮 Gaming",
-      value: [`Games: **${totalGames}**`, `Wins: **${totalWins}** (${winRate}%)`].join("\n"),
+      value: [`Games: **${totalGames}**`, `Wins: **${totalWins}** (${winRate}%)`].join(
+        "\n",
+      ),
       inline: true,
     });
   }

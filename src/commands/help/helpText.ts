@@ -204,7 +204,7 @@ function buildQuotesHelp(): string {
     "Save and view memorable server quotes.",
     "",
     "**Commands**",
-    "`/fun quote add author:@user text:\"...\"`   Add a quote",
+    '`/fun quote add author:@user text:"..."`   Add a quote',
     "`/fun quote random`                          Get a random quote",
     "`/fun quote list limit:5|10|25`              List recent quotes (default: 25)",
     "`/fun quote remove id:123`                  Remove a quote (ID has autocomplete)",

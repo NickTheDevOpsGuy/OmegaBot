@@ -67,7 +67,11 @@ export const data = new SlashCommandBuilder()
       .setName("end")
       .setDescription("End a giveaway early")
       .addIntegerOption((o) =>
-        o.setName("id").setDescription("Giveaway ID").setRequired(true).setAutocomplete(true),
+        o
+          .setName("id")
+          .setDescription("Giveaway ID")
+          .setRequired(true)
+          .setAutocomplete(true),
       ),
   )
   .addSubcommand((s) =>
@@ -75,7 +79,11 @@ export const data = new SlashCommandBuilder()
       .setName("reroll")
       .setDescription("Pick new winners for an ended giveaway")
       .addIntegerOption((o) =>
-        o.setName("id").setDescription("Giveaway ID").setRequired(true).setAutocomplete(true),
+        o
+          .setName("id")
+          .setDescription("Giveaway ID")
+          .setRequired(true)
+          .setAutocomplete(true),
       ),
   )
   .addSubcommand((s) => s.setName("list").setDescription("List active giveaways"));
@@ -97,16 +105,25 @@ export async function autocomplete(interaction: AutocompleteInteraction): Promis
       ? getActiveGiveaways(interaction.guildId)
       : getEndedGiveaways(interaction.guildId);
 
-  const needle = String(focused.value || "").trim().toLowerCase();
+  const needle = String(focused.value || "")
+    .trim()
+    .toLowerCase();
   const choices = giveaways
-    .filter((g) => !needle || String(g.id).includes(needle) || g.prize.toLowerCase().includes(needle))
+    .filter(
+      (g) =>
+        !needle ||
+        String(g.id).includes(needle) ||
+        g.prize.toLowerCase().includes(needle),
+    )
     .slice(0, 25)
     .map((g) => ({
       name: `#${g.id}: ${g.prize.slice(0, 80)}${g.prize.length > 80 ? "…" : ""}`,
       value: g.id,
     }));
 
-  await interaction.respond(choices.length ? choices : [{ name: "No giveaways found", value: 0 }]);
+  await interaction.respond(
+    choices.length ? choices : [{ name: "No giveaways found", value: 0 }],
+  );
 }
 
 /* -------------------------------------------------------------------------- */

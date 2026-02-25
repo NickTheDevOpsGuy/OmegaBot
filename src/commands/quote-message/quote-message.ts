@@ -15,7 +15,9 @@ export const data = new ContextMenuCommandBuilder()
   .setName("Quote")
   .setType(ApplicationCommandType.Message);
 
-export async function execute(interaction: MessageContextMenuCommandInteraction): Promise<void> {
+export async function execute(
+  interaction: MessageContextMenuCommandInteraction,
+): Promise<void> {
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   try {

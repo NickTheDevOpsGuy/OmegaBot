@@ -188,90 +188,90 @@ export async function fetchWeatherBundle(args: {
       },
     });
 
-  const raw = await res.text();
-  let parsed: WeatherApiResponse | null = null;
+    const raw = await res.text();
+    let parsed: WeatherApiResponse | null = null;
 
-  try {
-    parsed = JSON.parse(raw) as WeatherApiResponse;
-  } catch {
-    parsed = null;
-  }
-
-  if (!res.ok) {
-    const msg = readApiErrorMessage(parsed) ?? res.statusText ?? "Unknown error";
-
-    if (res.status === 401 || res.status === 403) {
-      throw new Error(
-        `WeatherAPI auth error (${res.status}). Check WEATHERAPI_KEY. ${msg}`,
-      );
-    }
-    if (res.status === 400) {
-      throw new Error(`WeatherAPI rejected the location. ${msg}`);
-    }
-    if (res.status === 429) {
-      throw new Error("WeatherAPI rate limit hit. Try again in a bit.");
+    try {
+      parsed = JSON.parse(raw) as WeatherApiResponse;
+    } catch {
+      parsed = null;
     }
 
-    throw new Error(`WeatherAPI error (${res.status}): ${msg}`);
-  }
+    if (!res.ok) {
+      const msg = readApiErrorMessage(parsed) ?? res.statusText ?? "Unknown error";
 
-  const placeLabel = buildPlaceLabel(parsed?.location);
-  const tzId = parsed?.location?.tz_id;
-  const localTime = parsed?.location?.localtime;
-
-  const nowTemp = pickTemp(args.unit, parsed?.current?.temp_f, parsed?.current?.temp_c);
-  const feels = pickTemp(
-    args.unit,
-    parsed?.current?.feelslike_f,
-    parsed?.current?.feelslike_c,
-  );
-
-  const now: WeatherNow | undefined = nowTemp
-    ? {
-        temp: nowTemp,
-        feelsLike: feels ?? undefined,
-        condition: parsed?.current?.condition?.text?.trim() ?? "Unknown",
-        asOf: parsed?.current?.last_updated,
-        humidity:
-          typeof parsed?.current?.humidity === "number"
-            ? `${parsed.current.humidity}%`
-            : undefined,
-        wind:
-          formatWind(
-            args.unit,
-            parsed?.current?.wind_dir,
-            parsed?.current?.wind_mph,
-            parsed?.current?.wind_kph,
-          ) ?? undefined,
+      if (res.status === 401 || res.status === 403) {
+        throw new Error(
+          `WeatherAPI auth error (${res.status}). Check WEATHERAPI_KEY. ${msg}`,
+        );
       }
-    : undefined;
+      if (res.status === 400) {
+        throw new Error(`WeatherAPI rejected the location. ${msg}`);
+      }
+      if (res.status === 429) {
+        throw new Error("WeatherAPI rate limit hit. Try again in a bit.");
+      }
 
-  const days: WeatherDay[] = [];
-  const fd: ForecastDay[] = parsed?.forecast?.forecastday ?? [];
+      throw new Error(`WeatherAPI error (${res.status}): ${msg}`);
+    }
 
-  for (let i = 0; i < fd.length; i += 1) {
-    const item = fd[i];
-    const label = i === 0 ? "Today" : (item.date ?? `Day ${i + 1}`);
+    const placeLabel = buildPlaceLabel(parsed?.location);
+    const tzId = parsed?.location?.tz_id;
+    const localTime = parsed?.location?.localtime;
 
-    const max = pickTemp(args.unit, item.day?.maxtemp_f, item.day?.maxtemp_c);
-    const min = pickTemp(args.unit, item.day?.mintemp_f, item.day?.mintemp_c);
-    const temp = max && min ? `${min} to ${max}` : (max ?? min ?? "N/A");
+    const nowTemp = pickTemp(args.unit, parsed?.current?.temp_f, parsed?.current?.temp_c);
+    const feels = pickTemp(
+      args.unit,
+      parsed?.current?.feelslike_f,
+      parsed?.current?.feelslike_c,
+    );
 
-    days.push({
-      label,
-      temp,
-      condition: item.day?.condition?.text?.trim() ?? "Forecast unavailable",
-      pop: dailyPopString(item) ?? undefined,
-      sunrise: item.astro?.sunrise,
-      sunset: item.astro?.sunset,
-    });
-  }
+    const now: WeatherNow | undefined = nowTemp
+      ? {
+          temp: nowTemp,
+          feelsLike: feels ?? undefined,
+          condition: parsed?.current?.condition?.text?.trim() ?? "Unknown",
+          asOf: parsed?.current?.last_updated,
+          humidity:
+            typeof parsed?.current?.humidity === "number"
+              ? `${parsed.current.humidity}%`
+              : undefined,
+          wind:
+            formatWind(
+              args.unit,
+              parsed?.current?.wind_dir,
+              parsed?.current?.wind_mph,
+              parsed?.current?.wind_kph,
+            ) ?? undefined,
+        }
+      : undefined;
 
-  logger.debug(
-    { q, placeLabel, tzId, localTime, days: days.length },
-    "[weather] weather bundle fetched",
-  );
+    const days: WeatherDay[] = [];
+    const fd: ForecastDay[] = parsed?.forecast?.forecastday ?? [];
 
-  return { placeLabel, tzId, localTime, now, days };
+    for (let i = 0; i < fd.length; i += 1) {
+      const item = fd[i];
+      const label = i === 0 ? "Today" : (item.date ?? `Day ${i + 1}`);
+
+      const max = pickTemp(args.unit, item.day?.maxtemp_f, item.day?.maxtemp_c);
+      const min = pickTemp(args.unit, item.day?.mintemp_f, item.day?.mintemp_c);
+      const temp = max && min ? `${min} to ${max}` : (max ?? min ?? "N/A");
+
+      days.push({
+        label,
+        temp,
+        condition: item.day?.condition?.text?.trim() ?? "Forecast unavailable",
+        pop: dailyPopString(item) ?? undefined,
+        sunrise: item.astro?.sunrise,
+        sunset: item.astro?.sunset,
+      });
+    }
+
+    logger.debug(
+      { q, placeLabel, tzId, localTime, days: days.length },
+      "[weather] weather bundle fetched",
+    );
+
+    return { placeLabel, tzId, localTime, now, days };
   });
 }

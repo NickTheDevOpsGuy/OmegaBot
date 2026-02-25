@@ -114,15 +114,15 @@ export async function llmSummary(text: string): Promise<string> {
       withRetries(
         async () =>
           client!.chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: [
-            { role: "system", content: system },
-            { role: "user", content: user },
-          ],
-          temperature: 0.2,
-        }),
-      "openai.chat.completions.create",
-    ),
+            model: "gpt-4o-mini",
+            messages: [
+              { role: "system", content: system },
+              { role: "user", content: user },
+            ],
+            temperature: 0.2,
+          }),
+        "openai.chat.completions.create",
+      ),
     );
 
     const content = response.choices?.[0]?.message?.content ?? "";

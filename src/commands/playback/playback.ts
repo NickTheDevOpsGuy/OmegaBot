@@ -71,7 +71,9 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
   const ephemeral = interaction.options.getBoolean("private") ?? true;
 
   try {
-    await interaction.deferReply(ephemeral ? { flags: MessageFlags.Ephemeral } : undefined);
+    await interaction.deferReply(
+      ephemeral ? { flags: MessageFlags.Ephemeral } : undefined,
+    );
 
     if (!interaction.channel || !interaction.channel.isTextBased()) {
       await interaction.editReply("This channel does not support playback.");

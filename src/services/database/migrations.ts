@@ -21,15 +21,15 @@ export function runMigrations(database: Database.Database): void {
   `);
 
   const applied = new Set(
-    (database.prepare("SELECT name FROM _schema_migrations").all() as Array<{ name: string }>).map(
-      (r) => r.name,
-    ),
+    (
+      database.prepare("SELECT name FROM _schema_migrations").all() as Array<{
+        name: string;
+      }>
+    ).map((r) => r.name),
   );
 
   const files = fs.readdirSync(MIGRATIONS_DIR);
-  const toRun = files
-    .filter((f) => f.endsWith(".sql") && f !== "schema.sql")
-    .sort();
+  const toRun = files.filter((f) => f.endsWith(".sql") && f !== "schema.sql").sort();
 
   for (const file of toRun) {
     const name = path.basename(file, ".sql");
@@ -40,10 +40,9 @@ export function runMigrations(database: Database.Database): void {
 
     try {
       database.exec(sql);
-      database.prepare("INSERT INTO _schema_migrations (name, applied_at) VALUES (?, ?)").run(
-        name,
-        Date.now(),
-      );
+      database
+        .prepare("INSERT INTO _schema_migrations (name, applied_at) VALUES (?, ?)")
+        .run(name, Date.now());
       logger.info({ migration: name }, "[db] migration applied");
     } catch (err) {
       logger.error({ err, migration: name }, "[db] migration failed");
