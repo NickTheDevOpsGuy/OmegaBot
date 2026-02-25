@@ -56,11 +56,10 @@ let exitCode = 1;
 
 let lastLines = [];
 const MAX_LINES = 50;
-function remember(line){
+function remember(line) {
   lastLines.push(line);
-  if(lastLines.length>MAX_LINES) lastLines.shift();
+  if (lastLines.length > MAX_LINES) lastLines.shift();
 }
-
 
 function done(success, message) {
   if (resolved) return;
@@ -89,7 +88,10 @@ child.on("close", (code) => {
 });
 
 const timeout = setTimeout(() => {
-  done(false, `timeout after ${TIMEOUT_MS / 1000}s waiting for ready. Last output:\n${lastLines.join("\n")}`);
+  done(
+    false,
+    `timeout after ${TIMEOUT_MS / 1000}s waiting for ready. Last output:\n${lastLines.join("\n")}`,
+  );
 }, TIMEOUT_MS);
 
 const onLine = (line) => {
