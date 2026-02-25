@@ -5,7 +5,17 @@ on:
   pull_request:
     branches:
       - develop
+      - main
   workflow_dispatch:
+    inputs:
+      run_e2e:
+        description: "Run Discord E2E job"
+        required: false
+        default: "true"
+      audit_level:
+        description: "npm audit level (low|moderate|high|critical)"
+        required: false
+        default: "high"
 
 concurrency:
   group: OmegaBot-${{ github.ref }}
@@ -47,13 +57,19 @@ jobs:
         run: npm run format:check
 
       - name: 🔒 npm audit
-        run: npm audit --audit-level=high
+        run: npm audit --audit-level=${{ github.event.inputs.audit_level || 'high' }}
         continue-on-error: true
 
   e2e:
     name: 🧪 E2E (Discord)
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    needs: lint-typecheck
+
+    # Run automatically for PRs; for manual runs, respect the input toggle
+    if: >
+      github.event_name == 'pull_request' ||
+      (github.event_name == 'workflow_dispatch' && (github.event.inputs.run_e2e == 'true' || github.event.inputs.run_e2e == 'True'))
 
     defaults:
       run:
