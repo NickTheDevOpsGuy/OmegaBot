@@ -35,11 +35,7 @@ import {
   buildGameMessage,
   buildLetterDropdowns,
 } from "./hangman/ui.js";
-import {
-  getStats,
-  recordResult,
-  type HangmanStats,
-} from "./hangman/hangmanStats.js";
+import { getStats, recordResult, type HangmanStats } from "./hangman/hangmanStats.js";
 import { GAME_TIMEOUT_MS } from "../../../constants.js";
 
 export type { HangmanStats } from "./hangman/hangmanStats.js";

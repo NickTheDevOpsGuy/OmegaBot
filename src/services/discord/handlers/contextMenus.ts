@@ -41,9 +41,9 @@ export async function handleUserContextMenu(
     typeof (cmd as { execute?: (i: unknown) => Promise<void> }).execute === "function"
   ) {
     try {
-      await (cmd as unknown as { execute: (i: typeof interaction) => Promise<void> }).execute(
-        interaction,
-      );
+      await (
+        cmd as unknown as { execute: (i: typeof interaction) => Promise<void> }
+      ).execute(interaction);
       commandsExecutedTotal.inc({ command: interaction.commandName });
     } catch (err) {
       if (isKnownInteractionError(err)) {
@@ -72,9 +72,9 @@ export async function handleMessageContextMenu(
     typeof (cmd as { execute?: (i: unknown) => Promise<void> }).execute === "function"
   ) {
     try {
-      await (cmd as unknown as { execute: (i: typeof interaction) => Promise<void> }).execute(
-        interaction,
-      );
+      await (
+        cmd as unknown as { execute: (i: typeof interaction) => Promise<void> }
+      ).execute(interaction);
       commandsExecutedTotal.inc({ command: interaction.commandName });
     } catch (err) {
       if (isKnownInteractionError(err)) {

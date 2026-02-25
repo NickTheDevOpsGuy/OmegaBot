@@ -1,15 +1,11 @@
 // src/services/quotes/quoteStore.test.ts
 import { describe, expect, it, beforeEach } from "vitest";
 import { useInMemoryDb } from "../../test/dbTestUtils.js";
-import {
-  addQuote,
-  listRecentQuotesForAutocomplete,
-} from "./quoteStore.js";
+import { addQuote, listRecentQuotesForAutocomplete } from "./quoteStore.js";
 
 useInMemoryDb();
 
 describe("quoteStore", () => {
-
   it("addQuote returns incremented id", () => {
     const id1 = addQuote("g1", "author1", "Hello", "adder1");
     const id2 = addQuote("g1", "author1", "World", "adder1");
