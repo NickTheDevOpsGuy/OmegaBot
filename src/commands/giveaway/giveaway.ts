@@ -310,11 +310,11 @@ export async function handleGiveawayButton(
 
     const giveaway = getGiveaway(giveawayId);
     if (!giveaway) {
-    await interaction.reply({ content: "Giveaway not found.", ephemeral: true });
-    return;
-  }
+      await interaction.reply({ content: "Giveaway not found.", ephemeral: true });
+      return;
+    }
 
-  if (giveaway.ended === 1) {
+    if (giveaway.ended === 1) {
       await interaction.reply({ content: "This giveaway has ended.", ephemeral: true });
       return;
     }
@@ -341,7 +341,10 @@ export async function handleGiveawayButton(
     } else if (action === "leave") {
       const success = removeEntry(giveawayId, interaction.user.id);
       if (success) {
-        await interaction.reply({ content: "You've left the giveaway.", ephemeral: true });
+        await interaction.reply({
+          content: "You've left the giveaway.",
+          ephemeral: true,
+        });
       } else {
         await interaction.reply({ content: "You weren't entered.", ephemeral: true });
       }

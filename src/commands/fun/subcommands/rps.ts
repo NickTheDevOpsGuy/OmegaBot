@@ -107,69 +107,69 @@ async function handleChallenge(
       }
 
       const action = buttonInteraction.customId.split(":")[2] as
-      | Choice
-      | "decline"
-      | "extend";
+        | Choice
+        | "decline"
+        | "extend";
 
-    if (action === "extend") {
-      if (playerId !== challenger.id) {
+      if (action === "extend") {
+        if (playerId !== challenger.id) {
+          await safeReplyToButton(
+            buttonInteraction,
+            "Only the person who started the challenge can extend time.",
+          );
+          return;
+        }
+        collector.resetTimer();
+        await buttonInteraction.deferUpdate();
+        await interaction.editReply({
+          content: [
+            `⚔️ **Rock Paper Scissors Challenge!**`,
+            ``,
+            `${challenger} challenges ${opponent} to a duel!`,
+            `${h2hText}`,
+            ``,
+            `Both players: click your choice below.`,
+            `⏱️ **Time extended!** You have another hour.`,
+          ].join("\n"),
+          components: [
+            buildChoiceButtons(challengeId),
+            buildDeclineButton(challengeId),
+            buildExtendButton(challengeId),
+          ],
+        });
+        return;
+      }
+
+      if (action === "decline") {
+        if (playerId === opponent.id) {
+          collector.stop("declined");
+          await buttonInteraction.update({
+            content: `❌ ${opponent} declined the challenge.`,
+            components: [],
+          });
+          return;
+        } else {
+          collector.stop("cancelled");
+          await buttonInteraction.update({
+            content: `❌ ${challenger} cancelled the challenge.`,
+            components: [],
+          });
+          return;
+        }
+      }
+
+      if (CHOICES.includes(action)) {
+        choices.set(playerId, action);
+
         await safeReplyToButton(
           buttonInteraction,
-          "Only the person who started the challenge can extend time.",
+          `You chose ${EMOJI[action]} **${CHOICE_LABELS[action]}**! Waiting for your opponent...`,
         );
-        return;
+
+        if (choices.has(challenger.id) && choices.has(opponent.id)) {
+          collector.stop("complete");
+        }
       }
-      collector.resetTimer();
-      await buttonInteraction.deferUpdate();
-      await interaction.editReply({
-        content: [
-          `⚔️ **Rock Paper Scissors Challenge!**`,
-          ``,
-          `${challenger} challenges ${opponent} to a duel!`,
-          `${h2hText}`,
-          ``,
-          `Both players: click your choice below.`,
-          `⏱️ **Time extended!** You have another hour.`,
-        ].join("\n"),
-        components: [
-          buildChoiceButtons(challengeId),
-          buildDeclineButton(challengeId),
-          buildExtendButton(challengeId),
-        ],
-      });
-      return;
-    }
-
-    if (action === "decline") {
-      if (playerId === opponent.id) {
-        collector.stop("declined");
-        await buttonInteraction.update({
-          content: `❌ ${opponent} declined the challenge.`,
-          components: [],
-        });
-        return;
-      } else {
-        collector.stop("cancelled");
-        await buttonInteraction.update({
-          content: `❌ ${challenger} cancelled the challenge.`,
-          components: [],
-        });
-        return;
-      }
-    }
-
-    if (CHOICES.includes(action)) {
-      choices.set(playerId, action);
-
-      await safeReplyToButton(
-        buttonInteraction,
-        `You chose ${EMOJI[action]} **${CHOICE_LABELS[action]}**! Waiting for your opponent...`,
-      );
-
-      if (choices.has(challenger.id) && choices.has(opponent.id)) {
-        collector.stop("complete");
-      }
-    }
     } catch (err) {
       logger.warn(
         { err, challengeId, interactionFailedRecovery: true },

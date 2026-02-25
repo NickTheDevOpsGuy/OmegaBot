@@ -218,7 +218,7 @@ async function handleChallenge(
       if (action === "extend") {
         if (playerId !== challenger.id) {
           await safeReplyToButton(
-          buttonInteraction,
+            buttonInteraction,
             "Only the person who started the challenge can extend time.",
           );
           return;
@@ -226,20 +226,20 @@ async function handleChallenge(
         collector.resetTimer();
         await buttonInteraction.deferUpdate();
         const content = [
-        `🎯 **Darts Challenge!**`,
-        ``,
-        `${challenger} challenges ${opponent}!`,
-        h2hText,
-        ``,
-        DARTBOARD_ART,
-        ``,
-        ...formatThrowLines(
-          challengerHits,
-          challengerScore,
-          `${challenger.username}'s throw`,
-        ),
-        ``,
-        `${opponent} – click **Throw my darts** to take your turn!`,
+          `🎯 **Darts Challenge!**`,
+          ``,
+          `${challenger} challenges ${opponent}!`,
+          h2hText,
+          ``,
+          DARTBOARD_ART,
+          ``,
+          ...formatThrowLines(
+            challengerHits,
+            challengerScore,
+            `${challenger.username}'s throw`,
+          ),
+          ``,
+          `${opponent} – click **Throw my darts** to take your turn!`,
           `⏱️ **Time extended!** You have another hour.`,
         ].join("\n");
         await challengeMessage.edit({
@@ -255,7 +255,7 @@ async function handleChallenge(
 
       if (action === "decline") {
         if (playerId === opponent.id) {
-        collector.stop("declined");
+          collector.stop("declined");
           await buttonInteraction.update({
             content: `❌ ${opponent} declined the darts challenge.`,
             components: [],
@@ -344,11 +344,11 @@ async function handleChallenge(
         }
         collector.stop("complete");
       } else if (action === "throw") {
-      await safeReplyToButton(
-        buttonInteraction,
-        "Only the challenged player can throw here!",
-      );
-    }
+        await safeReplyToButton(
+          buttonInteraction,
+          "Only the challenged player can throw here!",
+        );
+      }
     } catch (err) {
       logger.warn(
         { err, challengeId, interactionFailedRecovery: true },

@@ -89,10 +89,9 @@ When adding autocomplete to a slash command option (`setAutocomplete(true)`), im
 
 ```typescript
 // In your command module
-export const data = new SlashCommandBuilder()
-  .addStringOption((o) =>
-    o.setName("zone").setDescription("Timezone").setAutocomplete(true),
-  );
+export const data = new SlashCommandBuilder().addStringOption((o) =>
+  o.setName("zone").setDescription("Timezone").setAutocomplete(true),
+);
 
 export async function autocomplete(interaction: AutocompleteInteraction) {
   const focused = interaction.options.getFocused();

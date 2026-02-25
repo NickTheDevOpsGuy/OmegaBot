@@ -165,20 +165,38 @@ async function runBlackjack(interaction: ChatInputCommandInteraction): Promise<v
 
       if (action === "hit") {
         playerHand.push(deck.pop()!);
-      const playerValue = handValue(playerHand);
+        const playerValue = handValue(playerHand);
 
-      if (playerValue > 21) {
-        collector.stop("bust");
-        recordResult(userId, "loss");
-        logger.info({ gameId, userId }, "[blackjack] player bust");
+        if (playerValue > 21) {
+          collector.stop("bust");
+          recordResult(userId, "loss");
+          logger.info({ gameId, userId }, "[blackjack] player bust");
+          await message.edit({
+            content: buildGameMessage(playerHand, dealerHand, "player_bust", false),
+            components: [buildButtons(gameId, true), buildExtendRow(gameId, true)],
+          });
+          return;
+        }
+
+        if (playerValue === 21) {
+          collector.stop("stand");
+          await playDealerTurn(
+            interaction,
+            message,
+            playerHand,
+            dealerHand,
+            deck,
+            gameId,
+            userId,
+          );
+          return;
+        }
+
         await message.edit({
-          content: buildGameMessage(playerHand, dealerHand, "player_bust", false),
-          components: [buildButtons(gameId, true), buildExtendRow(gameId, true)],
+          content: buildGameMessage(playerHand, dealerHand, "playing"),
+          components: [buildButtons(gameId), buildExtendRow(gameId)],
         });
-        return;
-      }
-
-      if (playerValue === 21) {
+      } else if (action === "stand") {
         collector.stop("stand");
         await playDealerTurn(
           interaction,
@@ -189,25 +207,7 @@ async function runBlackjack(interaction: ChatInputCommandInteraction): Promise<v
           gameId,
           userId,
         );
-        return;
       }
-
-      await message.edit({
-        content: buildGameMessage(playerHand, dealerHand, "playing"),
-        components: [buildButtons(gameId), buildExtendRow(gameId)],
-      });
-    } else if (action === "stand") {
-      collector.stop("stand");
-      await playDealerTurn(
-        interaction,
-        message,
-        playerHand,
-        dealerHand,
-        deck,
-        gameId,
-        userId,
-      );
-    }
     } catch (err) {
       logger.warn(
         { err, gameId, interactionFailedRecovery: true },
