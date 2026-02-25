@@ -1,5 +1,6 @@
 // src/commands/help/helpText.test.ts
 import { describe, expect, it } from "vitest";
+import type { CommandListItem } from "../../services/discord/commandMeta.js";
 import { buildHelpText, type HelpTopic } from "./helpText.js";
 
 const TOPICS: HelpTopic[] = [
@@ -18,7 +19,7 @@ const TOPICS: HelpTopic[] = [
 
 describe("buildHelpText", () => {
   it("returns non-empty string for each topic (non-admin)", () => {
-    const emptyCommands = [];
+    const emptyCommands: CommandListItem[] = [];
     for (const topic of TOPICS) {
       const result = buildHelpText({
         isAdmin: false,
@@ -32,7 +33,7 @@ describe("buildHelpText", () => {
   });
 
   it("returns non-empty string for each topic (admin)", () => {
-    const emptyCommands = [];
+    const emptyCommands: CommandListItem[] = [];
     for (const topic of TOPICS) {
       const result = buildHelpText({
         isAdmin: true,

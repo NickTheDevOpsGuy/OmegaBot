@@ -92,11 +92,11 @@ function handleMetrics(res: http.ServerResponse): void {
 
   metricsRegistry
     .metrics()
-    .then((output) => {
+    .then((output: string) => {
       res.writeHead(200, { "Content-Type": metricsRegistry.contentType });
       res.end(output);
     })
-    .catch((err) => {
+    .catch((err: unknown) => {
       logger.warn({ err }, "[metrics] failed to collect");
       res.writeHead(500, { "Content-Type": "text/plain" });
       res.end("Failed to collect metrics");
