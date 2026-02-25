@@ -5,12 +5,7 @@ on:
   pull_request:
     branches:
       - develop
-
-  push:
-    branches:
-      - develop
-
-  workflow_dispatch: {}
+  workflow_dispatch:
 
 concurrency:
   group: OmegaBot-${{ github.ref }}
@@ -82,49 +77,3 @@ jobs:
           DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
           DISCORD_APP_ID: ${{ secrets.DISCORD_APP_ID }}
         run: npm run test:e2e
-
-  deploy:
-    name: 🚀 Deploy (develop)
-    runs-on: ubuntu-latest
-    needs: [lint-typecheck, e2e]
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-
-    steps:
-      - name: 🔐 Start SSH agent
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
-
-      - name: 🚀 Deploy via SSH
-        env:
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
-          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
-        run: |
-          set -euo pipefail
-
-          PORT="${DEPLOY_PORT:-22}"
-
-          ssh -p "$PORT" -o StrictHostKeyChecking=no "${DEPLOY_USER}@${DEPLOY_HOST}" << 'EOF'
-            set -euo pipefail
-
-            cd "${DEPLOY_PATH}"
-
-            # Example: pull latest develop and restart the bot.
-            # Adjust to your setup (pm2, systemd, docker, etc.)
-            git fetch --all --prune
-            git checkout develop
-            git pull --ff-only origin develop
-
-            npm ci --omit=dev
-            npm run build
-
-            # If you're using PM2:
-            # pm2 restart omegabot
-
-            # If you're using systemd:
-            # sudo systemctl restart omegabot
-
-            echo "Deploy complete."
-          EOF
