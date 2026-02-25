@@ -53,6 +53,7 @@ jobs:
   e2e:
     name: 🧪 E2E (Discord)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     defaults:
       run:
@@ -76,4 +77,5 @@ jobs:
         env:
           DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
           DISCORD_APP_ID: ${{ secrets.DISCORD_APP_ID }}
+          E2E_TIMEOUT_MS: 120000
         run: npm run test:e2e

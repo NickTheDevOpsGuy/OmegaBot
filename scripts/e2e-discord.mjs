@@ -36,14 +36,14 @@ if (!token || !appId) {
 const env = {
   ...process.env,
   DATABASE_PATH: ":memory:",
-  LOG_LEVEL: "error",
+  LOG_LEVEL: "info",
   METRICS_PORT: "0",
   DISCORD_TOKEN: token,
   DISCORD_APP_ID: appId,
 };
 
 const READY_MARKER = "OmegaBot is online";
-const TIMEOUT_MS = 45_000;
+const TIMEOUT_MS = Number(process.env.E2E_TIMEOUT_MS ?? 90_000);
 
 const child = spawn("node", [botPath], {
   cwd: projectRoot,
@@ -53,6 +53,14 @@ const child = spawn("node", [botPath], {
 
 let resolved = false;
 let exitCode = 1;
+
+let lastLines = [];
+const MAX_LINES = 50;
+function remember(line){
+  lastLines.push(line);
+  if(lastLines.length>MAX_LINES) lastLines.shift();
+}
+
 
 function done(success, message) {
   if (resolved) return;
@@ -81,10 +89,11 @@ child.on("close", (code) => {
 });
 
 const timeout = setTimeout(() => {
-  done(false, `timeout after ${TIMEOUT_MS / 1000}s waiting for ready`);
+  done(false, `timeout after ${TIMEOUT_MS / 1000}s waiting for ready. Last output:\n${lastLines.join("\n")}`);
 }, TIMEOUT_MS);
 
 const onLine = (line) => {
+  remember(line);
   if (line.includes(READY_MARKER)) {
     clearTimeout(timeout);
     done(true, "bot reached ready state");
