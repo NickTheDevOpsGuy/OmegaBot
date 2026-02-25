@@ -8,6 +8,7 @@ import {
   type ChatInputCommandInteraction,
 } from "discord.js";
 import { logger } from "../../../utils/logger.js";
+import { recordInteractionRecovery } from "../../../services/metrics/server.js";
 
 type Wyr = [string, string];
 
@@ -207,6 +208,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
         ephemeral: true,
       });
     } catch (err) {
+      recordInteractionRecovery("wouldYouRather");
       logger.warn(
         { err, interactionFailedRecovery: true },
         "[fun/wouldYouRather] vote handler failed",

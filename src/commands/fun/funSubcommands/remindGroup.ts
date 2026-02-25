@@ -30,7 +30,7 @@ export function buildRemindGroup(g: SlashCommandSubcommandGroupBuilder) {
         .setName("cancel")
         .setDescription("Cancel a reminder")
         .addIntegerOption((o) =>
-          o.setName("id").setDescription("Reminder ID to cancel").setRequired(true),
+          o.setName("id").setDescription("Reminder ID to cancel").setRequired(true).setAutocomplete(true),
         ),
     )
     .addSubcommand((s) => s.setName("clear").setDescription("Cancel all your reminders"));

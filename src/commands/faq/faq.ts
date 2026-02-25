@@ -13,6 +13,7 @@
 //
 // Subcommands live in ./subcommands/*.ts and delegate to src/services/faq/*.
 
+import type { AutocompleteInteraction } from "discord.js";
 import {
   MessageFlags,
   SlashCommandBuilder,
@@ -20,6 +21,7 @@ import {
 } from "discord.js";
 import { logger } from "../../utils/logger.js";
 
+import { getAll } from "../../services/faq/services.js";
 import { run as runAdd } from "./subcommands/add.js";
 import { run as runGet } from "./subcommands/get.js";
 import { run as runList } from "./subcommands/list.js";
@@ -71,7 +73,7 @@ export const data = new SlashCommandBuilder()
       .setName("get")
       .setDescription("Get a FAQ entry by key")
       .addStringOption((o) =>
-        o.setName("key").setDescription("Key to fetch").setRequired(true),
+        o.setName("key").setDescription("Key to fetch").setRequired(true).setAutocomplete(true),
       )
       .addBooleanOption((o) =>
         o.setName("full").setDescription("Show the full answer text").setRequired(false),
@@ -96,7 +98,7 @@ export const data = new SlashCommandBuilder()
           .setRequired(false),
       )
       .addStringOption((o) =>
-        o.setName("tag").setDescription("Filter by tag (optional)").setRequired(false),
+        o.setName("tag").setDescription("Filter by tag (optional)").setRequired(false).setAutocomplete(true),
       )
       .addBooleanOption((o) =>
         o
@@ -118,7 +120,7 @@ export const data = new SlashCommandBuilder()
       .setName("remove")
       .setDescription("Remove a FAQ entry by key")
       .addStringOption((o) =>
-        o.setName("key").setDescription("Key to remove").setRequired(true),
+        o.setName("key").setDescription("Key to remove").setRequired(true).setAutocomplete(true),
       )
       .addBooleanOption((o) =>
         o
@@ -138,7 +140,7 @@ export const data = new SlashCommandBuilder()
  */
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const sub = interaction.options.getSubcommand(true);
-  const ephemeral = interaction.options.getBoolean("private") ?? false;
+  const ephemeral = interaction.options.getBoolean("private") ?? true;
 
   // Parent owns the interaction lifecycle: always defer first.
   await interaction.deferReply(ephemeral ? { flags: MessageFlags.Ephemeral } : undefined);
@@ -170,4 +172,32 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     logger.error({ err, sub }, "[faq] subcommand failed");
     await interaction.editReply("Something went wrong. Try again in a bit.");
   }
+}
+
+export async function autocomplete(interaction: AutocompleteInteraction): Promise<void> {
+  const focused = interaction.options.getFocused(true);
+  const needle = String(focused.value).trim().toLowerCase();
+  const entries = getAll();
+
+  if (focused.name === "key") {
+    const keys = entries.map((e) => e.key);
+    const filtered = needle
+      ? keys.filter((k) => k.toLowerCase().includes(needle))
+      : keys;
+    const choices = filtered.slice(0, 25).map((key) => ({ name: key, value: key }));
+    await interaction.respond(choices);
+    return;
+  }
+
+  if (focused.name === "tag") {
+    const allTags = [...new Set(entries.flatMap((e) => e.tags))].filter(Boolean).sort();
+    const filtered = needle
+      ? allTags.filter((t) => t.toLowerCase().includes(needle))
+      : allTags;
+    const choices = filtered.slice(0, 25).map((tag) => ({ name: tag, value: tag }));
+    await interaction.respond(choices);
+    return;
+  }
+
+  await interaction.respond([]);
 }

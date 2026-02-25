@@ -19,6 +19,9 @@ function weatherEmoji(text: string): string {
 function friendlyWeatherError(err: unknown): string {
   const msg = err instanceof Error ? err.message : "Unknown error";
 
+  if (msg.includes("Circuit") && msg.includes("open")) {
+    return "Weather API is temporarily unavailable. Try again in a minute.";
+  }
   if (msg.toLowerCase().includes("missing weatherapi_key")) {
     return "Weather is not configured (missing WEATHERAPI_KEY). Ask an admin to set it in `.env`.";
   }

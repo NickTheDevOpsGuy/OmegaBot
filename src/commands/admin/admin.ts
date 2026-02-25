@@ -36,7 +36,17 @@ export const data = new SlashCommandBuilder()
           .setDescription("Duration in minutes")
           .setRequired(true)
           .setMinValue(1)
-          .setMaxValue(40320),
+          .setMaxValue(40320)
+          .addChoices(
+            { name: "5 minutes", value: 5 },
+            { name: "10 minutes", value: 10 },
+            { name: "30 minutes", value: 30 },
+            { name: "1 hour", value: 60 },
+            { name: "6 hours", value: 360 },
+            { name: "12 hours", value: 720 },
+            { name: "1 day", value: 1440 },
+            { name: "7 days", value: 10080 },
+          ),
       )
       .addStringOption((opt) =>
         opt.setName("reason").setDescription("Reason for timeout").setRequired(false),

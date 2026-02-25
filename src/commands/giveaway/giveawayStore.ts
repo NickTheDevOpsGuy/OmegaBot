@@ -125,6 +125,16 @@ export function getActiveGiveaways(guildId: string): Giveaway[] {
     .all(guildId) as Giveaway[];
 }
 
+export function getEndedGiveaways(guildId: string): Giveaway[] {
+  ensureGiveawayTables();
+  const db = getDb();
+  return db
+    .prepare(
+      `SELECT * FROM giveaways WHERE guild_id = ? AND ended = 1 ORDER BY ends_at DESC LIMIT 25`,
+    )
+    .all(guildId) as Giveaway[];
+}
+
 export function getExpiredGiveaways(): Giveaway[] {
   ensureGiveawayTables();
   const db = getDb();

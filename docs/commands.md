@@ -64,19 +64,23 @@ Stats and leaderboard views are not rate limited.
 
 ### Reminders
 
-| Command              | Description                 |
-| -------------------- | --------------------------- |
-| `/fun remind set`    | Set a reminder (5m, 1h, 1d) |
-| `/fun remind list`   | View pending reminders      |
-| `/fun remind cancel` | Cancel a reminder           |
-| `/fun remind clear`  | Cancel all reminders        |
+| Command              | Description                            |
+| -------------------- | -------------------------------------- |
+| `/fun remind set`    | Set a reminder (5m, 1h, 1d)             |
+| `/fun remind list`   | View pending reminders                  |
+| `/fun remind cancel` | Cancel a reminder (ID has autocomplete) |
+| `/fun remind clear`  | Cancel all reminders                    |
 
 ### Quotes & Jokes
 
-| Command      | Description      |
-| ------------ | ---------------- |
-| `/fun quote` | Save/view quotes |
-| `/fun joke`  | Community jokes  |
+| Command            | Description                                      |
+| ------------------ | ------------------------------------------------ |
+| `/fun quote add`   | Add a quote                                      |
+| `/fun quote random`| Get a random quote                               |
+| `/fun quote list`  | List recent quotes (limit: 5, 10, 25; default: 25) |
+| `/fun quote remove`| Remove a quote (ID has autocomplete)             |
+| `/fun quote search`| Search quotes (limit: 5, 10, 25)                |
+| `/fun joke`        | Community jokes                                 |
 
 ### Utility
 
@@ -96,7 +100,7 @@ Manage your profile, AFK status, and timezone.
 | ------------------- | ----------------------------------- |
 | `/profile view`     | View your or another user's profile |
 | `/profile afk`      | Set/clear AFK status                |
-| `/profile timezone` | Set/view timezone                   |
+| `/profile timezone` | Set/view timezone (zone has autocomplete) |
 
 ---
 
@@ -104,11 +108,11 @@ Manage your profile, AFK status, and timezone.
 
 Get info about users or the server.
 
-| Command        | Description            |
-| -------------- | ---------------------- |
-| `/info user`   | View user information  |
-| `/info server` | View server statistics |
-| `/info avatar` | View user's avatar     |
+| Command        | Description                                               |
+| -------------- | --------------------------------------------------------- |
+| `/info user`   | View user information                                     |
+| `/info server` | View server statistics                                    |
+| `/info avatar` | View user's avatar (size: 128–4096, format: png/jpg/webp/gif) |
 
 ---
 
@@ -127,20 +131,22 @@ View your unlocked achievements (19 total).
 
 ## `/giveaway` - Giveaway System
 
-| Command            | Description           |
-| ------------------ | --------------------- |
-| `/giveaway start`  | Create a giveaway     |
-| `/giveaway end`    | End early             |
-| `/giveaway reroll` | Pick new winners      |
-| `/giveaway list`   | List active giveaways |
+| Command            | Description                                      |
+| ------------------ | ------------------------------------------------ |
+| `/giveaway start`  | Create a giveaway                                |
+| `/giveaway end`    | End early (ID has autocomplete)                   |
+| `/giveaway reroll` | Pick new winners for ended giveaway (ID autocomplete) |
+| `/giveaway list`   | List active giveaways                            |
 
 ---
 
 ## `/suggestion` - Suggestion System
 
+Use `/suggestion` to submit an idea. A modal opens for multi-line input (up to 1000 characters).
+
 | Command                 | Description      |
 | ----------------------- | ---------------- |
-| `/suggestion submit`    | Submit an idea   |
+| `/suggestion`           | Submit an idea (opens modal) |
 | `/suggestion approve`   | Approve (mods)   |
 | `/suggestion deny`      | Deny (mods)      |
 | `/suggestion implement` | Mark implemented |
@@ -165,12 +171,12 @@ Requires **Manage Server** permission.
 
 ## `/faq` - FAQ System
 
-| Command       | Description      |
-| ------------- | ---------------- |
-| `/faq add`    | Create FAQ entry |
-| `/faq get`    | Retrieve FAQ     |
-| `/faq list`   | List all FAQs    |
-| `/faq remove` | Remove FAQ       |
+| Command       | Description                       |
+| ------------- | --------------------------------- |
+| `/faq add`    | Create FAQ entry                   |
+| `/faq get`    | Retrieve FAQ (key has autocomplete) |
+| `/faq list`   | List all FAQs                     |
+| `/faq remove` | Remove FAQ (key has autocomplete) |
 
 ---
 
@@ -195,6 +201,24 @@ Check external service status (Vercel, Supabase).
 
 ---
 
+## Context Menus
+
+### Right-click User
+
+| Menu               | Description              |
+| ------------------ | ------------------------ |
+| **View Profile**   | View user profile, stats, achievements |
+| **View Achievements** | View user's achievements   |
+
+### Right-click Message
+
+| Menu        | Description                                                     |
+| ----------- | --------------------------------------------------------------- |
+| **Summarize** | Summarize messages up to that one; DM you the result          |
+| **Quote**     | Save the message as a quote (text or embed; human or bot)        |
+
+---
+
 ## Other Commands
 
 | Command     | Description                                        |
@@ -204,7 +228,7 @@ Check external service status (Vercel, Supabase).
 | `/status`   | Vercel / Supabase status                           |
 | `/summary`  | Summarize chat                                     |
 | `/history`  | View chat history                                  |
-| `/playback` | Transcript playback                                |
+| `/playback` | Transcript playback (`private`, `before`, `after` message IDs for paging) |
 | `/admin`    | Admin tools                                        |
 
 ---

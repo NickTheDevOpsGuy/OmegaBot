@@ -1,5 +1,8 @@
 // src/bot.ts
+(globalThis as { __omegabotStartTime?: number }).__omegabotStartTime = Date.now();
+
 import { initDatabase, closeDatabase } from "./services/database/db.js";
+import { startMetricsServer, stopMetricsServer } from "./services/metrics/server.js";
 
 import { Client, GatewayIntentBits, Partials } from "discord.js";
 import { getDiscordErrorCode } from "./services/discord/interactionErrors.js";
@@ -137,9 +140,15 @@ client.once("clientReady", () => {
   if (!githubPrPollingEnabled && !githubAssigneePollingEnabled) {
     logger.info("GitHub polling disabled");
   }
+
+  startMetricsServer(client);
 });
 
-function shutdown(signal: string): void {
+let shuttingDown = false;
+
+async function shutdown(signal: string): Promise<void> {
+  if (shuttingDown) return;
+  shuttingDown = true;
   logger.info({ signal }, "Shutting down...");
 
   try {
@@ -149,12 +158,20 @@ function shutdown(signal: string): void {
     logger.warn({ err }, "Failed to stop reminder scheduler cleanly");
   }
 
+  stopMetricsServer();
+
+  try {
+    await client.destroy();
+  } catch (err) {
+    logger.warn({ err }, "Error closing Discord connection");
+  }
+
   closeDatabase();
   process.exit(0);
 }
 
-process.on("SIGINT", () => shutdown("SIGINT"));
-process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => void shutdown("SIGINT"));
+process.on("SIGTERM", () => void shutdown("SIGTERM"));
 
 void client.login(env.token);
 

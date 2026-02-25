@@ -17,6 +17,8 @@ Suggestions to make OmegaBot more maintainable, observable, and operator-friendl
 
 - ~~**Runbook**~~ – Done: `docs/runbook.md` (deploy, restart, DB, backup, health, security).
 - ~~**Backup reminder**~~ – Done: README Operational Notes and runbook mention backing up the DB.
+- ~~**Automated backup script**~~ – Done: `npm run db:backup` / `scripts/backup-db.sh`.
+- ~~**Metrics / health HTTP endpoint**~~ – Done: `METRICS_PORT` enables `/health` and `/metrics` (Prometheus).
 - ~~**Env summary at startup**~~ – Done: bot logs `[startup] optional features` (weather, summary, hangmanAdmin, jokeModerator, autoRole).
 
 ---
@@ -39,7 +41,7 @@ Suggestions to make OmegaBot more maintainable, observable, and operator-friendl
 ## User / DX
 
 - **Slash command count** – You’re happy with the current set; avoid adding commands “just because.” Prefer subcommands or options (like Hangman play/stats/words).
-- **Error messages** – When a command fails (e.g. missing env), ensure the reply is actionable (“Set WEATHERAPI_KEY in .env”) where possible.
+- ~~**Error messages**~~ – Done: missing env vars (e.g. GITHUB_TOKEN, WEATHERAPI_KEY, OPENAI_API_KEY) now suggest "Set it in .env (see .env.example)".
 - ~~**Rate limits**~~ – Done: cooldown replies for hangman, blackjack, slots, dice now include “(rate limit: Xs).”
 
 ---
@@ -57,4 +59,4 @@ Suggestions to make OmegaBot more maintainable, observable, and operator-friendl
 - **Major new systems** – Unless you need them (e.g. full moderation queue), avoid large new features that increase maintenance.
 - **UI overhaul** – Current embeds and buttons are clear; no need to change for its own sake.
 
-**Already done:** runbook, env summary at startup, pre-push tests, CI test:run, npm audit in CI, backup reminder, FAQ for admins, TODO resolved, rate limit in cooldown replies, secrets-not-in-logs doc. The rest can be done incrementally.
+**Already done:** runbook, env summary at startup, pre-push tests, CI test:run, npm audit in CI, backup reminder, FAQ for admins, TODO resolved, rate limit in cooldown replies, secrets-not-in-logs doc, automated backup script, metrics/health HTTP endpoint, actionable error messages for missing env vars. The rest can be done incrementally.

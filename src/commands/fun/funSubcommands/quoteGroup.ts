@@ -34,14 +34,28 @@ export function buildQuoteGroup(g: SlashCommandSubcommandGroupBuilder) {
       s
         .setName("list")
         .setDescription("List recent quotes")
-        .addUserOption((o) => o.setName("author").setDescription("Filter by author")),
+        .addUserOption((o) => o.setName("author").setDescription("Filter by author"))
+        .addIntegerOption((o) =>
+          o
+            .setName("limit")
+            .setDescription("Number to show (default: 25)")
+            .addChoices(
+              { name: "5", value: 5 },
+              { name: "10", value: 10 },
+              { name: "25", value: 25 },
+            ),
+        ),
     )
     .addSubcommand((s) =>
       s
         .setName("remove")
         .setDescription("Remove a quote")
         .addIntegerOption((o) =>
-          o.setName("id").setDescription("Quote ID to remove").setRequired(true),
+          o
+            .setName("id")
+            .setDescription("Quote ID to remove")
+            .setRequired(true)
+            .setAutocomplete(true),
         ),
     )
     .addSubcommand((s) =>
@@ -50,6 +64,16 @@ export function buildQuoteGroup(g: SlashCommandSubcommandGroupBuilder) {
         .setDescription("Search quotes")
         .addStringOption((o) =>
           o.setName("query").setDescription("Search text").setRequired(true),
+        )
+        .addIntegerOption((o) =>
+          o
+            .setName("limit")
+            .setDescription("Max results (default: 10)")
+            .addChoices(
+              { name: "5", value: 5 },
+              { name: "10", value: 10 },
+              { name: "25", value: 25 },
+            ),
         ),
     );
 }

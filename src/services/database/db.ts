@@ -4,6 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { logger } from "../../utils/logger.js";
+import { runMigrations } from "./migrations.js";
 
 let db: Database.Database | null = null;
 
@@ -190,8 +191,10 @@ export function initDatabase(): Database.Database {
   const schemaSql = fs.readFileSync(schemaPath, "utf-8");
   db.exec(schemaSql);
 
+  runMigrations(db);
+
   // -------------------------------------------------------------------------
-  // Migrations (keep init resilient across schema tweaks)
+  // Inline migrations (legacy, keep init resilient across schema tweaks)
   // -------------------------------------------------------------------------
   function ensureCoinFlipsSchema(): void {
     try {

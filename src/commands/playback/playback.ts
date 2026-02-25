@@ -15,6 +15,7 @@ import {
   DISCORD_SAFE_TEXT_LIMIT,
 } from "../../services/transcript/defaults.js";
 import { logger } from "../../utils/logger.js";
+import { recordInteractionRecovery } from "../../services/metrics/server.js";
 
 function chunkText(text: string, maxChars: number): string[] {
   if (text.length <= maxChars) return [text];
@@ -58,15 +59,19 @@ export const data = new SlashCommandBuilder()
       .setName("after")
       .setDescription("Message ID: show messages after this ID")
       .setRequired(false),
+  )
+  .addBooleanOption((opt) =>
+    opt.setName("private").setDescription("Only show playback to you").setRequired(false),
   );
 
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const count = interaction.options.getInteger("count") ?? 50;
   const before = interaction.options.getString("before") ?? undefined;
   const after = interaction.options.getString("after") ?? undefined;
+  const ephemeral = interaction.options.getBoolean("private") ?? true;
 
   try {
-    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+    await interaction.deferReply(ephemeral ? { flags: MessageFlags.Ephemeral } : undefined);
 
     if (!interaction.channel || !interaction.channel.isTextBased()) {
       await interaction.editReply("This channel does not support playback.");
@@ -141,6 +146,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
           components: [makeRow(index)],
         });
       } catch (err) {
+        recordInteractionRecovery("playback");
         logger.warn(
           { err, userId: interaction.user.id, interactionFailedRecovery: true },
           "[playback] button update failed",
@@ -172,7 +178,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       } else {
         await interaction.reply({
           content: "Something went wrong during playback.",
-          flags: MessageFlags.Ephemeral,
+          ephemeral,
         });
       }
     } catch (replyErr) {

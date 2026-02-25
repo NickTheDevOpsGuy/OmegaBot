@@ -219,7 +219,6 @@ See [troubleshooting.md](./troubleshooting.md) for debugging "failed to complete
 
 ## Future Improvements
 
-- Replace file stores with a database
-- Add metrics and observability
-- Implement comprehensive integration tests
+- Replace remaining file stores with database
+- Implement comprehensive integration tests for collectors
 - Add automated Discord.js version compatibility checks

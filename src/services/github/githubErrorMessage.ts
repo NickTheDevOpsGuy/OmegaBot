@@ -1,6 +1,10 @@
+import { CircuitOpenError } from "../circuitBreaker/circuitBreaker.js";
 import { GitHubApiError } from "./githubClient.js";
 
 export function getGitHubUserMessage(err: unknown): string | null {
+  if (err instanceof CircuitOpenError) {
+    return "GitHub API is temporarily unavailable. Try again in a minute.";
+  }
   if (!(err instanceof GitHubApiError)) return null;
 
   switch (err.status) {

@@ -1,6 +1,7 @@
 // src/services/weather/forecast.ts
 
 import { logger } from "../../utils/logger.js";
+import { weatherCircuit } from "../circuitBreaker/breakers.js";
 import type { TempUnit } from "../../services/weather/types.js";
 
 /* -------------------------------------------------------------------------- */
@@ -85,7 +86,7 @@ export type WeatherBundle = {
 function requireWeatherApiKey(): string {
   const key = process.env.WEATHERAPI_KEY?.trim();
   if (!key) {
-    throw new Error("Missing WEATHERAPI_KEY. Set it in .env (WEATHERAPI_KEY=...).");
+    throw new Error("WEATHERAPI_KEY is required. Set it in .env (see .env.example)");
   }
   return key;
 }
@@ -179,12 +180,13 @@ export async function fetchWeatherBundle(args: {
     `&days=${encodeURIComponent(String(safeDays))}` +
     `&aqi=no&alerts=no`;
 
-  const res = await fetch(url, {
-    headers: {
-      Accept: "application/json",
-      "User-Agent": "OmegaBot",
-    },
-  });
+  return weatherCircuit.execute(async () => {
+    const res = await fetch(url, {
+      headers: {
+        Accept: "application/json",
+        "User-Agent": "OmegaBot",
+      },
+    });
 
   const raw = await res.text();
   let parsed: WeatherApiResponse | null = null;
@@ -271,4 +273,5 @@ export async function fetchWeatherBundle(args: {
   );
 
   return { placeLabel, tzId, localTime, now, days };
+  });
 }

@@ -22,6 +22,7 @@ import {
   type ChatInputCommandInteraction,
 } from "discord.js";
 import { logger } from "../../../utils/logger.js";
+import { recordInteractionRecovery } from "../../../services/metrics/server.js";
 import { SHORT_TIMEOUT_MS } from "../../../constants.js";
 import {
   getStats,
@@ -212,6 +213,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
         ).catch(() => {});
       }
     } catch (err) {
+      recordInteractionRecovery("wordle");
       logger.warn(
         { err, gameId, interactionFailedRecovery: true },
         "[wordle] collect handler failed",

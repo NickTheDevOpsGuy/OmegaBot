@@ -10,11 +10,13 @@ import { logger } from "../../utils/logger.js";
 import type { CommandClient } from "./commandLoader.js";
 import type { CommandModule } from "./commandTypes.js";
 import { handleGiveawayButton } from "../../commands/giveaway/giveaway.js";
+import { handleModalSubmit as handleSuggestionModal } from "../../commands/suggestion/suggestion.js";
 import {
   getDiscordErrorCode,
   isKnownInteractionError,
   logKnownInteractionError,
 } from "./interactionErrors.js";
+import { commandsExecutedTotal } from "../metrics/server.js";
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return !!v && typeof v === "object";
@@ -126,6 +128,21 @@ export async function handleInteraction(
     return;
   }
 
+  // Handle modal submits (e.g. suggestion)
+  if (interaction.isModalSubmit()) {
+    if (interaction.customId.startsWith("suggestion:")) {
+      try {
+        await handleSuggestionModal(interaction);
+      } catch (err) {
+        logger.error(
+          { err, customId: interaction.customId },
+          "[interaction] suggestion modal failed",
+        );
+      }
+    }
+    return;
+  }
+
   // Handle button interactions (giveaways, etc.)
   if (interaction.isButton()) {
     if (interaction.customId.startsWith("giveaway:")) {
@@ -140,6 +157,50 @@ export async function handleInteraction(
       return;
     }
     // Other button interactions are handled by their respective collectors
+    return;
+  }
+
+  // Handle user context menus (right-click user → View Profile, View Achievements)
+  if (interaction.isUserContextMenuCommand()) {
+    const cmd = client.commands.get(interaction.commandName);
+    if (cmd && typeof (cmd as { execute?: (i: unknown) => Promise<void> }).execute === "function") {
+      try {
+        await (cmd as { execute: (i: typeof interaction) => Promise<void> }).execute(interaction);
+        commandsExecutedTotal.inc({ command: interaction.commandName });
+      } catch (err) {
+        if (isKnownInteractionError(err)) {
+          logKnownInteractionError(err, "contextMenu.execute", {
+            interactionId: interaction.id,
+            command: interaction.commandName,
+          });
+          return;
+        }
+        logger.error({ err, command: interaction.commandName }, "[interaction] context menu failed");
+        await safeRepliableReply(interaction, "Something went wrong. Try again later.", true);
+      }
+    }
+    return;
+  }
+
+  // Handle message context menus (right-click message → Summarize, Quote)
+  if (interaction.isMessageContextMenuCommand()) {
+    const cmd = client.commands.get(interaction.commandName);
+    if (cmd && typeof (cmd as { execute?: (i: unknown) => Promise<void> }).execute === "function") {
+      try {
+        await (cmd as { execute: (i: typeof interaction) => Promise<void> }).execute(interaction);
+        commandsExecutedTotal.inc({ command: interaction.commandName });
+      } catch (err) {
+        if (isKnownInteractionError(err)) {
+          logKnownInteractionError(err, "contextMenu.execute", {
+            interactionId: interaction.id,
+            command: interaction.commandName,
+          });
+          return;
+        }
+        logger.error({ err, command: interaction.commandName }, "[interaction] context menu failed");
+        await safeRepliableReply(interaction, "Something went wrong. Try again later.", true);
+      }
+    }
     return;
   }
 
@@ -216,6 +277,7 @@ export async function handleInteraction(
     );
 
     await command.execute(interaction);
+    commandsExecutedTotal.inc({ command: command.data.name });
   } catch (err) {
     if (isKnownInteractionError(err)) {
       logKnownInteractionError(err, "command.execute", meta);

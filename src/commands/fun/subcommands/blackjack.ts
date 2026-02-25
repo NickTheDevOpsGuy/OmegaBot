@@ -6,8 +6,10 @@ import {
   type Message,
 } from "discord.js";
 import { logger } from "../../../utils/logger.js";
+import { recordInteractionRecovery } from "../../../services/metrics/server.js";
 import {
   checkBlackjackCooldown,
+  formatCooldownMessage,
   recordBlackjackGame,
 } from "../../../services/discord/rateLimit.js";
 import { getStats, recordResult } from "./blackjackStore.js";
@@ -20,7 +22,7 @@ import {
 } from "./blackjack/ui.js";
 import { safeMessageEdit } from "../../../services/discord/safeReply.js";
 
-import { GAME_TIMEOUT_MS } from "../../../constants.js";
+import { BLACKJACK_COOLDOWN_MS, GAME_TIMEOUT_MS } from "../../../constants.js";
 
 /* -------------------------------------------------------------------------- */
 /* Dealer turn logic                                                          */
@@ -90,7 +92,7 @@ async function runBlackjack(interaction: ChatInputCommandInteraction): Promise<v
     const remaining = checkBlackjackCooldown(interaction.user.id);
     if (remaining > 0) {
       await interaction.editReply(
-        `⏱️ Slow down! Try again in **${Math.ceil(remaining / 1000)}** seconds (rate limit: 5s).`,
+        formatCooldownMessage(remaining, BLACKJACK_COOLDOWN_MS / 1000, "blackjack"),
       );
       return;
     }
@@ -209,6 +211,7 @@ async function runBlackjack(interaction: ChatInputCommandInteraction): Promise<v
         );
       }
     } catch (err) {
+      recordInteractionRecovery("blackjack");
       logger.warn(
         { err, gameId, interactionFailedRecovery: true },
         "[blackjack] collect handler failed",

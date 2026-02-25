@@ -6,6 +6,7 @@ import {
   type User,
 } from "discord.js";
 import { logger } from "../../../utils/logger.js";
+import { recordInteractionRecovery } from "../../../services/metrics/server.js";
 import { safeReplyToButton } from "../../../services/discord/safeReply.js";
 import {
   isKnownInteractionError,
@@ -171,6 +172,7 @@ async function handleChallenge(
         }
       }
     } catch (err) {
+      recordInteractionRecovery("rps");
       logger.warn(
         { err, challengeId, interactionFailedRecovery: true },
         "[rps] collect handler failed",

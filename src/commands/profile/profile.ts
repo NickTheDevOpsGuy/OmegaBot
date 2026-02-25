@@ -9,7 +9,9 @@
 //
 // Subcommand handlers live in ./subcommands/*.ts
 
+import type { AutocompleteInteraction } from "discord.js";
 import { SlashCommandBuilder, type ChatInputCommandInteraction } from "discord.js";
+import { filterTimezones } from "./timezones.js";
 import { run as runView } from "./subcommands/view.js";
 import { run as runAfk } from "./subcommands/afk.js";
 import { run as runTimezone } from "./subcommands/timezone.js";
@@ -42,7 +44,8 @@ export const data = new SlashCommandBuilder()
       .addStringOption((o) =>
         o
           .setName("zone")
-          .setDescription("IANA timezone (e.g., America/New_York, Europe/London)"),
+          .setDescription("IANA timezone (e.g., America/New_York, Europe/London)")
+          .setAutocomplete(true),
       )
       .addUserOption((o) =>
         o.setName("user").setDescription("View another user's timezone"),
@@ -64,4 +67,17 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     await runTimezone(interaction);
     return;
   }
+}
+
+export async function autocomplete(interaction: AutocompleteInteraction): Promise<void> {
+  const focused = interaction.options.getFocused(true);
+  if (focused.name !== "zone") {
+    await interaction.respond([]);
+    return;
+  }
+  const choices = filterTimezones(String(focused.value)).map((tz) => ({
+    name: tz,
+    value: tz,
+  }));
+  await interaction.respond(choices);
 }

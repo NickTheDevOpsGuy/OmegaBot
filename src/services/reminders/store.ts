@@ -56,6 +56,18 @@ export function listPendingReminders(): ReminderRow[] {
     .all() as ReminderRow[];
 }
 
+export function listPendingRemindersByUser(userId: string): ReminderRow[] {
+  return db()
+    .prepare(
+      `
+      SELECT * FROM reminders
+      WHERE user_id = ? AND delivered_at IS NULL
+      ORDER BY due_at ASC
+    `,
+    )
+    .all(userId) as ReminderRow[];
+}
+
 export function listDueReminders(nowMs: number): ReminderRow[] {
   return db()
     .prepare(

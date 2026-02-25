@@ -1,8 +1,10 @@
 import type { ChatInputCommandInteraction } from "discord.js";
+import { DICE_COOLDOWN_MS } from "../../../constants.js";
 import { logger } from "../../../utils/logger.js";
 import {
   checkDiceCooldown,
   recordDiceRoll,
+  formatCooldownMessage,
 } from "../../../services/discord/rateLimit.js";
 
 /**
@@ -66,7 +68,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
   const remaining = checkDiceCooldown(interaction.user.id);
   if (remaining > 0) {
     await interaction.editReply(
-      `⏱️ Slow down! Try again in **${Math.ceil(remaining / 1000)}** seconds (rate limit: 2s).`,
+      formatCooldownMessage(remaining, DICE_COOLDOWN_MS / 1000, "dice"),
     );
     return;
   }

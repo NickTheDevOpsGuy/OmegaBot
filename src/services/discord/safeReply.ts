@@ -22,6 +22,7 @@ function isRetryableError(err: unknown): boolean {
     const msg = err.message.toLowerCase();
     return (
       msg.includes("rate limit") ||
+      msg.includes("429") ||
       msg.includes("500") ||
       msg.includes("502") ||
       msg.includes("503") ||

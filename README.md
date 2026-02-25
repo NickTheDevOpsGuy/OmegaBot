@@ -43,11 +43,14 @@ Not intended to be:
 - GitHub PR and issue lookups
 - Vercel and Supabase status checks (`/status vercel`, `/status supabase`)
 - SQLite persistence for all data
-- **Resilient interaction handling** – Defer early before heavy work, try/catch with fallback defer, safe reply wrappers, retry on transient API errors; logs include `interactionFailedRecovery: true` when recovering from errors (reduces "failed to complete" occurrences)
-- **Autocomplete support** – Optional `autocomplete` handler on commands; responds with `[]` by default so Discord never shows autocomplete errors
+- **Resilient interaction handling** – Defer early before heavy work, try/catch with fallback defer, safe reply wrappers, retry on transient API errors (including Discord 429 rate limits); logs include `interactionFailedRecovery: true` when recovering (reduces "failed to complete" occurrences)
+- **Autocomplete support** – Timezone (`/profile timezone`) and FAQ keys (`/faq get`, `/faq remove`); responds with `[]` by default when no handler
 - **Admin health dashboard** – `/admin health` shows database status, env vars, and interaction error counts
+- **HTTP health & metrics** – Optional `METRICS_PORT` enables `/health` (200/503 with Discord status), `/metrics` (Prometheus), and `/dashboard` (web admin UI)
 - **Database integrity check** – `npm run db:check` to verify SQLite health
-- **Rate limiting** – slots (3s), blackjack (5s), dice (2s), darts (2s), hangman (10s) cooldowns to prevent spam
+- **Automated backup** – `npm run db:backup` copies DB to `data/backups/` (configurable); cron-friendly
+- **Graceful shutdown** – SIGINT/SIGTERM close Discord cleanly, then DB
+- **Rate limiting** – slots (3s), blackjack (5s), dice (2s), darts (2s), hangman (10s) cooldowns with clear "Try again in Xs" feedback
 - **Daily game metrics** – per-command, per-user play counts for analytics
 - **Long game timeouts** – Blackjack, Hangman, Wordle, and RPS challenges: 1 hour; Connect 4 and Tic Tac Toe: 10 min per move (starter can extend)
 - **Extend time** – The person who started the game can add more time via an "Extend time" button (Blackjack, Connect 4, Tic Tac Toe, Wordle, RPS challenge)
@@ -69,6 +72,12 @@ npm run register
 npm start
 ```
 
+**Docker (alternative):**
+```bash
+cp .env.example .env   # Add your DISCORD_TOKEN, DISCORD_APP_ID, DISCORD_GUILD_ID
+docker compose up -d
+```
+
 ---
 
 ## Operational Notes
@@ -77,7 +86,7 @@ npm start
 - Safe to restart (state persisted in SQLite)
 - Background pollers never crash the process
 - Optional features auto-disable when misconfigured
-- **Backup**: Back up `data/omegabot.db` (or your `DATABASE_PATH`) periodically; see [Runbook](docs/runbook.md)
+- **Backup**: Run `npm run db:backup` periodically, or copy `data/omegabot.db`; see [Runbook](docs/runbook.md)
 
 ---
 
@@ -89,7 +98,8 @@ npm start
 - [Environment Setup](docs/setup-env.md)
 - [Development Notes](docs/dev-notes.md)
 - [Troubleshooting](docs/troubleshooting.md) – Debugging "failed to complete" and common issues
-- [Runbook](docs/runbook.md) – Deploy, restart, backup, health
+- [Runbook](docs/runbook.md) – Deploy, restart, backup, health, Docker
+- [Grafana](docs/grafana.md) – Import dashboard for Prometheus metrics
 - [FAQ for server admins](docs/faq-admins.md) – Common questions when running the bot
 - [Improvement ideas](docs/improvements.md) – Optional next steps (beyond new commands)
 
@@ -103,6 +113,7 @@ npm start
 - **Database**: SQLite (better-sqlite3)
 - **Logging**: pino
 - **Quality**: ESLint, Prettier, Husky
+- **Ops**: Docker, Docker Compose, Dependabot, DevContainer
 
 ---
 
@@ -148,11 +159,11 @@ Games use a modular layout: `gameLogic.ts` (pure rules), `ui.ts` (Discord compon
 │   ├── transcripts.md
 │   └── troubleshooting.md
 ├── migrations
-│   ├── 001_rps_stats.sql
-│   ├── 002_game_usage_daily.sql
-│   ├── 003_darts_stats.sql
-│   └── schema.sql
+│   ├── 001_*.sql
+│   ├── schema.sql
+│   └── ...
 ├── scripts
+│   ├── backup-db.sh
 │   ├── db-check.ts
 │   └── precheck.sh
 ├── src
@@ -275,6 +286,7 @@ Games use a modular layout: `gameLogic.ts` (pure rules), `ui.ts` (Discord compon
 │   │   ├── profile
 │   │   │   ├── profile.ts
 │   │   │   ├── profileHelpers.ts
+│   │   │   ├── timezones.ts
 │   │   │   └── subcommands
 │   │   │       ├── afk.ts
 │   │   │       ├── timezone.ts
@@ -297,7 +309,10 @@ Games use a modular layout: `gameLogic.ts` (pure rules), `ui.ts` (Discord compon
 │   │   │   ├── index.ts
 │   │   │   └── types.ts
 │   │   ├── database
-│   │   │   └── db.ts
+│   │   │   ├── db.ts
+│   │   │   └── migrations.ts
+│   │   ├── metrics
+│   │   │   └── server.ts
 │   │   ├── discord
 │   │   │   ├── commandLoader.ts
 │   │   │   ├── commandMeta.ts
@@ -421,6 +436,9 @@ npm test              # Run tests in watch mode
 npm run test:run      # Run tests once
 npm run test:coverage # Run with coverage report
 npm run db:check      # Verify SQLite database integrity
+npm run db:backup     # Backup database to data/backups/
+npm run db:seed       # Seed dev DB with sample FAQs/timezone (DATABASE_PATH=data/dev.db)
+npm run dev:watch     # Run with hot reload (restarts on file change)
 ```
 
 18+ test files covering games, stores, services, rate limiting, metrics, integration flows, and core functionality.

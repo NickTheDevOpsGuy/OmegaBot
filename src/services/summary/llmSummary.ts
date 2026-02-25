@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { env } from "../../config/env.js";
 import { logger } from "../../utils/logger.js";
+import { openaiCircuit } from "../circuitBreaker/breakers.js";
 
 let client: OpenAI | null = null;
 
@@ -109,9 +110,10 @@ export async function llmSummary(text: string): Promise<string> {
   ].join("\n");
 
   try {
-    const response = await withRetries(
-      async () =>
-        client!.chat.completions.create({
+    const response = await openaiCircuit.execute(async () =>
+      withRetries(
+        async () =>
+          client!.chat.completions.create({
           model: "gpt-4o-mini",
           messages: [
             { role: "system", content: system },
@@ -120,6 +122,7 @@ export async function llmSummary(text: string): Promise<string> {
           temperature: 0.2,
         }),
       "openai.chat.completions.create",
+    ),
     );
 
     const content = response.choices?.[0]?.message?.content ?? "";

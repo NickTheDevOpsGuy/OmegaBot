@@ -3,19 +3,19 @@
 import fs from "fs";
 import path from "path";
 import { pathToFileURL } from "url";
-import { REST, Routes, SlashCommandBuilder } from "discord.js";
+import { REST, Routes } from "discord.js";
 import { env } from "./config/env.js";
 import { logger } from "./utils/logger.js";
 
 /**
- * Shape every slash command module must export.
- * This matches commandLoader.ts expectations.
+ * Shape command modules must export.
+ * Supports both SlashCommandBuilder and ContextMenuCommandBuilder.
  */
-type SlashCommandModule = {
-  data: SlashCommandBuilder;
+type CommandModule = {
+  data: { toJSON: () => Record<string, unknown>; name?: string };
 };
 
-type CommandJson = ReturnType<SlashCommandBuilder["toJSON"]>;
+type CommandJson = Record<string, unknown>;
 
 function readCommandFolders(commandsPath: string): string[] {
   return fs
@@ -30,7 +30,7 @@ function uniqByName(commands: CommandJson[]): { unique: CommandJson[]; dupes: st
   const unique: CommandJson[] = [];
 
   for (const cmd of commands) {
-    const name = cmd.name?.trim();
+    const name = typeof cmd.name === "string" ? cmd.name.trim() : "";
     if (!name) continue;
 
     if (seen.has(name)) {
@@ -68,17 +68,18 @@ async function registerCommands(): Promise<void> {
 
     try {
       const moduleUrl = pathToFileURL(file).href;
-      const imported = (await import(moduleUrl)) as Partial<SlashCommandModule>;
+      const imported = (await import(moduleUrl)) as Partial<CommandModule>;
 
-      if (!imported.data) {
+      if (!imported.data || typeof (imported.data as { toJSON?: unknown }).toJSON !== "function") {
         logger.warn({ folder, file: relFile }, "[register] skip (missing exported data)");
         continue;
       }
 
-      const json = imported.data.toJSON();
+      const json = (imported.data as { toJSON: () => CommandJson }).toJSON();
 
       commands.push(json);
-      logger.info({ command: imported.data.name, file: relFile }, "[register] prepared");
+      const cmdName = (imported.data as { name?: string }).name ?? json.name ?? folder;
+      logger.info({ command: cmdName, file: relFile }, "[register] prepared");
     } catch (err) {
       logger.warn({ err, folder, file: relFile }, "[register] failed to load");
     }

@@ -2,6 +2,7 @@
 
 import { env } from "../../config/env.js";
 import { logger } from "../../utils/logger.js";
+import { githubCircuit } from "../circuitBreaker/breakers.js";
 
 /**
  * Base URL for GitHub REST API v3
@@ -41,12 +42,12 @@ export class GitHubApiError extends Error {
  * The bot must be able to run without GitHub tokens/config.
  */
 export async function githubRequest<T>(path: string): Promise<T> {
-  const url = `${GITHUB_API_BASE}${path}`;
+  return githubCircuit.execute(async () => {
+    const url = `${GITHUB_API_BASE}${path}`;
 
-  // Enforce token only when a GitHub code path is actually executed.
-  const token = env.requireGithubToken();
+    // Enforce token only when a GitHub code path is actually executed.
+    const token = env.requireGithubToken();
 
-  try {
     const res = await fetch(url, {
       headers: {
         Accept: "application/vnd.github+json",
@@ -76,10 +77,5 @@ export async function githubRequest<T>(path: string): Promise<T> {
     }
 
     return (await res.json()) as T;
-  } catch (err) {
-    if (err instanceof GitHubApiError) throw err;
-
-    logger.error({ err, url, path }, "GitHub API request threw");
-    throw err;
-  }
+  });
 }

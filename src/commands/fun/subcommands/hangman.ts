@@ -14,9 +14,12 @@ import {
   type ChatInputCommandInteraction,
   type StringSelectMenuInteraction,
 } from "discord.js";
+import { HANGMAN_COOLDOWN_MS } from "../../../constants.js";
 import { logger } from "../../../utils/logger.js";
+import { recordInteractionRecovery } from "../../../services/metrics/server.js";
 import {
   checkHangmanCooldown,
+  formatCooldownMessage,
   recordHangmanGame,
 } from "../../../services/discord/rateLimit.js";
 import { safeMessageEdit } from "../../../services/discord/safeReply.js";
@@ -173,7 +176,7 @@ export async function runPlay(
   const remaining = checkHangmanCooldown(interaction.user.id);
   if (remaining > 0) {
     await interaction.editReply(
-      `⏱️ Slow down! Try again in **${Math.ceil(remaining / 1000)}** seconds (rate limit: 10s).`,
+      formatCooldownMessage(remaining, HANGMAN_COOLDOWN_MS / 1000, "hangman"),
     );
     return;
   }
@@ -270,6 +273,7 @@ export async function runPlay(
         components: buildLetterDropdowns(gameId, guessed),
       });
     } catch (err) {
+      recordInteractionRecovery("hangman");
       logger.warn(
         { err, gameId, interactionFailedRecovery: true },
         "[hangman] collect handler failed",

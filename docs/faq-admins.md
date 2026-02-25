@@ -23,7 +23,7 @@ The bot didn’t respond within Discord’s ~3 second window, or the interaction
 
 ## How do I back up the bot?
 
-Copy the SQLite database file (default: `data/omegabot.db`). You can copy it while the bot is running. See [Runbook – Database](runbook.md#database).
+Run **`npm run db:backup`** (or `scripts/backup-db.sh`). Backups go to `data/backups/` by default; the script keeps the last N backups (configurable via `BACKUP_KEEP`). You can run it while the bot is running. See [Runbook – Database](runbook.md#database).
 
 ---
 
@@ -35,7 +35,8 @@ Those features are optional and require env vars. Check startup logs for **`[sta
 
 ## How do I see if the bot is healthy?
 
-Use **`/admin health`** (requires Manage Server). It shows DB status, env summary, and interaction error counts. See [Runbook – Health](runbook.md#health).
+- **In Discord**: Use **`/admin health`** (requires Manage Server). Shows DB status, env summary, and interaction error counts.
+- **HTTP**: Set `METRICS_PORT=9090` (or another port) in `.env` to enable `GET /health` and `GET /metrics` for load balancers or monitoring. See [Runbook – Health](runbook.md#health).
 
 ---
 

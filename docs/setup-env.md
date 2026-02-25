@@ -20,6 +20,22 @@ DATABASE_PATH=data/omegabot.db
 
 ---
 
+### Metrics & Health HTTP Server
+
+```env
+METRICS_PORT=0
+```
+
+- `METRICS_PORT`
+  - Port for `/health` and `/metrics` (Prometheus) HTTP endpoints
+  - If `0` or unset, the HTTP server is disabled
+  - Example: `METRICS_PORT=9090` to enable monitoring
+- `ADMIN_DASHBOARD_TOKEN`
+  - If set, `/dashboard` and `/` require `?token=<value>` (use when exposing metrics port publicly)
+  - If unset, dashboard is open (fine for localhost)
+
+---
+
 ### Reminders
 
 ```env

@@ -10,6 +10,7 @@ import {
   DARTS_COOLDOWN_MS,
   HANGMAN_COOLDOWN_MS,
 } from "../../constants.js";
+import { recordRateLimitHit } from "../metrics/server.js";
 
 const RATE_LIMITS = new Map<string, number>();
 
@@ -108,4 +109,19 @@ export function checkHangmanCooldown(userId: string): number {
  */
 export function recordHangmanGame(userId: string): void {
   recordUse(userId, HANGMAN_KEY_PREFIX);
+}
+
+/**
+ * Format a user-facing cooldown message.
+ * Use when rate limit blocks a user - shows "Try again in Xs" clearly.
+ * Records rate limit hit to metrics when handler is provided.
+ */
+export function formatCooldownMessage(
+  remainingMs: number,
+  cooldownSec: number,
+  handler?: string,
+): string {
+  if (handler) recordRateLimitHit(handler);
+  const seconds = Math.ceil(remainingMs / 1000);
+  return `⏱️ Slow down! Try again in **${seconds}** seconds (rate limit: ${cooldownSec}s).`;
 }

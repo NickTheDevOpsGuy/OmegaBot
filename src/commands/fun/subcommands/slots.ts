@@ -12,10 +12,12 @@
 // Stats are persisted to slots_stats table.
 
 import { EmbedBuilder, type ChatInputCommandInteraction } from "discord.js";
+import { SLOTS_COOLDOWN_MS } from "../../../constants.js";
 import { logger } from "../../../utils/logger.js";
 import { getDb } from "../../../services/database/db.js";
 import {
   checkSlotsCooldown,
+  formatCooldownMessage,
   recordSlotsSpin,
 } from "../../../services/discord/rateLimit.js";
 
@@ -219,7 +221,7 @@ async function runSlots(interaction: ChatInputCommandInteraction): Promise<void>
     const remaining = checkSlotsCooldown(interaction.user.id);
     if (remaining > 0) {
       await interaction.editReply(
-        `⏱️ Slow down! Try again in **${Math.ceil(remaining / 1000)}** seconds (rate limit: 3s).`,
+        formatCooldownMessage(remaining, SLOTS_COOLDOWN_MS / 1000, "slots"),
       );
       return;
     }

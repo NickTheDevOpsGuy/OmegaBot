@@ -22,11 +22,13 @@ const HELP_TOPICS: HelpTopic[] = [
   "fun",
   "games",
   "profile",
+  "quotes",
   "github",
   "status",
   "admin",
   "commands",
   "changelog",
+  "summary",
 ];
 
 function parseHelpTopic(raw: string | null): HelpTopic {
@@ -43,15 +45,17 @@ export const data = new SlashCommandBuilder()
       .setDescription("Help topic")
       .setRequired(false)
       .addChoices(
-        { name: "overview", value: "overview" },
-        { name: "fun", value: "fun" },
-        { name: "github", value: "github" },
-        { name: "status", value: "status" },
-        { name: "summary", value: "summary" },
-        { name: "timezone", value: "timezone" },
-        { name: "admin", value: "admin" },
-        { name: "commands", value: "commands" },
-        { name: "changelog", value: "changelog" },
+        { name: "Overview", value: "overview" },
+        { name: "Fun commands", value: "fun" },
+        { name: "Games", value: "games" },
+        { name: "Profile & timezone", value: "profile" },
+        { name: "Quotes", value: "quotes" },
+        { name: "GitHub", value: "github" },
+        { name: "Status", value: "status" },
+        { name: "Admin", value: "admin" },
+        { name: "Commands list", value: "commands" },
+        { name: "Changelog", value: "changelog" },
+        { name: "Summary & history", value: "summary" },
       ),
   )
   .addBooleanOption((opt) =>

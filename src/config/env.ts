@@ -35,7 +35,9 @@ const openAIModel = (process.env.OPENAI_MODEL?.trim() || "gpt-4o-mini") as strin
 
 // Fail fast ONLY when LLM summaries are explicitly enabled
 if (summaryMode === "llm" && !openAIKey) {
-  throw new Error("OPENAI_API_KEY is required when SUMMARY_MODE=llm");
+  throw new Error(
+    "OPENAI_API_KEY is required when SUMMARY_MODE=llm. Set it in .env (see .env.example)",
+  );
 }
 
 const legacyGithubAnnounceChannelId = process.env.GITHUB_ANNOUNCE_CHANNEL_ID ?? null;
@@ -108,13 +110,17 @@ export const env = {
 
   requireGithubToken(): string {
     const token = process.env.GITHUB_TOKEN;
-    if (!token) throw new Error("GITHUB_TOKEN is required for this GitHub feature");
+    if (!token) {
+      throw new Error("GITHUB_TOKEN is required. Set it in .env (see .env.example)");
+    }
     return token;
   },
 
   requireWeatherApiKey(): string {
     const key = process.env.WEATHERAPI_KEY?.trim();
-    if (!key) throw new Error("WEATHERAPI_KEY is required for weather commands");
+    if (!key) {
+      throw new Error("WEATHERAPI_KEY is required for weather. Set it in .env (see .env.example)");
+    }
     return key;
   },
 };

@@ -39,12 +39,35 @@ export const data = new SlashCommandBuilder()
       .setName("avatar")
       .setDescription("View a user's avatar")
       .addUserOption((o) => o.setName("user").setDescription("User to view avatar for"))
+      .addIntegerOption((o) =>
+        o
+          .setName("size")
+          .setDescription("Avatar size (default: 4096)")
+          .addChoices(
+            { name: "128", value: 128 },
+            { name: "256", value: 256 },
+            { name: "512", value: 512 },
+            { name: "1024", value: 1024 },
+            { name: "4096", value: 4096 },
+          ),
+      )
+      .addStringOption((o) =>
+        o
+          .setName("format")
+          .setDescription("Image format (default: auto)")
+          .addChoices(
+            { name: "PNG", value: "png" },
+            { name: "JPEG", value: "jpg" },
+            { name: "WebP", value: "webp" },
+            { name: "GIF (animated)", value: "gif" },
+          ),
+      )
       .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
   );
 
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const sub = interaction.options.getSubcommand();
-  const ephemeral = interaction.options.getBoolean("private") ?? false;
+  const ephemeral = interaction.options.getBoolean("private") ?? true;
 
   await interaction.deferReply({ ephemeral });
 
@@ -221,27 +244,31 @@ async function handleServerInfo(interaction: ChatInputCommandInteraction): Promi
 /* Avatar                                                                      */
 /* -------------------------------------------------------------------------- */
 
+type AvatarFormat = "png" | "jpg" | "webp" | "gif";
+
 async function handleAvatar(interaction: ChatInputCommandInteraction): Promise<void> {
   const targetUser = interaction.options.getUser("user") ?? interaction.user;
   const member = interaction.guild?.members.cache.get(targetUser.id);
+  const size = interaction.options.getInteger("size") ?? 4096;
+  const format = interaction.options.getString("format") as AvatarFormat | null;
 
-  const globalAvatar = targetUser.displayAvatarURL({ size: 4096 });
-  const serverAvatar = member?.displayAvatarURL({ size: 4096 });
+  const urlOpts =
+    format === "gif"
+      ? { extension: "gif" as const, forceStatic: false }
+      : { extension: (format ?? undefined) as "png" | "jpg" | "webp" | undefined };
+  const globalAvatar = targetUser.displayAvatarURL({ ...urlOpts, size });
+  const serverAvatar = member?.displayAvatarURL({ ...urlOpts, size });
 
   const embed = new EmbedBuilder()
     .setTitle(`${targetUser.username}'s Avatar`)
     .setImage(serverAvatar ?? globalAvatar)
     .setColor(member?.displayColor ?? 0x5865f2);
 
-  // Add links for different sizes
-  const links = [
-    `[128](${targetUser.displayAvatarURL({ size: 128 })})`,
-    `[256](${targetUser.displayAvatarURL({ size: 256 })})`,
-    `[512](${targetUser.displayAvatarURL({ size: 512 })})`,
-    `[1024](${targetUser.displayAvatarURL({ size: 1024 })})`,
-    `[4096](${targetUser.displayAvatarURL({ size: 4096 })})`,
-  ];
-
+  // Add links for different sizes (same format if specified)
+  const sizes = [128, 256, 512, 1024, 4096] as const;
+  const links = sizes.map(
+    (s) => `[${s}](${targetUser.displayAvatarURL({ ...urlOpts, size: s })})`,
+  );
   embed.setDescription(`**Sizes:** ${links.join(" • ")}`);
 
   // If server avatar differs from global

@@ -20,8 +20,14 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 
 function isCommandModule(mod: unknown): mod is CommandModule {
   if (!isRecord(mod)) return false;
+  // Support both SlashCommandBuilder and ContextMenuCommandBuilder
+  const hasData = "data" in mod && isRecord((mod as { data?: unknown }).data);
+  const hasName =
+    hasData &&
+    typeof ((mod as { data?: { name?: unknown } }).data?.name) === "string";
   return (
-    "data" in mod &&
+    hasData &&
+    hasName &&
     "execute" in mod &&
     typeof (mod as { execute?: unknown }).execute === "function"
   );

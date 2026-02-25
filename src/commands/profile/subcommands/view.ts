@@ -17,7 +17,7 @@ import {
 } from "../../../services/gameStats/gameStats.js";
 
 export async function run(interaction: ChatInputCommandInteraction): Promise<void> {
-  const ephemeral = interaction.options.getBoolean("private") ?? false;
+  const ephemeral = interaction.options.getBoolean("private") ?? true;
   await interaction.deferReply({ ephemeral });
 
   const db = getDb();

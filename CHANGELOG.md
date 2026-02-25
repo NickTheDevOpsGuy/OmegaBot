@@ -1,3 +1,137 @@
+## [3.9.7] - 2026-02-12
+
+### Added
+
+- **Quote list limit option** – Choose 5, 10, or 25 (default: 25)
+- **Quote search limit option** – Choose 5, 10, or 25 results
+
+### Changed
+
+- **Quote context menu** – Allows quoting bot messages (no longer blocked)
+- **Quote autocomplete in DMs** – Shows "Use in a server" instead of empty
+- **Avatar help** – Note that GIF shows static when avatar isn't animated
+
+---
+
+## [3.9.6] - 2026-02-12
+
+### Added
+
+- **Help topic: quotes** – `/help topic:quotes` for quote commands and context menu
+- **Quote remove autocomplete** – Suggests recent quotes when removing
+
+### Changed
+
+- **Quote context menu** – Supports embed-only messages (extracts title + description)
+- **Avatar format** – Added GIF option for animated avatars
+- **Suggestion modal** – Specific error when bot lacks Send Messages or Embed Links
+- **Playback docs** – Documented `before`/`after` message IDs for paging
+
+---
+
+## [3.9.5] - 2026-02-12
+
+### Added
+
+- **Message context menu: Quote** – Right-click a message → "Quote"; saves it as a server quote
+- **Quote store** – Shared `services/quotes/quoteStore.ts` for `/fun quote add` and context menu
+- **Info avatar options** – Size (128–4096) and format (PNG/JPEG/WebP) choices
+- **Playback private option** – `private` flag (default: true) to show playback only to you
+- **Suggestion modal** – `/suggestion` opens a modal for multi-line input (up to 1000 chars)
+
+### Changed
+
+- **Help overview** – Clarified private-default: profile, info, achievements; use `private:false` to show in channel
+- **FAQ ephemeral default** – FAQ get/list now default to private
+- **Commands docs** – Context menus (Summarize, Quote), avatar options, playback private, suggestion modal
+
+---
+
+## [3.9.4] - 2026-02-12
+
+### Added
+
+- **Message context menu: Summarize** – Right-click a message → "Summarize"; DMs a summary of messages up to that point
+- **Rate limit metrics** – Prometheus `omegabot_rate_limit_hits_total` for cooldown hits (dice, slots, blackjack, hangman, darts)
+
+### Changed
+
+- **Ephemeral by default** – `/profile view` and `/info user` now default to private (ephemeral); use `private: false` to show in channel
+- **Grafana dashboard** – Added "Rate limit hits (cooldown)" panel
+
+---
+
+## [3.9.3] - 2026-02-12
+
+### Added
+
+- **Admin timeout presets** – Duration dropdown (5m, 10m, 30m, 1h, 6h, 12h, 1d, 7d)
+- **FAQ list tag autocomplete** – Suggests existing tags when filtering
+- **Help topic: summary** – `/help topic:summary` for /summary and /history
+- **Context menus** – Right-click user → "View Profile" and "View Achievements"
+
+---
+
+## [3.9.2] - 2026-02-12
+
+### Changed
+
+- **Help topics** – Clearer choice names (e.g. "Profile & timezone", "Games"); added `games` and `profile`; removed obsolete `timezone`/`summary` choices
+- **Giveaway** – Autocomplete for `end` and `reroll` ID option (shows active/ended giveaways with prize preview)
+- **Remind cancel** – Autocomplete for reminder ID (shows user's pending reminders with message preview)
+
+---
+
+## [3.9.1] - 2026-02-12
+
+### Added
+
+- **Dashboard auth** – `ADMIN_DASHBOARD_TOKEN` requires `?token=<value>` for `/dashboard` when set (use when exposing publicly)
+- **Docker docs** – Runbook section for `docker compose up`, volume, logs
+- **Grafana docs** – [docs/grafana.md](docs/grafana.md) with import steps and panel descriptions
+- **Backup note** – Runbook documents integrity check when `sqlite3` is installed
+
+---
+
+## [3.9.0] - 2026-02-12
+
+### Added
+
+- **Docker & Docker Compose** – One-command run: `docker compose up -d`; persisted data volume
+- **Web admin dashboard** – When `METRICS_PORT` is set, `GET /` or `GET /dashboard` shows health, DB status, Discord connection, uptime
+- **Grafana dashboard** – `grafana/omegabot-dashboard.json` for Prometheus metrics (uptime, command rate, interaction recovery)
+- **DevContainer** – `.devcontainer/devcontainer.json` for VS Code Dev Containers
+- **Circuit breakers** – GitHub, Weather, OpenAI APIs fail fast after 5 consecutive errors; 30s reset before retry
+- **Health check includes Discord** – `/health` returns 503 when Discord gateway is disconnected
+- **Backup verification** – `db:backup` runs `PRAGMA integrity_check` when sqlite3 is available; fails if backup is corrupt
+- **Dev seed script** – `npm run db:seed` populates DB with sample FAQs and timezone for local dev
+- **Hot reload** – `npm run dev:watch` restarts bot on file change (Node `--watch`)
+- **Dependabot** – `.github/dependabot.yml` for weekly npm dependency updates
+- **Cooldown helper** – `formatCooldownMessage()` for consistent "Try again in Xs" across rate-limited commands
+- **i18n skeleton** – `src/i18n/index.ts` with `t()` and `resolveLocale()` for future localization
+
+---
+
+## [3.8.0] - 2026-02-12
+
+### Added
+
+- **Autocomplete** – Profile timezone (`/profile timezone zone`) and FAQ keys (`/faq get`, `/faq remove`) with type-ahead suggestions
+- **Metrics & health HTTP server** – Optional `METRICS_PORT` (e.g. 9090) enables:
+  - `/health` – JSON status (200/503), database check, uptime
+  - `/metrics` – Prometheus scrape endpoint (commands executed, interaction recovery, uptime)
+- **Automated backup script** – `npm run db:backup` or `scripts/backup-db.sh`; keeps last N backups (configurable via `BACKUP_KEEP`)
+- **Graceful shutdown** – SIGINT/SIGTERM destroy Discord client before closing DB
+- **Migration system** – Versioned migrations in `migrations/` (runs before schema load)
+- **Discord 429 retry** – `safeReply` / `safeMessageEdit` now retry on rate limit (429) responses
+- **Clearer error messages** – Missing env vars (e.g. `GITHUB_TOKEN`, `WEATHERAPI_KEY`, `OPENAI_API_KEY`) suggest: "Set it in .env (see .env.example)"
+
+### Changed
+
+- **Database init** – Runs migrations from `migrations/` directory on startup
+
+---
+
 ## [3.7.0] - 2026-02-12
 
 ### Added

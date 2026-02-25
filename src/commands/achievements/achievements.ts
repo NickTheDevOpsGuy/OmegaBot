@@ -15,6 +15,7 @@ import {
   SlashCommandBuilder,
   EmbedBuilder,
   type ChatInputCommandInteraction,
+  type User,
 } from "discord.js";
 import { getDb } from "../../services/database/db.js";
 import { getTotalWins, getScalar, getCount } from "../../services/gameStats/gameStats.js";
@@ -219,22 +220,10 @@ const ACHIEVEMENTS: Achievement[] = [
 ];
 
 /* -------------------------------------------------------------------------- */
-/* Command                                                                     */
+/* Shared embed builder                                                        */
 /* -------------------------------------------------------------------------- */
 
-export const data = new SlashCommandBuilder()
-  .setName("achievements")
-  .setDescription("View your achievements and progress")
-  .addUserOption((o) => o.setName("user").setDescription("User to view achievements for"))
-  .addBooleanOption((o) => o.setName("private").setDescription("Only show to you"));
-
-export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
-  const ephemeral = interaction.options.getBoolean("private") ?? true;
-  await interaction.deferReply({ ephemeral });
-
-  const targetUser = interaction.options.getUser("user") ?? interaction.user;
-  const db = getDb();
-
+export function buildAchievementsEmbed(targetUser: User, db: ReturnType<typeof getDb>): EmbedBuilder {
   const earned: Achievement[] = [];
   const locked: Achievement[] = [];
 
@@ -256,7 +245,6 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     .setColor(0xffd700)
     .setFooter({ text: `${earned.length}/${ACHIEVEMENTS.length} unlocked` });
 
-  // Group by category
   const categories = ["games", "luck", "dedication", "social"] as const;
   const categoryNames: Record<(typeof categories)[number], string> = {
     games: "🎮 Games",
@@ -272,11 +260,9 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     if (categoryEarned.length === 0 && categoryLocked.length === 0) continue;
 
     const lines: string[] = [];
-
     for (const a of categoryEarned) {
       lines.push(`${a.emoji} **${a.name}** - ${a.description}`);
     }
-
     for (const a of categoryLocked) {
       lines.push(`🔒 ~~${a.name}~~ - ${a.description}`);
     }
@@ -292,5 +278,25 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     embed.setDescription("No achievements unlocked yet. Start playing to earn some!");
   }
 
+  return embed;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Command                                                                     */
+/* -------------------------------------------------------------------------- */
+
+export const data = new SlashCommandBuilder()
+  .setName("achievements")
+  .setDescription("View your achievements and progress")
+  .addUserOption((o) => o.setName("user").setDescription("User to view achievements for"))
+  .addBooleanOption((o) => o.setName("private").setDescription("Only show to you"));
+
+export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
+  const ephemeral = interaction.options.getBoolean("private") ?? true;
+  await interaction.deferReply({ ephemeral });
+
+  const targetUser = interaction.options.getUser("user") ?? interaction.user;
+  const db = getDb();
+  const embed = buildAchievementsEmbed(targetUser, db);
   await interaction.editReply({ embeds: [embed] });
 }

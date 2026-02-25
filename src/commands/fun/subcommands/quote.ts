@@ -2,28 +2,11 @@
 import { type ChatInputCommandInteraction, type User, EmbedBuilder } from "discord.js";
 import { logger } from "../../../utils/logger.js";
 import { getDb } from "../../../services/database/db.js";
+import { addQuote, ensureQuoteTable } from "../../../services/quotes/quoteStore.js";
 
 /* -------------------------------------------------------------------------- */
 /* Database                                                                    */
 /* -------------------------------------------------------------------------- */
-
-function ensureQuoteTable(): void {
-  const db = getDb();
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS quotes (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      guild_id TEXT NOT NULL,
-      author_id TEXT NOT NULL,
-      quote_text TEXT NOT NULL,
-      added_by TEXT NOT NULL,
-      added_at INTEGER NOT NULL,
-      context TEXT
-    );
-
-    CREATE INDEX IF NOT EXISTS idx_quotes_guild ON quotes(guild_id);
-    CREATE INDEX IF NOT EXISTS idx_quotes_author ON quotes(guild_id, author_id);
-  `);
-}
 
 type QuoteRow = {
   id: number;
@@ -34,27 +17,6 @@ type QuoteRow = {
   added_at: number;
   context: string | null;
 };
-
-function addQuote(
-  guildId: string,
-  authorId: string,
-  quoteText: string,
-  addedBy: string,
-  context?: string,
-): number {
-  ensureQuoteTable();
-  const db = getDb();
-  const now = Date.now();
-
-  const result = db
-    .prepare(
-      `INSERT INTO quotes (guild_id, author_id, quote_text, added_by, added_at, context)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-    )
-    .run(guildId, authorId, quoteText, addedBy, now, context ?? null);
-
-  return Number(result.lastInsertRowid);
-}
 
 function getRandomQuote(guildId: string, authorId?: string): QuoteRow | null {
   ensureQuoteTable();
@@ -227,7 +189,8 @@ export async function run(
 
       case "list": {
         const filterUser = interaction.options.getUser("author");
-        const quotes = listQuotes(guildId, filterUser?.id, 10);
+        const limit = interaction.options.getInteger("limit") ?? 25;
+        const quotes = listQuotes(guildId, filterUser?.id, limit);
 
         if (quotes.length === 0) {
           const msg = filterUser
@@ -282,13 +245,14 @@ export async function run(
 
       case "search": {
         const query = interaction.options.getString("query", true).trim();
+        const limit = interaction.options.getInteger("limit") ?? 10;
 
         if (query.length < 2) {
           await interaction.editReply("Search query must be at least 2 characters.");
           return;
         }
 
-        const quotes = searchQuotes(guildId, query, 10);
+        const quotes = searchQuotes(guildId, query, limit);
 
         if (quotes.length === 0) {
           await interaction.editReply(`No quotes found matching "${query}".`);

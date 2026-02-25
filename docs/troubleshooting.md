@@ -52,6 +52,17 @@ When users see "This interaction failed" or "Application did not respond" in Dis
 
 ---
 
+## HTTP Health Endpoint
+
+If you set `METRICS_PORT` (e.g. 9090), the bot exposes:
+
+- **`GET /health`** – Returns 200 when database is ok, 503 when degraded. JSON body includes `status`, `database`, `uptime_seconds`.
+- **`GET /metrics`** – Prometheus scrape endpoint.
+
+Use these for load balancer health checks, Kubernetes probes, or monitoring dashboards.
+
+---
+
 ## Database Issues
 
 ### SQLite busy / locked
@@ -62,7 +73,7 @@ When users see "This interaction failed" or "Application did not respond" in Dis
 ### Schema mismatches
 
 - Run `npm run db:check` to verify integrity.
-- Check `migrations/` for schema changes.
+- Check `migrations/` for schema changes. Migrations run automatically on startup.
 
 ---
 

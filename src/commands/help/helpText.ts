@@ -10,11 +10,13 @@ export type HelpTopic =
   | "fun"
   | "games"
   | "profile"
+  | "quotes"
   | "github"
   | "status"
   | "admin"
   | "commands"
-  | "changelog";
+  | "changelog"
+  | "summary";
 
 /**
  * Builds help text for the specified topic.
@@ -37,6 +39,8 @@ export function buildHelpText(args: {
       return buildGamesHelp();
     case "profile":
       return buildProfileHelp();
+    case "quotes":
+      return buildQuotesHelp();
     case "github":
       return buildGitHubHelp();
     case "status":
@@ -47,6 +51,8 @@ export function buildHelpText(args: {
       return buildCommandsHelp({ isAdmin, commands });
     case "changelog":
       return buildChangelogHelp();
+    case "summary":
+      return buildSummaryHelp();
     case "overview":
     default:
       return buildOverviewHelp({ isAdmin });
@@ -65,11 +71,12 @@ function buildOverviewHelp(args: { isAdmin: boolean }): string {
     "",
     "**Getting Started**",
     "Type `/` and pick a command from the menu.",
-    "Most commands support `private:true` to only show results to you.",
+    "Profile, info, and achievements default to private; use `private:false` to show in channel.",
+    "Most games support `private` to control visibility.",
     "",
     "**Topics**",
     "Use `/help topic:<topic>` for detailed help:",
-    `\`overview\`, \`fun\`, \`games\`, \`profile\`, \`status\`${isAdmin ? ", `admin`" : ""}, \`commands\`, \`changelog\``,
+    `\`overview\`, \`fun\`, \`games\`, \`profile\`, \`quotes\`, \`summary\`, \`status\`${isAdmin ? ", `admin`" : ""}, \`commands\`, \`changelog\``,
     "",
     "**Quick Commands**",
     "`/fun daily`       Daily check-in for points",
@@ -178,8 +185,37 @@ function buildProfileHelp(): string {
     "**Related Commands**",
     "`/info user`       Detailed user info",
     "`/info server`     Server statistics",
-    "`/info avatar`     View avatars",
+    "`/info avatar`     View avatars (size 128–4096, format png/jpg/webp/gif)",
     "`/achievements`    View unlocked achievements",
+    "",
+    "**Avatar note**",
+    "GIF format shows animated avatars; if the user's avatar isn't animated, a static image is returned.",
+  ].join("\n");
+}
+
+/* -------------------------------------------------------------------------- */
+/* Quotes                                                                      */
+/* -------------------------------------------------------------------------- */
+
+function buildQuotesHelp(): string {
+  return [
+    "**Help: Quotes**",
+    "",
+    "Save and view memorable server quotes.",
+    "",
+    "**Commands**",
+    "`/fun quote add author:@user text:\"...\"`   Add a quote",
+    "`/fun quote random`                          Get a random quote",
+    "`/fun quote list limit:5|10|25`              List recent quotes (default: 25)",
+    "`/fun quote remove id:123`                  Remove a quote (ID has autocomplete)",
+    "`/fun quote search query:... limit:5|10|25`  Search quotes",
+    "",
+    "**Context menu**",
+    "Right-click a message → **Quote** to save it as a server quote.",
+    "Works with regular text and embed titles/descriptions (human or bot messages).",
+    "",
+    "**Permissions**",
+    "Only the person who added a quote (or users with Manage Messages) can remove it.",
   ].join("\n");
 }
 
@@ -216,6 +252,25 @@ function buildStatusHelp(): string {
     "",
     "Shows overall status, degraded components, and active incidents.",
     "Uses public Statuspage APIs—no API keys required.",
+  ].join("\n");
+}
+
+/* -------------------------------------------------------------------------- */
+/* Summary & History                                                           */
+/* -------------------------------------------------------------------------- */
+
+function buildSummaryHelp(): string {
+  return [
+    "**Help: Summary & History**",
+    "",
+    "`/summary`     Get a summary of recent channel messages (DM'd to you)",
+    "`/history`     Get raw recent messages (DM'd, no AI)",
+    "",
+    "**Summary modes** (set in .env):",
+    "• `SUMMARY_MODE=local` – Fast, free, basic summarization",
+    "• `SUMMARY_MODE=llm` – Higher quality via OpenAI (requires OPENAI_API_KEY)",
+    "",
+    "Use `private:true` so only you see the command result.",
   ].join("\n");
 }
 
@@ -301,6 +356,44 @@ function buildCommandsHelp(args: {
 function buildChangelogHelp(): string {
   return [
     "**OmegaBot Changelog**",
+    "",
+    "**3.9.7** (2026-02-12)",
+    "• Quote list: limit 5/10/25; Quote context menu: bot messages allowed",
+    "• Quote autocomplete in DMs: friendly message; Avatar GIF help note",
+    "",
+    "**3.9.6** (2026-02-12)",
+    "• Help topic: quotes; Quote remove autocomplete",
+    "• Quote context menu: embed-only messages; Avatar GIF format",
+    "• Suggestion: clearer permission errors",
+    "",
+    "**3.9.5** (2026-02-12)",
+    "• Context menu: right-click message → Quote (saves as server quote)",
+    "• Info avatar: size & format options; Suggestion uses modal",
+    "• Playback & FAQ: private option / ephemeral by default",
+    "",
+    "**3.9.4** (2026-02-12)",
+    "• Context menu: right-click message → Summarize (DMs summary of messages)",
+    "• Rate limit metrics: omegabot_rate_limit_hits_total for cooldown hits",
+    "• Ephemeral by default: /profile view & /info user now private unless you choose otherwise",
+    "",
+    "**3.9.3** (2026-02-12)",
+    "• Context menus: right-click user → View Profile, View Achievements",
+    "• Admin timeout presets, FAQ tag autocomplete, help topic: summary",
+    "",
+    "**3.9.2** (2026-02-12)",
+    "• Slash commands: Help topic choices (games, profile), giveaway & remind autocomplete",
+    "",
+    "**3.9.0** (2026-02-12)",
+    "• Docker & Docker Compose, web admin dashboard, Grafana dashboard",
+    "• Circuit breakers for GitHub/Weather/OpenAI, backup verification",
+    "• Dev seed script, hot reload (dev:watch), Dependabot, i18n skeleton",
+    "",
+    "**3.8.0** (2026-02-12)",
+    "• Autocomplete: profile timezone, FAQ keys",
+    "• Health & metrics: METRICS_PORT enables /health and /metrics (Prometheus)",
+    "• Automated backup: npm run db:backup",
+    "• Graceful shutdown, migration system, Discord 429 retry",
+    "• Clearer error messages for missing env vars",
     "",
     "**3.7.0** (2026-02-12)",
     "• Interaction handling: defer early, try/catch with fallback, reduces 'interaction failed'",

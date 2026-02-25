@@ -8,15 +8,18 @@ import {
   EmbedBuilder,
   PermissionFlagsBits,
   type ChatInputCommandInteraction,
+  type AutocompleteInteraction,
   type ButtonInteraction,
   type TextChannel,
 } from "discord.js";
 import { logger } from "../../utils/logger.js";
+import { recordInteractionRecovery } from "../../services/metrics/server.js";
 import {
   createGiveaway,
   setGiveawayMessage,
   getGiveaway,
   getActiveGiveaways,
+  getEndedGiveaways,
   endGiveaway,
   addEntry,
   removeEntry,
@@ -64,7 +67,7 @@ export const data = new SlashCommandBuilder()
       .setName("end")
       .setDescription("End a giveaway early")
       .addIntegerOption((o) =>
-        o.setName("id").setDescription("Giveaway ID").setRequired(true),
+        o.setName("id").setDescription("Giveaway ID").setRequired(true).setAutocomplete(true),
       ),
   )
   .addSubcommand((s) =>
@@ -72,10 +75,39 @@ export const data = new SlashCommandBuilder()
       .setName("reroll")
       .setDescription("Pick new winners for an ended giveaway")
       .addIntegerOption((o) =>
-        o.setName("id").setDescription("Giveaway ID").setRequired(true),
+        o.setName("id").setDescription("Giveaway ID").setRequired(true).setAutocomplete(true),
       ),
   )
   .addSubcommand((s) => s.setName("list").setDescription("List active giveaways"));
+
+/* -------------------------------------------------------------------------- */
+/* Autocomplete                                                                 */
+/* -------------------------------------------------------------------------- */
+
+export async function autocomplete(interaction: AutocompleteInteraction): Promise<void> {
+  const sub = interaction.options.getSubcommand();
+  const focused = interaction.options.getFocused(true);
+  if (focused.name !== "id" || !interaction.guildId) {
+    await interaction.respond([]);
+    return;
+  }
+
+  const giveaways =
+    sub === "end"
+      ? getActiveGiveaways(interaction.guildId)
+      : getEndedGiveaways(interaction.guildId);
+
+  const needle = String(focused.value || "").trim().toLowerCase();
+  const choices = giveaways
+    .filter((g) => !needle || String(g.id).includes(needle) || g.prize.toLowerCase().includes(needle))
+    .slice(0, 25)
+    .map((g) => ({
+      name: `#${g.id}: ${g.prize.slice(0, 80)}${g.prize.length > 80 ? "…" : ""}`,
+      value: g.id,
+    }));
+
+  await interaction.respond(choices.length ? choices : [{ name: "No giveaways found", value: 0 }]);
+}
 
 /* -------------------------------------------------------------------------- */
 /* Command Execution                                                           */
@@ -358,6 +390,7 @@ export async function handleGiveawayButton(
       logger.warn({ err, giveawayId }, "[giveaway] failed to update entry count");
     }
   } catch (err) {
+    recordInteractionRecovery("giveaway");
     logger.warn(
       { err, interactionFailedRecovery: true },
       "[giveaway] button handler failed",

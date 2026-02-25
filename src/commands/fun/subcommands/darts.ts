@@ -8,7 +8,9 @@ import {
   type ButtonInteraction,
   type User,
 } from "discord.js";
+import { DARTS_COOLDOWN_MS } from "../../../constants.js";
 import { logger } from "../../../utils/logger.js";
+import { recordInteractionRecovery } from "../../../services/metrics/server.js";
 import { safeReplyToButton } from "../../../services/discord/safeReply.js";
 import {
   isKnownInteractionError,
@@ -16,6 +18,7 @@ import {
 } from "../../../services/discord/interactionErrors.js";
 import {
   checkDartsCooldown,
+  formatCooldownMessage,
   recordDartsThrow,
 } from "../../../services/discord/rateLimit.js";
 import {
@@ -111,7 +114,7 @@ async function runSoloThrow(interaction: ChatInputCommandInteraction): Promise<v
   const remaining = checkDartsCooldown(interaction.user.id);
   if (remaining > 0) {
     await interaction.editReply(
-      `⏱️ Slow down! Try again in **${Math.ceil(remaining / 1000)}** seconds (rate limit: 2s).`,
+      formatCooldownMessage(remaining, DARTS_COOLDOWN_MS / 1000, "darts"),
     );
     return;
   }
@@ -157,7 +160,7 @@ async function handleChallenge(
   const remaining = checkDartsCooldown(challenger.id);
   if (remaining > 0) {
     await interaction.editReply(
-      `⏱️ Slow down! Try again in **${Math.ceil(remaining / 1000)}** seconds (rate limit: 2s).`,
+      formatCooldownMessage(remaining, DARTS_COOLDOWN_MS / 1000, "darts"),
     );
     return;
   }
@@ -276,7 +279,7 @@ async function handleChallenge(
         if (remainingOpp > 0) {
           await safeReplyToButton(
             buttonInteraction,
-            `⏱️ Slow down! Try again in **${Math.ceil(remainingOpp / 1000)}** seconds.`,
+            formatCooldownMessage(remainingOpp, DARTS_COOLDOWN_MS / 1000, "darts"),
           );
           return;
         }
@@ -350,6 +353,7 @@ async function handleChallenge(
         );
       }
     } catch (err) {
+      recordInteractionRecovery("darts");
       logger.warn(
         { err, challengeId, interactionFailedRecovery: true },
         "[darts] collect handler failed",

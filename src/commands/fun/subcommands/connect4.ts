@@ -1,6 +1,7 @@
 // src/commands/fun/subcommands/connect4.ts
 import { ComponentType, type ChatInputCommandInteraction } from "discord.js";
 import { logger } from "../../../utils/logger.js";
+import { recordInteractionRecovery } from "../../../services/metrics/server.js";
 import {
   safeReplyToButton,
   safeDeferUpdate,
@@ -214,6 +215,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
         "connect4.turn",
       );
     } catch (err) {
+      recordInteractionRecovery("connect4");
       logger.warn(
         { err, interactionFailedRecovery: true },
         "[fun/connect4] handler failed",

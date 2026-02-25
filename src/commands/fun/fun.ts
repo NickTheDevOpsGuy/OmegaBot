@@ -1,6 +1,10 @@
 // src/commands/fun/fun.ts
 
-import { MessageFlags, type ChatInputCommandInteraction } from "discord.js";
+import {
+  MessageFlags,
+  type AutocompleteInteraction,
+  type ChatInputCommandInteraction,
+} from "discord.js";
 import { logger } from "../../utils/logger.js";
 import {
   isKnownInteractionError,
@@ -21,6 +25,8 @@ import type { TempUnit } from "../../services/weather/types.js";
 
 import { handleJoke } from "./subcommands/joke/index.js";
 import { run as runReminders } from "./subcommands/reminders.js";
+import { listPendingRemindersByUser } from "../../services/reminders/store.js";
+import { listRecentQuotesForAutocomplete } from "../../services/quotes/quoteStore.js";
 import { run as runEightball } from "./subcommands/eightball.js";
 import { run as runRps } from "./subcommands/rps.js";
 import { run as runTrivia } from "./subcommands/trivia.js";
@@ -146,6 +152,60 @@ const HANDLERS: Record<string, FunHandler> = {
 /* -------------------------------------------------------------------------- */
 
 export const data = buildFunCommand();
+
+export async function autocomplete(interaction: AutocompleteInteraction): Promise<void> {
+  const group = interaction.options.getSubcommandGroup(false);
+  const sub = interaction.options.getSubcommand(false);
+  const focused = interaction.options.getFocused(true);
+
+  if (group === "remind" && sub === "cancel" && focused.name === "id") {
+    const reminders = listPendingRemindersByUser(interaction.user.id);
+    const needle = String(focused.value || "").trim().toLowerCase();
+    const choices = reminders
+      .filter(
+        (r) =>
+          !needle ||
+          String(r.id).includes(needle) ||
+          r.message.toLowerCase().includes(needle),
+      )
+      .slice(0, 25)
+      .map((r) => ({
+        name: `#${r.id}: ${r.message.slice(0, 60)}${r.message.length > 60 ? "…" : ""}`,
+        value: r.id,
+      }));
+    await interaction.respond(
+      choices.length ? choices : [{ name: "No pending reminders", value: 0 }],
+    );
+    return;
+  }
+
+  if (group === "quote" && sub === "remove" && focused.name === "id") {
+    if (!interaction.guildId) {
+      await interaction.respond([{ name: "Use in a server to remove quotes", value: 0 }]);
+      return;
+    }
+    const quotes = listRecentQuotesForAutocomplete(interaction.guildId);
+    const needle = String(focused.value || "").trim().toLowerCase();
+    const choices = quotes
+      .filter(
+        (q) =>
+          !needle ||
+          String(q.id).includes(needle) ||
+          q.preview.toLowerCase().includes(needle),
+      )
+      .slice(0, 25)
+      .map((q) => ({
+        name: `#${q.id}: ${q.preview}`,
+        value: q.id,
+      }));
+    await interaction.respond(
+      choices.length ? choices : [{ name: "No quotes found", value: 0 }],
+    );
+    return;
+  }
+
+  await interaction.respond([]);
+}
 
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const group = interaction.options.getSubcommandGroup(false);
