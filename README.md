@@ -34,7 +34,7 @@ Not intended to be:
 
 ## Features at a Glance
 
-- 16 slash commands with logical grouping
+- 15+ slash commands with logical grouping; 4 context menus (View Profile, View Achievements, Summarize, Quote)
 - 14 interactive games
 - 19 unlockable achievements
 - Giveaway system with automatic winners
@@ -44,9 +44,9 @@ Not intended to be:
 - Vercel and Supabase status checks (`/status vercel`, `/status supabase`)
 - SQLite persistence for all data
 - **Resilient interaction handling** – Defer early before heavy work, try/catch with fallback defer, safe reply wrappers, retry on transient API errors (including Discord 429 rate limits); logs include `interactionFailedRecovery: true` when recovering (reduces "failed to complete" occurrences)
-- **Autocomplete support** – Timezone (`/profile timezone`) and FAQ keys (`/faq get`, `/faq remove`); responds with `[]` by default when no handler
+- **Autocomplete support** – Timezone, FAQ keys/tags, giveaway end/reroll IDs, remind cancel, quote remove; responds with `[]` by default when no handler
 - **Admin health dashboard** – `/admin health` shows database status, env vars, and interaction error counts
-- **HTTP health & metrics** – Optional `METRICS_PORT` enables `/health` (200/503 with Discord status), `/metrics` (Prometheus), and `/dashboard` (web admin UI)
+- **HTTP health & metrics** – Optional `METRICS_PORT` enables `/health` (200/503 with Discord status), `/metrics` (Prometheus; includes rate-limit hit counts), and `/dashboard` (web admin UI)
 - **Database integrity check** – `npm run db:check` to verify SQLite health
 - **Automated backup** – `npm run db:backup` copies DB to `data/backups/` (configurable); cron-friendly
 - **Graceful shutdown** – SIGINT/SIGTERM close Discord cleanly, then DB
@@ -57,6 +57,8 @@ Not intended to be:
 - **Timeout reminders** – Connect 4 and Tic Tac Toe warn 1 minute before move timeout
 - **Hangman** – Dropdown letter pick (A–M / N–Z), difficulty levels, words in SQLite, solve-time stats; admins (role in `HANGMAN_ADMIN_ROLE_ID`) can add words
 - **Changelog in Discord** – `/help topic:changelog` for recent release notes
+- **Ephemeral by default** – Profile, info, achievements, help, FAQ, and playback reply privately unless you pass `private: false`
+- **Quote context menu** – Right-click any message → Quote; supports embeds and bot messages; `/help topic:quotes` for details
 
 ---
 
@@ -100,6 +102,7 @@ docker compose up -d
 - [Development Notes](docs/dev-notes.md)
 - [Troubleshooting](docs/troubleshooting.md) – Debugging "failed to complete" and common issues
 - [Runbook](docs/runbook.md) – Deploy, restart, backup, health, Docker
+- [Localization (i18n)](docs/i18n.md) – Multi-language skeleton and usage
 - [Grafana](docs/grafana.md) – Import dashboard for Prometheus metrics
 - [FAQ for server admins](docs/faq-admins.md) – Common questions when running the bot
 - [Improvement ideas](docs/improvements.md) – Optional next steps (beyond new commands)
@@ -120,7 +123,11 @@ docker compose up -d
 
 ## Project Structure
 
-Games use a modular layout: `gameLogic.ts` (pure rules), `ui.ts` (Discord components), and `*Store.ts` (database). Shared stats queries live in `services/gameStats/`. Timeouts and rate limits are in `src/constants.ts`.
+- **Games**: `gameLogic.ts` (pure rules), `ui.ts` (Discord components), `*Store.ts` (database). Shared stats queries in `services/gameStats/`. Timeouts and rate limits in `src/constants.ts`.
+- **Help**: Topic text in `src/commands/help/topics/*.ts` (e.g. overview, games, quotes).
+- **Interactions**: Handlers in `src/services/discord/handlers/` (autocomplete, modals, buttons, context menus).
+- **Fun subcommands**: Grouped in `funSubcommands/gamesGroup.ts` and `utilityGroup.ts`.
+- **i18n**: Localization skeleton in `src/i18n/index.ts`; see [i18n docs](docs/i18n.md).
 
 <details>
 <summary>📁 Click to expand file structure</summary>
@@ -153,12 +160,18 @@ Games use a modular layout: `gameLogic.ts` (pure rules), `ui.ts` (Discord compon
 │   ├── dev-notes.md
 │   ├── faq-admins.md
 │   ├── faq.md
+│   ├── grafana.md
+│   ├── i18n.md
 │   ├── improvements.md
 │   ├── runbook.md
 │   ├── setup-discord.md
 │   ├── setup-env.md
 │   ├── transcripts.md
 │   └── troubleshooting.md
+├── grafana
+│   └── omegabot-dashboard.json
+├── .devcontainer
+│   └── devcontainer.json
 ├── migrations
 │   ├── 001_*.sql
 │   ├── schema.sql
@@ -166,7 +179,8 @@ Games use a modular layout: `gameLogic.ts` (pure rules), `ui.ts` (Discord compon
 ├── scripts
 │   ├── backup-db.sh
 │   ├── db-check.ts
-│   └── precheck.sh
+│   ├── precheck.sh
+│   └── seed-dev-db.mjs
 ├── src
 │   ├── commands
 │   │   ├── achievements
@@ -232,6 +246,9 @@ Games use a modular layout: `gameLogic.ts` (pure rules), `ui.ts` (Discord compon
 │   │   │   │   ├── dice.ts
 │   │   │   │   ├── eightball.ts
 │   │   │   │   ├── fact.ts
+│   │   │   │   ├── hangman
+│   │   │   │   │   ├── hangmanStats.ts
+│   │   │   │   │   └── ui.ts
 │   │   │   │   ├── hangman.test.ts
 │   │   │   │   ├── hangman.ts
 │   │   │   │   ├── leaderboard.ts
@@ -260,22 +277,37 @@ Games use a modular layout: `gameLogic.ts` (pure rules), `ui.ts` (Discord compon
 │   │   │   ├── coinStore.ts
 │   │   │   ├── fun.ts
 │   │   │   └── funSubcommands
+│   │   │       ├── gamesGroup.ts
 │   │   │       ├── hangmanGroup.ts
 │   │   │       ├── index.ts
 │   │   │       ├── quoteGroup.ts
-│   │   │       └── remindGroup.ts
+│   │   │       ├── remindGroup.ts
+│   │   │       └── utilityGroup.ts
 │   │   ├── github
 │   │   │   ├── gh.ts
 │   │   │   ├── github.ts
 │   │   │   ├── pr.ts
 │   │   │   └── status.ts
 │   │   ├── giveaway
+│   │   │   ├── buttonHandler.ts
 │   │   │   ├── giveaway.ts
 │   │   │   ├── giveawayStore.test.ts
 │   │   │   └── giveawayStore.ts
 │   │   ├── help
 │   │   │   ├── help.ts
-│   │   │   └── helpText.ts
+│   │   │   ├── helpText.ts
+│   │   │   └── topics
+│   │   │       ├── admin.ts
+│   │   │       ├── changelog.ts
+│   │   │       ├── commands.ts
+│   │   │       ├── fun.ts
+│   │   │       ├── games.ts
+│   │   │       ├── github.ts
+│   │   │       ├── overview.ts
+│   │   │       ├── profile.ts
+│   │   │       ├── quotes.ts
+│   │   │       ├── status.ts
+│   │   │       └── summary.ts
 │   │   ├── history
 │   │   │   └── history.ts
 │   │   ├── info
@@ -284,6 +316,8 @@ Games use a modular layout: `gameLogic.ts` (pure rules), `ui.ts` (Discord compon
 │   │   │   └── ping.ts
 │   │   ├── playback
 │   │   │   └── playback.ts
+│   │   ├── quote-message
+│   │   │   └── quote-message.ts
 │   │   ├── profile
 │   │   │   ├── profile.ts
 │   │   │   ├── profileHelpers.ts
@@ -294,17 +328,28 @@ Games use a modular layout: `gameLogic.ts` (pure rules), `ui.ts` (Discord compon
 │   │   │       └── view.ts
 │   │   ├── status
 │   │   │   └── status.ts
+│   │   ├── summarize-message
+│   │   │   └── summarize-message.ts
 │   │   ├── suggestion
 │   │   │   └── suggestion.ts
-│   │   └── summary
-│   │       └── summary.ts
+│   │   ├── summary
+│   │   │   └── summary.ts
+│   │   ├── view-achievements
+│   │   │   └── view-achievements.ts
+│   │   └── view-profile
+│   │       └── view-profile.ts
 │   ├── config
 │   │   └── env.ts
+│   ├── i18n
+│   │   └── index.ts
 │   ├── services
 │   │   ├── ai
 │   │   │   └── claudeService.ts
 │   │   ├── cache
 │   │   │   └── simpleCache.ts
+│   │   ├── circuitBreaker
+│   │   │   ├── breakers.ts
+│   │   │   └── circuitBreaker.ts
 │   │   ├── config
 │   │   │   ├── guildConfigStore.ts
 │   │   │   ├── index.ts
@@ -315,6 +360,11 @@ Games use a modular layout: `gameLogic.ts` (pure rules), `ui.ts` (Discord compon
 │   │   ├── metrics
 │   │   │   └── server.ts
 │   │   ├── discord
+│   │   │   ├── handlers
+│   │   │   │   ├── autocomplete.ts
+│   │   │   │   ├── buttons.ts
+│   │   │   │   ├── contextMenus.ts
+│   │   │   │   └── modals.ts
 │   │   │   ├── commandLoader.ts
 │   │   │   ├── commandMeta.ts
 │   │   │   ├── commandTypes.ts
@@ -360,6 +410,8 @@ Games use a modular layout: `gameLogic.ts` (pure rules), `ui.ts` (Discord compon
 │   │   ├── logging
 │   │   │   ├── index.ts
 │   │   │   └── requestContext.ts
+│   │   ├── quotes
+│   │   │   └── quoteStore.ts
 │   │   ├── reminders
 │   │   │   ├── index.ts
 │   │   │   ├── scheduler.ts
@@ -370,6 +422,8 @@ Games use a modular layout: `gameLogic.ts` (pure rules), `ui.ts` (Discord compon
 │   │   ├── starboard
 │   │   │   ├── starboardHandler.ts
 │   │   │   └── starboardStore.test.ts
+│   │   ├── statuspage
+│   │   │   └── statuspageApi.ts
 │   │   ├── summary
 │   │   │   ├── llmSummary.ts
 │   │   │   ├── localSummary.ts
@@ -427,6 +481,8 @@ Games use a modular layout: `gameLogic.ts` (pure rules), `ui.ts` (Discord compon
 4. Run `npm run lint && npm run typecheck`
 5. Run `npm test` to verify tests pass
 6. Submit a pull request
+
+**Project layout:** Help text lives in `src/commands/help/topics/*.ts`. Interaction handlers (autocomplete, modals, buttons, context menus) are in `src/services/discord/handlers/`. Fun subcommands are split into `gamesGroup.ts` and `utilityGroup.ts`. See [Development Notes](docs/dev-notes.md) for more.
 
 ---
 

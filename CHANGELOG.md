@@ -7,6 +7,7 @@
 
 ### Changed
 
+- **Refactors** – helpText split into `help/topics/*`; giveaway button handler extracted; hangman stats in `hangman/hangmanStats.ts`; fun subcommands in gamesGroup/utilityGroup; interaction handlers in `handlers/*`
 - **Quote context menu** – Allows quoting bot messages (no longer blocked)
 - **Quote autocomplete in DMs** – Shows "Use in a server" instead of empty
 - **Avatar help** – Note that GIF shows static when avatar isn't animated

@@ -10,6 +10,8 @@ Short guide for running and maintaining OmegaBot.
 2. **Docker**: See [Docker](#docker) below.
 3. Or after code changes: `npm run build && npm start` (re-register only if you changed slash command definitions).
 
+**Note:** `npm run register` requires `DISCORD_TOKEN` and `DISCORD_APP_ID` in `.env` (or your environment). If these are not set, registration will fail. See [Environment Setup](setup-env.md).
+
 ---
 
 ## Docker
@@ -69,5 +71,4 @@ docker compose up -d
 
 ## Optional: Pre-push Checks
 
-- `git push` runs `precheck` (Prettier, ESLint, TypeScript). To skip: put `[skip-precheck]` in the last commit message.
-- To run tests before push, add `npm run test:run` to `scripts/precheck.sh`.
+- `git push` runs `precheck` (Prettier, ESLint, TypeScript, tests). To skip: put `[skip-precheck]` in the last commit message.

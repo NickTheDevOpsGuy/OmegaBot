@@ -1,22 +1,23 @@
 // src/services/discord/interactionHandler.ts
 import { performance } from "node:perf_hooks";
-import type {
-  Interaction,
-  RepliableInteraction,
-  AutocompleteInteraction,
-} from "discord.js";
+import type { Interaction, RepliableInteraction } from "discord.js";
 import { MessageFlags } from "discord.js";
 import { logger } from "../../utils/logger.js";
 import type { CommandClient } from "./commandLoader.js";
 import type { CommandModule } from "./commandTypes.js";
-import { handleGiveawayButton } from "../../commands/giveaway/giveaway.js";
-import { handleModalSubmit as handleSuggestionModal } from "../../commands/suggestion/suggestion.js";
 import {
   getDiscordErrorCode,
   isKnownInteractionError,
   logKnownInteractionError,
 } from "./interactionErrors.js";
 import { commandsExecutedTotal } from "../metrics/server.js";
+import { handleAutocomplete } from "./handlers/autocomplete.js";
+import { handleModalSubmit } from "./handlers/modals.js";
+import { handleButton } from "./handlers/buttons.js";
+import {
+  handleUserContextMenu,
+  handleMessageContextMenu,
+} from "./handlers/contextMenus.js";
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return !!v && typeof v === "object";
@@ -41,27 +42,15 @@ function isCommandModule(cmd: unknown): cmd is CommandModule {
   );
 }
 
-/**
- * Small helper so "unknown command" logs can suggest the closest registry keys.
- * Not fancy levenshtein, but enough to spot casing/pluralization/old names.
- */
 function closestCommandNames(input: string, candidates: string[], max = 5): string[] {
   const needle = input.trim().toLowerCase();
   if (!needle) return [];
 
   function score(name: string): number {
     const n = name.toLowerCase();
-
-    // exact
     if (n === needle) return 0;
-
-    // starts-with is usually the best hint
     if (n.startsWith(needle) || needle.startsWith(n)) return 1;
-
-    // contains
     if (n.includes(needle) || needle.includes(n)) return 2;
-
-    // cheap distance-ish: length diff + first/last char mismatch
     const len = Math.abs(n.length - needle.length);
     const first = n[0] === needle[0] ? 0 : 1;
     const last = n[n.length - 1] === needle[needle.length - 1] ? 0 : 1;
@@ -100,131 +89,28 @@ export async function handleInteraction(
   interaction: Interaction,
   client: CommandClient,
 ): Promise<void> {
-  // Autocomplete: respond quickly (≤3s). Commands can export autocomplete handler.
   if (interaction.isAutocomplete()) {
-    const command = client.commands.get(interaction.commandName);
-    const autocomplete =
-      command && typeof command === "object" && "autocomplete" in command
-        ? (command as { autocomplete?: (i: AutocompleteInteraction) => Promise<void> })
-            .autocomplete
-        : undefined;
-    try {
-      if (autocomplete && typeof autocomplete === "function") {
-        await autocomplete(interaction);
-      } else {
-        await interaction.respond([]);
-      }
-    } catch (err) {
-      logger.warn(
-        { err, command: interaction.commandName, interactionId: interaction.id },
-        "[interaction] autocomplete failed",
-      );
-      try {
-        await interaction.respond([]);
-      } catch {
-        // ignore
-      }
-    }
+    await handleAutocomplete(interaction, client);
     return;
   }
 
-  // Handle modal submits (e.g. suggestion)
   if (interaction.isModalSubmit()) {
-    if (interaction.customId.startsWith("suggestion:")) {
-      try {
-        await handleSuggestionModal(interaction);
-      } catch (err) {
-        logger.error(
-          { err, customId: interaction.customId },
-          "[interaction] suggestion modal failed",
-        );
-      }
-    }
+    await handleModalSubmit(interaction);
     return;
   }
 
-  // Handle button interactions (giveaways, etc.)
   if (interaction.isButton()) {
-    if (interaction.customId.startsWith("giveaway:")) {
-      try {
-        await handleGiveawayButton(interaction);
-      } catch (err) {
-        logger.error(
-          { err, customId: interaction.customId },
-          "[interaction] giveaway button failed",
-        );
-      }
-      return;
-    }
-    // Other button interactions are handled by their respective collectors
+    await handleButton(interaction);
     return;
   }
 
-  // Handle user context menus (right-click user → View Profile, View Achievements)
   if (interaction.isUserContextMenuCommand()) {
-    const cmd = client.commands.get(interaction.commandName);
-    if (
-      cmd &&
-      typeof (cmd as { execute?: (i: unknown) => Promise<void> }).execute === "function"
-    ) {
-      try {
-        await (cmd as { execute: (i: typeof interaction) => Promise<void> }).execute(
-          interaction,
-        );
-        commandsExecutedTotal.inc({ command: interaction.commandName });
-      } catch (err) {
-        if (isKnownInteractionError(err)) {
-          logKnownInteractionError(err, "contextMenu.execute", {
-            interactionId: interaction.id,
-            command: interaction.commandName,
-          });
-          return;
-        }
-        logger.error(
-          { err, command: interaction.commandName },
-          "[interaction] context menu failed",
-        );
-        await safeRepliableReply(
-          interaction,
-          "Something went wrong. Try again later.",
-          true,
-        );
-      }
-    }
+    await handleUserContextMenu(interaction, client);
     return;
   }
 
-  // Handle message context menus (right-click message → Summarize, Quote)
   if (interaction.isMessageContextMenuCommand()) {
-    const cmd = client.commands.get(interaction.commandName);
-    if (
-      cmd &&
-      typeof (cmd as { execute?: (i: unknown) => Promise<void> }).execute === "function"
-    ) {
-      try {
-        await (cmd as { execute: (i: typeof interaction) => Promise<void> }).execute(
-          interaction,
-        );
-        commandsExecutedTotal.inc({ command: interaction.commandName });
-      } catch (err) {
-        if (isKnownInteractionError(err)) {
-          logKnownInteractionError(err, "contextMenu.execute", {
-            interactionId: interaction.id,
-            command: interaction.commandName,
-          });
-          return;
-        }
-        logger.error(
-          { err, command: interaction.commandName },
-          "[interaction] context menu failed",
-        );
-        await safeRepliableReply(
-          interaction,
-          "Something went wrong. Try again later.",
-          true,
-        );
-      }
-    }
+    await handleMessageContextMenu(interaction, client);
     return;
   }
 
@@ -239,12 +125,10 @@ export async function handleInteraction(
     username: interaction.user.username,
     guildId: interaction.inGuild() ? interaction.guildId : null,
     channelId: interaction.channelId ?? null,
-    // If you ever suspect readiness / partial cache timing issues:
     clientReady: typeof client.isReady === "function" ? client.isReady() : null,
     registrySize: client.commands?.size ?? null,
   };
 
-  // Useful to correlate "command not found" reports to startup/reload timing
   logger.debug(meta, "[interaction] received");
 
   const commandUnknown = client.commands.get(interaction.commandName);
@@ -252,19 +136,10 @@ export async function handleInteraction(
   if (!commandUnknown) {
     const keys = [...client.commands.keys()];
     const closest = closestCommandNames(interaction.commandName, keys, 6);
-
     logger.warn(
-      {
-        ...meta,
-        knownCommandsSample: keys.slice(0, 40),
-        closest,
-      },
+      { ...meta, knownCommandsSample: keys.slice(0, 40), closest },
       "[interaction] unknown command (not in registry)",
     );
-
-    // You can optionally reply, but many bots choose not to.
-    // If you want to tell the user quietly:
-    // await safeRepliableReply(interaction, "That command is not available right now. Try again in a moment.", true);
     return;
   }
 
@@ -277,7 +152,6 @@ export async function handleInteraction(
       },
       "[interaction] invalid command module shape",
     );
-
     await safeRepliableReply(
       interaction,
       "That command is misconfigured on the bot. Tell an admin to check logs.",
@@ -289,7 +163,6 @@ export async function handleInteraction(
   const command = commandUnknown;
 
   try {
-    // If you want to see what modules are actually being executed:
     logger.debug(
       {
         ...meta,
@@ -310,7 +183,6 @@ export async function handleInteraction(
 
     const code = getDiscordErrorCode(err);
     const msg = getDiscordErrorMessage(err);
-
     logger.error({ ...meta, err, code, msg }, "[interaction] command failed");
 
     const hint =

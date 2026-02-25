@@ -1,6 +1,5 @@
 // src/i18n/index.ts
-// i18n skeleton - structure for future localization.
-// Add locale files under src/i18n/locales/{locale}.ts
+// i18n for future localization. Add locale files under src/i18n/locales/{locale}.ts
 
 export type Locale = "en" | "es" | "de"; // extend as needed
 
@@ -12,9 +11,31 @@ const translations: Record<Locale, Record<string, string>> = {
     "rate_limit.slow_down": "Slow down!",
     "error.generic": "Something went wrong. Try again later.",
     "error.api_unavailable": "API is temporarily unavailable. Try again in a minute.",
+    "error.interaction_failed": "Something went wrong. Try again later.",
+    "quote.saved": "Quote #{id} saved!",
+    "suggestion.posted": "Suggestion posted.",
+    "help.no_commands": "No commands found. Check the command loader.",
   },
-  es: {},
-  de: {},
+  es: {
+    "rate_limit.try_again": "Intenta de nuevo en {seconds}s",
+    "rate_limit.slow_down": "¡Más despacio!",
+    "error.generic": "Algo salió mal. Intenta de nuevo más tarde.",
+    "error.api_unavailable": "La API no está disponible. Intenta en un minuto.",
+    "error.interaction_failed": "Algo salió mal. Intenta de nuevo más tarde.",
+    "quote.saved": "¡Cita #{id} guardada!",
+    "suggestion.posted": "Sugerencia publicada.",
+    "help.no_commands": "No se encontraron comandos.",
+  },
+  de: {
+    "rate_limit.try_again": "Versuche es in {seconds}s erneut",
+    "rate_limit.slow_down": "Langsamer!",
+    "error.generic": "Etwas ist schiefgelaufen. Versuche es später erneut.",
+    "error.api_unavailable": "Die API ist vorübergehend nicht verfügbar.",
+    "error.interaction_failed": "Etwas ist schiefgelaufen. Versuche es später erneut.",
+    "quote.saved": "Zitat #{id} gespeichert!",
+    "suggestion.posted": "Vorschlag eingereicht.",
+    "help.no_commands": "Keine Befehle gefunden.",
+  },
 };
 
 /**

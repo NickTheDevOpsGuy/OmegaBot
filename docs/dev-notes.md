@@ -13,6 +13,20 @@ This document captures design decisions, conventions, and architectural guidelin
 
 ---
 
+## Code Organization
+
+| Area | Location |
+|------|----------|
+| Help topic content | `src/commands/help/topics/*.ts` |
+| Interaction handlers | `src/services/discord/handlers/` (autocomplete, modals, buttons, context menus) |
+| Fun subcommand groups | `src/commands/fun/funSubcommands/gamesGroup.ts`, `utilityGroup.ts` |
+| Giveaway button logic | `src/commands/giveaway/buttonHandler.ts` |
+| Hangman stats | `src/commands/fun/subcommands/hangman/hangmanStats.ts` |
+| Quote store (slash + context menu) | `src/services/quotes/quoteStore.ts` |
+| i18n | `src/i18n/index.ts` |
+
+---
+
 ## Discord.js v14 Migration
 
 ### Key Changes from v13 to v14
