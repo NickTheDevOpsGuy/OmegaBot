@@ -234,9 +234,7 @@ async function handleChatCommand(
     const genericMsg = t("error.generic", resolveLocale(guildLocale));
     await safeRepliableReply(
       interaction,
-      hint
-        ? `${genericMsg}\n${hint}`
-        : genericMsg,
+      hint ? `${genericMsg}\n${hint}` : genericMsg,
       true,
     );
   } finally {

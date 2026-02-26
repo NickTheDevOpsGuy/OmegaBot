@@ -23,8 +23,8 @@ This document captures design decisions, conventions, and architectural guidelin
 | Giveaway button logic              | `src/commands/giveaway/buttonHandler.ts`                                        |
 | Hangman stats                      | `src/commands/fun/subcommands/hangman/hangmanStats.ts`                          |
 | Quote store (slash + context menu) | `src/services/quotes/quoteStore.ts`                                             |
-| Command usage analytics (non-game) | `src/services/analytics/commandUsageStore.ts`                                  |
-| Request context / correlation IDs | `src/services/logging/requestContext.ts`                                       |
+| Command usage analytics (non-game) | `src/services/analytics/commandUsageStore.ts`                                   |
+| Request context / correlation IDs  | `src/services/logging/requestContext.ts`                                        |
 | i18n                               | `src/i18n/index.ts`                                                             |
 
 ---
