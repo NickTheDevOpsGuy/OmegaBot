@@ -68,7 +68,12 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
   const remaining = checkDiceCooldown(interaction.user.id);
   if (remaining > 0) {
     await interaction.editReply(
-      formatCooldownMessage(remaining, DICE_COOLDOWN_MS / 1000, "dice"),
+      formatCooldownMessage(
+        remaining,
+        DICE_COOLDOWN_MS / 1000,
+        "dice",
+        interaction.guild?.preferredLocale ?? null,
+      ),
     );
     return;
   }

@@ -1,6 +1,6 @@
 {
   "name": "OmegaBot",
-  "version": "3.9.7",
+  "version": "3.9.8",
   "type": "module",
   "scripts": {
     "build": "tsc",
@@ -22,7 +22,8 @@
     "db:backup": "bash scripts/backup-db.sh",
     "db:seed": "node scripts/seed-dev-db.mjs",
     "dev:watch": "npm run build && node --watch dist/bot.js",
-    "test:e2e": "npm run build && node scripts/e2e-discord.mjs"
+    "test:e2e": "npm run build && node scripts/e2e-discord.mjs",
+    "check:discord": "node scripts/check-discord-version.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",

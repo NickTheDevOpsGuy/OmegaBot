@@ -45,13 +45,13 @@ Not intended to be:
 - SQLite persistence for all data
 - **Resilient interaction handling** – Defer early before heavy work, try/catch with fallback defer, safe reply wrappers, retry on transient API errors (including Discord 429 rate limits); logs include `interactionFailedRecovery: true` when recovering (reduces "failed to complete" occurrences)
 - **Autocomplete support** – Timezone, FAQ keys/tags, giveaway end/reroll IDs, remind cancel, quote remove; responds with `[]` by default when no handler
-- **Admin health dashboard** – `/admin health` shows database status, env vars, and interaction error counts
+- **Admin health dashboard** – `/admin health` shows database status, env vars, interaction errors, and optional API reachability (Weather, GitHub)
 - **HTTP health & metrics** – Optional `METRICS_PORT` enables `/health` (200/503 with Discord status), `/metrics` (Prometheus; includes rate-limit hit counts), and `/dashboard` (web admin UI)
 - **Database integrity check** – `npm run db:check` to verify SQLite health
 - **Automated backup** – `npm run db:backup` copies DB to `data/backups/` (configurable); cron-friendly
 - **Graceful shutdown** – SIGINT/SIGTERM close Discord cleanly, then DB
-- **Rate limiting** – slots (3s), blackjack (5s), dice (2s), darts (2s), hangman (10s) cooldowns with clear "Try again in Xs" feedback
-- **Daily game metrics** – per-command, per-user play counts for analytics
+- **Rate limiting** – slots (3s), blackjack (5s), dice (2s), darts (2s), hangman (10s) cooldowns with i18n "Try again in Xs" (en/es/de)
+- **Daily game metrics** – per-command, per-user play counts; `command_usage_daily` for non-game commands
 - **Long game timeouts** – Blackjack, Hangman, Wordle, and RPS challenges: 1 hour; Connect 4 and Tic Tac Toe: 10 min per move (starter can extend)
 - **Extend time** – The person who started the game can add more time via an "Extend time" button (Blackjack, Connect 4, Tic Tac Toe, Wordle, RPS challenge)
 - **Timeout reminders** – Connect 4 and Tic Tac Toe warn 1 minute before move timeout
@@ -59,6 +59,10 @@ Not intended to be:
 - **Changelog in Discord** – `/help topic:changelog` for recent release notes
 - **Ephemeral by default** – Profile, info, achievements, help, FAQ, and playback reply privately unless you pass `private: false`
 - **Quote context menu** – Right-click any message → Quote; supports embeds and bot messages; `/help topic:quotes` for details
+- **i18n** – Rate-limit and error messages use guild locale (en/es/de); see [i18n docs](docs/i18n.md)
+- **Correlation IDs** – Interaction logs include `requestId` for tracing failures
+- **Summary fallback** – When LLM API is down, falls back to local summary
+- **E2E tests** – `npm run test:e2e` validates Discord connection (needs secrets in CI)
 
 ---
 
@@ -96,7 +100,7 @@ docker compose up -d
 ## Documentation
 
 - [Command Reference](docs/commands.md)
-- [Analytics](docs/analytics.md) – Daily game metrics and `game_usage_daily` table
+- [Analytics](docs/analytics.md) – Daily game metrics (`game_usage_daily`), command usage (`command_usage_daily`)
 - [Discord Bot Setup](docs/setup-discord.md)
 - [Environment Setup](docs/setup-env.md)
 - [Development Notes](docs/dev-notes.md)
@@ -123,11 +127,13 @@ docker compose up -d
 
 ## Project Structure
 
-- **Games**: `gameLogic.ts` (pure rules), `ui.ts` (Discord components), `*Store.ts` (database). Shared stats queries in `services/gameStats/`. Timeouts and rate limits in `src/constants.ts`.
-- **Help**: Topic text in `src/commands/help/topics/*.ts` (e.g. overview, games, quotes).
+- **Games**: `gameLogic.ts` (pure rules), `ui.ts` (Discord components), `*Store.ts` (database). Shared stats in `services/gameStats/`. Timeouts in `src/constants.ts`.
+- **Help**: Topic text in `src/commands/help/topics/*.ts`.
 - **Interactions**: Handlers in `src/services/discord/handlers/` (autocomplete, modals, buttons, context menus).
 - **Fun subcommands**: Grouped in `funSubcommands/gamesGroup.ts` and `utilityGroup.ts`.
-- **i18n**: Localization skeleton in `src/i18n/index.ts`; see [i18n docs](docs/i18n.md).
+- **Analytics**: Game metrics in `services/fun/gameUsageMetrics.ts`; non-game in `services/analytics/commandUsageStore.ts`.
+- **Logging context**: Request IDs in `services/logging/requestContext.ts`.
+- **i18n**: `src/i18n/index.ts`; see [i18n docs](docs/i18n.md).
 
 <details>
 <summary>📁 Click to expand file structure</summary>
@@ -174,11 +180,14 @@ docker compose up -d
 │   └── devcontainer.json
 ├── migrations
 │   ├── 001_*.sql
+│   ├── 004_command_usage_daily.sql
 │   ├── schema.sql
 │   └── ...
 ├── scripts
 │   ├── backup-db.sh
+│   ├── check-discord-version.mjs
 │   ├── db-check.ts
+│   ├── e2e-discord.mjs
 │   ├── precheck.sh
 │   └── seed-dev-db.mjs
 ├── src
@@ -189,6 +198,7 @@ docker compose up -d
 │   │   ├── admin
 │   │   │   ├── subcommands
 │   │   │   │   ├── ban.ts
+│   │   │   │   ├── health.integration.test.ts
 │   │   │   │   ├── health.ts
 │   │   │   │   ├── kick.ts
 │   │   │   │   ├── stats.ts
@@ -244,6 +254,7 @@ docker compose up -d
 │   │   │   │   ├── dartsStore.ts
 │   │   │   │   ├── dice.integration.test.ts
 │   │   │   │   ├── dice.ts
+│   │   │   │   ├── slots.integration.test.ts
 │   │   │   │   ├── eightball.ts
 │   │   │   │   ├── fact.ts
 │   │   │   │   ├── hangman
@@ -313,6 +324,7 @@ docker compose up -d
 │   │   ├── info
 │   │   │   └── info.ts
 │   │   ├── ping
+│   │   │   ├── ping.integration.test.ts
 │   │   │   └── ping.ts
 │   │   ├── playback
 │   │   │   └── playback.ts
@@ -343,6 +355,8 @@ docker compose up -d
 │   ├── i18n
 │   │   └── index.ts
 │   ├── services
+│   │   ├── analytics
+│   │   │   └── commandUsageStore.ts
 │   │   ├── ai
 │   │   │   └── claudeService.ts
 │   │   ├── cache
@@ -493,13 +507,14 @@ npm test              # Run tests in watch mode
 npm run test:run      # Run tests once
 npm run test:coverage # Run with coverage report
 npm run test:e2e      # E2E: start bot, wait for Discord ready (needs DISCORD_TOKEN, DISCORD_APP_ID)
+npm run check:discord # Verify discord.js is v14.x
 npm run db:check      # Verify SQLite database integrity
 npm run db:backup     # Backup database to data/backups/
 npm run db:seed       # Seed dev DB with sample FAQs/timezone (DATABASE_PATH=data/dev.db)
 npm run dev:watch     # Run with hot reload (restarts on file change)
 ```
 
-18+ test files covering games, stores, services, rate limiting, metrics, integration flows, and core functionality.
+25+ test files: unit tests (games, stores, services, rate limiting, metrics) and integration tests (dice, slots, ping, admin health).
 
 ---
 

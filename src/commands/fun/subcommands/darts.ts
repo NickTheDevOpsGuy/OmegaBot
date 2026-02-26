@@ -114,7 +114,12 @@ async function runSoloThrow(interaction: ChatInputCommandInteraction): Promise<v
   const remaining = checkDartsCooldown(interaction.user.id);
   if (remaining > 0) {
     await interaction.editReply(
-      formatCooldownMessage(remaining, DARTS_COOLDOWN_MS / 1000, "darts"),
+      formatCooldownMessage(
+        remaining,
+        DARTS_COOLDOWN_MS / 1000,
+        "darts",
+        interaction.guild?.preferredLocale ?? null,
+      ),
     );
     return;
   }
@@ -160,7 +165,12 @@ async function handleChallenge(
   const remaining = checkDartsCooldown(challenger.id);
   if (remaining > 0) {
     await interaction.editReply(
-      formatCooldownMessage(remaining, DARTS_COOLDOWN_MS / 1000, "darts"),
+      formatCooldownMessage(
+        remaining,
+        DARTS_COOLDOWN_MS / 1000,
+        "darts",
+        interaction.guild?.preferredLocale ?? null,
+      ),
     );
     return;
   }
@@ -279,7 +289,12 @@ async function handleChallenge(
         if (remainingOpp > 0) {
           await safeReplyToButton(
             buttonInteraction,
-            formatCooldownMessage(remainingOpp, DARTS_COOLDOWN_MS / 1000, "darts"),
+            formatCooldownMessage(
+              remainingOpp,
+              DARTS_COOLDOWN_MS / 1000,
+              "darts",
+              buttonInteraction.guild?.preferredLocale ?? null,
+            ),
           );
           return;
         }

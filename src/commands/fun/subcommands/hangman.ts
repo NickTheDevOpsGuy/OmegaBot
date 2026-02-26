@@ -52,7 +52,12 @@ export async function runPlay(
   const remaining = checkHangmanCooldown(interaction.user.id);
   if (remaining > 0) {
     await interaction.editReply(
-      formatCooldownMessage(remaining, HANGMAN_COOLDOWN_MS / 1000, "hangman"),
+      formatCooldownMessage(
+        remaining,
+        HANGMAN_COOLDOWN_MS / 1000,
+        "hangman",
+        interaction.guild?.preferredLocale ?? null,
+      ),
     );
     return;
   }

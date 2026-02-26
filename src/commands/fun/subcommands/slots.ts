@@ -221,7 +221,12 @@ async function runSlots(interaction: ChatInputCommandInteraction): Promise<void>
     const remaining = checkSlotsCooldown(interaction.user.id);
     if (remaining > 0) {
       await interaction.editReply(
-        formatCooldownMessage(remaining, SLOTS_COOLDOWN_MS / 1000, "slots"),
+        formatCooldownMessage(
+          remaining,
+          SLOTS_COOLDOWN_MS / 1000,
+          "slots",
+          interaction.guild?.preferredLocale ?? null,
+        ),
       );
       return;
     }

@@ -114,12 +114,36 @@ async function registerCommands(): Promise<void> {
       { guildId: env.guildId, count: unique.length },
       "[register] guild commands registered",
     );
+
+    const verified = await rest.get(
+      Routes.applicationGuildCommands(env.appId, env.guildId),
+    );
+    const actual = Array.isArray(verified) ? verified.length : 0;
+    if (actual !== unique.length) {
+      logger.warn(
+        { expected: unique.length, actual },
+        "[register] sanity check: command count mismatch",
+      );
+    } else {
+      logger.info("[register] sanity check passed");
+    }
   } else {
     await rest.put(Routes.applicationCommands(env.appId), {
       body: unique,
     });
 
     logger.info({ count: unique.length }, "[register] global commands registered");
+
+    const verified = await rest.get(Routes.applicationCommands(env.appId));
+    const actual = Array.isArray(verified) ? verified.length : 0;
+    if (actual !== unique.length) {
+      logger.warn(
+        { expected: unique.length, actual },
+        "[register] sanity check: command count mismatch",
+      );
+    } else {
+      logger.info("[register] sanity check passed");
+    }
   }
 }
 

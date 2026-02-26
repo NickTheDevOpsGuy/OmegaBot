@@ -9,6 +9,8 @@ const translations: Record<Locale, Record<string, string>> = {
   en: {
     "rate_limit.try_again": "Try again in {seconds}s",
     "rate_limit.slow_down": "Slow down!",
+    "rate_limit.cooldown_full":
+      "⏱️ Slow down! Try again in **{seconds}** seconds (rate limit: {cooldownSec}s).",
     "error.generic": "Something went wrong. Try again later.",
     "error.api_unavailable": "API is temporarily unavailable. Try again in a minute.",
     "error.interaction_failed": "Something went wrong. Try again later.",
@@ -19,6 +21,8 @@ const translations: Record<Locale, Record<string, string>> = {
   es: {
     "rate_limit.try_again": "Intenta de nuevo en {seconds}s",
     "rate_limit.slow_down": "¡Más despacio!",
+    "rate_limit.cooldown_full":
+      "⏱️ ¡Más despacio! Intenta en **{seconds}** segundos (límite: {cooldownSec}s).",
     "error.generic": "Algo salió mal. Intenta de nuevo más tarde.",
     "error.api_unavailable": "La API no está disponible. Intenta en un minuto.",
     "error.interaction_failed": "Algo salió mal. Intenta de nuevo más tarde.",
@@ -29,6 +33,8 @@ const translations: Record<Locale, Record<string, string>> = {
   de: {
     "rate_limit.try_again": "Versuche es in {seconds}s erneut",
     "rate_limit.slow_down": "Langsamer!",
+    "rate_limit.cooldown_full":
+      "⏱️ Langsamer! Versuche in **{seconds}** Sekunden erneut (Limit: {cooldownSec}s).",
     "error.generic": "Etwas ist schiefgelaufen. Versuche es später erneut.",
     "error.api_unavailable": "Die API ist vorübergehend nicht verfügbar.",
     "error.interaction_failed": "Etwas ist schiefgelaufen. Versuche es später erneut.",
@@ -59,9 +65,19 @@ export function t(
 }
 
 /**
- * Resolve locale from Discord guild preference or user preference.
- * For now returns default; extend with guild_config or user settings.
+ * Map Discord locale (e.g. "en-US", "es-ES") to our Locale type.
  */
-export function resolveLocale(/* guildId?: string, userId?: string */): Locale {
-  return DEFAULT_LOCALE;
+function discordLocaleToLocale(discordLocale: string | null): Locale {
+  if (!discordLocale) return DEFAULT_LOCALE;
+  const prefix = discordLocale.split("-")[0].toLowerCase();
+  if (prefix === "es") return "es";
+  if (prefix === "de") return "de";
+  return "en";
+}
+
+/**
+ * Resolve locale from Discord guild preference or interaction.
+ */
+export function resolveLocale(guildLocale?: string | null): Locale {
+  return guildLocale ? discordLocaleToLocale(guildLocale) : DEFAULT_LOCALE;
 }

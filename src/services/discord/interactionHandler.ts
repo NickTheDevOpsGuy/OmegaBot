@@ -1,6 +1,17 @@
 // src/services/discord/interactionHandler.ts
 import { performance } from "node:perf_hooks";
-import type { Interaction, RepliableInteraction } from "discord.js";
+import type {
+  ChatInputCommandInteraction,
+  Interaction,
+  RepliableInteraction,
+} from "discord.js";
+import {
+  createRequestContext,
+  runWithContextAsync,
+  getContextLogger,
+  getRequestId,
+} from "../logging/requestContext.js";
+import { t, resolveLocale } from "../../i18n/index.js";
 import { MessageFlags } from "discord.js";
 import { logger } from "../../utils/logger.js";
 import type { CommandClient } from "./commandLoader.js";
@@ -11,6 +22,7 @@ import {
   logKnownInteractionError,
 } from "./interactionErrors.js";
 import { commandsExecutedTotal } from "../metrics/server.js";
+import { recordCommandUsage } from "../analytics/commandUsageStore.js";
 import { handleAutocomplete } from "./handlers/autocomplete.js";
 import { handleModalSubmit } from "./handlers/modals.js";
 import { handleButton } from "./handlers/buttons.js";
@@ -117,7 +129,32 @@ export async function handleInteraction(
   if (!interaction.isChatInputCommand()) return;
 
   const start = performance.now();
+  const subcommand = interaction.options.getSubcommand(false);
+  const ctx = createRequestContext({
+    userId: interaction.user.id,
+    guildId: interaction.guildId ?? undefined,
+    channelId: interaction.channelId,
+    command: interaction.commandName,
+    subcommand: subcommand ?? undefined,
+    meta: {
+      interactionId: interaction.id,
+      username: interaction.user.username,
+      clientReady: typeof client.isReady === "function" ? client.isReady() : null,
+      registrySize: client.commands?.size ?? null,
+    },
+  });
 
+  await runWithContextAsync(ctx, async () => {
+    await handleChatCommand(interaction as ChatInputCommandInteraction, client, start);
+  });
+}
+
+async function handleChatCommand(
+  interaction: ChatInputCommandInteraction,
+  client: CommandClient,
+  start: number,
+): Promise<void> {
+  const log = getContextLogger();
   const meta = {
     interactionId: interaction.id,
     command: interaction.commandName,
@@ -129,14 +166,14 @@ export async function handleInteraction(
     registrySize: client.commands?.size ?? null,
   };
 
-  logger.debug(meta, "[interaction] received");
+  log.debug(meta, "[interaction] received");
 
   const commandUnknown = client.commands.get(interaction.commandName);
 
   if (!commandUnknown) {
     const keys = [...client.commands.keys()];
     const closest = closestCommandNames(interaction.commandName, keys, 6);
-    logger.warn(
+    log.warn(
       { ...meta, knownCommandsSample: keys.slice(0, 40), closest },
       "[interaction] unknown command (not in registry)",
     );
@@ -144,7 +181,7 @@ export async function handleInteraction(
   }
 
   if (!isCommandModule(commandUnknown)) {
-    logger.error(
+    log.error(
       {
         ...meta,
         foundType: typeof commandUnknown,
@@ -163,7 +200,7 @@ export async function handleInteraction(
   const command = commandUnknown;
 
   try {
-    logger.debug(
+    log.debug(
       {
         ...meta,
         moduleName: command.data.name,
@@ -175,28 +212,35 @@ export async function handleInteraction(
 
     await command.execute(interaction);
     commandsExecutedTotal.inc({ command: command.data.name });
+    recordCommandUsage(interaction.user.id, command.data.name);
   } catch (err) {
     if (isKnownInteractionError(err)) {
-      logKnownInteractionError(err, "command.execute", meta);
+      logKnownInteractionError(err, "command.execute", {
+        ...meta,
+        requestId: getRequestId(),
+      });
       return;
     }
 
     const code = getDiscordErrorCode(err);
     const msg = getDiscordErrorMessage(err);
-    logger.error({ ...meta, err, code, msg }, "[interaction] command failed");
+    log.error({ ...meta, err, code, msg }, "[interaction] command failed");
 
     const hint =
       code != null ? `Discord error code: ${code}` : msg ? `Error: ${msg}` : null;
 
+    const guildLocale = (interaction as { guild?: { preferredLocale?: string } }).guild
+      ?.preferredLocale;
+    const genericMsg = t("error.generic", resolveLocale(guildLocale));
     await safeRepliableReply(
       interaction,
       hint
-        ? `Something went wrong while running that command.\n${hint}`
-        : "Something went wrong while running that command.",
+        ? `${genericMsg}\n${hint}`
+        : genericMsg,
       true,
     );
   } finally {
     const ms = Math.round(performance.now() - start);
-    logger.debug({ ...meta, ms }, "[interaction] command timing");
+    log.debug({ ...meta, ms }, "[interaction] command timing");
   }
 }

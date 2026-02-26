@@ -46,7 +46,7 @@ docker compose up -d
 
 ## Health
 
-- **Discord**: `/admin health` (Manage Server) shows DB status, env summary, and interaction error counts.
+- **Discord**: `/admin health` (Manage Server) shows DB status, env summary, interaction errors, and optional API reachability (Weather, GitHub).
 - **HTTP**: Set `METRICS_PORT=9090` (or another port) to enable:
   - `GET /` or `GET /dashboard` – Web admin UI (health, DB, Discord, uptime). If `ADMIN_DASHBOARD_TOKEN` is set, require `?token=<token>`.
   - `GET /health` – JSON with status, database, discord, uptime (200 if all ok, 503 if degraded).

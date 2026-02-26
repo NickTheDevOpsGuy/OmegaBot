@@ -59,4 +59,4 @@ Suggestions to make OmegaBot more maintainable, observable, and operator-friendl
 - **Major new systems** – Unless you need them (e.g. full moderation queue), avoid large new features that increase maintenance.
 - **UI overhaul** – Current embeds and buttons are clear; no need to change for its own sake.
 
-**Already done:** runbook, env summary at startup, pre-push tests, CI test:run, npm audit in CI, backup reminder, FAQ for admins, TODO resolved, rate limit in cooldown replies, secrets-not-in-logs doc, automated backup script, metrics/health HTTP endpoint, actionable error messages for missing env vars. The rest can be done incrementally.
+**Already done:** runbook, env summary at startup, pre-push tests, CI test:run, npm audit in CI, backup reminder, FAQ for admins, TODO resolved, rate limit in cooldown replies, secrets-not-in-logs doc, automated backup script, metrics/health HTTP endpoint, actionable error messages, integration tests (dice/slots/ping/health), i18n for rate limits, health optional API reachability, command usage analytics, summary fallback, Discord.js version check. The rest can be done incrementally.

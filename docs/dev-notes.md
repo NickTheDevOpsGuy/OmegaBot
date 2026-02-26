@@ -23,6 +23,8 @@ This document captures design decisions, conventions, and architectural guidelin
 | Giveaway button logic              | `src/commands/giveaway/buttonHandler.ts`                                        |
 | Hangman stats                      | `src/commands/fun/subcommands/hangman/hangmanStats.ts`                          |
 | Quote store (slash + context menu) | `src/services/quotes/quoteStore.ts`                                             |
+| Command usage analytics (non-game) | `src/services/analytics/commandUsageStore.ts`                                  |
+| Request context / correlation IDs | `src/services/logging/requestContext.ts`                                       |
 | i18n                               | `src/i18n/index.ts`                                                             |
 
 ---
@@ -234,5 +236,5 @@ See [troubleshooting.md](./troubleshooting.md) for debugging "failed to complete
 ## Future Improvements
 
 - Replace remaining file stores with database
-- Implement comprehensive integration tests for collectors
-- Add automated Discord.js version compatibility checks
+- Integration tests for collectors (button/dropdown flows) – dice, slots, ping, health integration tests exist
+- ~~Discord.js version check~~ – Done: `npm run check:discord` in CI

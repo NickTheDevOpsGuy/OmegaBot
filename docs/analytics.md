@@ -40,3 +40,29 @@ Data is recorded automatically when users run these commands. No configuration r
 - Dates are UTC. Use `date(new Date().toISOString().slice(0,10))` or equivalent for "today".
 - Data is cumulative; `ON CONFLICT ... DO UPDATE` increments `count` for repeat plays.
 - Table is created automatically on first use (or via `migrations/schema.sql` on init).
+
+---
+
+## Command Usage (Non-Game)
+
+The `command_usage_daily` table tracks non-game command usage (help, profile, ping, etc.) per user per day. Game commands use `game_usage_daily` instead.
+
+### Schema
+
+```sql
+CREATE TABLE command_usage_daily (
+  date TEXT NOT NULL,
+  command TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  count INTEGER NOT NULL DEFAULT 1,
+  PRIMARY KEY (date, command, user_id)
+);
+```
+
+### Commands Tracked
+
+All slash commands except the game commands listed above (slots, blackjack, dice, etc.).
+
+### Location
+
+`src/services/analytics/commandUsageStore.ts` – `recordCommandUsage()` is called from the interaction handler on successful command execution.

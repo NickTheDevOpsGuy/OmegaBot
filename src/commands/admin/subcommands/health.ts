@@ -5,6 +5,43 @@ import { getDb } from "../../../services/database/db.js";
 import { getInteractionErrorCounts } from "../../../services/discord/interactionErrors.js";
 import { EmbedColors } from "../../../utils/colors.js";
 import { safeReply } from "../utils.js";
+import { env } from "../../../config/env.js";
+
+const OPTIONAL_CHECK_TIMEOUT_MS = 3000;
+
+async function checkWeatherReachable(): Promise<string> {
+  const key = env.weatherApiKey;
+  if (!key) return "⚠️ Not configured";
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), OPTIONAL_CHECK_TIMEOUT_MS);
+    const r = await fetch(
+      `https://api.weatherapi.com/v1/current.json?key=${key}&q=London`,
+      { signal: ctrl.signal },
+    );
+    clearTimeout(t);
+    return r.ok ? "✅ Reachable" : `⚠️ API error ${r.status}`;
+  } catch (e) {
+    return `❌ Unreachable (${e instanceof Error ? e.message : String(e).slice(0, 50)})`;
+  }
+}
+
+async function checkGitHubReachable(): Promise<string> {
+  const token = env.githubToken;
+  if (!token) return "⚠️ Not configured";
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), OPTIONAL_CHECK_TIMEOUT_MS);
+    const r = await fetch("https://api.github.com/rate_limit", {
+      headers: { Authorization: `Bearer ${token}` },
+      signal: ctrl.signal,
+    });
+    clearTimeout(t);
+    return r.ok ? "✅ Reachable" : `⚠️ API error ${r.status}`;
+  } catch (e) {
+    return `❌ Unreachable (${e instanceof Error ? e.message : String(e).slice(0, 50)})`;
+  }
+}
 
 export async function handleHealth(
   interaction: ChatInputCommandInteraction,
@@ -63,6 +100,13 @@ export async function handleHealth(
         status: process.env[key] ? "✅ Configured" : "⚠️ Not configured",
       });
     }
+
+    const [weatherStatus, githubStatus] = await Promise.all([
+      checkWeatherReachable(),
+      checkGitHubReachable(),
+    ]);
+    checks.push({ name: "Weather API (reachability)", status: weatherStatus });
+    checks.push({ name: "GitHub API (reachability)", status: githubStatus });
 
     const embed = new EmbedBuilder()
       .setTitle("Health Check")

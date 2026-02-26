@@ -10,6 +10,7 @@ import {
   DARTS_COOLDOWN_MS,
   HANGMAN_COOLDOWN_MS,
 } from "../../constants.js";
+import { t, resolveLocale } from "../../i18n/index.js";
 import { recordRateLimitHit } from "../metrics/server.js";
 
 const RATE_LIMITS = new Map<string, number>();
@@ -115,13 +116,19 @@ export function recordHangmanGame(userId: string): void {
  * Format a user-facing cooldown message.
  * Use when rate limit blocks a user - shows "Try again in Xs" clearly.
  * Records rate limit hit to metrics when handler is provided.
+ * @param guildLocale - Optional Discord guild preferred locale (e.g. from interaction.guild?.preferredLocale)
  */
 export function formatCooldownMessage(
   remainingMs: number,
   cooldownSec: number,
   handler?: string,
+  guildLocale?: string | null,
 ): string {
   if (handler) recordRateLimitHit(handler);
   const seconds = Math.ceil(remainingMs / 1000);
-  return `⏱️ Slow down! Try again in **${seconds}** seconds (rate limit: ${cooldownSec}s).`;
+  const locale = resolveLocale(guildLocale);
+  return t("rate_limit.cooldown_full", locale, {
+    seconds: String(seconds),
+    cooldownSec: String(cooldownSec),
+  });
 }

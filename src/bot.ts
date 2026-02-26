@@ -32,6 +32,12 @@ client.commands = new Map();
 initDatabase();
 logger.info("Database initialized");
 
+if (!process.env.BACKUP_KEEP?.trim()) {
+  logger.info(
+    "[startup] BACKUP_KEEP not set; consider running npm run db:backup periodically",
+  );
+}
+
 // Catch unhandled promise rejections (e.g. from collectors or async handlers)
 process.on("unhandledRejection", (reason, promise) => {
   const code = getDiscordErrorCode(reason);

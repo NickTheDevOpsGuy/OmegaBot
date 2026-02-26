@@ -1,3 +1,24 @@
+## [3.9.8] - 2026-02-26
+
+### Added
+
+- **i18n for rate limits** – Cooldown messages use `t()` with guild locale (en/es/de)
+- **Integration tests** – ping, slots, admin health (following dice pattern)
+- **Correlation IDs** – Request context (requestId) in interaction logs for tracing failures
+- **Health check optional services** – Weather and GitHub API reachability in `/admin health`
+- **Command usage analytics** – `command_usage_daily` table for non-game commands
+- **Summary fallback** – When LLM API fails, falls back to local summary
+- **Post-register sanity check** – Verifies command count after registration
+- **Backup reminder** – Startup log when BACKUP_KEEP not set
+- **Discord.js version check** – `npm run check:discord` in CI
+
+### Changed
+
+- **Error messages** – Generic errors use i18n `t("error.generic")`
+- **E2E** – `npm run test:e2e`; GitHub Action job when secrets present
+
+---
+
 ## [3.9.7] - 2026-02-12
 
 ### Added

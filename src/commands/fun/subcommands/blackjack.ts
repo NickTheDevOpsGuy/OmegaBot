@@ -92,7 +92,12 @@ async function runBlackjack(interaction: ChatInputCommandInteraction): Promise<v
     const remaining = checkBlackjackCooldown(interaction.user.id);
     if (remaining > 0) {
       await interaction.editReply(
-        formatCooldownMessage(remaining, BLACKJACK_COOLDOWN_MS / 1000, "blackjack"),
+        formatCooldownMessage(
+          remaining,
+          BLACKJACK_COOLDOWN_MS / 1000,
+          "blackjack",
+          interaction.guild?.preferredLocale ?? null,
+        ),
       );
       return;
     }

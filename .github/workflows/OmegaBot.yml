@@ -44,6 +44,9 @@ jobs:
       - name: 📦 Install dependencies
         run: npm ci
 
+      - name: 📌 Discord.js version check
+        run: npm run check:discord
+
       - name: 🧪 Run Tests
         run: npm run test:run
 
