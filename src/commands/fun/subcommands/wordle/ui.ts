@@ -8,14 +8,14 @@ import { MAX_GUESSES } from "../wordleStore.js";
 
 type LetterStatus = "correct" | "present" | "absent" | "untried";
 
+/** One row of the grid: each cell is square + letter (e.g. 🟩H🟩E🟨L⬛L⬛O). */
 function formatGuess(guess: string, word: string): string {
   return guess
     .split("")
-    .map((_, i) => {
+    .map((letter, i) => {
       const result = getLetterResult(guess, word, i);
-      if (result === "correct") return "🟩";
-      if (result === "present") return "🟨";
-      return "⬛";
+      const square = result === "correct" ? "🟩" : result === "present" ? "🟨" : "⬛";
+      return `${square}${letter.toUpperCase()}`;
     })
     .join("");
 }
@@ -65,7 +65,7 @@ export function buildGameMessage(
   const lines = ["🟩 **Wordle** - Daily Puzzle", ""];
 
   for (const guess of guesses) {
-    lines.push(`${formatGuess(guess, word)} ${guess.toUpperCase()}`);
+    lines.push(formatGuess(guess, word));
   }
 
   for (let i = guesses.length; i < MAX_GUESSES; i++) {
