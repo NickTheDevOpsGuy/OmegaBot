@@ -3,11 +3,14 @@
 // Shared timeouts and limits used across commands.
 // Centralizing these makes tuning easier and keeps behavior consistent.
 
-/** 1 hour - game timeout for Blackjack, Hangman, Wordle, RPS challenge, Darts challenge */
+/** 1 hour - game timeout for Blackjack, Hangman, Wordle */
 export const GAME_TIMEOUT_MS = 3_600_000;
 
-/** 10 minutes - per-move timeout for Connect 4, Tic Tac Toe (PvP) */
-export const MOVE_TIMEOUT_MS = 600_000;
+/** 24 hours - PvP challenge timeout (RPS, Darts) so the other player has time to see and respond */
+export const CHALLENGE_TIMEOUT_MS = 24 * 60 * 60 * 1000;
+
+/** 30 minutes - per-move timeout for Connect 4, Tic Tac Toe (PvP); gives the other user time to play */
+export const MOVE_TIMEOUT_MS = 30 * 60 * 1000;
 
 /** 1 minute - warning before move timeout (Connect 4, Tic Tac Toe) */
 export const WARNING_BEFORE_MS = 60_000;

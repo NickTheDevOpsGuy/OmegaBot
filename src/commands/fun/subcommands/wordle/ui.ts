@@ -8,7 +8,7 @@ import { MAX_GUESSES } from "../wordleStore.js";
 
 type LetterStatus = "correct" | "present" | "absent" | "untried";
 
-/** One row of the grid: each cell is square + letter (e.g. 🟩H🟩E🟨L⬛L⬛O). */
+/** One row of the grid: each cell is square + letter, space-separated (e.g. 🟩H 🟩E 🟨L ⬛L ⬛O). */
 function formatGuess(guess: string, word: string): string {
   return guess
     .split("")
@@ -17,7 +17,7 @@ function formatGuess(guess: string, word: string): string {
       const square = result === "correct" ? "🟩" : result === "present" ? "🟨" : "⬛";
       return `${square}${letter.toUpperCase()}`;
     })
-    .join("");
+    .join(" ");
 }
 
 /** Build letter status from all guesses (best status wins: correct > present > absent). */
@@ -69,7 +69,7 @@ export function buildGameMessage(
   }
 
   for (let i = guesses.length; i < MAX_GUESSES; i++) {
-    lines.push("⬜⬜⬜⬜⬜");
+    lines.push("⬜ ⬜ ⬜ ⬜ ⬜");
   }
 
   lines.push("");
@@ -79,6 +79,19 @@ export function buildGameMessage(
 
   if (status === "won") {
     lines.push(`🎉 **Congratulations!** You got it in ${guesses.length}/${MAX_GUESSES}!`);
+    const shareGrid = guesses
+      .map((g) =>
+        g
+          .split("")
+          .map((_, i) => {
+            const r = getLetterResult(g, word, i);
+            return r === "correct" ? "🟩" : r === "present" ? "🟨" : "⬛";
+          })
+          .join(""),
+      )
+      .join("\n");
+    lines.push("");
+    lines.push(`**Share:** Wordle ${guesses.length}/${MAX_GUESSES}\n${shareGrid}`);
   } else if (status === "lost") {
     lines.push(`😢 **Game Over!** The word was **${word.toUpperCase()}**`);
   } else {

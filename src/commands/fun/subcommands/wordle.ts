@@ -97,6 +97,12 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
     components: [buildGuessButton(gameId)],
   });
 
+  if (!existingGame && interaction.channel && "send" in interaction.channel) {
+    interaction.channel
+      .send(`👀 ${interaction.user} is playing Wordle!`)
+      .catch((err) => logger.debug({ err }, "[wordle] tease send failed"));
+  }
+
   const collector = message.createMessageComponentCollector({
     componentType: ComponentType.Button,
     time: 3_600_000, // 1 hour
@@ -189,6 +195,14 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
             content: buildGameMessage(guesses, word, won ? "won" : "lost"),
             components: [buildGuessButton(gameId, true)],
           });
+
+          if (won && interaction.channel && "send" in interaction.channel) {
+            interaction.channel
+              .send(
+                `🎉 ${interaction.user} got today's Wordle in ${guesses.length} guess${guesses.length === 1 ? "" : "es"}!`,
+              )
+              .catch((err) => logger.debug({ err }, "[wordle] win tease send failed"));
+          }
           return;
         }
 

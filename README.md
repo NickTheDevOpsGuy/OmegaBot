@@ -52,7 +52,7 @@ Not intended to be:
 - **Graceful shutdown** – SIGINT/SIGTERM close Discord cleanly, then DB
 - **Rate limiting** – slots (3s), blackjack (5s), dice (2s), darts (2s), hangman (10s) cooldowns with i18n "Try again in Xs" (en/es/de)
 - **Daily game metrics** – per-command, per-user play counts; `command_usage_daily` for non-game commands
-- **Long game timeouts** – Blackjack, Hangman, Wordle, and RPS challenges: 1 hour; Connect 4 and Tic Tac Toe: 10 min per move (starter can extend)
+- **Long game timeouts** – Blackjack, Hangman, Wordle: 1 hour; RPS and Darts challenges: 24 hours; Connect 4 and Tic Tac Toe: 30 min per move (starter can extend)
 - **Extend time** – The person who started the game can add more time via an "Extend time" button (Blackjack, Connect 4, Tic Tac Toe, Wordle, RPS challenge)
 - **Timeout reminders** – Connect 4 and Tic Tac Toe warn 1 minute before move timeout
 - **Hangman** – Dropdown letter pick (A–M / N–Z), difficulty levels, words in SQLite, solve-time stats; admins (role in `HANGMAN_ADMIN_ROLE_ID`) can add words
@@ -127,10 +127,10 @@ docker compose up -d
 
 ## Project Structure
 
-- **Games**: `gameLogic.ts` (pure rules), `ui.ts` (Discord components), `*Store.ts` (database). Shared stats in `services/gameStats/`. Timeouts in `src/constants.ts`.
+- **Games**: `gameLogic.ts` (pure rules), `ui.ts` (Discord components), `*Store.ts` (database). Shared stats in `services/gameStats/`. Timeouts in `src/constants.ts`. Long game files are split into subfolders (e.g. `tictactoe/vsBot.ts`, `darts/stats.ts`, `slots/gameLogic.ts`, `hangman/play.ts`).
 - **Help**: Topic text in `src/commands/help/topics/*.ts`.
 - **Interactions**: Handlers in `src/services/discord/handlers/` (autocomplete, modals, buttons, context menus).
-- **Fun subcommands**: Grouped in `funSubcommands/gamesGroup.ts` and `utilityGroup.ts`.
+- **Fun command**: `fun.ts` (definition), `execute.ts` (routing + handler registry), `autocomplete.ts` (remind/quote IDs). Subcommands in `subcommands/`; groups in `funSubcommands/` (gamesGroup, utilityGroup, etc.).
 - **Analytics**: Game metrics in `services/fun/gameUsageMetrics.ts`; non-game in `services/analytics/commandUsageStore.ts`.
 - **Logging context**: Request IDs in `services/logging/requestContext.ts`.
 - **i18n**: `src/i18n/index.ts`; see [i18n docs](docs/i18n.md).

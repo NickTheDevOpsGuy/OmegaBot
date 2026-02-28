@@ -63,7 +63,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       "",
       renderBoard(board),
       "",
-      statusLine ?? "Pick a column. ⏱️ 10 min per move (starter can extend)",
+      statusLine ?? "Pick a column. ⏱️ 30 min per move (starter can extend)",
     ].join("\n");
 
   const msg = await interaction.editReply({
@@ -117,7 +117,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
           await safeEditReply(
             interaction,
             {
-              content: render("⏱️ **Time extended!** +10 min for this move."),
+              content: render("⏱️ **Time extended!** +30 min for this move."),
               components: buildControls({ gameId, board, disabled: false }),
             },
             "connect4.extend",
