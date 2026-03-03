@@ -11,15 +11,23 @@ import type { GuildMember } from "discord.js";
  * - easy to tweak copy later
  */
 export function buildWelcomeMessage(member: GuildMember): string {
-  const username = member.user.username;
+  const handle = member.displayName || member.user.username;
 
   return [
-    `👋 Welcome, ${username}!`,
+    `🎉 Welcome to OmegaBot, ${handle}`,
     ``,
-    `Here’s how to get started:`,
-    `📌 Check the server rules`,
-    `📖 Read the pinned messages`,
+    `We're glad you're here.`,
     ``,
-    `❓ If you're not sure where to go, just ask — someone will help you out.`,
+    `🚀 Getting Started`,
+    ``,
+    `📌 Take a quick look at the server rules`,
+    `📖 Check the pinned messages in each channel for important context`,
+    ``,
+    `💬 Need Help?`,
+    ``,
+    `Not sure where to jump in? Just ask.`,
+    `The community's friendly and someone will point you in the right direction.`,
+    ``,
+    `Let's build something cool together 🤖`,
   ].join("\n");
 }
