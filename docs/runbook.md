@@ -77,6 +77,12 @@ In CI (GitHub Actions), the e2e job runs only when `DISCORD_TOKEN` and `DISCORD_
 
 ---
 
+## Optional: Test Coverage
+
+Run `npm run test:coverage` occasionally to see coverage. See [Improvement ideas](improvements.md) if you want to add a coverage gate or badge.
+
+---
+
 ## Optional: Pre-push Checks
 
 - `git push` runs `precheck` (Prettier, ESLint, TypeScript, tests). To skip: put `[skip-precheck]` in the last commit message.

@@ -14,7 +14,11 @@ export async function autocomplete(interaction: AutocompleteInteraction): Promis
   const sub = interaction.options.getSubcommand(false);
   const focused = interaction.options.getFocused(true);
 
-  if (group === "remind" && sub === "cancel" && focused.name === "id") {
+  if (
+    group === "remind" &&
+    (sub === "cancel" || sub === "snooze") &&
+    focused.name === "id"
+  ) {
     const reminders = listPendingRemindersByUser(interaction.user.id);
     const needle = String(focused.value || "")
       .trim()

@@ -4,19 +4,15 @@
 //
 // Subcommands:
 // - /info user [@user]  - View user details, roles, permissions
-// - /info server        - View server statistics
+// - /info server        - View server statistics; optional invite link
 // - /info avatar [@user] - View user's avatar in multiple sizes
 //
-// This consolidates the old /userinfo, /serverinfo, and /avatar commands.
+// Handlers live in ./handlers/*.ts
 
-import {
-  SlashCommandBuilder,
-  EmbedBuilder,
-  PermissionFlagsBits,
-  type ChatInputCommandInteraction,
-  type GuildMember,
-  ChannelType,
-} from "discord.js";
+import { SlashCommandBuilder, type ChatInputCommandInteraction } from "discord.js";
+import { handleUserInfo } from "./handlers/userInfo.js";
+import { handleServerInfo } from "./handlers/serverInfo.js";
+import { handleAvatar } from "./handlers/avatar.js";
 
 export const data = new SlashCommandBuilder()
   .setName("info")
@@ -32,7 +28,12 @@ export const data = new SlashCommandBuilder()
     s
       .setName("server")
       .setDescription("View information about this server")
-      .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+      .addBooleanOption((o) => o.setName("private").setDescription("Only show to you"))
+      .addBooleanOption((o) =>
+        o
+          .setName("invite")
+          .setDescription("Create a 24h invite link for this channel (requires Create Invite)"),
+      ),
   )
   .addSubcommand((s) =>
     s
@@ -78,207 +79,4 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
   } else if (sub === "avatar") {
     await handleAvatar(interaction);
   }
-}
-
-/* -------------------------------------------------------------------------- */
-/* User Info                                                                   */
-/* -------------------------------------------------------------------------- */
-
-async function handleUserInfo(interaction: ChatInputCommandInteraction): Promise<void> {
-  const targetUser = interaction.options.getUser("user") ?? interaction.user;
-  const member = interaction.guild?.members.cache.get(targetUser.id) as
-    | GuildMember
-    | undefined;
-
-  const embed = new EmbedBuilder()
-    .setTitle(`${targetUser.username}`)
-    .setThumbnail(targetUser.displayAvatarURL({ size: 256 }))
-    .setColor(member?.displayColor ?? 0x5865f2);
-
-  // Basic info
-  embed.addFields({
-    name: "📋 User Info",
-    value: [
-      `**ID:** \`${targetUser.id}\``,
-      `**Created:** <t:${Math.floor(targetUser.createdTimestamp / 1000)}:R>`,
-      targetUser.bot ? "**Bot:** Yes" : null,
-    ]
-      .filter(Boolean)
-      .join("\n"),
-    inline: true,
-  });
-
-  // Server-specific info
-  if (member) {
-    const roles = member.roles.cache
-      .filter((r) => r.id !== interaction.guild?.id)
-      .sort((a, b) => b.position - a.position)
-      .map((r) => r.toString())
-      .slice(0, 10);
-
-    embed.addFields({
-      name: "🏠 Server Info",
-      value: [
-        `**Joined:** <t:${Math.floor((member.joinedTimestamp ?? 0) / 1000)}:R>`,
-        member.nickname ? `**Nickname:** ${member.nickname}` : null,
-        `**Roles:** ${roles.length > 0 ? roles.join(", ") : "None"}${member.roles.cache.size > 11 ? ` (+${member.roles.cache.size - 11} more)` : ""}`,
-      ]
-        .filter(Boolean)
-        .join("\n"),
-      inline: false,
-    });
-
-    // Permissions (key ones)
-    const keyPerms: string[] = [];
-    if (member.permissions.has(PermissionFlagsBits.Administrator)) {
-      keyPerms.push("Administrator");
-    } else {
-      if (member.permissions.has(PermissionFlagsBits.ManageGuild))
-        keyPerms.push("Manage Server");
-      if (member.permissions.has(PermissionFlagsBits.ManageMessages))
-        keyPerms.push("Manage Messages");
-      if (member.permissions.has(PermissionFlagsBits.BanMembers))
-        keyPerms.push("Ban Members");
-      if (member.permissions.has(PermissionFlagsBits.KickMembers))
-        keyPerms.push("Kick Members");
-    }
-
-    if (keyPerms.length > 0) {
-      embed.addFields({
-        name: "🔑 Key Permissions",
-        value: keyPerms.join(", "),
-        inline: false,
-      });
-    }
-  }
-
-  await interaction.editReply({ embeds: [embed] });
-}
-
-/* -------------------------------------------------------------------------- */
-/* Server Info                                                                 */
-/* -------------------------------------------------------------------------- */
-
-async function handleServerInfo(interaction: ChatInputCommandInteraction): Promise<void> {
-  const guild = interaction.guild;
-
-  if (!guild) {
-    await interaction.editReply("This command can only be used in a server.");
-    return;
-  }
-
-  // Fetch more data
-  await guild.members.fetch().catch((): null => null);
-
-  const textChannels = guild.channels.cache.filter(
-    (c): boolean => c.type === ChannelType.GuildText,
-  ).size;
-  const voiceChannels = guild.channels.cache.filter(
-    (c): boolean => c.type === ChannelType.GuildVoice,
-  ).size;
-  const categories = guild.channels.cache.filter(
-    (c): boolean => c.type === ChannelType.GuildCategory,
-  ).size;
-
-  const totalMembers = guild.memberCount;
-  const botCount = guild.members.cache.filter((m) => m.user.bot).size;
-  const humanCount = totalMembers - botCount;
-
-  const embed = new EmbedBuilder()
-    .setTitle(guild.name)
-    .setThumbnail(guild.iconURL({ size: 256 }))
-    .setColor(0x5865f2);
-
-  if (guild.description) {
-    embed.setDescription(guild.description);
-  }
-
-  embed.addFields(
-    {
-      name: "📋 General",
-      value: [
-        `**ID:** \`${guild.id}\``,
-        `**Owner:** <@${guild.ownerId}>`,
-        `**Created:** <t:${Math.floor(guild.createdTimestamp / 1000)}:R>`,
-        `**Boost Level:** ${guild.premiumTier} (${guild.premiumSubscriptionCount ?? 0} boosts)`,
-      ].join("\n"),
-      inline: true,
-    },
-    {
-      name: "👥 Members",
-      value: [
-        `**Total:** ${totalMembers.toLocaleString()}`,
-        `**Humans:** ${humanCount.toLocaleString()}`,
-        `**Bots:** ${botCount.toLocaleString()}`,
-      ].join("\n"),
-      inline: true,
-    },
-    {
-      name: "📁 Channels",
-      value: [
-        `**Text:** ${textChannels}`,
-        `**Voice:** ${voiceChannels}`,
-        `**Categories:** ${categories}`,
-      ].join("\n"),
-      inline: true,
-    },
-    {
-      name: "📊 Other",
-      value: [
-        `**Roles:** ${guild.roles.cache.size}`,
-        `**Emojis:** ${guild.emojis.cache.size}`,
-        `**Stickers:** ${guild.stickers.cache.size}`,
-      ].join("\n"),
-      inline: true,
-    },
-  );
-
-  if (guild.bannerURL()) {
-    embed.setImage(guild.bannerURL({ size: 512 }));
-  }
-
-  await interaction.editReply({ embeds: [embed] });
-}
-
-/* -------------------------------------------------------------------------- */
-/* Avatar                                                                      */
-/* -------------------------------------------------------------------------- */
-
-type AvatarFormat = "png" | "jpg" | "webp" | "gif";
-
-async function handleAvatar(interaction: ChatInputCommandInteraction): Promise<void> {
-  const targetUser = interaction.options.getUser("user") ?? interaction.user;
-  const member = interaction.guild?.members.cache.get(targetUser.id);
-  const size = interaction.options.getInteger("size") ?? 4096;
-  const format = interaction.options.getString("format") as AvatarFormat | null;
-
-  const urlOpts =
-    format === "gif"
-      ? { extension: "gif" as const, forceStatic: false }
-      : { extension: (format ?? undefined) as "png" | "jpg" | "webp" | undefined };
-  const globalAvatar = targetUser.displayAvatarURL({ ...urlOpts, size });
-  const serverAvatar = member?.displayAvatarURL({ ...urlOpts, size });
-
-  const embed = new EmbedBuilder()
-    .setTitle(`${targetUser.username}'s Avatar`)
-    .setImage(serverAvatar ?? globalAvatar)
-    .setColor(member?.displayColor ?? 0x5865f2);
-
-  // Add links for different sizes (same format if specified)
-  const sizes = [128, 256, 512, 1024, 4096] as const;
-  const links = sizes.map(
-    (s) => `[${s}](${targetUser.displayAvatarURL({ ...urlOpts, size: s })})`,
-  );
-  embed.setDescription(`**Sizes:** ${links.join(" • ")}`);
-
-  // If server avatar differs from global
-  if (serverAvatar && serverAvatar !== globalAvatar) {
-    embed.addFields({
-      name: "🌐 Global Avatar",
-      value: `[View](${globalAvatar})`,
-      inline: true,
-    });
-  }
-
-  await interaction.editReply({ embeds: [embed] });
 }

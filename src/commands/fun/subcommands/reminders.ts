@@ -1,80 +1,14 @@
 // src/commands/fun/subcommands/reminders.ts
 import { EmbedBuilder, type ChatInputCommandInteraction } from "discord.js";
-import { getDb } from "../../../services/database/db.js";
+import {
+  cancelAllByUser,
+  cancelReminder,
+  getReminderForUser,
+  insertReminder,
+  listPendingRemindersByUser,
+  updateDueAt,
+} from "../../../services/reminders/store.js";
 import { logger } from "../../../utils/logger.js";
-
-/* -------------------------------------------------------------------------- */
-/* Database Helpers                                                            */
-/* -------------------------------------------------------------------------- */
-
-type Reminder = {
-  id: number;
-  user_id: string;
-  channel_id: string;
-  message: string;
-  due_at: number;
-  created_at: number;
-  delivered_at: number | null;
-};
-
-function getUserReminders(userId: string): Reminder[] {
-  const db = getDb();
-  return db
-    .prepare(
-      `SELECT * FROM reminders 
-       WHERE user_id = ? AND delivered_at IS NULL 
-       ORDER BY due_at ASC 
-       LIMIT 25`,
-    )
-    .all(userId) as Reminder[];
-}
-
-function getReminder(reminderId: number, userId: string): Reminder | null {
-  const db = getDb();
-  return db
-    .prepare(`SELECT * FROM reminders WHERE id = ? AND user_id = ?`)
-    .get(reminderId, userId) as Reminder | null;
-}
-
-function cancelReminder(reminderId: number, userId: string): boolean {
-  const db = getDb();
-  // Mark as delivered so it won't be sent
-  const result = db
-    .prepare(
-      `UPDATE reminders SET delivered_at = ? WHERE id = ? AND user_id = ? AND delivered_at IS NULL`,
-    )
-    .run(Date.now(), reminderId, userId);
-  return result.changes > 0;
-}
-
-function cancelAllReminders(userId: string): number {
-  const db = getDb();
-  const result = db
-    .prepare(
-      `UPDATE reminders SET delivered_at = ? WHERE user_id = ? AND delivered_at IS NULL`,
-    )
-    .run(Date.now(), userId);
-  return result.changes;
-}
-
-function createReminder(data: {
-  userId: string;
-  channelId: string;
-  message: string;
-  dueAt: number;
-}): number {
-  const db = getDb();
-  const now = Date.now();
-
-  const result = db
-    .prepare(
-      `INSERT INTO reminders (user_id, channel_id, message, due_at, created_at)
-       VALUES (?, ?, ?, ?, ?)`,
-    )
-    .run(data.userId, data.channelId, data.message, data.dueAt, now);
-
-  return Number(result.lastInsertRowid);
-}
 
 /* -------------------------------------------------------------------------- */
 /* Helpers                                                                     */
@@ -94,30 +28,22 @@ function formatTimeUntil(dueAt: number): string {
 }
 
 function parseDuration(input: string): number | null {
-  // Support formats: 5m, 1h, 1d, 1h30m, etc.
   const regex = /^(?:(\d+)d)?(?:(\d+)h)?(?:(\d+)m)?$/i;
   const match = input.replace(/\s/g, "").match(regex);
 
   if (!match) {
-    // Try simple number (assume minutes)
     const num = parseInt(input, 10);
-    if (!isNaN(num) && num > 0) {
-      return num * 60 * 1000;
-    }
+    if (!isNaN(num) && num > 0) return num * 60 * 1000;
     return null;
   }
 
   const days = parseInt(match[1] || "0", 10);
   const hours = parseInt(match[2] || "0", 10);
   const minutes = parseInt(match[3] || "0", 10);
-
   if (days === 0 && hours === 0 && minutes === 0) return null;
 
   const ms = (days * 24 * 60 + hours * 60 + minutes) * 60 * 1000;
-
-  // Min 1 minute, max 30 days
   if (ms < 60 * 1000 || ms > 30 * 24 * 60 * 60 * 1000) return null;
-
   return ms;
 }
 
@@ -127,14 +53,12 @@ function parseDuration(input: string): number | null {
 
 export async function run(
   interaction: ChatInputCommandInteraction,
-  action: "set" | "list" | "cancel" | "clear",
+  action: "set" | "list" | "cancel" | "snooze" | "clear",
 ): Promise<void> {
   const userId = interaction.user.id;
 
-  // LIST
   if (action === "list") {
-    const reminders = getUserReminders(userId);
-
+    const reminders = listPendingRemindersByUser(userId, 25);
     if (reminders.length === 0) {
       await interaction.editReply("You don't have any pending reminders.");
       return;
@@ -152,18 +76,14 @@ export async function run(
       const preview = r.message.length > 50 ? r.message.slice(0, 47) + "..." : r.message;
       return `**#${r.id}** - ${preview}\n└ Due in **${timeLeft}** (<t:${Math.floor(r.due_at / 1000)}:R>)`;
     });
-
     embed.setDescription(lines.join("\n\n"));
-
     await interaction.editReply({ embeds: [embed] });
     return;
   }
 
-  // CANCEL
   if (action === "cancel") {
     const reminderId = interaction.options.getInteger("id", true);
-
-    const reminder = getReminder(reminderId, userId);
+    const reminder = getReminderForUser(reminderId, userId);
     if (!reminder) {
       await interaction.editReply(
         `Reminder #${reminderId} not found or doesn't belong to you.`,
@@ -182,9 +102,42 @@ export async function run(
     return;
   }
 
-  // CLEAR
+  if (action === "snooze") {
+    const reminderId = interaction.options.getInteger("id", true);
+    const timeInput = interaction.options.getString("time", true);
+
+    const reminder = getReminderForUser(reminderId, userId);
+    if (!reminder) {
+      await interaction.editReply(
+        `Reminder #${reminderId} not found or doesn't belong to you.`,
+      );
+      return;
+    }
+
+    const durationMs = parseDuration(timeInput);
+    if (!durationMs) {
+      await interaction.editReply(
+        "Invalid time format. Use formats like: `30m`, `1h`, `1d` (min 1 minute, max 30 days)",
+      );
+      return;
+    }
+
+    const newDueAt = Date.now() + durationMs;
+    const updated = updateDueAt(reminderId, userId, newDueAt);
+    if (!updated) {
+      await interaction.editReply(`Failed to snooze reminder #${reminderId}.`);
+      return;
+    }
+
+    const timestamp = Math.floor(newDueAt / 1000);
+    await interaction.editReply(
+      `✅ Reminder #${reminderId} snoozed! I'll remind you <t:${timestamp}:R> (<t:${timestamp}:f>).`,
+    );
+    return;
+  }
+
   if (action === "clear") {
-    const count = cancelAllReminders(userId);
+    const count = cancelAllByUser(userId);
     if (count === 0) {
       await interaction.editReply("You don't have any reminders to clear.");
     } else {
@@ -195,7 +148,7 @@ export async function run(
     return;
   }
 
-  // SET (default)
+  // SET
   const timeInput = interaction.options.getString("time", true);
   const message = interaction.options.getString("message", true);
 
@@ -208,13 +161,18 @@ export async function run(
   }
 
   const dueAt = Date.now() + durationMs;
+  const channelId = interaction.channelId;
+  if (!channelId) {
+    await interaction.editReply("Reminders must be set in a channel.");
+    return;
+  }
 
   try {
-    const id = createReminder({
+    const id = insertReminder({
       userId,
-      channelId: interaction.channelId,
+      channelId,
       message,
-      dueAt,
+      dueAtMs: dueAt,
     });
 
     const timestamp = Math.floor(dueAt / 1000);

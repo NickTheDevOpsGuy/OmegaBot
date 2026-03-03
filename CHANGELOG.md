@@ -11,11 +11,24 @@
 - **Post-register sanity check** – Verifies command count after registration
 - **Backup reminder** – Startup log when BACKUP_KEEP not set
 - **Discord.js version check** – `npm run check:discord` in CI
+- **Remind snooze** – `/fun remind snooze` to reschedule a reminder by ID and time (e.g. 30m, 1h); ID has autocomplete
+- **Info server invite** – `/info server` optional **invite** creates a 24h invite link for the channel (when bot has Create Invite)
 
 ### Changed
 
+- **Refactors** – Daily logic in `daily/dailyStore.ts`; stats in `stats/fetchers.ts` + `stats/buildEmbed.ts`; achievements in `definitions.ts` + `embedBuilder.ts`; starboard in `starboardStore.ts` + `starboardEmbed.ts`; Connect 4 PvP in `connect4/pvp.ts`
 - **Error messages** – Generic errors use i18n `t("error.generic")`
 - **E2E** – `npm run test:e2e`; GitHub Action job when secrets present
+- **CI** – Test coverage run + artifact upload; coverage threshold (lines/functions/statements 50%, branches 40%) in `vitest.config.ts`; Codecov upload for coverage badge
+- **Stricter typings** – `getRow<T>` / `getAll<T>` in `services/database/db.ts` for typed SQLite results; reminders, giveaway store, joke store, stats fetchers, and db recovery/PRAGMA use them or named types; `migrations.ts` uses named `MigrationRow`
+- **Docs** – Permissions reminder in `improvements.md` (keep new admin features behind roles/permissions); README coverage badge (Codecov)
+
+### Fixed / Refactored
+
+- **Reminders** – Single source of truth: `services/reminders/store.ts` has all DB ops (`cancelReminder`, `cancelAllByUser`, `updateDueAt`, `getReminderForUser`); fun command uses the store only (no duplicate DB logic).
+- **Info command** – Handlers split into `info/handlers/userInfo.ts`, `serverInfo.ts`, `avatar.ts`; main `info.ts` stays thin.
+- **Help** – New topic **info** (`/help topic:info`) for user/server/avatar; overview topic list updated.
+- **Error handling** – Button and modal handlers now send a user-facing message on failure ("Something went wrong…"); invite creation failure in `/info server` logged at debug; dev-notes document error-handling and logging patterns.
 
 ---
 

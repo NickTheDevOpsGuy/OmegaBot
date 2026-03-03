@@ -26,8 +26,11 @@ export async function handleAutocomplete(
     );
     try {
       await interaction.respond([]);
-    } catch {
-      // ignore
+    } catch (fallbackErr) {
+      logger.debug(
+        { err: fallbackErr, command: interaction.commandName },
+        "[interaction] autocomplete fallback respond([]) failed",
+      );
     }
   }
 }

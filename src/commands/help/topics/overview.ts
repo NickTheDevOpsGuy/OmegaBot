@@ -11,7 +11,7 @@ export function buildOverviewHelp(args: { isAdmin: boolean }): string {
     "",
     "**Topics**",
     "Use `/help topic:<topic>` for detailed help:",
-    `\`overview\`, \`fun\`, \`games\`, \`profile\`, \`quotes\`, \`summary\`, \`status\`${isAdmin ? ", `admin`" : ""}, \`commands\`, \`changelog\``,
+    `\`overview\`, \`fun\`, \`games\`, \`profile\`, \`quotes\`, \`info\`, \`summary\`, \`status\`${isAdmin ? ", `admin`" : ""}, \`commands\`, \`changelog\``,
     "",
     "**Quick Commands**",
     "`/fun daily`       Daily check-in for points",

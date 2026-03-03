@@ -8,5 +8,14 @@ export default defineConfig({
     clearMocks: true,
     restoreMocks: true,
     include: ["src/**/*.test.ts", "src/**/*.spec.ts"],
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "text-summary", "html", "lcov"],
+      outputDir: "coverage",
+      lines: 50,
+      functions: 50,
+      branches: 40,
+      statements: 50,
+    },
   },
 });

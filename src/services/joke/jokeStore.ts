@@ -1,5 +1,5 @@
 // src/services/joke/jokeStore.ts
-import { getDb } from "../database/db.js";
+import { getAll, getDb, getRow } from "../database/db.js";
 import { logger } from "../../utils/logger.js";
 
 export type JokeCategory =
@@ -86,7 +86,7 @@ export function getRandomJoke(category?: JokeCategory): Joke | null {
 
     query += " ORDER BY RANDOM() LIMIT 1";
 
-    const joke = db.prepare(query).get(...params) as Joke | undefined;
+    const joke = getRow<Joke>(db.prepare(query), ...params);
 
     if (joke) {
       // Increment usage count
@@ -126,7 +126,8 @@ export function getJoke(jokeId: number): Joke | null {
   const db = getDb();
 
   try {
-    return db.prepare("SELECT * FROM jokes WHERE id = ?").get(jokeId) as Joke | null;
+    const row = getRow<Joke>(db.prepare("SELECT * FROM jokes WHERE id = ?"), jokeId);
+    return row ?? null;
   } catch (error) {
     logger.error({ error, jokeId }, "Failed to get joke");
     throw error;
@@ -148,30 +149,32 @@ export function listJokes(category?: JokeCategory, limit: number = 50): Joke[] {
     query += " ORDER BY added_at DESC LIMIT ?";
     params.push(limit);
 
-    return db.prepare(query).all(...params) as Joke[];
+    return getAll<Joke>(db.prepare(query), ...params);
   } catch (error) {
     logger.error({ error, category, limit }, "Failed to list jokes");
     throw error;
   }
 }
 
+type JokeCountRow = { count: number };
+type JokeCategoryRow = { category: string; count: number };
+
 export function getJokeStats(): { total: number; byCategory: Record<string, number> } {
   const db = getDb();
 
   try {
-    const total = db.prepare("SELECT COUNT(*) as count FROM jokes").get() as {
-      count: number;
-    };
+    const totalRow = getRow<JokeCountRow>(db.prepare("SELECT COUNT(*) as count FROM jokes"));
+    const total = totalRow?.count ?? 0;
 
-    const byCategory = db
-      .prepare(
+    const byCategory = getAll<JokeCategoryRow>(
+      db.prepare(
         `
       SELECT category, COUNT(*) as count 
       FROM jokes 
       GROUP BY category
     `,
-      )
-      .all() as { category: string; count: number }[];
+      ),
+    );
 
     const categoryMap: Record<string, number> = {};
     byCategory.forEach((row) => {
@@ -179,7 +182,7 @@ export function getJokeStats(): { total: number; byCategory: Record<string, numb
     });
 
     return {
-      total: total.count,
+      total,
       byCategory: categoryMap,
     };
   } catch (error) {

@@ -20,13 +20,11 @@ export function runMigrations(database: Database.Database): void {
     )
   `);
 
-  const applied = new Set(
-    (
-      database.prepare("SELECT name FROM _schema_migrations").all() as Array<{
-        name: string;
-      }>
-    ).map((r) => r.name),
-  );
+  type MigrationRow = { name: string };
+  const rows = database
+    .prepare("SELECT name FROM _schema_migrations")
+    .all() as MigrationRow[];
+  const applied = new Set(rows.map((r) => r.name));
 
   const files = fs.readdirSync(MIGRATIONS_DIR);
   const toRun = files.filter((f) => f.endsWith(".sql") && f !== "schema.sql").sort();

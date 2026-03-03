@@ -3,7 +3,7 @@
 // Database operations for the giveaway system.
 // Handles CRUD for giveaways and entries.
 
-import { getDb } from "../../services/database/db.js";
+import { getAll, getDb, getRow } from "../../services/database/db.js";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                       */
@@ -101,47 +101,50 @@ export function setGiveawayMessage(giveawayId: number, messageId: string): void 
 export function getGiveaway(giveawayId: number): Giveaway | null {
   ensureGiveawayTables();
   const db = getDb();
-  const row = db.prepare(`SELECT * FROM giveaways WHERE id = ?`).get(giveawayId) as
-    | Giveaway
-    | undefined;
+  const row = getRow<Giveaway>(db.prepare(`SELECT * FROM giveaways WHERE id = ?`), giveawayId);
   return row ?? null;
 }
 
 export function getGiveawayByMessage(messageId: string): Giveaway | null {
   ensureGiveawayTables();
   const db = getDb();
-  return db
-    .prepare(`SELECT * FROM giveaways WHERE message_id = ?`)
-    .get(messageId) as Giveaway | null;
+  const row = getRow<Giveaway>(
+    db.prepare(`SELECT * FROM giveaways WHERE message_id = ?`),
+    messageId,
+  );
+  return row ?? null;
 }
 
 export function getActiveGiveaways(guildId: string): Giveaway[] {
   ensureGiveawayTables();
   const db = getDb();
-  return db
-    .prepare(
+  return getAll<Giveaway>(
+    db.prepare(
       `SELECT * FROM giveaways WHERE guild_id = ? AND ended = 0 ORDER BY ends_at ASC`,
-    )
-    .all(guildId) as Giveaway[];
+    ),
+    guildId,
+  );
 }
 
 export function getEndedGiveaways(guildId: string): Giveaway[] {
   ensureGiveawayTables();
   const db = getDb();
-  return db
-    .prepare(
+  return getAll<Giveaway>(
+    db.prepare(
       `SELECT * FROM giveaways WHERE guild_id = ? AND ended = 1 ORDER BY ends_at DESC LIMIT 25`,
-    )
-    .all(guildId) as Giveaway[];
+    ),
+    guildId,
+  );
 }
 
 export function getExpiredGiveaways(): Giveaway[] {
   ensureGiveawayTables();
   const db = getDb();
   const now = Date.now();
-  return db
-    .prepare(`SELECT * FROM giveaways WHERE ended = 0 AND ends_at <= ?`)
-    .all(now) as Giveaway[];
+  return getAll<Giveaway>(
+    db.prepare(`SELECT * FROM giveaways WHERE ended = 0 AND ends_at <= ?`),
+    now,
+  );
 }
 
 export function endGiveaway(giveawayId: number, winners: string[]): void {
@@ -180,22 +183,27 @@ export function removeEntry(giveawayId: number, userId: string): boolean {
   return result.changes > 0;
 }
 
+type GiveawayEntryRow = { user_id: string };
+type CountRow = { count: number };
+
 export function getEntries(giveawayId: number): string[] {
   ensureGiveawayTables();
   const db = getDb();
-  const rows = db
-    .prepare(`SELECT user_id FROM giveaway_entries WHERE giveaway_id = ?`)
-    .all(giveawayId) as Array<{ user_id: string }>;
+  const rows = getAll<GiveawayEntryRow>(
+    db.prepare(`SELECT user_id FROM giveaway_entries WHERE giveaway_id = ?`),
+    giveawayId,
+  );
   return rows.map((r) => r.user_id);
 }
 
 export function getEntryCount(giveawayId: number): number {
   ensureGiveawayTables();
   const db = getDb();
-  const row = db
-    .prepare(`SELECT COUNT(*) as count FROM giveaway_entries WHERE giveaway_id = ?`)
-    .get(giveawayId) as { count: number };
-  return row.count;
+  const row = getRow<CountRow>(
+    db.prepare(`SELECT COUNT(*) as count FROM giveaway_entries WHERE giveaway_id = ?`),
+    giveawayId,
+  );
+  return row?.count ?? 0;
 }
 
 /* -------------------------------------------------------------------------- */

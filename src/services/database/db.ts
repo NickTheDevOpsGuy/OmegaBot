@@ -45,11 +45,12 @@ function attemptDatabaseRecovery(dbPath: string): boolean {
       const recoveredDb = new Database(recoveredPath);
 
       // Get schema and data using pragma and manual copy
-      const tables = corruptedDb
-        .prepare(
+      type SchemaRow = { name: string; sql: string };
+      const tables = getAll<SchemaRow>(
+        corruptedDb.prepare(
           `SELECT name, sql FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'`,
-        )
-        .all() as Array<{ name: string; sql: string }>;
+        ),
+      );
 
       for (const table of tables) {
         try {
@@ -196,11 +197,12 @@ export function initDatabase(): Database.Database {
   // -------------------------------------------------------------------------
   // Inline migrations (legacy, keep init resilient across schema tweaks)
   // -------------------------------------------------------------------------
+  type TableInfoRow = { name: string };
   function ensureCoinFlipsSchema(): void {
     try {
-      const cols = db!.prepare("PRAGMA table_info(coin_flips)").all() as Array<{
-        name: string;
-      }>;
+      const cols = getAll<TableInfoRow>(
+        db!.prepare("PRAGMA table_info(coin_flips)"),
+      );
       const hasTimestamp = cols.some((c) => c.name === "timestamp");
       if (!hasTimestamp) {
         logger.warn("[db] migrating coin_flips: adding missing timestamp column");
@@ -221,9 +223,9 @@ export function initDatabase(): Database.Database {
 
   function ensureHangmanStatsSchema(): void {
     try {
-      const cols = db!.prepare("PRAGMA table_info(hangman_stats)").all() as Array<{
-        name: string;
-      }>;
+      const cols = getAll<TableInfoRow>(
+        db!.prepare("PRAGMA table_info(hangman_stats)"),
+      );
       if (!cols.some((c) => c.name === "best_time_seconds")) {
         logger.warn("[db] migrating hangman_stats: adding best_time_seconds");
         db!.exec("ALTER TABLE hangman_stats ADD COLUMN best_time_seconds INTEGER;");
@@ -249,6 +251,20 @@ export function getDb(): Database.Database {
     throw new Error("Database not initialized. Call initDatabase() first.");
   }
   return db;
+}
+
+/** Typed wrapper for better-sqlite3 .get(); centralizes the result cast. Accepts any prepared statement. */
+export function getRow<T>(stmt: unknown, ...args: unknown[]): T | undefined {
+  const s = stmt as { get: (...a: unknown[]) => unknown };
+  const row = s.get(...args);
+  return row as T | undefined;
+}
+
+/** Typed wrapper for better-sqlite3 .all(); centralizes the result cast. Accepts any prepared statement. */
+export function getAll<T>(stmt: unknown, ...args: unknown[]): T[] {
+  const s = stmt as { all: (...a: unknown[]) => unknown[] };
+  const rows = s.all(...args);
+  return rows as T[];
 }
 
 export function closeDatabase(): void {

@@ -148,7 +148,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       return;
     }
     if (group === "remind") {
-      await runReminders(interaction, sub as "set" | "list" | "cancel" | "clear");
+      await runReminders(interaction, sub as "set" | "list" | "cancel" | "snooze" | "clear");
       return;
     }
     if (group === "hangman") {

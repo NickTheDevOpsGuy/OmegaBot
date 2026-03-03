@@ -10,7 +10,6 @@ export type LeaderboardMode =
   | { kind: "user"; userId: string };
 
 type PerCommandCounts = Record<string, number>;
-type ByUserByCommand = Record<string, PerCommandCounts>;
 
 function toCount(v: unknown): number {
   return typeof v === "number" && Number.isFinite(v) ? v : 0;
@@ -94,26 +93,13 @@ export async function run(
   mode: LeaderboardMode,
 ): Promise<void> {
   const snapshot = await getFunUsageSnapshot();
-
-  // Defensive casts (JSON file can drift)
-  const totalsByUserRaw = (snapshot as unknown as { totalsByUser?: unknown })
-    .totalsByUser;
-  const totalsByCommandRaw = (snapshot as unknown as { totalsByCommand?: unknown })
-    .totalsByCommand;
-  const byUserByCommandRaw = (snapshot as unknown as { byUserByCommand?: unknown })
-    .byUserByCommand;
-
-  const totalsByUser = (totalsByUserRaw ?? {}) as Record<string, unknown>;
-  const totalsByCommand = (totalsByCommandRaw ?? {}) as Record<string, unknown>;
-  const byUserByCommand = (byUserByCommandRaw ?? {}) as ByUserByCommand;
+  const totalsByUser = snapshot.totalsByUser;
+  const totalsByCommand = snapshot.totalsByCommand;
+  const byUserByCommand = snapshot.byUserByCommand;
+  const updatedAt = snapshot.updatedAt ?? "unknown";
 
   const anyUserUsage = Object.keys(totalsByUser).length > 0;
-  const anyCommandUsage = (Object.values(totalsByCommand) as unknown[]).some(
-    (n) => toCount(n) > 0,
-  );
-
-  const updatedAt =
-    (snapshot as unknown as { updatedAt?: string }).updatedAt ?? "unknown";
+  const anyCommandUsage = Object.values(totalsByCommand).some((n) => toCount(n) > 0);
 
   const embed = new EmbedBuilder().setFooter({ text: `Updated: ${updatedAt}` });
 
@@ -130,7 +116,7 @@ export async function run(
 
   // ---- Top Commands view ----
   if (mode.kind === "commands") {
-    const items = (Object.entries(totalsByCommand) as Array<[string, unknown]>)
+    const items = Object.entries(totalsByCommand)
       .map(([cmd, raw]) => ({ cmd, count: toCount(raw) }))
       .filter((x) => x.count > 0)
       .sort((a, b) => b.count - a.count)
@@ -197,7 +183,7 @@ export async function run(
   }
 
   // ---- Top Users (default) ----
-  const userItems = (Object.entries(totalsByUser) as Array<[string, unknown]>)
+  const userItems = Object.entries(totalsByUser)
     .map(([userId, raw]) => ({ userId, total: toCount(raw) }))
     .filter((x) => x.total > 0)
     .sort((a, b) => b.total - a.total)

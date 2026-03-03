@@ -17,8 +17,9 @@ This document captures design decisions, conventions, and architectural guidelin
 
 | Area                               | Location                                                                        |
 | ---------------------------------- | ------------------------------------------------------------------------------- |
-| Help topic content                 | `src/commands/help/topics/*.ts`                                                 |
-| Interaction handlers               | `src/services/discord/handlers/` (autocomplete, modals, buttons, context menus) |
+| Database typed helpers             | `src/services/database/db.ts` (`getRow<T>`, `getAll<T>` for SQLite results)     |
+| Help topic content                | `src/commands/help/topics/*.ts`                                                |
+| Interaction handlers              | `src/services/discord/handlers/` (autocomplete, modals, buttons, context menus)  |
 | Fun subcommand groups              | `src/commands/fun/funSubcommands/gamesGroup.ts`, `utilityGroup.ts`              |
 | Giveaway button logic              | `src/commands/giveaway/buttonHandler.ts`                                        |
 | Hangman stats                      | `src/commands/fun/subcommands/hangman/hangmanStats.ts`                          |
@@ -94,6 +95,13 @@ Guidelines:
 - Avoid logging inside pure helpers
 - Prefer logging at command boundaries and service entry points
 - **Never log secrets**: Do not log `DISCORD_TOKEN`, API keys, or other env vars that contain secrets (e.g. `env.token`, `process.env.WEATHERAPI_KEY`). Log only that a feature is enabled/disabled (e.g. `weather: true`) or use redacted placeholders.
+
+### Error handling
+
+- **Slash commands**: The interaction handler (`interactionHandler.ts`) wraps every `command.execute()` in try/catch, logs with context (command, userId, interactionId), and sends the user an i18n generic message (plus optional Discord error hint). Commands can still catch internally and `editReply` with a specific message before rethrowing.
+- **Known Discord errors** (10062 unknown interaction, 40060 already acknowledged, 10008 unknown message) are logged at INFO via `interactionErrors.ts` so they don’t flood error level; the user may still see "interaction failed" in Discord.
+- **Buttons & modals**: Handlers in `handlers/buttons.ts` and `handlers/modals.ts` catch handler errors, log with `logger.error`, then try to reply or edit with "Something went wrong…" so the user gets feedback instead of a bare "interaction failed".
+- **Context menus**: Same pattern as slash commands (try/catch, known-error handling, user-facing fallback reply).
 
 ---
 

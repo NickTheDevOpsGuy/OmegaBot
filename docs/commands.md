@@ -1,6 +1,8 @@
 # OmegaBot Command Reference
 
-OmegaBot has **15 slash commands** organized into logical groups.
+This file is the **single source of truth** for command behavior; update it when adding or changing commands.
+
+OmegaBot has **16 slash commands** organized into logical groups.
 
 ---
 
@@ -64,12 +66,13 @@ Stats and leaderboard views are not rate limited.
 
 ### Reminders
 
-| Command              | Description                             |
-| -------------------- | --------------------------------------- |
-| `/fun remind set`    | Set a reminder (5m, 1h, 1d)             |
-| `/fun remind list`   | View pending reminders                  |
-| `/fun remind cancel` | Cancel a reminder (ID has autocomplete) |
-| `/fun remind clear`  | Cancel all reminders                    |
+| Command              | Description                                             |
+| -------------------- | ------------------------------------------------------- |
+| `/fun remind set`    | Set a reminder (5m, 1h, 1d)                             |
+| `/fun remind list`   | View pending reminders                                  |
+| `/fun remind snooze` | Reschedule a reminder (ID + time, e.g. 30m, 1h; ID has autocomplete) |
+| `/fun remind cancel` | Cancel a reminder (ID has autocomplete)                 |
+| `/fun remind clear`  | Cancel all reminders                                    |
 
 ### Quotes & Jokes
 
@@ -106,12 +109,12 @@ Manage your profile, AFK status, and timezone.
 
 ## `/info` - Information
 
-Get info about users or the server.
+Get info about users or the server. Use `/help topic:info` for details.
 
 | Command        | Description                                                   |
 | -------------- | ------------------------------------------------------------- |
 | `/info user`   | View user information                                         |
-| `/info server` | View server statistics                                        |
+| `/info server` | View server statistics; optional **invite** creates a 24h invite link for the channel |
 | `/info avatar` | View user's avatar (size: 128–4096, format: png/jpg/webp/gif) |
 
 ---

@@ -8,7 +8,7 @@ Suggestions to make OmegaBot more maintainable, observable, and operator-friendl
 
 - ~~**CI: run tests once explicitly**~~ – Done: workflow uses `npm run test:run`.
 - ~~**Pre-push: run tests**~~ – Done: `scripts/precheck.sh` runs `npm run test:run` (use `[skip-precheck]` to skip).
-- **Test coverage** – Run `npm run test:coverage` occasionally or in CI; add a coverage badge or gate only if you want to enforce a minimum.
+- ~~**Test coverage**~~ – Done: CI runs `npm run test:coverage`, uploads artifact and to Codecov (badge in README), and enforces thresholds in `vitest.config.ts` (lines/functions/statements 50%, branches 40%).
 - ~~**Dependency audits**~~ – Done: CI runs `npm audit --audit-level=high` (continue-on-error so PRs don’t block on audit).
 
 ---
@@ -26,14 +26,14 @@ Suggestions to make OmegaBot more maintainable, observable, and operator-friendl
 ## Documentation
 
 - ~~**FAQ for server admins**~~ – Done: `docs/faq-admins.md` (Hangman words, interaction failed, backup, optional features, health, rate limits).
-- **Keep commands.md as single source** – You already list commands and timeouts there; keep it updated when behavior changes.
+- ~~**Keep commands.md as single source**~~ – Done: `docs/commands.md` states this at the top; update it when adding or changing commands.
 
 ---
 
 ## Code / Maintenance
 
 - ~~**Resolve TODOs**~~ – Done: FAQ services.test.ts now has title/body empty tests; TODO removed.
-- **Stricter typings** – Where you use `as` or `any`, consider narrowing types or adding small interfaces to avoid regressions.
+- **Stricter typings** – Leaderboard, quote, reminders, giveaway store, joke store, stats fetchers, and db layer use `getRow`/`getAll` or named types; elsewhere, consider narrowing remaining `as`/`any` incrementally.
 - ~~**Shared constants**~~ – Done: `src/constants.ts` centralizes game timeouts, move timeouts, and rate limit cooldowns.
 
 ---
@@ -49,7 +49,7 @@ Suggestions to make OmegaBot more maintainable, observable, and operator-friendl
 ## Security
 
 - ~~**Secrets**~~ – Done: runbook and dev-notes say never log tokens/API keys; log only “feature enabled” or redacted placeholders.
-- **Permissions** – Commands that need Manage Server (e.g. giveaway, config) already restrict; keep new admin features behind roles or permissions.
+- ~~**Permissions**~~ – Reminder: Commands that need Manage Server (e.g. giveaway, config) already restrict. **When adding new admin or moderator features, keep them behind roles or permissions** (e.g. existing role IDs, or Discord permission checks).
 
 ---
 
@@ -59,4 +59,4 @@ Suggestions to make OmegaBot more maintainable, observable, and operator-friendl
 - **Major new systems** – Unless you need them (e.g. full moderation queue), avoid large new features that increase maintenance.
 - **UI overhaul** – Current embeds and buttons are clear; no need to change for its own sake.
 
-**Already done:** runbook, env summary at startup, pre-push tests, CI test:run, npm audit in CI, backup reminder, FAQ for admins, TODO resolved, rate limit in cooldown replies, secrets-not-in-logs doc, automated backup script, metrics/health HTTP endpoint, actionable error messages, integration tests (dice/slots/ping/health), i18n for rate limits, health optional API reachability, command usage analytics, summary fallback, Discord.js version check. The rest can be done incrementally.
+**Already done:** runbook, env summary at startup, pre-push tests, CI test:run, CI test:coverage + artifact + Codecov + threshold, npm audit in CI, backup reminder, FAQ for admins, TODO resolved, rate limit in cooldown replies, secrets-not-in-logs doc, automated backup script, metrics/health HTTP endpoint, actionable error messages, integration tests (dice/slots/ping/health), i18n for rate limits, health optional API reachability, command usage analytics, summary fallback, Discord.js version check, commands.md single-source note, leaderboard/quote/reminders/giveaway/joke/stats-fetchers/db typings (getRow/getAll), permissions reminder. The rest can be done incrementally.

@@ -18,6 +18,8 @@ type QuoteRow = {
   context: string | null;
 };
 
+type CountResult = { count: number };
+
 function getRandomQuote(guildId: string, authorId?: string): QuoteRow | null {
   ensureQuoteTable();
   const db = getDb();
@@ -81,14 +83,14 @@ function countQuotes(guildId: string, authorId?: string): number {
       .prepare(
         `SELECT COUNT(*) as count FROM quotes WHERE guild_id = ? AND author_id = ?`,
       )
-      .get(guildId, authorId) as { count: number };
-    return row.count;
+      .get(guildId, authorId) as CountResult | undefined;
+    return row?.count ?? 0;
   }
 
   const row = db
     .prepare(`SELECT COUNT(*) as count FROM quotes WHERE guild_id = ?`)
-    .get(guildId) as { count: number };
-  return row.count;
+    .get(guildId) as CountResult | undefined;
+  return row?.count ?? 0;
 }
 
 function searchQuotes(guildId: string, query: string, limit = 10): QuoteRow[] {

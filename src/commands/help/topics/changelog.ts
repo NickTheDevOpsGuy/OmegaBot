@@ -2,6 +2,10 @@ export function buildChangelogHelp(): string {
   return [
     "**OmegaBot Changelog**",
     "",
+    "**3.9.8** (2026-02-26)",
+    "• Refactors: daily, stats, achievements, starboard, Connect 4 PvP split into smaller modules",
+    "• /fun remind snooze – reschedule a reminder (ID + time); /info server invite – optional 24h invite link",
+    "",
     "**3.9.7** (2026-02-12)",
     "• Quote list: limit 5/10/25 (default 25); Quote search: limit option",
     "• Quote context menu: bot messages allowed; autocomplete in DMs: friendly message",

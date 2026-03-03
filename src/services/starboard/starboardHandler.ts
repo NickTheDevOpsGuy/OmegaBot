@@ -1,19 +1,9 @@
 // src/services/starboard/starboardHandler.ts
 //
 // Handles ⭐ reactions to post highlighted messages to a starboard channel.
-//
-// How it works:
-// 1. Listens for messageReactionAdd/Remove events
-// 2. Counts ⭐ reactions (excluding message author)
-// 3. When threshold is met, posts to configured starboard channel
-// 4. Updates existing starboard posts when count changes
-// 5. Removes from starboard if count drops below threshold
-//
-// Requires guild config with starboardChannelId and starboardThreshold.
-// Bot needs GuildMessageReactions and GuildMessages intents.
+// Store: starboardStore.ts; Embed: starboardEmbed.ts.
 
 import {
-  EmbedBuilder,
   type Client,
   type MessageReaction,
   type User,
@@ -22,127 +12,14 @@ import {
   type PartialUser,
 } from "discord.js";
 import { logger } from "../../utils/logger.js";
-import { getDb } from "../database/db.js";
 import { getGuildConfig } from "../config/guildConfigStore.js";
-
-/* -------------------------------------------------------------------------- */
-/* Database                                                                    */
-/* -------------------------------------------------------------------------- */
-
-function ensureStarboardTable(): void {
-  const db = getDb();
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS starboard_posts (
-      original_message_id TEXT PRIMARY KEY,
-      starboard_message_id TEXT NOT NULL,
-      guild_id TEXT NOT NULL,
-      channel_id TEXT NOT NULL,
-      star_count INTEGER NOT NULL DEFAULT 0,
-      created_at INTEGER NOT NULL
-    );
-
-    CREATE INDEX IF NOT EXISTS idx_starboard_guild ON starboard_posts(guild_id);
-  `);
-}
-
-type StarboardPost = {
-  original_message_id: string;
-  starboard_message_id: string;
-  guild_id: string;
-  channel_id: string;
-  star_count: number;
-};
-
-function getStarboardPost(messageId: string): StarboardPost | null {
-  ensureStarboardTable();
-  const db = getDb();
-  return db
-    .prepare(`SELECT * FROM starboard_posts WHERE original_message_id = ?`)
-    .get(messageId) as StarboardPost | null;
-}
-
-function saveStarboardPost(data: {
-  originalMessageId: string;
-  starboardMessageId: string;
-  guildId: string;
-  channelId: string;
-  starCount: number;
-}): void {
-  ensureStarboardTable();
-  const db = getDb();
-  const now = Date.now();
-
-  db.prepare(
-    `INSERT OR REPLACE INTO starboard_posts 
-     (original_message_id, starboard_message_id, guild_id, channel_id, star_count, created_at)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-  ).run(
-    data.originalMessageId,
-    data.starboardMessageId,
-    data.guildId,
-    data.channelId,
-    data.starCount,
-    now,
-  );
-}
-
-function updateStarCount(messageId: string, starCount: number): void {
-  ensureStarboardTable();
-  const db = getDb();
-  db.prepare(
-    `UPDATE starboard_posts SET star_count = ? WHERE original_message_id = ?`,
-  ).run(starCount, messageId);
-}
-
-function deleteStarboardPost(messageId: string): void {
-  ensureStarboardTable();
-  const db = getDb();
-  db.prepare(`DELETE FROM starboard_posts WHERE original_message_id = ?`).run(messageId);
-}
-
-/* -------------------------------------------------------------------------- */
-/* Embed Builder                                                               */
-/* -------------------------------------------------------------------------- */
-
-function buildStarboardEmbed(reaction: MessageReaction, starCount: number): EmbedBuilder {
-  const message = reaction.message;
-  const author = message.author;
-
-  const embed = new EmbedBuilder()
-    .setColor(0xffd700)
-    .setAuthor({
-      name: author?.username ?? "Unknown",
-      iconURL: author?.displayAvatarURL(),
-    })
-    .setTimestamp(message.createdAt)
-    .setFooter({ text: `⭐ ${starCount} | #${(message.channel as TextChannel).name}` });
-
-  // Add message content
-  if (message.content) {
-    embed.setDescription(message.content.slice(0, 4096));
-  }
-
-  // Add first image attachment
-  const imageAttachment = message.attachments.find((a) =>
-    a.contentType?.startsWith("image/"),
-  );
-  if (imageAttachment) {
-    embed.setImage(imageAttachment.url);
-  }
-
-  // Add link to original
-  embed.addFields({
-    name: "Original",
-    value: `[Jump to message](${message.url})`,
-    inline: false,
-  });
-
-  return embed;
-}
-
-/* -------------------------------------------------------------------------- */
-/* Handler                                                                     */
-/* -------------------------------------------------------------------------- */
+import {
+  getStarboardPost,
+  saveStarboardPost,
+  updateStarCount,
+  deleteStarboardPost,
+} from "./starboardStore.js";
+import { buildStarboardEmbed } from "./starboardEmbed.js";
 
 export async function handleStarboardReaction(
   reaction: MessageReaction | PartialMessageReaction,
@@ -150,7 +27,6 @@ export async function handleStarboardReaction(
   _added: boolean,
 ): Promise<void> {
   try {
-    // Fetch partial reaction if needed
     if (reaction.partial) {
       try {
         await reaction.fetch();
@@ -160,15 +36,12 @@ export async function handleStarboardReaction(
       }
     }
 
-    // Only handle star emoji
     if (reaction.emoji.name !== "⭐") return;
 
     const message = reaction.message;
 
-    // Must be in a guild
     if (!message.guild || !message.guildId) return;
 
-    // Fetch the message if partial
     if (message.partial) {
       try {
         await message.fetch();
@@ -178,24 +51,19 @@ export async function handleStarboardReaction(
       }
     }
 
-    // Don't star bot messages
     if (message.author?.bot) return;
 
-    // Get guild config
     const config = getGuildConfig(message.guildId);
     if (!config.starboardChannelId) return;
 
     const threshold = config.starboardThreshold ?? 3;
     const starboardChannelId = config.starboardChannelId;
 
-    // Don't star messages from the starboard channel itself
     if (message.channelId === starboardChannelId) return;
 
-    // Count stars (excluding the message author)
     const starReaction = message.reactions.cache.get("⭐");
     let starCount = starReaction?.count ?? 0;
 
-    // If the author starred their own message, don't count it
     if (starReaction && message.author) {
       const users = await starReaction.users.fetch();
       if (users.has(message.author.id)) {
@@ -203,10 +71,8 @@ export async function handleStarboardReaction(
       }
     }
 
-    // Get or create starboard post
     const existingPost = getStarboardPost(message.id);
 
-    // Get the starboard channel
     const starboardChannel = await message.guild.channels
       .fetch(starboardChannelId)
       .catch((): null => null);
@@ -222,9 +88,7 @@ export async function handleStarboardReaction(
     const textChannel = starboardChannel as TextChannel;
 
     if (existingPost) {
-      // Update existing post
       if (starCount < threshold) {
-        // Remove from starboard if below threshold
         try {
           const starboardMessage = await textChannel.messages
             .fetch(existingPost.starboard_message_id)
@@ -241,7 +105,6 @@ export async function handleStarboardReaction(
           logger.debug({ err }, "[starboard] failed to delete starboard message");
         }
       } else {
-        // Update star count
         try {
           const starboardMessage = await textChannel.messages
             .fetch(existingPost.starboard_message_id)
@@ -257,7 +120,6 @@ export async function handleStarboardReaction(
         }
       }
     } else if (starCount >= threshold) {
-      // Create new starboard post
       try {
         const embed = buildStarboardEmbed(reaction as MessageReaction, starCount);
         const starboardMessage = await textChannel.send({
@@ -285,10 +147,6 @@ export async function handleStarboardReaction(
     logger.error({ err }, "[starboard] handler error");
   }
 }
-
-/* -------------------------------------------------------------------------- */
-/* Setup                                                                       */
-/* -------------------------------------------------------------------------- */
 
 export function setupStarboardListeners(client: Client): void {
   client.on("messageReactionAdd", async (reaction, user) => {

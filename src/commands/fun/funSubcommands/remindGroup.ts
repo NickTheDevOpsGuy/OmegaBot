@@ -37,5 +37,23 @@ export function buildRemindGroup(g: SlashCommandSubcommandGroupBuilder) {
             .setAutocomplete(true),
         ),
     )
+    .addSubcommand((s) =>
+      s
+        .setName("snooze")
+        .setDescription("Reschedule a reminder (e.g. 30m, 1h)")
+        .addIntegerOption((o) =>
+          o
+            .setName("id")
+            .setDescription("Reminder ID to snooze")
+            .setRequired(true)
+            .setAutocomplete(true),
+        )
+        .addStringOption((o) =>
+          o
+            .setName("time")
+            .setDescription("When to remind (e.g. 30m, 1h, 1d)")
+            .setRequired(true),
+        ),
+    )
     .addSubcommand((s) => s.setName("clear").setDescription("Cancel all your reminders"));
 }

@@ -5,6 +5,7 @@
 <p align="center">
   <img src="https://img.shields.io/github/last-commit/NickTheDevOpsGuy/OmegaBot">
   <img src="https://img.shields.io/github/license/NickTheDevOpsGuy/OmegaBot">
+  <img src="https://codecov.io/gh/NickTheDevOpsGuy/OmegaBot/graph/badge.svg" alt="codecov">
   <img src="https://img.shields.io/badge/node-18+-blue">
   <img src="https://img.shields.io/badge/discord.js-v14-blue">
   <img src="https://img.shields.io/badge/made%20with-TypeScript-blue">
@@ -34,7 +35,7 @@ Not intended to be:
 
 ## Features at a Glance
 
-- 15+ slash commands with logical grouping; 4 context menus (View Profile, View Achievements, Summarize, Quote)
+- 16 slash commands with logical grouping; 4 context menus (View Profile, View Achievements, Summarize, Quote)
 - 14 interactive games
 - 19 unlockable achievements
 - Giveaway system with automatic winners
@@ -44,7 +45,7 @@ Not intended to be:
 - Vercel and Supabase status checks (`/status vercel`, `/status supabase`)
 - SQLite persistence for all data
 - **Resilient interaction handling** – Defer early before heavy work, try/catch with fallback defer, safe reply wrappers, retry on transient API errors (including Discord 429 rate limits); logs include `interactionFailedRecovery: true` when recovering (reduces "failed to complete" occurrences)
-- **Autocomplete support** – Timezone, FAQ keys/tags, giveaway end/reroll IDs, remind cancel, quote remove; responds with `[]` by default when no handler
+- **Autocomplete support** – Timezone, FAQ keys/tags, giveaway end/reroll IDs, remind cancel/snooze (IDs), quote remove; responds with `[]` by default when no handler
 - **Admin health dashboard** – `/admin health` shows database status, env vars, interaction errors, and optional API reachability (Weather, GitHub)
 - **HTTP health & metrics** – Optional `METRICS_PORT` enables `/health` (200/503 with Discord status), `/metrics` (Prometheus; includes rate-limit hit counts), and `/dashboard` (web admin UI)
 - **Database integrity check** – `npm run db:check` to verify SQLite health
@@ -57,6 +58,8 @@ Not intended to be:
 - **Timeout reminders** – Connect 4 and Tic Tac Toe warn 1 minute before move timeout
 - **Hangman** – Dropdown letter pick (A–M / N–Z), difficulty levels, words in SQLite, solve-time stats; admins (role in `HANGMAN_ADMIN_ROLE_ID`) can add words
 - **Changelog in Discord** – `/help topic:changelog` for recent release notes
+- **Reminders** – `/fun remind set`, list, **snooze** (reschedule by ID + time), cancel, clear; IDs have autocomplete for cancel/snooze
+- **Info server invite** – `/info server` optional **invite** creates a 24h invite link for the channel (when bot has Create Invite)
 - **Ephemeral by default** – Profile, info, achievements, help, FAQ, and playback reply privately unless you pass `private: false`
 - **Quote context menu** – Right-click any message → Quote; supports embeds and bot messages; `/help topic:quotes` for details
 - **i18n** – Rate-limit and error messages use guild locale (en/es/de); see [i18n docs](docs/i18n.md)
@@ -115,7 +118,7 @@ docker compose up -d
 
 ## Tech Stack
 
-- **Runtime**: Node.js 18+
+- **Runtime**: Node.js 18+ (20 recommended; see `.nvmrc` – use `nvm use` or `fnm use` if you use a version manager)
 - **Language**: TypeScript 5.x
 - **Discord**: discord.js v14
 - **Database**: SQLite (better-sqlite3)
@@ -127,10 +130,12 @@ docker compose up -d
 
 ## Project Structure
 
-- **Games**: `gameLogic.ts` (pure rules), `ui.ts` (Discord components), `*Store.ts` (database). Shared stats in `services/gameStats/`. Timeouts in `src/constants.ts`. Long game files are split into subfolders (e.g. `tictactoe/vsBot.ts`, `darts/stats.ts`, `slots/gameLogic.ts`, `hangman/play.ts`).
+- **Games**: `gameLogic.ts` (pure rules), `ui.ts` (Discord components), `*Store.ts` (database). Shared stats in `services/gameStats/`. Timeouts in `src/constants.ts`. Long flows split into subfolders: `tictactoe/vsBot.ts`, `vsPlayer.ts`; `darts/stats.ts`, `solo.ts`, `challenge.ts`; `slots/gameLogic.ts`, `slotsStore.ts`; `hangman/play.ts`, `statsDisplay.ts`, `words.ts`; `connect4/pvp.ts`. **Daily** in `daily/dailyStore.ts`. **Stats** in `stats/fetchers.ts`, `stats/buildEmbed.ts`. **Achievements** in `achievements/definitions.ts`, `embedBuilder.ts`. **Starboard** in `services/starboard/starboardStore.ts`, `starboardEmbed.ts`.
+- **Database**: SQLite via `services/database/db.ts`; `getRow<T>()` and `getAll<T>()` for typed query results. Giveaway store, joke store, reminders, stats fetchers, and quote use these helpers.
 - **Help**: Topic text in `src/commands/help/topics/*.ts`.
 - **Interactions**: Handlers in `src/services/discord/handlers/` (autocomplete, modals, buttons, context menus).
-- **Fun command**: `fun.ts` (definition), `execute.ts` (routing + handler registry), `autocomplete.ts` (remind/quote IDs). Subcommands in `subcommands/`; groups in `funSubcommands/` (gamesGroup, utilityGroup, etc.).
+- **Fun command**: `fun.ts` (definition), `execute.ts` (routing + handler registry), `autocomplete.ts` (remind/quote IDs). Subcommands in `subcommands/`; groups in `funSubcommands/` (gamesGroup, utilityGroup, etc.). **Reminders**: single source in `services/reminders/store.ts`; fun command uses it (no duplicate DB logic).
+- **Info command**: `info.ts` (definition); handlers in `info/handlers/` (userInfo, serverInfo, avatar).
 - **Analytics**: Game metrics in `services/fun/gameUsageMetrics.ts`; non-game in `services/analytics/commandUsageStore.ts`.
 - **Logging context**: Request IDs in `services/logging/requestContext.ts`.
 - **i18n**: `src/i18n/index.ts`; see [i18n docs](docs/i18n.md).
@@ -194,7 +199,9 @@ docker compose up -d
 │   ├── commands
 │   │   ├── achievements
 │   │   │   ├── achievements.test.ts
-│   │   │   └── achievements.ts
+│   │   │   ├── achievements.ts
+│   │   │   ├── definitions.ts
+│   │   │   └── embedBuilder.ts
 │   │   ├── admin
 │   │   │   ├── subcommands
 │   │   │   │   ├── ban.ts
@@ -215,13 +222,28 @@ docker compose up -d
 │   │   │   │   └── remove.ts
 │   │   │   └── faq.ts
 │   │   ├── fun
+│   │   │   ├── autocomplete.ts
+│   │   │   ├── execute.ts
 │   │   │   ├── subcommands
 │   │   │   │   ├── blackjack
 │   │   │   │   │   ├── gameLogic.ts
 │   │   │   │   │   └── ui.ts
 │   │   │   │   ├── connect4
 │   │   │   │   │   ├── gameLogic.ts
+│   │   │   │   │   ├── pvp.ts
 │   │   │   │   │   └── ui.ts
+│   │   │   │   ├── darts
+│   │   │   │   │   ├── challenge.ts
+│   │   │   │   │   ├── gameLogic.ts
+│   │   │   │   │   ├── solo.ts
+│   │   │   │   │   ├── stats.ts
+│   │   │   │   │   └── ui.ts
+│   │   │   │   ├── hangman
+│   │   │   │   │   ├── hangmanStats.ts
+│   │   │   │   │   ├── play.ts
+│   │   │   │   │   ├── statsDisplay.ts
+│   │   │   │   │   ├── ui.ts
+│   │   │   │   │   ├── words.ts
 │   │   │   │   ├── joke
 │   │   │   │   │   ├── add.ts
 │   │   │   │   │   ├── index.ts
@@ -229,11 +251,18 @@ docker compose up -d
 │   │   │   │   │   ├── random.ts
 │   │   │   │   │   └── remove.ts
 │   │   │   │   ├── rps
+│   │   │   │   │   ├── challenge.ts
 │   │   │   │   │   ├── gameLogic.ts
+│   │   │   │   │   ├── stats.ts
 │   │   │   │   │   └── ui.ts
+│   │   │   │   ├── slots
+│   │   │   │   │   ├── gameLogic.ts
+│   │   │   │   │   └── slotsStore.ts
 │   │   │   │   ├── tictactoe
 │   │   │   │   │   ├── gameLogic.ts
-│   │   │   │   │   └── ui.ts
+│   │   │   │   │   ├── ui.ts
+│   │   │   │   │   ├── vsBot.ts
+│   │   │   │   │   └── vsPlayer.ts
 │   │   │   │   ├── trivia
 │   │   │   │   │   └── questions.ts
 │   │   │   │   ├── wordle
@@ -245,21 +274,16 @@ docker compose up -d
 │   │   │   │   ├── coinflipstats.ts
 │   │   │   │   ├── connect4.ts
 │   │   │   │   ├── connect4Store.ts
+│   │   │   │   ├── daily
+│   │   │   │   │   └── dailyStore.ts
 │   │   │   │   ├── daily.test.ts
 │   │   │   │   ├── daily.ts
-│   │   │   │   ├── darts
-│   │   │   │   │   ├── gameLogic.ts
-│   │   │   │   │   └── ui.ts
 │   │   │   │   ├── darts.ts
 │   │   │   │   ├── dartsStore.ts
 │   │   │   │   ├── dice.integration.test.ts
 │   │   │   │   ├── dice.ts
-│   │   │   │   ├── slots.integration.test.ts
 │   │   │   │   ├── eightball.ts
 │   │   │   │   ├── fact.ts
-│   │   │   │   ├── hangman
-│   │   │   │   │   ├── hangmanStats.ts
-│   │   │   │   │   └── ui.ts
 │   │   │   │   ├── hangman.test.ts
 │   │   │   │   ├── hangman.ts
 │   │   │   │   ├── leaderboard.ts
@@ -269,8 +293,12 @@ docker compose up -d
 │   │   │   │   ├── rps.test.ts
 │   │   │   │   ├── rps.ts
 │   │   │   │   ├── rpsStore.ts
+│   │   │   │   ├── slots.integration.test.ts
 │   │   │   │   ├── slots.test.ts
 │   │   │   │   ├── slots.ts
+│   │   │   │   ├── stats
+│   │   │   │   │   ├── buildEmbed.ts
+│   │   │   │   │   └── fetchers.ts
 │   │   │   │   ├── stats.ts
 │   │   │   │   ├── tictactoe.ts
 │   │   │   │   ├── tictactoeStore.test.ts
@@ -322,6 +350,10 @@ docker compose up -d
 │   │   ├── history
 │   │   │   └── history.ts
 │   │   ├── info
+│   │   │   ├── handlers
+│   │   │   │   ├── avatar.ts
+│   │   │   │   ├── serverInfo.ts
+│   │   │   │   └── userInfo.ts
 │   │   │   └── info.ts
 │   │   ├── ping
 │   │   │   ├── ping.integration.test.ts
@@ -355,6 +387,11 @@ docker compose up -d
 │   ├── i18n
 │   │   └── index.ts
 │   ├── services
+│   │   ├── starboard
+│   │   │   ├── starboardEmbed.ts
+│   │   │   ├── starboardHandler.ts
+│   │   │   ├── starboardStore.test.ts
+│   │   │   └── starboardStore.ts
 │   │   ├── analytics
 │   │   │   └── commandUsageStore.ts
 │   │   ├── ai
@@ -433,9 +470,6 @@ docker compose up -d
 │   │   │   └── store.ts
 │   │   ├── roles
 │   │   │   └── autoRoleHandler.ts
-│   │   ├── starboard
-│   │   │   ├── starboardHandler.ts
-│   │   │   └── starboardStore.test.ts
 │   │   ├── statuspage
 │   │   │   └── statuspageApi.ts
 │   │   ├── summary
