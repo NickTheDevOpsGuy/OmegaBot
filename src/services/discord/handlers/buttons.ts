@@ -23,7 +23,10 @@ async function replyOrEditButton(
       });
       return;
     }
-    logger.warn({ err, customId: interaction.customId }, "[interaction] failed to send error reply");
+    logger.warn(
+      { err, customId: interaction.customId },
+      "[interaction] failed to send error reply",
+    );
   }
 }
 
@@ -36,7 +39,10 @@ export async function handleButton(interaction: ButtonInteraction): Promise<void
         { err, customId: interaction.customId, interactionId: interaction.id },
         "[interaction] giveaway button failed",
       );
-      await replyOrEditButton(interaction, "Something went wrong with that action. Try again later.");
+      await replyOrEditButton(
+        interaction,
+        "Something went wrong with that action. Try again later.",
+      );
     }
   }
   // Other button interactions are handled by their respective collectors

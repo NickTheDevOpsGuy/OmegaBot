@@ -18,8 +18,8 @@ This document captures design decisions, conventions, and architectural guidelin
 | Area                               | Location                                                                        |
 | ---------------------------------- | ------------------------------------------------------------------------------- |
 | Database typed helpers             | `src/services/database/db.ts` (`getRow<T>`, `getAll<T>` for SQLite results)     |
-| Help topic content                | `src/commands/help/topics/*.ts`                                                |
-| Interaction handlers              | `src/services/discord/handlers/` (autocomplete, modals, buttons, context menus)  |
+| Help topic content                 | `src/commands/help/topics/*.ts`                                                 |
+| Interaction handlers               | `src/services/discord/handlers/` (autocomplete, modals, buttons, context menus) |
 | Fun subcommand groups              | `src/commands/fun/funSubcommands/gamesGroup.ts`, `utilityGroup.ts`              |
 | Giveaway button logic              | `src/commands/giveaway/buttonHandler.ts`                                        |
 | Hangman stats                      | `src/commands/fun/subcommands/hangman/hangmanStats.ts`                          |

@@ -90,9 +90,7 @@ export function fetchDueReminders(nowMs: number): ReminderRow[] {
 }
 
 export function markDelivered(id: number): void {
-  db()
-    .prepare(`UPDATE reminders SET delivered_at = ? WHERE id = ?`)
-    .run(Date.now(), id);
+  db().prepare(`UPDATE reminders SET delivered_at = ? WHERE id = ?`).run(Date.now(), id);
 }
 
 /** Mark a reminder as delivered (cancel) if it belongs to the user. Returns true if updated. */
@@ -108,7 +106,9 @@ export function cancelReminder(id: number, userId: string): boolean {
 /** Mark all pending reminders for a user as delivered. Returns count. */
 export function cancelAllByUser(userId: string): number {
   const result = db()
-    .prepare(`UPDATE reminders SET delivered_at = ? WHERE user_id = ? AND delivered_at IS NULL`)
+    .prepare(
+      `UPDATE reminders SET delivered_at = ? WHERE user_id = ? AND delivered_at IS NULL`,
+    )
     .run(Date.now(), userId);
   return result.changes;
 }

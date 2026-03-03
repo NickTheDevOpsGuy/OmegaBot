@@ -90,7 +90,13 @@ export async function handleServerInfo(
 
   if (wantInvite && interaction.channel && "invites" in interaction.channel) {
     const channel = interaction.channel as TextChannel & {
-      invites: { create(options: { maxAge: number; maxUses: number; reason: string }): Promise<{ url: string }> };
+      invites: {
+        create(options: {
+          maxAge: number;
+          maxUses: number;
+          reason: string;
+        }): Promise<{ url: string }>;
+      };
     };
     const canCreate = guild.members.me
       ?.permissionsIn(channel)

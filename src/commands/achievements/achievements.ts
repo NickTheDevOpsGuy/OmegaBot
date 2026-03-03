@@ -3,10 +3,7 @@
 // Achievement system: command definition and execution.
 // Definitions in definitions.ts; embed in embedBuilder.ts.
 
-import {
-  SlashCommandBuilder,
-  type ChatInputCommandInteraction,
-} from "discord.js";
+import { SlashCommandBuilder, type ChatInputCommandInteraction } from "discord.js";
 import { getDb } from "../../services/database/db.js";
 import { buildAchievementsEmbed } from "./embedBuilder.js";
 

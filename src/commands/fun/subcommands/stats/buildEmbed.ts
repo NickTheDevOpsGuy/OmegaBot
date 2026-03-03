@@ -30,7 +30,11 @@ export type StatsData = {
   coins: CoinRow | null;
 };
 
-export function buildStatsEmbed(username: string, avatarURL: string, data: StatsData): EmbedBuilder {
+export function buildStatsEmbed(
+  username: string,
+  avatarURL: string,
+  data: StatsData,
+): EmbedBuilder {
   const embed = new EmbedBuilder()
     .setTitle(`📊 Stats for ${username}`)
     .setThumbnail(avatarURL)
@@ -72,7 +76,9 @@ export function buildStatsEmbed(username: string, avatarURL: string, data: Stats
 
   if (data.wordle) {
     const winRate =
-      data.wordle.played > 0 ? Math.round((data.wordle.won / data.wordle.played) * 100) : 0;
+      data.wordle.played > 0
+        ? Math.round((data.wordle.won / data.wordle.played) * 100)
+        : 0;
     gameLines.push(
       `🟩 **Wordle:** ${data.wordle.won}/${data.wordle.played} (${winRate}%) | 🔥 ${data.wordle.current_streak}`,
     );

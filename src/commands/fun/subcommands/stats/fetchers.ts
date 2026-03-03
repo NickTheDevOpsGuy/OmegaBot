@@ -25,7 +25,12 @@ export type DailyRow = {
   points: number;
 };
 export type TTTRow = { wins: number; losses: number; ties: number };
-export type BlackjackRow = { wins: number; losses: number; ties: number; blackjacks: number };
+export type BlackjackRow = {
+  wins: number;
+  losses: number;
+  ties: number;
+  blackjacks: number;
+};
 export type HangmanRow = { wins: number; losses: number; total_guesses: number };
 export type WordleRow = {
   played: number;
@@ -47,7 +52,10 @@ export function getRPSStats(db: ReturnType<typeof getDb>, userId: string): RPSRo
   );
 }
 
-export function getTriviaStats(db: ReturnType<typeof getDb>, userId: string): TriviaRow | null {
+export function getTriviaStats(
+  db: ReturnType<typeof getDb>,
+  userId: string,
+): TriviaRow | null {
   return safeQuery(() =>
     getRow<TriviaRow>(
       db.prepare(
@@ -58,7 +66,10 @@ export function getTriviaStats(db: ReturnType<typeof getDb>, userId: string): Tr
   );
 }
 
-export function getDailyStats(db: ReturnType<typeof getDb>, userId: string): DailyRow | null {
+export function getDailyStats(
+  db: ReturnType<typeof getDb>,
+  userId: string,
+): DailyRow | null {
   return safeQuery(() =>
     getRow<DailyRow>(
       db.prepare(
@@ -106,7 +117,10 @@ export function getHangmanStats(
   );
 }
 
-export function getWordleStats(db: ReturnType<typeof getDb>, userId: string): WordleRow | null {
+export function getWordleStats(
+  db: ReturnType<typeof getDb>,
+  userId: string,
+): WordleRow | null {
   return safeQuery(() =>
     getRow<WordleRow>(
       db.prepare(
@@ -117,7 +131,10 @@ export function getWordleStats(db: ReturnType<typeof getDb>, userId: string): Wo
   );
 }
 
-export function getSlotsStats(db: ReturnType<typeof getDb>, userId: string): SlotsRow | null {
+export function getSlotsStats(
+  db: ReturnType<typeof getDb>,
+  userId: string,
+): SlotsRow | null {
   return safeQuery(() =>
     getRow<SlotsRow>(
       db.prepare(`SELECT spins, wins, jackpots FROM slots_stats WHERE user_id = ?`),
@@ -126,7 +143,10 @@ export function getSlotsStats(db: ReturnType<typeof getDb>, userId: string): Slo
   );
 }
 
-export function getDartsStats(db: ReturnType<typeof getDb>, userId: string): DartsRow | null {
+export function getDartsStats(
+  db: ReturnType<typeof getDb>,
+  userId: string,
+): DartsRow | null {
   return safeQuery(() =>
     getRow<DartsRow>(
       db.prepare(
@@ -151,7 +171,10 @@ export function getDartsPvpStats(
 
 type CountRow = { count: number };
 
-export function getCoinStats(db: ReturnType<typeof getDb>, userId: string): CoinRow | null {
+export function getCoinStats(
+  db: ReturnType<typeof getDb>,
+  userId: string,
+): CoinRow | null {
   return safeQuery(() => {
     const heads = getRow<CountRow>(
       db.prepare(

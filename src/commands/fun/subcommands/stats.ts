@@ -22,11 +22,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
     coins: fetchers.getCoinStats(db, targetUser.id),
   };
 
-  const embed = buildStatsEmbed(
-    targetUser.username,
-    targetUser.displayAvatarURL(),
-    data,
-  );
+  const embed = buildStatsEmbed(targetUser.username, targetUser.displayAvatarURL(), data);
 
   await interaction.editReply({ embeds: [embed] });
 }

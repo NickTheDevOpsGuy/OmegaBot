@@ -200,9 +200,7 @@ export function initDatabase(): Database.Database {
   type TableInfoRow = { name: string };
   function ensureCoinFlipsSchema(): void {
     try {
-      const cols = getAll<TableInfoRow>(
-        db!.prepare("PRAGMA table_info(coin_flips)"),
-      );
+      const cols = getAll<TableInfoRow>(db!.prepare("PRAGMA table_info(coin_flips)"));
       const hasTimestamp = cols.some((c) => c.name === "timestamp");
       if (!hasTimestamp) {
         logger.warn("[db] migrating coin_flips: adding missing timestamp column");
@@ -223,9 +221,7 @@ export function initDatabase(): Database.Database {
 
   function ensureHangmanStatsSchema(): void {
     try {
-      const cols = getAll<TableInfoRow>(
-        db!.prepare("PRAGMA table_info(hangman_stats)"),
-      );
+      const cols = getAll<TableInfoRow>(db!.prepare("PRAGMA table_info(hangman_stats)"));
       if (!cols.some((c) => c.name === "best_time_seconds")) {
         logger.warn("[db] migrating hangman_stats: adding best_time_seconds");
         db!.exec("ALTER TABLE hangman_stats ADD COLUMN best_time_seconds INTEGER;");

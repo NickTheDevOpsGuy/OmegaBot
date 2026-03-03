@@ -163,7 +163,9 @@ export function getJokeStats(): { total: number; byCategory: Record<string, numb
   const db = getDb();
 
   try {
-    const totalRow = getRow<JokeCountRow>(db.prepare("SELECT COUNT(*) as count FROM jokes"));
+    const totalRow = getRow<JokeCountRow>(
+      db.prepare("SELECT COUNT(*) as count FROM jokes"),
+    );
     const total = totalRow?.count ?? 0;
 
     const byCategory = getAll<JokeCategoryRow>(

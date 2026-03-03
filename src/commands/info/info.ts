@@ -32,7 +32,9 @@ export const data = new SlashCommandBuilder()
       .addBooleanOption((o) =>
         o
           .setName("invite")
-          .setDescription("Create a 24h invite link for this channel (requires Create Invite)"),
+          .setDescription(
+            "Create a 24h invite link for this channel (requires Create Invite)",
+          ),
       ),
   )
   .addSubcommand((s) =>

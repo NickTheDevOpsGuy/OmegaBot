@@ -95,11 +95,7 @@ function calculatePoints(streak: number): number {
   const base = 10;
   const streakBonus = Math.min(streak * 2, 50);
   const milestoneBonus =
-    streak > 0 && streak % 7 === 0
-      ? 25
-      : streak > 0 && streak % 30 === 0
-        ? 100
-        : 0;
+    streak > 0 && streak % 7 === 0 ? 25 : streak > 0 && streak % 30 === 0 ? 100 : 0;
 
   return base + streakBonus + milestoneBonus;
 }
