@@ -1,5 +1,5 @@
 // src/commands/fun/subcommands/leaderboard.ts
-
+// /fun leaderboard: top users, top commands, or one user's breakdown. Uses fun_usage snapshot.
 import { EmbedBuilder, type ChatInputCommandInteraction, type User } from "discord.js";
 import { getFunUsageSnapshot } from "../../../services/fun/funUsageStore.js";
 import { logger } from "../../../utils/logger.js";

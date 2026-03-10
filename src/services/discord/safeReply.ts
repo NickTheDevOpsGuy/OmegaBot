@@ -12,7 +12,7 @@ import { logger } from "../../utils/logger.js";
 import {
   isKnownInteractionError,
   logKnownInteractionError,
-} from "./interactionErrors.js";
+} from "./interaction/interactionErrors.js";
 
 const RETRY_DELAY_MS = 500;
 const MAX_RETRIES = 2;

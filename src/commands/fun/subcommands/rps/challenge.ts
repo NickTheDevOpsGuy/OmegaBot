@@ -1,4 +1,5 @@
 // src/commands/fun/subcommands/rps/challenge.ts
+// Rock-paper-scissors PvP: challenge, collector, result. Uses rpsStore for H2H stats.
 import {
   ComponentType,
   type ChatInputCommandInteraction,
@@ -11,7 +12,7 @@ import { safeReplyToButton } from "../../../../services/discord/safeReply.js";
 import {
   isKnownInteractionError,
   logKnownInteractionError,
-} from "../../../../services/discord/interactionErrors.js";
+} from "../../../../services/discord/interaction/interactionErrors.js";
 import { recordPvpResult, getH2HStats } from "../rpsStore.js";
 import { CHOICES, EMOJI, CHOICE_LABELS, getResult, type Choice } from "./gameLogic.js";
 import { buildChoiceButtons, buildDeclineButton, buildExtendButton } from "./ui.js";

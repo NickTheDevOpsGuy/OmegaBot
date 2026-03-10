@@ -3,7 +3,7 @@ import { logger } from "../../../utils/logger.js";
 import {
   isKnownInteractionError,
   logKnownInteractionError,
-} from "../interactionErrors.js";
+} from "../interaction/interactionErrors.js";
 import { handleModalSubmit as handleSuggestionModal } from "../../../commands/suggestion/suggestion.js";
 
 async function replyOrEditModal(

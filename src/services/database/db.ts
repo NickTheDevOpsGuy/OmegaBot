@@ -1,4 +1,5 @@
 // src/services/database/db.ts
+// SQLite init, migrations, recovery, and typed helpers (getRow/getAll).
 import Database from "better-sqlite3";
 import fs from "node:fs";
 import path from "node:path";
@@ -249,14 +250,24 @@ export function getDb(): Database.Database {
   return db;
 }
 
-/** Typed wrapper for better-sqlite3 .get(); centralizes the result cast. Accepts any prepared statement. */
+/**
+ * Typed wrapper for better-sqlite3 statement.get(). Use for single-row queries.
+ * @param stmt - A prepared statement (from db.prepare(...)) with a .get method.
+ * @param args - Bound parameters for the statement.
+ * @returns The row as T, or undefined if no row.
+ */
 export function getRow<T>(stmt: unknown, ...args: unknown[]): T | undefined {
   const s = stmt as { get: (...a: unknown[]) => unknown };
   const row = s.get(...args);
   return row as T | undefined;
 }
 
-/** Typed wrapper for better-sqlite3 .all(); centralizes the result cast. Accepts any prepared statement. */
+/**
+ * Typed wrapper for better-sqlite3 statement.all(). Use for multi-row queries.
+ * @param stmt - A prepared statement (from db.prepare(...)) with an .all method.
+ * @param args - Bound parameters for the statement.
+ * @returns All rows as T[].
+ */
 export function getAll<T>(stmt: unknown, ...args: unknown[]): T[] {
   const s = stmt as { all: (...a: unknown[]) => unknown[] };
   const rows = s.all(...args);

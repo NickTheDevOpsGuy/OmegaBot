@@ -6,7 +6,7 @@ import { logger } from "../../utils/logger.js";
 import {
   isKnownInteractionError,
   logKnownInteractionError,
-} from "../../services/discord/interactionErrors.js";
+} from "../../services/discord/interaction/interactionErrors.js";
 import { run as runDice } from "./subcommands/dice.js";
 import { run as runCoinflip } from "./subcommands/coinflip.js";
 import { run as runCoinflipStats } from "./subcommands/coinflipstats.js";

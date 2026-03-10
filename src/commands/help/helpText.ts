@@ -4,17 +4,17 @@
 // message limits while providing comprehensive documentation.
 
 import type { CommandListItem } from "../../services/discord/commandMeta.js";
-import { buildOverviewHelp } from "./topics/overview.js";
+import { buildOverviewHelp } from "./topics/meta/overview.js";
+import { buildChangelogHelp } from "./topics/meta/changelog.js";
+import { buildSummaryHelp } from "./topics/meta/summary.js";
 import { buildFunHelp } from "./topics/fun.js";
 import { buildGamesHelp } from "./topics/games.js";
 import { buildProfileHelp } from "./topics/profile.js";
 import { buildQuotesHelp } from "./topics/quotes.js";
 import { buildGitHubHelp } from "./topics/github.js";
 import { buildStatusHelp } from "./topics/status.js";
-import { buildSummaryHelp } from "./topics/summary.js";
 import { buildAdminHelp } from "./topics/admin.js";
 import { buildCommandsHelp } from "./topics/commands.js";
-import { buildChangelogHelp } from "./topics/changelog.js";
 import { buildInfoHelp } from "./topics/info.js";
 
 export type HelpTopic =

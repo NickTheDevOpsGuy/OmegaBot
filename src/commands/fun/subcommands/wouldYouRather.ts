@@ -1,4 +1,5 @@
 // src/commands/fun/subcommands/wouldYouRather.ts
+// "Would you rather" poll: pick one of two options via buttons.
 import {
   ActionRowBuilder,
   ButtonBuilder,

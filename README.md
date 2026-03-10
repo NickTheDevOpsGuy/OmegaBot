@@ -132,8 +132,8 @@ docker compose up -d
 
 - **Games**: `gameLogic.ts` (pure rules), `ui.ts` (Discord components), `*Store.ts` (database). Shared stats in `services/gameStats/`. Timeouts in `src/constants.ts`. Long flows split into subfolders: `tictactoe/vsBot.ts`, `vsPlayer.ts`; `darts/stats.ts`, `solo.ts`, `challenge.ts`; `slots/gameLogic.ts`, `slotsStore.ts`; `hangman/play.ts`, `statsDisplay.ts`, `words.ts`; `connect4/pvp.ts`. **Daily** in `daily/dailyStore.ts`. **Stats** in `stats/fetchers.ts`, `stats/buildEmbed.ts`. **Achievements** in `achievements/definitions.ts`, `embedBuilder.ts`. **Starboard** in `services/starboard/starboardStore.ts`, `starboardEmbed.ts`.
 - **Database**: SQLite via `services/database/db.ts`; `getRow<T>()` and `getAll<T>()` for typed query results. Giveaway store, joke store, reminders, stats fetchers, and quote use these helpers.
-- **Help**: Topic text in `src/commands/help/topics/*.ts`.
-- **Interactions**: Handlers in `src/services/discord/handlers/` (autocomplete, modals, buttons, context menus).
+- **Help**: Topic text in `src/commands/help/topics/*.ts` (overview, changelog, summary in `topics/meta/`).
+- **Interactions**: Main router in `src/services/discord/interaction/interactionHandler.ts`; handlers in `handlers/` (autocomplete, modals, buttons, context menus).
 - **Fun command**: `fun.ts` (definition), `execute.ts` (routing + handler registry), `autocomplete.ts` (remind/quote IDs). Subcommands in `subcommands/`; groups in `funSubcommands/` (gamesGroup, utilityGroup, etc.). **Reminders**: single source in `services/reminders/store.ts`; fun command uses it (no duplicate DB logic).
 - **Info command**: `info.ts` (definition); handlers in `info/handlers/` (userInfo, serverInfo, avatar).
 - **Analytics**: Game metrics in `services/fun/gameUsageMetrics.ts`; non-game in `services/analytics/commandUsageStore.ts`.
@@ -336,17 +336,19 @@ docker compose up -d
 │   │   │   ├── help.ts
 │   │   │   ├── helpText.ts
 │   │   │   └── topics
+│   │   │       ├── meta
+│   │   │       │   ├── changelog.ts
+│   │   │       │   ├── overview.ts
+│   │   │       │   └── summary.ts
 │   │   │       ├── admin.ts
-│   │   │       ├── changelog.ts
 │   │   │       ├── commands.ts
 │   │   │       ├── fun.ts
 │   │   │       ├── games.ts
 │   │   │       ├── github.ts
-│   │   │       ├── overview.ts
+│   │   │       ├── info.ts
 │   │   │       ├── profile.ts
 │   │   │       ├── quotes.ts
-│   │   │       ├── status.ts
-│   │   │       └── summary.ts
+│   │   │       └── status.ts
 │   │   ├── history
 │   │   │   └── history.ts
 │   │   ├── info
@@ -416,17 +418,18 @@ docker compose up -d
 │   │   │   │   ├── buttons.ts
 │   │   │   │   ├── contextMenus.ts
 │   │   │   │   └── modals.ts
+│   │   │   ├── interaction
+│   │   │   │   ├── interactionErrors.ts
+│   │   │   │   ├── interactionHandler.ts
+│   │   │   │   └── tracedInteractionHandler.ts
 │   │   │   ├── commandLoader.ts
 │   │   │   ├── commandMeta.ts
 │   │   │   ├── commandTypes.ts
 │   │   │   ├── cooldowns.ts
 │   │   │   ├── fetchChannelMessages.ts
-│   │   │   ├── interactionErrors.ts
-│   │   │   ├── interactionHandler.ts
 │   │   │   ├── rateLimit.test.ts
 │   │   │   ├── rateLimit.ts
-│   │   │   ├── safeReply.ts
-│   │   │   └── tracedInteractionHandler.ts
+│   │   │   └── safeReply.ts
 │   │   ├── gameStats
 │   │   │   ├── gameStats.test.ts
 │   │   │   └── gameStats.ts
@@ -530,7 +533,7 @@ docker compose up -d
 5. Run `npm test` to verify tests pass
 6. Submit a pull request
 
-**Project layout:** Help text lives in `src/commands/help/topics/*.ts`. Interaction handlers (autocomplete, modals, buttons, context menus) are in `src/services/discord/handlers/`. Fun subcommands are split into `gamesGroup.ts` and `utilityGroup.ts`. See [Development Notes](docs/dev-notes.md) for more.
+**Project layout:** Help text lives in `src/commands/help/topics/*.ts` (meta/ has overview, changelog, summary). Interaction routing is in `src/services/discord/interaction/`; handlers (autocomplete, modals, buttons, context menus) are in `src/services/discord/handlers/`. Fun subcommands are split into `gamesGroup.ts` and `utilityGroup.ts`. See [Development Notes](docs/dev-notes.md) for more.
 
 ---
 

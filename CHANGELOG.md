@@ -1,3 +1,15 @@
+## [3.9.9] - 2026-03-10
+
+### Changed
+
+- **Hangman words** – Seed words live only in SQLite: migration `005_hangman_seed_words.sql` (1,600+ easy/medium/hard words). No TypeScript seed list; store reads from DB only.
+- **Dev-notes** – File and folder limits (≤300 lines per file, ≤10 items per folder; `fun/subcommands` documented as exception). Comments section: file-purpose at top, JSDoc for exported/non-obvious behavior.
+- **File-purpose comments** – Added or clarified in key modules (db, forecast, quote, leaderboard, poll, wouldYouRather, scheduler, rps/challenge, blackjack, interactionHandler, tracedInteractionHandler, funUsageStore, issueAssigneePoller, hangmanWordStore).
+- **JSDoc** – Expanded on critical-path exports: `getRandomWord`, `handleInteraction`, `getRow`/`getAll` (db).
+- **Docs** – README and dev-notes updated for file/folder shifts: help `topics/meta/` (overview, changelog, summary), discord `interaction/` (interactionHandler, interactionErrors, tracedInteractionHandler); file tree and project layout reflect current structure.
+
+---
+
 ## [3.9.8] - 2026-02-26
 
 ### Added

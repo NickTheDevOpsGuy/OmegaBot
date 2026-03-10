@@ -2,7 +2,7 @@
 import { EmbedBuilder, type ChatInputCommandInteraction } from "discord.js";
 import { logger } from "../../../utils/logger.js";
 import { getDb } from "../../../services/database/db.js";
-import { getInteractionErrorCounts } from "../../../services/discord/interactionErrors.js";
+import { getInteractionErrorCounts } from "../../../services/discord/interaction/interactionErrors.js";
 import { EmbedColors } from "../../../utils/colors.js";
 import { safeReply } from "../utils.js";
 import { env } from "../../../config/env.js";

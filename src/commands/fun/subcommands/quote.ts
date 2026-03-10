@@ -1,4 +1,5 @@
 // src/commands/fun/subcommands/quote.ts
+// Guild quotes: add, random, list, search, remove. Uses quoteStore for persistence.
 import { type ChatInputCommandInteraction, type User, EmbedBuilder } from "discord.js";
 import { logger } from "../../../utils/logger.js";
 import { getDb } from "../../../services/database/db.js";

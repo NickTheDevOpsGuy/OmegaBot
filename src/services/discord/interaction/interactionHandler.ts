@@ -1,4 +1,5 @@
-// src/services/discord/interactionHandler.ts
+// src/services/discord/interaction/interactionHandler.ts
+// Routes interactions to commands, autocomplete, modals, buttons, context menus; wraps execute in try/catch.
 import { performance } from "node:perf_hooks";
 import type {
   ChatInputCommandInteraction,
@@ -10,26 +11,26 @@ import {
   runWithContextAsync,
   getContextLogger,
   getRequestId,
-} from "../logging/requestContext.js";
-import { t, resolveLocale } from "../../i18n/index.js";
+} from "../../logging/requestContext.js";
+import { t, resolveLocale } from "../../../i18n/index.js";
 import { MessageFlags } from "discord.js";
-import { logger } from "../../utils/logger.js";
-import type { CommandClient } from "./commandLoader.js";
-import type { CommandModule } from "./commandTypes.js";
+import { logger } from "../../../utils/logger.js";
+import type { CommandClient } from "../commandLoader.js";
+import type { CommandModule } from "../commandTypes.js";
 import {
   getDiscordErrorCode,
   isKnownInteractionError,
   logKnownInteractionError,
 } from "./interactionErrors.js";
-import { commandsExecutedTotal } from "../metrics/server.js";
-import { recordCommandUsage } from "../analytics/commandUsageStore.js";
-import { handleAutocomplete } from "./handlers/autocomplete.js";
-import { handleModalSubmit } from "./handlers/modals.js";
-import { handleButton } from "./handlers/buttons.js";
+import { commandsExecutedTotal } from "../../metrics/server.js";
+import { recordCommandUsage } from "../../analytics/commandUsageStore.js";
+import { handleAutocomplete } from "../handlers/autocomplete.js";
+import { handleModalSubmit } from "../handlers/modals.js";
+import { handleButton } from "../handlers/buttons.js";
 import {
   handleUserContextMenu,
   handleMessageContextMenu,
-} from "./handlers/contextMenus.js";
+} from "../handlers/contextMenus.js";
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return !!v && typeof v === "object";
@@ -97,6 +98,13 @@ async function safeRepliableReply(
   }
 }
 
+/**
+ * Main entry for all Discord interactions. Dispatches to the appropriate handler
+ * (autocomplete, modal, button, context menu, or slash command), wraps command
+ * execution in try/catch, and sends a generic error message on failure.
+ * @param interaction - The incoming interaction from Discord.
+ * @param client - The command client (registry of slash commands and metadata).
+ */
 export async function handleInteraction(
   interaction: Interaction,
   client: CommandClient,

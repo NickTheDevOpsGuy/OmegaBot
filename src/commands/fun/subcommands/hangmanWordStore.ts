@@ -1,60 +1,9 @@
 // src/commands/fun/subcommands/hangmanWordStore.ts
-// SQLite-backed hangman word list with difficulty. Seed words on first use.
+// SQLite-backed hangman word list. Table and seed words are in migrations (schema.sql + 005_hangman_seed_words.sql).
 
 import { getDb } from "../../../services/database/db.js";
 
 export type HangmanDifficulty = "easy" | "medium" | "hard";
-
-const SEED_WORDS: { word: string; difficulty: HangmanDifficulty }[] = [
-  { word: "apple", difficulty: "easy" },
-  { word: "beach", difficulty: "easy" },
-  { word: "chair", difficulty: "easy" },
-  { word: "dance", difficulty: "easy" },
-  { word: "eagle", difficulty: "easy" },
-  { word: "flame", difficulty: "easy" },
-  { word: "grape", difficulty: "easy" },
-  { word: "house", difficulty: "easy" },
-  { word: "juice", difficulty: "easy" },
-  { word: "lemon", difficulty: "easy" },
-  { word: "mouse", difficulty: "easy" },
-  { word: "night", difficulty: "easy" },
-  { word: "ocean", difficulty: "easy" },
-  { word: "piano", difficulty: "easy" },
-  { word: "queen", difficulty: "easy" },
-  { word: "river", difficulty: "easy" },
-  { word: "snake", difficulty: "easy" },
-  { word: "tiger", difficulty: "easy" },
-  { word: "uncle", difficulty: "easy" },
-  { word: "viola", difficulty: "easy" },
-  { word: "water", difficulty: "easy" },
-  { word: "xenon", difficulty: "easy" },
-  { word: "yacht", difficulty: "easy" },
-  { word: "zebra", difficulty: "easy" },
-  { word: "brain", difficulty: "medium" },
-  { word: "cloud", difficulty: "medium" },
-  { word: "dream", difficulty: "medium" },
-  { word: "earth", difficulty: "medium" },
-  { word: "frost", difficulty: "medium" },
-  { word: "ghost", difficulty: "medium" },
-  { word: "happy", difficulty: "medium" },
-  { word: "image", difficulty: "medium" },
-  { word: "jolly", difficulty: "medium" },
-  { word: "karma", difficulty: "medium" },
-  { word: "lunar", difficulty: "medium" },
-  { word: "magic", difficulty: "medium" },
-  { word: "ninja", difficulty: "medium" },
-  { word: "opera", difficulty: "medium" },
-  { word: "pixel", difficulty: "medium" },
-  { word: "quest", difficulty: "medium" },
-  { word: "robot", difficulty: "medium" },
-  { word: "storm", difficulty: "medium" },
-  { word: "train", difficulty: "medium" },
-  { word: "urban", difficulty: "medium" },
-  { word: "video", difficulty: "medium" },
-  { word: "witch", difficulty: "medium" },
-  { word: "youth", difficulty: "medium" },
-  { word: "knife", difficulty: "medium" },
-];
 
 function ensureTable(): void {
   const db = getDb();
@@ -73,25 +22,13 @@ function ensureTable(): void {
   );
 }
 
-function seedIfEmpty(): void {
-  const db = getDb();
-  const count = db.prepare("SELECT COUNT(*) as c FROM hangman_words").get() as {
-    c: number;
-  };
-  if (count.c > 0) return;
-  const now = Date.now();
-  const insert = db.prepare(
-    `INSERT OR IGNORE INTO hangman_words (word, difficulty, added_by, created_at) VALUES (?, ?, NULL, ?)`,
-  );
-  for (const { word, difficulty } of SEED_WORDS) {
-    insert.run(word.toLowerCase(), difficulty, now);
-  }
-}
-
-/** Get a random word, optionally filtered by difficulty. */
+/**
+ * Returns a random word from the hangman_words table for use in a game.
+ * @param difficulty - If set, only words of this difficulty (easy/medium/hard) are considered.
+ * @returns The word in lowercase, or null if no words exist for the given filter.
+ */
 export function getRandomWord(difficulty?: HangmanDifficulty): string | null {
   ensureTable();
-  seedIfEmpty();
   const db = getDb();
   const stmt =
     difficulty == null
@@ -132,7 +69,6 @@ export function listWords(
   difficulty?: HangmanDifficulty,
 ): { word: string; difficulty: string }[] {
   ensureTable();
-  seedIfEmpty();
   const db = getDb();
   const stmt =
     difficulty == null
@@ -150,7 +86,6 @@ export function listWords(
 /** Total word count. */
 export function getWordCount(): number {
   ensureTable();
-  seedIfEmpty();
   const db = getDb();
   const row = db.prepare("SELECT COUNT(*) as c FROM hangman_words").get() as {
     c: number;

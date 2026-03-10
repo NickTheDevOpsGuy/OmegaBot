@@ -1,5 +1,5 @@
 // src/services/github/issueAssigneePoller.ts
-
+// Poll GitHub repo for new/updated issues and PRs; post to channel when assignees change.
 import type { Client } from "discord.js";
 import { env } from "../../config/env.js";
 import { logger } from "../../utils/logger.js";

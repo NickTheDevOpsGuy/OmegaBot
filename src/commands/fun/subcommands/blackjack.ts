@@ -1,4 +1,5 @@
 // src/commands/fun/subcommands/blackjack.ts
+// Blackjack vs bot: hit/stand/double, cooldown, stats. Uses blackjackStore and rateLimit.
 import {
   ComponentType,
   type ChatInputCommandInteraction,

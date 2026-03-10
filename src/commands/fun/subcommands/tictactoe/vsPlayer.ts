@@ -11,7 +11,7 @@ import { logger } from "../../../../utils/logger.js";
 import {
   isKnownInteractionError,
   logKnownInteractionError,
-} from "../../../../services/discord/interactionErrors.js";
+} from "../../../../services/discord/interaction/interactionErrors.js";
 import {
   safeReplyToButton,
   safeMessageEdit,

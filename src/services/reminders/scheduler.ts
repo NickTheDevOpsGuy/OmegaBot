@@ -1,4 +1,5 @@
 // src/services/reminders/scheduler.ts
+// Background loop: fetch due reminders, DM users, mark delivered. Runs on bot ready.
 import type { Client } from "discord.js";
 import { PermissionFlagsBits } from "discord.js";
 import { logger } from "../../utils/logger.js";

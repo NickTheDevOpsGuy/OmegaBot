@@ -1,6 +1,6 @@
-import { MessageFlags } from "discord.js";
 // src/commands/fun/subcommands/poll.ts
-
+// Create polls and record votes via buttons; stored in pollStore.
+import { MessageFlags } from "discord.js";
 import {
   ActionRowBuilder,
   ButtonBuilder,

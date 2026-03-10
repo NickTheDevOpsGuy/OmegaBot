@@ -4,6 +4,23 @@ This document captures design decisions, conventions, and architectural guidelin
 
 ---
 
+## File and Folder Limits
+
+- **File size:** Keep source and test files under 300 lines. Split by extracting helpers, types, or test suites.
+- **Folder size:** Aim for at most 10 direct children (files + subdirs) per folder. This keeps navigation and imports manageable.
+- **Current exception:** `src/commands/fun/subcommands` has 39 items (game entry points, stores, tests, subdirs). Reorganizing into e.g. `games/` and `utility/` subfolders would satisfy the limit but requires broad import and execute.ts changes; consider it for a dedicated refactor.
+
+---
+
+## Comments
+
+- **File purpose:** Prefer a short comment at the top (path and/or one line describing the module). Example: `// Fun command execution: handler registry, usage tracking, subcommand routing.`
+- **JSDoc:** Use for exported functions and non-obvious behavior (e.g. recovery logic, side effects). Not required for every small helper.
+- **Section headers:** Use `/* ----- Section ----- */` sparingly in long files to separate logical blocks (e.g. Database, Handlers).
+- **In-code:** Comment *why* when it’s not obvious from the code; avoid restating what the code does.
+
+---
+
 ## Architecture Principles
 
 - Commands are thin and delegate logic to services
@@ -18,8 +35,9 @@ This document captures design decisions, conventions, and architectural guidelin
 | Area                               | Location                                                                        |
 | ---------------------------------- | ------------------------------------------------------------------------------- |
 | Database typed helpers             | `src/services/database/db.ts` (`getRow<T>`, `getAll<T>` for SQLite results)     |
-| Help topic content                 | `src/commands/help/topics/*.ts`                                                 |
-| Interaction handlers               | `src/services/discord/handlers/` (autocomplete, modals, buttons, context menus) |
+| Help topic content                 | `src/commands/help/topics/*.ts` (overview, changelog, summary in `topics/meta/`) |
+| Interaction routing & errors       | `src/services/discord/interaction/` (interactionHandler, interactionErrors, tracedInteractionHandler) |
+| Interaction handlers               | `src/services/discord/handlers/` (autocomplete, modals, buttons, context menus)   |
 | Fun subcommand groups              | `src/commands/fun/funSubcommands/gamesGroup.ts`, `utilityGroup.ts`              |
 | Giveaway button logic              | `src/commands/giveaway/buttonHandler.ts`                                        |
 | Hangman stats                      | `src/commands/fun/subcommands/hangman/hangmanStats.ts`                          |
@@ -98,8 +116,8 @@ Guidelines:
 
 ### Error handling
 
-- **Slash commands**: The interaction handler (`interactionHandler.ts`) wraps every `command.execute()` in try/catch, logs with context (command, userId, interactionId), and sends the user an i18n generic message (plus optional Discord error hint). Commands can still catch internally and `editReply` with a specific message before rethrowing.
-- **Known Discord errors** (10062 unknown interaction, 40060 already acknowledged, 10008 unknown message) are logged at INFO via `interactionErrors.ts` so they don’t flood error level; the user may still see "interaction failed" in Discord.
+- **Slash commands**: The interaction handler (`services/discord/interaction/interactionHandler.ts`) wraps every `command.execute()` in try/catch, logs with context (command, userId, interactionId), and sends the user an i18n generic message (plus optional Discord error hint). Commands can still catch internally and `editReply` with a specific message before rethrowing.
+- **Known Discord errors** (10062 unknown interaction, 40060 already acknowledged, 10008 unknown message) are logged at INFO via `interaction/interactionErrors.ts` so they don’t flood error level; the user may still see "interaction failed" in Discord.
 - **Buttons & modals**: Handlers in `handlers/buttons.ts` and `handlers/modals.ts` catch handler errors, log with `logger.error`, then try to reply or edit with "Something went wrong…" so the user gets feedback instead of a bare "interaction failed".
 - **Context menus**: Same pattern as slash commands (try/catch, known-error handling, user-facing fallback reply).
 
@@ -246,3 +264,4 @@ See [troubleshooting.md](./troubleshooting.md) for debugging "failed to complete
 - Replace remaining file stores with database
 - Integration tests for collectors (button/dropdown flows) – dice, slots, ping, health integration tests exist
 - ~~Discord.js version check~~ – Done: `npm run check:discord` in CI
+- Reorganize `src/commands/fun/subcommands` into `games/` and `utility/` (or similar) so the folder has ≤10 direct children

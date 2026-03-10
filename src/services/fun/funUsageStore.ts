@@ -1,5 +1,5 @@
 // src/services/fun/funUsageStore.ts
-
+// Per-command usage counts (JSON file); used by leaderboard and analytics.
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { logger } from "../../utils/logger.js";

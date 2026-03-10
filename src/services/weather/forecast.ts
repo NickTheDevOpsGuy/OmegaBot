@@ -1,4 +1,5 @@
 // src/services/weather/forecast.ts
+// Fetch and format weather from WeatherAPI.com; supports current and 7-day forecast.
 
 import { logger } from "../../utils/logger.js";
 import { weatherCircuit } from "../circuitBreaker/breakers.js";

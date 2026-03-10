@@ -3,7 +3,7 @@ import { logger } from "../../../utils/logger.js";
 import {
   isKnownInteractionError,
   logKnownInteractionError,
-} from "../interactionErrors.js";
+} from "../interaction/interactionErrors.js";
 import { handleGiveawayButton } from "../../../commands/giveaway/buttonHandler.js";
 
 async function replyOrEditButton(

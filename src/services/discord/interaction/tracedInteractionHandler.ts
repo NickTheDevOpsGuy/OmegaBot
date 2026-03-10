@@ -1,4 +1,5 @@
-// src/services/discord/tracedInteractionHandler.ts
+// src/services/discord/interaction/tracedInteractionHandler.ts
+// Request tracing: traceCommand, traceDbOperation, traceApiCall for timing and context.
 import type { ChatInputCommandInteraction, AutocompleteInteraction } from "discord.js";
 import {
   createRequestContext,
@@ -7,19 +8,12 @@ import {
   logCheckpoint,
   getElapsedMs,
   getRequestId,
-} from "../logging/requestContext.js";
-import { logger } from "../../utils/logger.js";
+} from "../../logging/requestContext.js";
+import { logger } from "../../../utils/logger.js";
 
 export type CommandHandler = (interaction: ChatInputCommandInteraction) => Promise<void>;
 export type AutocompleteHandler = (interaction: AutocompleteInteraction) => Promise<void>;
 
-/**
- * Wrap a command handler with request tracing
- * This gives you:
- * - Unique request ID (UUID) for every command invocation
- * - Automatic timing logs
- * - Context available throughout the entire call stack
- */
 export function traceCommand(
   commandName: string,
   handler: CommandHandler,
@@ -85,9 +79,6 @@ export function traceCommand(
   };
 }
 
-/**
- * Log a database operation with timing
- */
 export function traceDbOperation<T>(operation: string, fn: () => T): T {
   const requestId = getRequestId();
   const start = Date.now();
@@ -128,9 +119,6 @@ export function traceDbOperation<T>(operation: string, fn: () => T): T {
   }
 }
 
-/**
- * Log an async database operation with timing
- */
 export async function traceDbOperationAsync<T>(
   operation: string,
   fn: () => Promise<T>,
@@ -174,9 +162,6 @@ export async function traceDbOperationAsync<T>(
   }
 }
 
-/**
- * Log an external API call with timing
- */
 export async function traceApiCall<T>(
   service: string,
   operation: string,

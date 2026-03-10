@@ -5,9 +5,9 @@ import { initDatabase, closeDatabase } from "./services/database/db.js";
 import { startMetricsServer, stopMetricsServer } from "./services/metrics/server.js";
 
 import { Client, GatewayIntentBits, Partials } from "discord.js";
-import { getDiscordErrorCode } from "./services/discord/interactionErrors.js";
+import { getDiscordErrorCode } from "./services/discord/interaction/interactionErrors.js";
 import { loadCommands, type CommandClient } from "./services/discord/commandLoader.js";
-import { handleInteraction } from "./services/discord/interactionHandler.js";
+import { handleInteraction } from "./services/discord/interaction/interactionHandler.js";
 import { pollPullRequestsOnce } from "./services/github/prPoller.js";
 import { pollIssueAssigneesOnce } from "./services/github/issueAssigneePoller.js";
 import { handleAutoRole } from "./services/roles/autoRoleHandler.js";

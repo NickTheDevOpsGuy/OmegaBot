@@ -15,7 +15,7 @@ import { safeReplyToButton } from "../../../../services/discord/safeReply.js";
 import {
   isKnownInteractionError,
   logKnownInteractionError,
-} from "../../../../services/discord/interactionErrors.js";
+} from "../../../../services/discord/interaction/interactionErrors.js";
 import {
   checkDartsCooldown,
   formatCooldownMessage,

@@ -6,7 +6,7 @@ import { logger } from "../../../utils/logger.js";
 import {
   isKnownInteractionError,
   logKnownInteractionError,
-} from "../interactionErrors.js";
+} from "../interaction/interactionErrors.js";
 import { commandsExecutedTotal } from "../../metrics/server.js";
 import type { CommandClient } from "../commandLoader.js";
 

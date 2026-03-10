@@ -1,10 +1,8 @@
-// src/services/discord/interactionErrors.ts
+// src/services/discord/interaction/interactionErrors.ts
 //
 // Discord interaction error handling.
-// These errors cause "failed to complete" in Discord but are often transient.
-// We log at INFO so they're visible when debugging without spamming error level.
 
-import { logger } from "../../utils/logger.js";
+import { logger } from "../../../utils/logger.js";
 
 /** 10062: Unknown interaction (expired/timed out) */
 export const CODE_UNKNOWN_INTERACTION = 10062;
@@ -34,7 +32,6 @@ export function isKnownInteractionError(err: unknown): boolean {
   );
 }
 
-/** Simple in-memory counters for interaction errors (reset on restart). */
 const interactionErrorCounts: Record<string, number> = {
   unknown_interaction: 0,
   unknown_message: 0,
@@ -51,10 +48,6 @@ export function resetInteractionErrorCounts(): void {
   interactionErrorCounts.already_acknowledged = 0;
 }
 
-/**
- * Log a known Discord interaction error at INFO level.
- * User sees "failed to complete" in Discord; this helps correlate with logs.
- */
 export function logKnownInteractionError(
   err: unknown,
   context: string,
