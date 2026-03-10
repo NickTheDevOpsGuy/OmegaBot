@@ -1,6 +1,6 @@
 import type { GuildMember } from "discord.js";
 import { describe, expect, it } from "vitest";
-import { AGREEMENTS_WIKI_URL, buildWelcomeMessage } from "./welcomeMessage.js";
+import { AGREEMENTS_URL, buildWelcomeMessage } from "./welcomeMessage.js";
 
 function mockMember(displayName: string, username = "fallback-user"): GuildMember {
   return {
@@ -10,17 +10,17 @@ function mockMember(displayName: string, username = "fallback-user"): GuildMembe
 }
 
 describe("buildWelcomeMessage", () => {
-  it("includes the Agreements wiki URL and onboarding hints", () => {
+  it("includes the Agreements URL and onboarding hints", () => {
     const message = buildWelcomeMessage(mockMember("Nick"));
 
-    expect(message).toContain(AGREEMENTS_WIKI_URL);
-    expect(message).toContain("/help topic:overview");
-    expect(message).toContain("See what we're all about in the wiki");
+    expect(message).toContain(AGREEMENTS_URL);
+    expect(message).toContain("/help <topic>");
+    expect(message).toContain("Our docs and guides");
   });
 
   it("falls back to username when displayName is empty", () => {
     const message = buildWelcomeMessage(mockMember("", "nick-user"));
 
-    expect(message).toContain("Welcome to OmegaBot, nick-user!");
+    expect(message).toContain("Welcome to OmegaBot, nick-user");
   });
 });
