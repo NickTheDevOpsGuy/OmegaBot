@@ -65,9 +65,7 @@ describe("achievement system", () => {
 
       expect(checkTenWins("user1")).toBe(false);
 
-      db.prepare(`UPDATE hangman_stats SET wins = 3 WHERE user_id = ?`).run(
-        "user1",
-      );
+      db.prepare(`UPDATE hangman_stats SET wins = 3 WHERE user_id = ?`).run("user1");
       expect(checkTenWins("user1")).toBe(true);
     });
   });

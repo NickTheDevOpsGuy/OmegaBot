@@ -4,11 +4,7 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import { useInMemoryDb } from "../../test/dbTestUtils.js";
 import { getDb } from "../../services/database/db.js";
-import {
-  setupTables,
-  checkQuotable,
-  checkGenerous,
-} from "./achievements.testHelpers.js";
+import { setupTables, checkQuotable, checkGenerous } from "./achievements.testHelpers.js";
 
 useInMemoryDb();
 

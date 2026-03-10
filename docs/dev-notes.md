@@ -17,7 +17,7 @@ This document captures design decisions, conventions, and architectural guidelin
 - **File purpose:** Prefer a short comment at the top (path and/or one line describing the module). Example: `// Fun command execution: handler registry, usage tracking, subcommand routing.`
 - **JSDoc:** Use for exported functions and non-obvious behavior (e.g. recovery logic, side effects). Not required for every small helper.
 - **Section headers:** Use `/* ----- Section ----- */` sparingly in long files to separate logical blocks (e.g. Database, Handlers).
-- **In-code:** Comment *why* when it’s not obvious from the code; avoid restating what the code does.
+- **In-code:** Comment _why_ when it’s not obvious from the code; avoid restating what the code does.
 
 ---
 
@@ -32,19 +32,19 @@ This document captures design decisions, conventions, and architectural guidelin
 
 ## Code Organization
 
-| Area                               | Location                                                                        |
-| ---------------------------------- | ------------------------------------------------------------------------------- |
-| Database typed helpers             | `src/services/database/db.ts` (`getRow<T>`, `getAll<T>` for SQLite results)     |
-| Help topic content                 | `src/commands/help/topics/*.ts` (overview, changelog, summary in `topics/meta/`) |
+| Area                               | Location                                                                                              |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Database typed helpers             | `src/services/database/db.ts` (`getRow<T>`, `getAll<T>` for SQLite results)                           |
+| Help topic content                 | `src/commands/help/topics/*.ts` (overview, changelog, summary in `topics/meta/`)                      |
 | Interaction routing & errors       | `src/services/discord/interaction/` (interactionHandler, interactionErrors, tracedInteractionHandler) |
-| Interaction handlers               | `src/services/discord/handlers/` (autocomplete, modals, buttons, context menus)   |
-| Fun subcommand groups              | `src/commands/fun/funSubcommands/gamesGroup.ts`, `utilityGroup.ts`              |
-| Giveaway button logic              | `src/commands/giveaway/buttonHandler.ts`                                        |
-| Hangman stats                      | `src/commands/fun/subcommands/hangman/hangmanStats.ts`                          |
-| Quote store (slash + context menu) | `src/services/quotes/quoteStore.ts`                                             |
-| Command usage analytics (non-game) | `src/services/analytics/commandUsageStore.ts`                                   |
-| Request context / correlation IDs  | `src/services/logging/requestContext.ts`                                        |
-| i18n                               | `src/i18n/index.ts`                                                             |
+| Interaction handlers               | `src/services/discord/handlers/` (autocomplete, modals, buttons, context menus)                       |
+| Fun subcommand groups              | `src/commands/fun/funSubcommands/gamesGroup.ts`, `utilityGroup.ts`                                    |
+| Giveaway button logic              | `src/commands/giveaway/buttonHandler.ts`                                                              |
+| Hangman stats                      | `src/commands/fun/subcommands/hangman/hangmanStats.ts`                                                |
+| Quote store (slash + context menu) | `src/services/quotes/quoteStore.ts`                                                                   |
+| Command usage analytics (non-game) | `src/services/analytics/commandUsageStore.ts`                                                         |
+| Request context / correlation IDs  | `src/services/logging/requestContext.ts`                                                              |
+| i18n                               | `src/i18n/index.ts`                                                                                   |
 
 ---
 
