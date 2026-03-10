@@ -2,7 +2,15 @@
 
 import type { GuildMember } from "discord.js";
 
-export const AGREEMENTS_WIKI_URL = "https://github.com/WRDLNKDN/Agreements";
+/** Stakeholders form – so we know who you are and how to contact you (e.g. Google Meets). */
+export const STAKEHOLDERS_FORM_URL =
+  "https://docs.google.com/forms/d/e/1FAIpQLSezRIhc7pvsQqEY0KnSIUI-PYXxLil4c7MPwPTalcKX9P-MQg/viewform?usp=sharing&ouid=113408318770074166535";
+
+/** Community wiki – docs, guides, and what we're about. */
+export const WIKI_URL = "https://github.com/WRDLNKDN/WebDev/wiki";
+
+/** Agreements repo – contributor policies, reimbursement, and official agreements. */
+export const AGREEMENTS_URL = "https://github.com/WRDLNKDN/Agreements";
 
 /**
  * Build a welcome message for a new member.
@@ -14,23 +22,35 @@ export const AGREEMENTS_WIKI_URL = "https://github.com/WRDLNKDN/Agreements";
  */
 export function buildWelcomeMessage(member: GuildMember): string {
   const handle = member.displayName || member.user.username;
+  const botName = member.client?.user?.username;
+  const name = handle && handle !== botName ? handle : "there";
 
   return [
-    `🎉 Welcome to OmegaBot, ${handle}!`,
+    `🎉 Welcome to OmegaBot, ${name}`,
     ``,
     `We're glad you're here.`,
     ``,
     `🚀 Getting Started`,
     ``,
-    `📌 Take a quick look at the server rules and pinned channel messages.`,
-    `📚 See what we're all about in the wiki:`,
-    AGREEMENTS_WIKI_URL,
-    `🤖 Run \`/help topic:overview\` for a quick command tour.`,
+    `📌 Take a quick look at the server rules`,
+    `📖 Check the pinned messages in **#general** for important context`,
+    ``,
+    `📋 **Stakeholders form** – Please fill this out so we know who you are and how to reach you (e.g. for Google Meets):`,
+    STAKEHOLDERS_FORM_URL,
+    ``,
+    `📚 **Wiki** – Our docs and guides:`,
+    WIKI_URL,
+    ``,
+    `📜 **Agreements** – Contributor policies, reimbursement, and official agreements:`,
+    AGREEMENTS_URL,
     ``,
     `💬 Need Help?`,
     ``,
-    `Not sure where to jump in? Just ask in chat.`,
-    `The community is friendly and someone will point you in the right direction.`,
+    `Want to blow off some steam? Run some games in **#bots**.`,
+    `For bot help, type \`/help <topic>\` for bot help.`,
+    ``,
+    `Not sure where to jump in? Just ask.`,
+    `The community's friendly and someone will point you in the right direction.`,
     ``,
     `Let's build something cool together 🤖`,
   ].join("\n");
