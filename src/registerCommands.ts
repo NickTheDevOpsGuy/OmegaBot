@@ -66,7 +66,10 @@ async function registerCommands(): Promise<void> {
       const relFile = path.relative(process.cwd(), file).replaceAll("\\", "/");
 
       if (!fs.existsSync(file)) {
-        logger.debug({ group, name, file: relFile }, "[register] skip (missing entry file)");
+        logger.debug(
+          { group, name, file: relFile },
+          "[register] skip (missing entry file)",
+        );
         continue;
       }
 
@@ -78,7 +81,10 @@ async function registerCommands(): Promise<void> {
           !imported.data ||
           typeof (imported.data as { toJSON?: unknown }).toJSON !== "function"
         ) {
-          logger.warn({ group, name, file: relFile }, "[register] skip (missing exported data)");
+          logger.warn(
+            { group, name, file: relFile },
+            "[register] skip (missing exported data)",
+          );
           continue;
         }
 
