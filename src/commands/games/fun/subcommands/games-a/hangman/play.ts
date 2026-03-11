@@ -15,11 +15,7 @@ import {
 } from "../../../../../../services/discord/discord/rateLimit/index.js";
 import { safeMessageEdit } from "../../../../../../services/discord/discord/safeReply.js";
 import { getRandomWord, type HangmanDifficulty } from "./hangmanWordStore.js";
-import {
-  MAX_WRONG_GUESSES,
-  buildHangmanEmbed,
-  buildLetterDropdowns,
-} from "./ui.js";
+import { MAX_WRONG_GUESSES, buildHangmanEmbed, buildLetterDropdowns } from "./ui.js";
 import { getNewlyUnlockedAchievementLine } from "../../../../achievements/achievements.js";
 import { getDb } from "../../../../../../services/core/database/db.js";
 import { recordResult } from "./hangmanStats.js";
