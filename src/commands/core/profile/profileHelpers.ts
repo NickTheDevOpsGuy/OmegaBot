@@ -3,7 +3,11 @@
 // Shared DB and formatting helpers for profile subcommands.
 
 import { getDb } from "../../../services/core/database/db.js";
-import { getTotalWins, getScalar, getCount } from "../../../services/stores/gameStats/gameStats.js";
+import {
+  getTotalWins,
+  getScalar,
+  getCount,
+} from "../../../services/stores/gameStats/gameStats.js";
 
 export type Db = ReturnType<typeof getDb>;
 

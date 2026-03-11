@@ -61,9 +61,7 @@ export async function runPlay(
   logger.info({ gameId, userId, difficulty }, "[hangman] game started");
 
   const message = await interaction.editReply({
-    embeds: [
-      buildHangmanEmbed(word, guessed, wrongCount, "playing", difficulty),
-    ],
+    embeds: [buildHangmanEmbed(word, guessed, wrongCount, "playing", difficulty)],
     components: buildLetterDropdowns(gameId, guessed),
   });
 
@@ -112,10 +110,8 @@ export async function runPlay(
           : undefined;
         let extraLine = "*See your stats: `/fun hangman stats`*";
         if (isWon) {
-          const achievementLine = getNewlyUnlockedAchievementLine(
-            userId,
-            getDb(),
-            () => recordResult(userId, true, totalGuesses, solveTimeSeconds),
+          const achievementLine = getNewlyUnlockedAchievementLine(userId, getDb(), () =>
+            recordResult(userId, true, totalGuesses, solveTimeSeconds),
           );
           if (achievementLine) extraLine += `\n\n${achievementLine}`;
         } else {
@@ -144,9 +140,7 @@ export async function runPlay(
       }
 
       await message.edit({
-        embeds: [
-          buildHangmanEmbed(word, guessed, wrongCount, "playing", difficulty),
-        ],
+        embeds: [buildHangmanEmbed(word, guessed, wrongCount, "playing", difficulty)],
         components: buildLetterDropdowns(gameId, guessed),
       });
     } catch (err) {

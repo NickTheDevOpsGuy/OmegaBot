@@ -1,5 +1,9 @@
 // src/commands/help/help.ts
-import { SlashCommandBuilder, MessageFlags, type ChatInputCommandInteraction } from "discord.js";
+import {
+  SlashCommandBuilder,
+  MessageFlags,
+  type ChatInputCommandInteraction,
+} from "discord.js";
 import { getContextLogger } from "../../../services/core/logging/requestContext.js";
 import { buildHelpText, type HelpTopic } from "./helpText.js";
 import type { CommandClient } from "../../../services/discord/discord/commandLoader.js";

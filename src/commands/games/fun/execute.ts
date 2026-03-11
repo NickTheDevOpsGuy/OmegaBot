@@ -33,7 +33,10 @@ import { run as runWordle } from "./subcommands/games-b/wordle/index.js";
 import { run as runDarts } from "./subcommands/games-a/darts/index.js";
 import { run as runSlots } from "./subcommands/games-b/slots/index.js";
 import { run as runStats } from "./subcommands/games-b/stats/index.js";
-import { recordFunUsage, type FunCommandKey } from "../../../services/stores/fun/funUsageStore.js";
+import {
+  recordFunUsage,
+  type FunCommandKey,
+} from "../../../services/stores/fun/funUsageStore.js";
 import {
   recordDailyPlay,
   type GameCommand,

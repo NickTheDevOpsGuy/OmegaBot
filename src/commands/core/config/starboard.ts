@@ -2,7 +2,10 @@
 // /config starboard set/status/clear handler.
 
 import { ChannelType, MessageFlags, type ChatInputCommandInteraction } from "discord.js";
-import { setGuildConfig, getGuildConfig } from "../../../services/core/config/guildConfigStore.js";
+import {
+  setGuildConfig,
+  getGuildConfig,
+} from "../../../services/core/config/guildConfigStore.js";
 import { getContextLogger } from "../../../services/core/logging/requestContext.js";
 
 export async function handleStarboard(
@@ -57,7 +60,10 @@ export async function handleStarboard(
       starboardThreshold: 3,
     });
 
-    getContextLogger().info({ guildId: interaction.guildId }, "[config] starboard disabled");
+    getContextLogger().info(
+      { guildId: interaction.guildId },
+      "[config] starboard disabled",
+    );
 
     await interaction.reply({
       content: "✅ Starboard disabled.",

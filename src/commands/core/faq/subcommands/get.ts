@@ -9,7 +9,10 @@
 // - Format a clean response
 
 import type { ChatInputCommandInteraction } from "discord.js";
-import { getByKey, incrementUsage } from "../../../../services/integrations/faq/services.js";
+import {
+  getByKey,
+  incrementUsage,
+} from "../../../../services/integrations/faq/services.js";
 
 import {
   guardFaqAction,

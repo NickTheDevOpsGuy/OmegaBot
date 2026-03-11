@@ -91,9 +91,7 @@ export const data = new SlashCommandBuilder()
   .addSubcommand((s) =>
     s.setName("claude").setDescription("Check Anthropic Claude status"),
   )
-  .addSubcommand((s) =>
-    s.setName("cursor").setDescription("Check Cursor IDE status"),
-  )
+  .addSubcommand((s) => s.setName("cursor").setDescription("Check Cursor IDE status"))
   .addSubcommand((s) =>
     s.setName("llms").setDescription("Check all LLM statuses (ChatGPT, Claude, Cursor)"),
   );
@@ -119,9 +117,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       }
       return `❌ **${name}** — Failed to fetch`;
     });
-    await interaction.editReply(
-      ["**LLM status**", "", ...lines].join("\n"),
-    );
+    await interaction.editReply(["**LLM status**", "", ...lines].join("\n"));
     return;
   }
 

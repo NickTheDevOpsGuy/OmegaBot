@@ -6,7 +6,10 @@ import { startMetricsServer, stopMetricsServer } from "./services/core/metrics/s
 
 import { Client, GatewayIntentBits, Partials } from "discord.js";
 import { getDiscordErrorCode } from "./services/discord/discord/interaction/interactionErrors.js";
-import { loadCommands, type CommandClient } from "./services/discord/discord/commandLoader.js";
+import {
+  loadCommands,
+  type CommandClient,
+} from "./services/discord/discord/commandLoader.js";
 import { handleInteraction } from "./services/discord/discord/interaction/interactionHandler.js";
 import { pollPullRequestsOnce } from "./services/integrations/github/prPoller.js";
 import { pollIssueAssigneesOnce } from "./services/integrations/github/issueAssigneePoller.js";

@@ -47,8 +47,7 @@ export async function guardFaqAction(
   if (perm.ok) return true;
 
   const locale = resolveLocale(interaction.guild?.preferredLocale ?? null);
-  const msg =
-    "reason" in perm ? t(perm.reason, locale) : t("error.generic", locale);
+  const msg = "reason" in perm ? t(perm.reason, locale) : t("error.generic", locale);
   await interaction.editReply("❌ " + msg);
   return false;
 }

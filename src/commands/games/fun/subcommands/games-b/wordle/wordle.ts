@@ -179,7 +179,8 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
 
         if (!isWordInList(guess)) {
           await modalSubmit.reply({
-            content: "That word isn't in the word list. Try another 5-letter word — this guess doesn't count.",
+            content:
+              "That word isn't in the word list. Try another 5-letter word — this guess doesn't count.",
             ephemeral: true,
           });
           return;

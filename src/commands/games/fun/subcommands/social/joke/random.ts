@@ -1,7 +1,10 @@
 // src/commands/fun/subcommands/joke/random.ts
 import type { ChatInputCommandInteraction } from "discord.js";
 import { logger } from "../../../../../../utils/logger.js";
-import { getRandomJoke, type JokeCategory } from "../../../../../../services/stores/joke/jokeStore.js";
+import {
+  getRandomJoke,
+  type JokeCategory,
+} from "../../../../../../services/stores/joke/jokeStore.js";
 
 const categoryEmoji: Record<JokeCategory, string> = {
   boomer: "👴",

@@ -98,7 +98,10 @@ export async function handleModalSubmit(
     await sent.react("👎").catch((): null => null);
     await interaction.editReply("✅ Suggestion posted.");
   } catch (err) {
-    getContextLogger().error({ err, userId: interaction.user.id }, "[suggestion] post failed");
+    getContextLogger().error(
+      { err, userId: interaction.user.id },
+      "[suggestion] post failed",
+    );
     const msg =
       err &&
       typeof err === "object" &&

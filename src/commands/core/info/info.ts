@@ -9,7 +9,11 @@
 //
 // Handlers live in ./handlers/*.ts
 
-import { EmbedBuilder, SlashCommandBuilder, type ChatInputCommandInteraction } from "discord.js";
+import {
+  EmbedBuilder,
+  SlashCommandBuilder,
+  type ChatInputCommandInteraction,
+} from "discord.js";
 import { getDb } from "../../../services/core/database/db.js";
 import { getTimezone } from "../profile/profileHelpers.js";
 import { handleUserInfo } from "./handlers/userInfo.js";

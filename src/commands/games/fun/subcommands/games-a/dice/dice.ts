@@ -65,7 +65,9 @@ async function rollAnimation(
 }
 
 /** Parse dice notation: 2d6+3, 1d20, d6 → { count, sides, modifier }. */
-function parseNotation(notation: string): { count: number; sides: number; modifier: number } | null {
+function parseNotation(
+  notation: string,
+): { count: number; sides: number; modifier: number } | null {
   const trimmed = notation.trim().toLowerCase();
   const match = trimmed.match(/^(\d*)d(\d+)([+-]\d+)?$/);
   if (!match) return null;

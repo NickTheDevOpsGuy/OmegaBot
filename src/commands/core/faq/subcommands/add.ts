@@ -59,7 +59,10 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
 
     await interaction.editReply(`✅ Added FAQ **${entry.key}**`);
 
-    getContextLogger().info({ userId: interaction.user.id, key: entry.key }, "[faq/add] created");
+    getContextLogger().info(
+      { userId: interaction.user.id, key: entry.key },
+      "[faq/add] created",
+    );
   } catch (err) {
     await handleFaqSubcommandError(interaction, err, "[faq/add] failed");
   }

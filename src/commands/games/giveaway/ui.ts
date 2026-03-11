@@ -27,9 +27,7 @@ export function buildGiveawayEmbed(giveaway: Giveaway, entryCount: number): Embe
   if (ended && giveaway.winners) {
     let winners: string[] = [];
     try {
-      const parsed = WinnersSchema.safeParse(
-        JSON.parse(giveaway.winners) as unknown,
-      );
+      const parsed = WinnersSchema.safeParse(JSON.parse(giveaway.winners) as unknown);
       winners = parsed.success ? parsed.data : [];
     } catch {
       winners = [];

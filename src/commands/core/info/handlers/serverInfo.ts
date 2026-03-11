@@ -16,7 +16,9 @@ export async function handleServerInfo(
   const wantInvite = interaction.options.getBoolean("invite") ?? false;
 
   if (!guild) {
-    const locale = resolveLocale((interaction.guild as { preferredLocale?: string } | null)?.preferredLocale ?? null);
+    const locale = resolveLocale(
+      (interaction.guild as { preferredLocale?: string } | null)?.preferredLocale ?? null,
+    );
     await interaction.editReply(t("common.guild_only", locale));
     return;
   }

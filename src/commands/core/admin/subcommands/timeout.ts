@@ -59,7 +59,10 @@ export async function handleTimeout(
       "[admin] user timed out",
     );
   } catch (err) {
-    getContextLogger().error({ err, targetUser: targetUser.id }, "[admin] timeout failed");
+    getContextLogger().error(
+      { err, targetUser: targetUser.id },
+      "[admin] timeout failed",
+    );
     await safeReply(interaction, {
       content: userFacingError(err, locale),
       ephemeral: true,

@@ -4,7 +4,10 @@ import { type ChatInputCommandInteraction, type User, EmbedBuilder } from "disco
 import { logger } from "../../../../../../utils/logger.js";
 import { t, resolveLocale } from "../../../../../../i18n/index.js";
 import { getDb } from "../../../../../../services/core/database/db.js";
-import { addQuote, ensureQuoteTable } from "../../../../../../services/stores/quotes/quoteStore.js";
+import {
+  addQuote,
+  ensureQuoteTable,
+} from "../../../../../../services/stores/quotes/quoteStore.js";
 
 /* -------------------------------------------------------------------------- */
 /* Database                                                                    */

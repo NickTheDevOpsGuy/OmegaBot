@@ -6,7 +6,11 @@ import { execute } from "./status.js";
 
 vi.mock("../../../services/integrations/statuspage/statuspageApi.js", () => ({
   fetchStatuspageSummary: vi.fn().mockResolvedValue({
-    page: { name: "Vercel", url: "https://vercel.com", updated_at: "2024-01-01T00:00:00Z" },
+    page: {
+      name: "Vercel",
+      url: "https://vercel.com",
+      updated_at: "2024-01-01T00:00:00Z",
+    },
     status: { indicator: "none", description: "All Systems Operational" },
     components: [],
     incidents: [],

@@ -7,12 +7,14 @@ import { execute } from "./admin.js";
 
 useInMemoryDb();
 
-function createMockInteraction(overrides: {
-  guildId?: string | null;
-  inGuild?: boolean;
-  subcommand?: string;
-  memberHasModeratorRole?: boolean;
-} = {}) {
+function createMockInteraction(
+  overrides: {
+    guildId?: string | null;
+    inGuild?: boolean;
+    subcommand?: string;
+    memberHasModeratorRole?: boolean;
+  } = {},
+) {
   const {
     guildId = null,
     inGuild = false,

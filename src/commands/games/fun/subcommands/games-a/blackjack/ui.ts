@@ -2,12 +2,7 @@
 //
 // Blackjack Discord UI: message formatting, embed, and button builders.
 
-import {
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-  EmbedBuilder,
-} from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from "discord.js";
 import type { Card } from "./gameLogic.js";
 import { handValue, formatHand } from "./gameLogic.js";
 

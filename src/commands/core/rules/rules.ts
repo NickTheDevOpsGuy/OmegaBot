@@ -1,7 +1,11 @@
 // src/commands/rules/rules.ts
 // Show server rules (link to configured rules channel).
 
-import { EmbedBuilder, SlashCommandBuilder, type ChatInputCommandInteraction } from "discord.js";
+import {
+  EmbedBuilder,
+  SlashCommandBuilder,
+  type ChatInputCommandInteraction,
+} from "discord.js";
 import { getGuildConfig } from "../../../services/core/config/guildConfigStore.js";
 import { t, resolveLocale } from "../../../i18n/index.js";
 

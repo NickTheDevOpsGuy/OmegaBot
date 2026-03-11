@@ -23,7 +23,7 @@
 - **Help admin visibility** – `/help` “admin” topic and command list now use the same permission check as `/admin` (`isModerator`: `ADMIN_USER_IDS`, moderator roles, Discord perms).
 - **i18n for user-facing strings** – Guild-only, FAQ (key empty, permissions), and admin (no permission, missing permissions, interaction expired) messages use `t()` with guild locale (en/es/de). New keys in `src/i18n/index.ts`.
 - **Logging** – Interaction error logs include `requestId` via `getContextLogger()`. `safeReply` logs `interactionFailedRecovery: true` when recovery via `followUp` succeeds. Retries in `safeEditReply`/`safeMessageEdit` log with request context. Dev-notes and troubleshooting updated for logging and recovery.
-- **Context logger in commands** – Help, admin, config, dice, FAQ (faq.ts, add, remove, _shared), and suggestion use `getContextLogger()` so their logs include `requestId` when running in an interaction.
+- **Context logger in commands** – Help, admin, config, dice, FAQ (faq.ts, add, remove, \_shared), and suggestion use `getContextLogger()` so their logs include `requestId` when running in an interaction.
 
 ---
 

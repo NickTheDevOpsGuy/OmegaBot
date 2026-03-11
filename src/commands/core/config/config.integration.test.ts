@@ -8,12 +8,14 @@ import { execute } from "./config.js";
 
 useInMemoryDb();
 
-function createMockInteraction(overrides: {
-  guildId?: string | null;
-  group?: string | null;
-  sub?: string;
-  role?: { id: string; name: string };
-} = {}) {
+function createMockInteraction(
+  overrides: {
+    guildId?: string | null;
+    group?: string | null;
+    sub?: string;
+    role?: { id: string; name: string };
+  } = {},
+) {
   const { guildId = "g1", group = "moderator-role", sub = "add", role } = overrides;
   const reply = vi.fn().mockResolvedValue(undefined);
   return {
@@ -64,7 +66,10 @@ describe("config integration", () => {
     db.exec(
       "CREATE TABLE IF NOT EXISTS moderator_roles (guild_id TEXT NOT NULL, role_id TEXT NOT NULL, PRIMARY KEY (guild_id, role_id))",
     );
-    db.prepare("INSERT INTO moderator_roles (guild_id, role_id) VALUES (?, ?)").run("g1", "r1");
+    db.prepare("INSERT INTO moderator_roles (guild_id, role_id) VALUES (?, ?)").run(
+      "g1",
+      "r1",
+    );
     const mock = createMockInteraction({
       guildId: "g1",
       group: "moderator-role",

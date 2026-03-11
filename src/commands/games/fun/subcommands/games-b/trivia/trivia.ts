@@ -1,10 +1,7 @@
 // src/commands/fun/subcommands/trivia.ts
 import type { ChatInputCommandInteraction } from "discord.js";
 import { logger } from "../../../../../../utils/logger.js";
-import {
-  getStats,
-  getTriviaLeaderboard,
-} from "./triviaStore.js";
+import { getStats, getTriviaLeaderboard } from "./triviaStore.js";
 import type { TriviaCategory } from "./questions.js";
 import { runTriviaGame } from "./gameFlow.js";
 

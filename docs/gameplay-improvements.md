@@ -10,7 +10,7 @@ Suggestions to improve how games feel to play: clarity, fairness, discoverabilit
 
 - **Double down missing** – Comment in code mentions "hit/stand/double" but only Hit and Stand exist. Adding a **Double** button (one extra card, then dealer plays) would match real blackjack and add meaningful choice.
 - **No Split** – Splitting pairs is optional but would deepen strategy; lower priority than Double.
-- **Timeout outcome** – On timeout the message shows "Dealer wins" + "Timed out". Consider: "*You didn't play in time; round forfeited.*" so it's clear it wasn't a normal loss.
+- **Timeout outcome** – On timeout the message shows "Dealer wins" + "Timed out". Consider: "_You didn't play in time; round forfeited._" so it's clear it wasn't a normal loss.
 - **Blackjack payout** – Message says "You win 3:2!" but there's no currency/bet; consider "Blackjack! (3:2 payout)" or keep as-is for flavor.
 
 ---
@@ -20,8 +20,8 @@ Suggestions to improve how games feel to play: clarity, fairness, discoverabilit
 **Current:** Daily word, 6 guesses, modal input, 🟩🟨⬛ feedback, letter bank, share line, resume.
 
 - **Invalid words count as guesses** – The modal only checks length (5) and `[a-z]`. Words like `AAAAA` or `XYZAB` are accepted and consume a guess. **Validate against the word list** (e.g. `WORDS` in `gameLogic.ts` or a separate "valid guesses" list) and reply ephemerally: "Not in word list. Try another 5-letter word." without using a guess.
-- **Discoverability of stats** – First-time players may not know `/fun wordle stats` exists. Optional: add a small line under the grid when the game ends: "*See your stats: `/fun wordle stats`*".
-- **Resume message** – "Continuing your game..." is good; consider adding "*X guesses so far*" when resuming so they know where they left off.
+- **Discoverability of stats** – First-time players may not know `/fun wordle stats` exists. Optional: add a small line under the grid when the game ends: "_See your stats: `/fun wordle stats`_".
+- **Resume message** – "Continuing your game..." is good; consider adding "_X guesses so far_" when resuming so they know where they left off.
 
 ---
 
@@ -68,7 +68,7 @@ Suggestions to improve how games feel to play: clarity, fairness, discoverabilit
 
 - **Turn line** – "Turn: 🔴 @user1" is clear. Good.
 - **Column labels** – "1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣" under the board matches buttons 1–7. Good.
-- **Full column** – Buttons are disabled when `board[0][col] !== 0`. Consider adding a small note when the last column fills: "*Game is a draw*" if you support draw detection (or already do).
+- **Full column** – Buttons are disabled when `board[0][col] !== 0`. Consider adding a small note when the last column fills: "_Game is a draw_" if you support draw detection (or already do).
 
 ---
 
@@ -93,7 +93,7 @@ Suggestions to improve how games feel to play: clarity, fairness, discoverabilit
 
 ## Cross-cutting
 
-- **Cooldowns** – Messages like "Wait X seconds before playing again" are clear. Consider linking to the command: "*Use `/fun slots` again in Xs.*"
+- **Cooldowns** – Messages like "Wait X seconds before playing again" are clear. Consider linking to the command: "_Use `/fun slots` again in Xs._"
 - **Extend time** – Games that have "Extend time" explain it well (e.g. "+30 min for this move"). Good.
 - **Ephemeral vs public** – Most games post in-channel so others can watch; Wordle has a channel tease. Consistent and good.
 - **Help** – `/help topic:games` (or similar) could list each game with one line and a tip (e.g. "Wordle: invalid words don't count if you add validation").
@@ -102,13 +102,13 @@ Suggestions to improve how games feel to play: clarity, fairness, discoverabilit
 
 ## Priority summary
 
-| Priority | Item |
-|----------|------|
-| High     | Wordle: validate guess against word list so invalid words don't use a guess. |
-| Medium   | Blackjack: add Double button (and clarify timeout message). |
+| Priority | Item                                                                                        |
+| -------- | ------------------------------------------------------------------------------------------- |
+| High     | Wordle: validate guess against word list so invalid words don't use a guess.                |
+| Medium   | Blackjack: add Double button (and clarify timeout message).                                 |
 | Medium   | Slots: surface paytable in spin embed or footer so players don’t need to discover the flag. |
-| Low      | Trivia: "Next question" button after each answer. |
-| Low      | RPS solo / Darts solo: "Play again" or "Throw again" button. |
-| Low      | Hangman: show "Wrong: (0/6)" when no wrong letters yet. |
+| Low      | Trivia: "Next question" button after each answer.                                           |
+| Low      | RPS solo / Darts solo: "Play again" or "Throw again" button.                                |
+| Low      | Hangman: show "Wrong: (0/6)" when no wrong letters yet.                                     |
 
 If you want, the next step can be implementing the Wordle word validation and/or the Blackjack Double button.

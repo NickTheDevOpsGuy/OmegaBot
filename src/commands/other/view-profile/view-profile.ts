@@ -15,7 +15,10 @@ import {
   getTimezone,
   formatTimeInZone,
 } from "../../core/profile/profileHelpers.js";
-import { getTotalWins, getTotalGamesPlayed } from "../../../services/stores/gameStats/gameStats.js";
+import {
+  getTotalWins,
+  getTotalGamesPlayed,
+} from "../../../services/stores/gameStats/gameStats.js";
 
 export const data = new ContextMenuCommandBuilder()
   .setName("View Profile")

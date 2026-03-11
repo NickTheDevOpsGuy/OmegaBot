@@ -17,15 +17,13 @@ import { getNewlyUnlockedAchievementLine } from "../../../../achievements/achiev
 import { getDb } from "../../../../../../services/core/database/db.js";
 import { getStats, recordResult } from "./blackjackStore.js";
 import { createDeck, handValue, isBlackjack, type Card } from "./gameLogic.js";
-import {
-  buildGameEmbed,
-  buildButtons,
-  buildExtendRow,
-  type GameStatus,
-} from "./ui.js";
+import { buildGameEmbed, buildButtons, buildExtendRow, type GameStatus } from "./ui.js";
 import { safeMessageEdit } from "../../../../../../services/discord/discord/safeReply.js";
 
-import { BLACKJACK_COOLDOWN_MS, GAME_TIMEOUT_MS } from "../../../../../../utils/constants.js";
+import {
+  BLACKJACK_COOLDOWN_MS,
+  GAME_TIMEOUT_MS,
+} from "../../../../../../utils/constants.js";
 
 /* -------------------------------------------------------------------------- */
 /* Dealer turn logic                                                          */
@@ -240,10 +238,7 @@ async function runBlackjack(interaction: ChatInputCommandInteraction): Promise<v
 
         await message.edit({
           embeds: [buildGameEmbed(playerHand, dealerHand, "playing")],
-          components: [
-            buildButtons(gameId, false, false),
-            buildExtendRow(gameId),
-          ],
+          components: [buildButtons(gameId, false, false), buildExtendRow(gameId)],
         });
       } else if (action === "stand") {
         collector.stop("stand");

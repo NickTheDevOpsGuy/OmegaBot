@@ -8,27 +8,27 @@ Suggestions for new slash commands and other improvements. Prioritized by impact
 
 ### High value, good fit
 
-| Command | Description | Why |
-|--------|-------------|-----|
-| **`/roll` or `/fun roll`** | Alias or subcommand for “roll XdY” (e.g. 2d6, 1d20) with optional modifier. | You have `/fun dice` with sides/count; a dedicated “roll 2d6+3” style is familiar to TTRPG/board-game users and could share dice logic. |
-| **`/time` or `/info time`** | Show current time in a user’s timezone (or server default). | Complements `/profile timezone`; useful for “when is the meeting?” without opening profile. |
-| **`/serverrules` or `/rules`** | Post or link to server rules (configurable channel or text in DB/config). | Many servers want a single “rules” command; can be a short embed + link to #rules. |
+| Command                        | Description                                                                 | Why                                                                                                                                     |
+| ------------------------------ | --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| **`/roll` or `/fun roll`**     | Alias or subcommand for “roll XdY” (e.g. 2d6, 1d20) with optional modifier. | You have `/fun dice` with sides/count; a dedicated “roll 2d6+3” style is familiar to TTRPG/board-game users and could share dice logic. |
+| **`/time` or `/info time`**    | Show current time in a user’s timezone (or server default).                 | Complements `/profile timezone`; useful for “when is the meeting?” without opening profile.                                             |
+| **`/serverrules` or `/rules`** | Post or link to server rules (configurable channel or text in DB/config).   | Many servers want a single “rules” command; can be a short embed + link to #rules.                                                      |
 
 ### Medium value
 
-| Command | Description | Why |
-|--------|-------------|-----|
-| **`/fun choose`** | Pick one (or N) from a list: “A, B, C” or “option1 / option2”. | Quick “bot pick for us” without a full poll; good for games or decisions. |
-| **`/remind list`** (already exists) | — | Consider surfacing in `/help` or a “Your reminders” line in `/profile view` so it’s discoverable. |
-| **`/config moderator-role`** | Add/remove a role that can use `/admin` moderation. | You have DB-backed moderator roles; if not exposed yet, a subcommand here would complete the story. |
+| Command                             | Description                                                    | Why                                                                                                 |
+| ----------------------------------- | -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| **`/fun choose`**                   | Pick one (or N) from a list: “A, B, C” or “option1 / option2”. | Quick “bot pick for us” without a full poll; good for games or decisions.                           |
+| **`/remind list`** (already exists) | —                                                              | Consider surfacing in `/help` or a “Your reminders” line in `/profile view` so it’s discoverable.   |
+| **`/config moderator-role`**        | Add/remove a role that can use `/admin` moderation.            | You have DB-backed moderator roles; if not exposed yet, a subcommand here would complete the story. |
 
 ### Lower priority / niche
 
-| Command | Description | Why |
-|--------|-------------|-----|
-| **`/birthday` or `/profile birthday`** | Store and optionally announce birthdays. | Nice for community feel; requires scheduling and privacy thought. |
-| **`/wyr`** | Alias for `/fun would-you-rather` | Shorter; only if you want a top-level shortcut. |
-| **`/uptime`** | Bot uptime (or link to `/admin stats` for admins). | `/ping` and `/admin stats` already cover this for most users; only add if non-admins often ask. |
+| Command                                | Description                                        | Why                                                                                             |
+| -------------------------------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| **`/birthday` or `/profile birthday`** | Store and optionally announce birthdays.           | Nice for community feel; requires scheduling and privacy thought.                               |
+| **`/wyr`**                             | Alias for `/fun would-you-rather`                  | Shorter; only if you want a top-level shortcut.                                                 |
+| **`/uptime`**                          | Bot uptime (or link to `/admin stats` for admins). | `/ping` and `/admin stats` already cover this for most users; only add if non-admins often ask. |
 
 ---
 

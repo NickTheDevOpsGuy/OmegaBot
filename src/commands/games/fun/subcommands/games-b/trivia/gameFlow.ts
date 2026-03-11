@@ -11,11 +11,7 @@ import {
   type Message,
 } from "discord.js";
 import { logger } from "../../../../../../utils/logger.js";
-import {
-  getStats,
-  recordCorrect,
-  recordIncorrect,
-} from "./triviaStore.js";
+import { getStats, recordCorrect, recordIncorrect } from "./triviaStore.js";
 import {
   getRandomQuestion,
   shuffleArray,
@@ -46,8 +42,10 @@ function buildQuestionEmbed(
 ): { embed: EmbedBuilder; buttons: ActionRowBuilder<ButtonBuilder> } {
   const points = DIFFICULTY_POINTS[question.difficulty];
   const emoji = CATEGORY_EMOJI[question.category];
-  const categoryLabel = question.category.charAt(0).toUpperCase() + question.category.slice(1);
-  const difficultyLabel = question.difficulty.charAt(0).toUpperCase() + question.difficulty.slice(1);
+  const categoryLabel =
+    question.category.charAt(0).toUpperCase() + question.category.slice(1);
+  const difficultyLabel =
+    question.difficulty.charAt(0).toUpperCase() + question.difficulty.slice(1);
   const embedColor = CATEGORY_COLORS[question.category] ?? 0x6366f1;
   const embed = new EmbedBuilder()
     .setTitle(`${emoji} Trivia — ${categoryLabel}`)
@@ -253,7 +251,8 @@ async function waitForNextQuestion(
     const correctIndex = allAnswers.indexOf(question.correctAnswer);
     const response2 = await message.awaitMessageComponent({
       componentType: ComponentType.Button,
-      filter: (i) => i.user.id === interaction.user.id && i.customId.startsWith(triviaId2),
+      filter: (i) =>
+        i.user.id === interaction.user.id && i.customId.startsWith(triviaId2),
       time: TRIVIA_TIMEOUT_MS,
     });
     const selectedIndex = parseInt(response2.customId.split(":")[1], 10);

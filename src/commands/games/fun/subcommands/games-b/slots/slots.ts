@@ -55,9 +55,14 @@ async function runSlots(interaction: ChatInputCommandInteraction): Promise<void>
     const embed = new EmbedBuilder()
       .setTitle("🎰 Slots Paytable")
       .setDescription(
-        ["**Three of a kind**", "```", ...paytableLines, "```", "", "Two matching: **2×**"].join(
-          "\n",
-        ),
+        [
+          "**Three of a kind**",
+          "```",
+          ...paytableLines,
+          "```",
+          "",
+          "Two matching: **2×**",
+        ].join("\n"),
       )
       .setColor(0x5865f2);
     await interaction.editReply({ embeds: [embed] });
@@ -66,7 +71,9 @@ async function runSlots(interaction: ChatInputCommandInteraction): Promise<void>
 
   if (showLeaderboard) {
     const leaders = getLeaderboard(10);
-    const embed = new EmbedBuilder().setTitle("🎰 Jackpot Leaderboard").setColor(0xffd700);
+    const embed = new EmbedBuilder()
+      .setTitle("🎰 Jackpot Leaderboard")
+      .setColor(0xffd700);
     if (leaders.length === 0) {
       embed.setDescription("No jackpot winners yet! Be the first!");
     } else {

@@ -19,9 +19,7 @@ function ensureModeratorRolesTable(): void {
 export function addModeratorRole(guildId: string, roleId: string): void {
   ensureModeratorRolesTable();
   getDb()
-    .prepare(
-      "INSERT OR IGNORE INTO moderator_roles (guild_id, role_id) VALUES (?, ?)",
-    )
+    .prepare("INSERT OR IGNORE INTO moderator_roles (guild_id, role_id) VALUES (?, ?)")
     .run(guildId, roleId);
 }
 
@@ -58,7 +56,10 @@ export async function handleModeratorRole(
   if (sub === "add") {
     const role = interaction.options.getRole("role", true);
     addModeratorRole(guildId, role.id);
-    getContextLogger().info({ guildId, roleId: role.id }, "[config] moderator role added");
+    getContextLogger().info(
+      { guildId, roleId: role.id },
+      "[config] moderator role added",
+    );
     await interaction.reply({
       content: `✅ **${role.name}** can now use \`/admin\` moderation (timeout, kick, ban).`,
       flags: MessageFlags.Ephemeral,
@@ -66,7 +67,10 @@ export async function handleModeratorRole(
   } else if (sub === "remove") {
     const role = interaction.options.getRole("role", true);
     const removed = removeModeratorRole(guildId, role.id);
-    getContextLogger().info({ guildId, roleId: role.id, removed }, "[config] moderator role removed");
+    getContextLogger().info(
+      { guildId, roleId: role.id, removed },
+      "[config] moderator role removed",
+    );
     await interaction.reply({
       content: removed
         ? `✅ **${role.name}** removed from moderator roles.`

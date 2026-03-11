@@ -102,8 +102,7 @@ export const data = new SlashCommandBuilder()
 export async function isModerator(
   interaction: ChatInputCommandInteraction,
 ): Promise<boolean> {
-  if (env.adminUserIds.size > 0 && env.adminUserIds.has(interaction.user.id))
-    return true;
+  if (env.adminUserIds.size > 0 && env.adminUserIds.has(interaction.user.id)) return true;
   if (!interaction.inGuild() || !interaction.member) return false;
 
   if (interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) return true;

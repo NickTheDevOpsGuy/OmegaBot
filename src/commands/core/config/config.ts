@@ -111,10 +111,7 @@ export const data = new SlashCommandBuilder()
           .setName("add")
           .setDescription("Add a moderator role")
           .addRoleOption((opt) =>
-            opt
-              .setName("role")
-              .setDescription("Role to add")
-              .setRequired(true),
+            opt.setName("role").setDescription("Role to add").setRequired(true),
           ),
       )
       .addSubcommand((sub) =>

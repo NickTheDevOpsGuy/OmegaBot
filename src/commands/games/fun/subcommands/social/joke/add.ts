@@ -1,6 +1,9 @@
 // src/commands/fun/subcommands/joke/add.ts
 import type { ChatInputCommandInteraction } from "discord.js";
-import { addJoke, type JokeCategory } from "../../../../../../services/stores/joke/jokeStore.js";
+import {
+  addJoke,
+  type JokeCategory,
+} from "../../../../../../services/stores/joke/jokeStore.js";
 
 export async function handleJokeAdd(
   interaction: ChatInputCommandInteraction,

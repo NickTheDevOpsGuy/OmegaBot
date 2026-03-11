@@ -40,7 +40,10 @@ export async function handleWelcome(
       welcomeEnabled: false,
     });
 
-    getContextLogger().info({ guildId: interaction.guildId }, "[config] welcome channel cleared");
+    getContextLogger().info(
+      { guildId: interaction.guildId },
+      "[config] welcome channel cleared",
+    );
 
     await interaction.reply({
       content: "✅ Welcome channel cleared. Using system channel as fallback.",

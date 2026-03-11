@@ -2,7 +2,11 @@
 // Achievement definitions and check functions.
 
 import { getDb } from "../../../services/core/database/db.js";
-import { getTotalWins, getScalar, getCount } from "../../../services/stores/gameStats/gameStats.js";
+import {
+  getTotalWins,
+  getScalar,
+  getCount,
+} from "../../../services/stores/gameStats/gameStats.js";
 
 export type Achievement = {
   id: string;

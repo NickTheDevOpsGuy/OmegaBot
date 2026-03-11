@@ -7,13 +7,15 @@ import { run } from "./add.js";
 
 useInMemoryDb();
 
-function createMockInteraction(overrides: {
-  guildId?: string;
-  key?: string;
-  title?: string;
-  body?: string;
-  tags?: string | null;
-} = {}) {
+function createMockInteraction(
+  overrides: {
+    guildId?: string;
+    key?: string;
+    title?: string;
+    body?: string;
+    tags?: string | null;
+  } = {},
+) {
   const {
     guildId = "g1",
     key = "key",

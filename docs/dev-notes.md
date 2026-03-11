@@ -34,19 +34,19 @@ This document captures design decisions, conventions, and architectural guidelin
 
 For the full folder layout (command and service groups), see [Project structure](project-structure.md).
 
-| Area                               | Location                                                                                                          |
-| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| Database typed helpers             | `src/services/core/database/db.ts` (`getRow<T>`, `getAll<T>` for SQLite results)                                 |
-| Help topic content                 | `src/commands/core/help/topics/*.ts` (overview, changelog, summary in `topics/meta/`)                             |
-| Interaction routing & errors       | `src/services/discord/discord/interaction/` (interactionHandler, interactionErrors, tracedInteractionHandler)   |
-| Interaction handlers               | `src/services/discord/discord/handlers/` (autocomplete, modals, buttons, context menus)                         |
-| Fun subcommand groups              | `src/commands/games/fun/funSubcommands/gamesGroup.ts`, `utilityGroup.ts`                                         |
-| Giveaway button logic              | `src/commands/games/giveaway/buttonHandler.ts`                                                                   |
-| Hangman stats                      | `src/commands/games/fun/subcommands/games-a/hangman/hangmanStats.ts`                                            |
-| Quote store (slash + context menu) | `src/services/stores/quotes/quoteStore.ts`                                                                       |
-| Command usage analytics (non-game) | `src/services/core/analytics/commandUsageStore.ts`                                                               |
-| Request context / correlation IDs  | `src/services/core/logging/requestContext.ts`                                                                   |
-| i18n                               | `src/i18n/index.ts`                                                                                              |
+| Area                               | Location                                                                                                      |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Database typed helpers             | `src/services/core/database/db.ts` (`getRow<T>`, `getAll<T>` for SQLite results)                              |
+| Help topic content                 | `src/commands/core/help/topics/*.ts` (overview, changelog, summary in `topics/meta/`)                         |
+| Interaction routing & errors       | `src/services/discord/discord/interaction/` (interactionHandler, interactionErrors, tracedInteractionHandler) |
+| Interaction handlers               | `src/services/discord/discord/handlers/` (autocomplete, modals, buttons, context menus)                       |
+| Fun subcommand groups              | `src/commands/games/fun/funSubcommands/gamesGroup.ts`, `utilityGroup.ts`                                      |
+| Giveaway button logic              | `src/commands/games/giveaway/buttonHandler.ts`                                                                |
+| Hangman stats                      | `src/commands/games/fun/subcommands/games-a/hangman/hangmanStats.ts`                                          |
+| Quote store (slash + context menu) | `src/services/stores/quotes/quoteStore.ts`                                                                    |
+| Command usage analytics (non-game) | `src/services/core/analytics/commandUsageStore.ts`                                                            |
+| Request context / correlation IDs  | `src/services/core/logging/requestContext.ts`                                                                 |
+| i18n                               | `src/i18n/index.ts`                                                                                           |
 
 ---
 

@@ -38,7 +38,10 @@ export async function handleRules(
       rulesChannelId: null,
     });
 
-    getContextLogger().info({ guildId: interaction.guildId }, "[config] rules channel cleared");
+    getContextLogger().info(
+      { guildId: interaction.guildId },
+      "[config] rules channel cleared",
+    );
 
     await interaction.reply({
       content: "✅ Rules channel cleared.",

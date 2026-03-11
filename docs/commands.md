@@ -163,19 +163,19 @@ Use `/suggestion` to submit an idea. A modal opens for multi-line input (up to 1
 
 Requires **Manage Server** permission.
 
-| Command                           | Description                  |
-| --------------------------------- | ---------------------------- |
-| `/config view`                    | View all settings            |
-| `/config welcome set`             | Set welcome channel          |
-| `/config welcome clear`          | Clear welcome channel        |
-| `/config starboard set`          | Set up starboard             |
-| `/config starboard status`       | View starboard settings      |
-| `/config starboard clear`        | Disable starboard            |
-| `/config rules set`              | Set rules channel            |
-| `/config rules clear`            | Clear rules channel          |
-| `/config moderator-role add`     | Add role that can use /admin |
-| `/config moderator-role remove`  | Remove moderator role        |
-| `/config moderator-role list`    | List moderator roles         |
+| Command                         | Description                  |
+| ------------------------------- | ---------------------------- |
+| `/config view`                  | View all settings            |
+| `/config welcome set`           | Set welcome channel          |
+| `/config welcome clear`         | Clear welcome channel        |
+| `/config starboard set`         | Set up starboard             |
+| `/config starboard status`      | View starboard settings      |
+| `/config starboard clear`       | Disable starboard            |
+| `/config rules set`             | Set rules channel            |
+| `/config rules clear`           | Clear rules channel          |
+| `/config moderator-role add`    | Add role that can use /admin |
+| `/config moderator-role remove` | Remove moderator role        |
+| `/config moderator-role list`   | List moderator roles         |
 
 ---
 
@@ -204,14 +204,14 @@ Requires **Manage Server** permission.
 
 Check external service status (infrastructure and LLM/AI).
 
-| Command             | Description                    |
-| ------------------- | ------------------------------ |
-| `/status vercel`    | Vercel platform status         |
-| `/status supabase`  | Supabase platform status       |
-| `/status chatgpt`   | OpenAI / ChatGPT status       |
-| `/status claude`    | Anthropic Claude status       |
-| `/status cursor`    | Cursor IDE status             |
-| `/status llms`      | All LLM statuses at once       |
+| Command            | Description              |
+| ------------------ | ------------------------ |
+| `/status vercel`   | Vercel platform status   |
+| `/status supabase` | Supabase platform status |
+| `/status chatgpt`  | OpenAI / ChatGPT status  |
+| `/status claude`   | Anthropic Claude status  |
+| `/status cursor`   | Cursor IDE status        |
+| `/status llms`     | All LLM statuses at once |
 
 ---
 
@@ -237,11 +237,11 @@ Check external service status (infrastructure and LLM/AI).
 
 Restricted to users in **`ADMIN_USER_IDS`** (in `.env`) or with a server moderator role (Administrator, Manage Server, Moderate Members, or `/config moderator-role`). If **`MODERATION_ALLOWED_ROLE_IDS`** is set in `.env`, only those roles (and `ADMIN_USER_IDS`) can use timeout, kick, and ban; stats and health still use the normal moderator check. See [FAQ – Who can use /admin?](faq-admins.md#who-can-use-admin) and [Environment Setup – Admin / Moderation](setup-env.md#admin--moderation-optional).
 
-| Subcommand   | Description                              |
-| ------------ | ---------------------------------------- |
+| Subcommand       | Description                           |
+| ---------------- | ------------------------------------- |
 | `/admin timeout` | Timeout a user (5m–7d)                |
 | `/admin kick`    | Kick a user from the server           |
-| `/admin ban`     | Ban a user (optional message delete)   |
+| `/admin ban`     | Ban a user (optional message delete)  |
 | `/admin stats`   | Bot statistics (uptime, DB, commands) |
 | `/admin health`  | Health check (DB, env, errors)        |
 
@@ -254,23 +254,23 @@ Restricted to users in **`ADMIN_USER_IDS`** (in `.env`) or with a server moderat
 | `/help`     | Command help (use `topic:changelog` for changelog)                        |
 | `/ping`     | Health check                                                              |
 | `/status`   | Vercel / Supabase status                                                  |
-| `/rules`    | View server rules (link to configured channel)                           |
+| `/rules`    | View server rules (link to configured channel)                            |
 | `/summary`  | Summarize chat                                                            |
 | `/history`  | View chat history                                                         |
 | `/playback` | Transcript playback (`private`, `before`, `after` message IDs for paging) |
-| `/admin`    | Admin tools (see [§ /admin](#admin--admin--moderation))                    |
+| `/admin`    | Admin tools (see [§ /admin](#admin--admin--moderation))                   |
 
 ---
 
 ## Command Count Summary
 
-| Category          | Commands                                           |
-| ----------------- | -------------------------------------------------- |
+| Category          | Commands                                                  |
+| ----------------- | --------------------------------------------------------- |
 | Core              | 7 (help, ping, info, profile, achievements, admin, rules) |
-| Fun               | 1 (with 25+ subcommands)                           |
-| Server Management | 3 (config, giveaway, suggestion)                   |
-| Content           | 4 (faq, summary, history, playback)                |
-| Integration       | 2 (gh, status)                                     |
-| **Total**         | **17 slash commands**                              |
+| Fun               | 1 (with 25+ subcommands)                                  |
+| Server Management | 3 (config, giveaway, suggestion)                          |
+| Content           | 4 (faq, summary, history, playback)                       |
+| Integration       | 2 (gh, status)                                            |
+| **Total**         | **17 slash commands**                                     |
 
 ---
