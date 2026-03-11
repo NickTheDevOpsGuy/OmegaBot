@@ -9,7 +9,6 @@ import type {
   MessageFlags,
 } from "discord.js";
 import { getContextLogger, getRequestId } from "../../core/logging/requestContext.js";
-import { logger } from "../../../utils/logger.js";
 import {
   isKnownInteractionError,
   logKnownInteractionError,

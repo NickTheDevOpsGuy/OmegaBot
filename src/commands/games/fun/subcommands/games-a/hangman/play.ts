@@ -17,7 +17,6 @@ import { safeMessageEdit } from "../../../../../../services/discord/discord/safe
 import { getRandomWord, type HangmanDifficulty } from "./hangmanWordStore.js";
 import {
   MAX_WRONG_GUESSES,
-  buildGameMessage,
   buildHangmanEmbed,
   buildLetterDropdowns,
 } from "./ui.js";
