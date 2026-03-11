@@ -1,3 +1,32 @@
+## [3.9.11] - 2026-03-11
+
+### Changed
+
+- **Folder structure (≤10 per folder)** – `src/commands` now has 4 groups: `core/`, `games/`, `social/`, `other/` (command loader loads from each). `src/commands/games/fun/subcommands` has 4 groups: `games-a/`, `games-b/`, `social/`, `utility/`. All files kept under 300 lines; dev-notes updated.
+- **Services (≤10 per folder)** – `src/services` reorganized into 4 groups: `core/` (config, database, logging, metrics, cache, dashboard, circuitBreaker, analytics, time), `discord/discord/`, `integrations/` (ai, github, weather, statuspage, faq, welcome, starboard, summary), `stores/` (quotes, reminders, timezone, transcript, gameStats, fun, joke, roles). All import paths updated; migrations path in db fixed for new depth.
+- **Cleanup** – Removed empty folders `src/commands/general` and `src/commands/games/fun/subcommands/ttt`.
+- **Tests colocated** – Removed `src/test`; in-memory DB helper lives at `src/services/core/database/dbTestUtils.ts`. All unit and integration tests sit next to the code they test. Added unit tests for `guildConfigStore`; integration tests for `/help` and `/status`. Dev-notes Testing section and CHANGELOG updated.
+
+---
+
+## [3.9.10] - 2026-03-11
+
+### Added
+
+- **Moderation role gating** – Optional `MODERATION_ALLOWED_ROLE_IDS` in `.env` (comma-separated role IDs). When set, only users with one of those roles or in `ADMIN_USER_IDS` can use `/admin timeout`, kick, and ban; stats and health still use the normal moderator check. See [Environment Setup](docs/setup-env.md#admin--moderation-optional) and [FAQ](docs/faq-admins.md#who-can-use-admin).
+- **Integration tests** – Config (moderator-role add/list, guild_only), rules (guild_only), FAQ add (key/title/body validation), admin (guild_only, no_permission when user cannot moderate), suggestion (guild_only).
+- **Zod validation for stored JSON** – FAQ store (`FaqStoreV1Schema`), timezone store (`TimezoneStoreFileV1Schema`), and giveaway winners (`WinnersSchema`) use Zod `safeParse`; on failure they log and use a safe default (empty store or empty array) to avoid corrupt data causing runtime errors.
+
+### Changed
+
+- **Admin reply handling** – Admin commands use the shared `safeEditReply` from `services/discord/safeReply.ts` (retries, known-error handling) instead of a separate implementation in `admin/utils.ts`.
+- **Help admin visibility** – `/help` “admin” topic and command list now use the same permission check as `/admin` (`isModerator`: `ADMIN_USER_IDS`, moderator roles, Discord perms).
+- **i18n for user-facing strings** – Guild-only, FAQ (key empty, permissions), and admin (no permission, missing permissions, interaction expired) messages use `t()` with guild locale (en/es/de). New keys in `src/i18n/index.ts`.
+- **Logging** – Interaction error logs include `requestId` via `getContextLogger()`. `safeReply` logs `interactionFailedRecovery: true` when recovery via `followUp` succeeds. Retries in `safeEditReply`/`safeMessageEdit` log with request context. Dev-notes and troubleshooting updated for logging and recovery.
+- **Context logger in commands** – Help, admin, config, dice, FAQ (faq.ts, add, remove, _shared), and suggestion use `getContextLogger()` so their logs include `requestId` when running in an interaction.
+
+---
+
 ## [3.9.9] - 2026-03-10
 
 ### Changed

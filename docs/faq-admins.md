@@ -4,6 +4,27 @@ Common questions when running OmegaBot.
 
 ---
 
+## Who can use /admin?
+
+**Stats and health** use the same rules as below. **Timeout, kick, and ban** use an extra rule when **`MODERATION_ALLOWED_ROLE_IDS`** is set.
+
+- **If `MODERATION_ALLOWED_ROLE_IDS` is set in `.env`:**  
+  Only users whose Discord user ID is in **`ADMIN_USER_IDS`** **or** who have one of the listed **role IDs** can run `/admin timeout`, `/admin kick`, and `/admin ban`. No other server roles (e.g. Manage Server) can use those three subcommands. Stats and health still follow the normal rules below.
+
+- **Otherwise**, users can run `/admin` if **either**:
+
+1. **Allowlist in `.env`** – Their Discord user ID is in **`ADMIN_USER_IDS`** (comma-separated).  
+   Example: `ADMIN_USER_IDS=123456789012345678,987654321098765432`  
+   Get your ID: Developer Mode → Right-click yourself → Copy ID.
+
+2. **Server roles** – They have one of:
+   - Discord **Administrator**, **Manage Server**, or **Moderate Members**, or
+   - A role added as a moderator via **`/config moderator-role`**.
+
+If neither applies, the command responds with a permission error. See [Environment Setup – Admin / Moderation](setup-env.md#admin--moderation-optional).
+
+---
+
 ## How do I add Hangman words?
 
 Set **`HANGMAN_ADMIN_ROLE_ID`** in `.env` to a Discord role ID. Users with that role can run:
@@ -35,7 +56,7 @@ Those features are optional and require env vars. Check startup logs for **`[sta
 
 ## How do I see if the bot is healthy?
 
-- **In Discord**: Use **`/admin health`** (requires Manage Server). Shows DB status, env summary, and interaction error counts.
+- **In Discord**: Use **`/admin health`** (requires [admin access](#who-can-use-admin): `ADMIN_USER_IDS` in `.env` or server moderator role). Shows DB status, env summary, and interaction error counts.
 - **HTTP**: Set `METRICS_PORT=9090` (or another port) in `.env` to enable `GET /health` and `GET /metrics` for load balancers or monitoring. See [Runbook – Health](runbook.md#health).
 
 ---

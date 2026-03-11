@@ -1,21 +1,21 @@
 // src/bot.ts
 (globalThis as { __omegabotStartTime?: number }).__omegabotStartTime = Date.now();
 
-import { initDatabase, closeDatabase } from "./services/database/db.js";
-import { startMetricsServer, stopMetricsServer } from "./services/metrics/server.js";
+import { initDatabase, closeDatabase } from "./services/core/database/db.js";
+import { startMetricsServer, stopMetricsServer } from "./services/core/metrics/server.js";
 
 import { Client, GatewayIntentBits, Partials } from "discord.js";
-import { getDiscordErrorCode } from "./services/discord/interaction/interactionErrors.js";
-import { loadCommands, type CommandClient } from "./services/discord/commandLoader.js";
-import { handleInteraction } from "./services/discord/interaction/interactionHandler.js";
-import { pollPullRequestsOnce } from "./services/github/prPoller.js";
-import { pollIssueAssigneesOnce } from "./services/github/issueAssigneePoller.js";
-import { handleAutoRole } from "./services/roles/autoRoleHandler.js";
-import { onGuildMemberAdd } from "./services/welcome/welcomeHandler.js";
-import { setupStarboardListeners } from "./services/starboard/starboardHandler.js";
+import { getDiscordErrorCode } from "./services/discord/discord/interaction/interactionErrors.js";
+import { loadCommands, type CommandClient } from "./services/discord/discord/commandLoader.js";
+import { handleInteraction } from "./services/discord/discord/interaction/interactionHandler.js";
+import { pollPullRequestsOnce } from "./services/integrations/github/prPoller.js";
+import { pollIssueAssigneesOnce } from "./services/integrations/github/issueAssigneePoller.js";
+import { handleAutoRole } from "./services/stores/roles/autoRoleHandler.js";
+import { onGuildMemberAdd } from "./services/integrations/welcome/welcomeHandler.js";
+import { setupStarboardListeners } from "./services/integrations/starboard/starboardHandler.js";
 import { env } from "./config/env.js";
 import { logger } from "./utils/logger.js";
-import { createReminderScheduler } from "./services/reminders/index.js";
+import { createReminderScheduler } from "./services/stores/reminders/index.js";
 
 const client = new Client({
   intents: [

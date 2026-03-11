@@ -8,7 +8,7 @@ This document captures design decisions, conventions, and architectural guidelin
 
 - **File size:** Keep source and test files under 300 lines. Split by extracting helpers, types, or test suites.
 - **Folder size:** Aim for at most 10 direct children (files + subdirs) per folder. This keeps navigation and imports manageable.
-- **Current exception:** `src/commands/fun/subcommands` has 39 items (game entry points, stores, tests, subdirs). Reorganizing into e.g. `games/` and `utility/` subfolders would satisfy the limit but requires broad import and execute.ts changes; consider it for a dedicated refactor.
+- **Services:** `src/services` has four groups: `core/` (config, database, logging, metrics, cache, dashboard, circuitBreaker, analytics, time), `discord/discord/`, `integrations/` (ai, github, weather, statuspage, faq, welcome, starboard, summary), `stores/` (quotes, reminders, timezone, transcript, gameStats, fun, joke, roles).
 
 ---
 
@@ -32,19 +32,38 @@ This document captures design decisions, conventions, and architectural guidelin
 
 ## Code Organization
 
-| Area                               | Location                                                                                              |
-| ---------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| Database typed helpers             | `src/services/database/db.ts` (`getRow<T>`, `getAll<T>` for SQLite results)                           |
-| Help topic content                 | `src/commands/help/topics/*.ts` (overview, changelog, summary in `topics/meta/`)                      |
-| Interaction routing & errors       | `src/services/discord/interaction/` (interactionHandler, interactionErrors, tracedInteractionHandler) |
-| Interaction handlers               | `src/services/discord/handlers/` (autocomplete, modals, buttons, context menus)                       |
-| Fun subcommand groups              | `src/commands/fun/funSubcommands/gamesGroup.ts`, `utilityGroup.ts`                                    |
-| Giveaway button logic              | `src/commands/giveaway/buttonHandler.ts`                                                              |
-| Hangman stats                      | `src/commands/fun/subcommands/hangman/hangmanStats.ts`                                                |
-| Quote store (slash + context menu) | `src/services/quotes/quoteStore.ts`                                                                   |
-| Command usage analytics (non-game) | `src/services/analytics/commandUsageStore.ts`                                                         |
-| Request context / correlation IDs  | `src/services/logging/requestContext.ts`                                                              |
-| i18n                               | `src/i18n/index.ts`                                                                                   |
+For the full folder layout (command and service groups), see [Project structure](project-structure.md).
+
+| Area                               | Location                                                                                                          |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Database typed helpers             | `src/services/core/database/db.ts` (`getRow<T>`, `getAll<T>` for SQLite results)                                 |
+| Help topic content                 | `src/commands/core/help/topics/*.ts` (overview, changelog, summary in `topics/meta/`)                             |
+| Interaction routing & errors       | `src/services/discord/discord/interaction/` (interactionHandler, interactionErrors, tracedInteractionHandler)   |
+| Interaction handlers               | `src/services/discord/discord/handlers/` (autocomplete, modals, buttons, context menus)                         |
+| Fun subcommand groups              | `src/commands/games/fun/funSubcommands/gamesGroup.ts`, `utilityGroup.ts`                                         |
+| Giveaway button logic              | `src/commands/games/giveaway/buttonHandler.ts`                                                                   |
+| Hangman stats                      | `src/commands/games/fun/subcommands/games-a/hangman/hangmanStats.ts`                                            |
+| Quote store (slash + context menu) | `src/services/stores/quotes/quoteStore.ts`                                                                       |
+| Command usage analytics (non-game) | `src/services/core/analytics/commandUsageStore.ts`                                                               |
+| Request context / correlation IDs  | `src/services/core/logging/requestContext.ts`                                                                   |
+| i18n                               | `src/i18n/index.ts`                                                                                              |
+
+---
+
+## Testing
+
+- **Colocated tests:** Unit and integration tests live next to the code they test: `*.test.ts` and `*.integration.test.ts` in the same directory (or in a `tests/` subfolder where needed, e.g. hangman). There is no central `src/test` folder.
+- **DB-dependent tests:** Tests that need an in-memory SQLite DB use `useInMemoryDb()` from `src/services/core/database/dbTestUtils.ts` (colocated with the database module). Import it from there in your test file.
+- **Vitest:** Config in `vitest.config.ts`; includes `src/**/*.test.ts`, `src/**/*.spec.ts`, and `src/**/*.integration.test.ts`. Run with `npm test`.
+
+---
+
+## Logging
+
+- **Logger:** Single pino instance in `src/utils/logger.ts`. Level via `LOG_LEVEL`; pretty output in dev when `LOG_PRETTY` is not `false`.
+- **Request context:** Every slash command runs inside `runWithContextAsync()` in the interaction handler. Context includes `requestId` (UUID), `userId`, `guildId`, `command`, `subcommand`, and `startedAt`.
+- **Correlation:** The handler and shared code (e.g. `safeReply`, `interactionErrors`) use `getContextLogger()` from `requestContext.ts`, so their log lines include `requestId`. To tie your command’s logs to the same request, use `getContextLogger()` instead of the base `logger` when logging inside a command or handler that runs within that context.
+- **Recovery:** When `safeReply` falls back to `followUp` after an initial failure, it logs with `interactionFailedRecovery: true`. Use this (and `[interaction] Discord error`) to debug “failed to complete” and rate limits; see [Troubleshooting](troubleshooting.md).
 
 ---
 
@@ -239,7 +258,7 @@ if (interaction.inGuild()) {
 
 - Run in watch mode: `npm run test`
 - Run once (CI): `npm run test:run`
-- Database-backed tests should use the in-memory SQLite helper: `src/test/dbTestUtils.ts`
+- Database-backed tests should use the in-memory SQLite helper: `src/services/core/database/dbTestUtils.ts`
 
 ### Manual Testing
 
@@ -264,4 +283,4 @@ See [troubleshooting.md](./troubleshooting.md) for debugging "failed to complete
 - Replace remaining file stores with database
 - Integration tests for collectors (button/dropdown flows) – dice, slots, ping, health integration tests exist
 - ~~Discord.js version check~~ – Done: `npm run check:discord` in CI
-- Reorganize `src/commands/fun/subcommands` into `games/` and `utility/` (or similar) so the folder has ≤10 direct children
+- ~~Reorganize `src/commands/fun/subcommands` into `games/` and `utility/`~~ – Done: now `games-a/`, `games-b/`, `social/`, `utility/` under `commands/games/fun/subcommands`

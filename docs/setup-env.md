@@ -166,3 +166,31 @@ HANGMAN_ADMIN_ROLE_ID=
 ```
 
 If unset, only the built-in word list is used and no one can add words.
+
+---
+
+### Admin / Moderation (Optional)
+
+Control who can use `/admin` (timeout, kick, ban) via **user IDs** in `.env`:
+
+```env
+ADMIN_USER_IDS=123456789012345678,987654321098765432
+```
+
+- **Format:** Comma-separated Discord user IDs (no spaces required).
+- **Get your user ID:** Enable Developer Mode in Discord → Right-click your username → Copy ID.
+- Users listed here can run `/admin` moderation subcommands even without Discord Administrator or moderator roles.
+- If unset or empty, only **role-based** access applies: Discord Administrator, Manage Server, Moderate Members, or roles added with `/config moderator-role`.
+
+**Restrict moderation to a specific role (optional):**
+
+```env
+MODERATION_ALLOWED_ROLE_IDS=111111111111111111
+```
+
+- **Format:** Comma-separated Discord **role** IDs.
+- **If set:** Only users with one of these roles (or in `ADMIN_USER_IDS`) can use `/admin timeout`, `/admin kick`, and `/admin ban`. Stats and health still use the normal moderator check.
+- **If unset:** Normal rules above apply (Administrator, Manage Server, Moderate Members, `/config moderator-role`).
+- **Get role ID:** Server Settings → Roles → Right-click role → Copy ID.
+
+See [FAQ – Who can use /admin?](faq-admins.md#who-can-use-admin) for details.

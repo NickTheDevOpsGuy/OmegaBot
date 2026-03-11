@@ -1,0 +1,103 @@
+// src/services/discord/commandLoader.ts
+import { Client } from "discord.js";
+import { readdir } from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { logger } from "../../../utils/logger.js";
+import type { CommandModule } from "./commandTypes.js";
+
+/**
+ * Client typing: command loader populates this registry.
+ */
+export type CommandClient = Client & {
+  commands: Map<string, CommandModule>;
+  reminderScheduler?: { start: () => void; stop: () => void };
+};
+
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return !!v && typeof v === "object";
+}
+
+function isCommandModule(mod: unknown): mod is CommandModule {
+  if (!isRecord(mod)) return false;
+  // Support both SlashCommandBuilder and ContextMenuCommandBuilder
+  const hasData = "data" in mod && isRecord((mod as { data?: unknown }).data);
+  const hasName =
+    hasData && typeof (mod as { data?: { name?: unknown } }).data?.name === "string";
+  return (
+    hasData &&
+    hasName &&
+    "execute" in mod &&
+    typeof (mod as { execute?: unknown }).execute === "function"
+  );
+}
+
+/**
+ * Load compiled command modules from /dist.
+ * This loader runs at runtime (node), so it imports built JS.
+ *
+ * Convention:
+ * - dist/commands/<group>/<name>/<name>.js (group = core, games, social, other)
+ * - Each module exports { data, execute, ... }
+ */
+export async function loadCommands(client: CommandClient): Promise<void> {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+
+  const commandsDir = path.resolve(__dirname, "../../commands");
+
+  logger.info({ commandsDir }, "[commands] loading");
+
+  const topEntries = await readdir(commandsDir, { withFileTypes: true });
+  let loaded = 0;
+
+  for (const topEntry of topEntries) {
+    if (!topEntry.isDirectory()) continue;
+
+    const groupDir = path.join(commandsDir, topEntry.name);
+    const subEntries = await readdir(groupDir, { withFileTypes: true });
+
+    for (const entry of subEntries) {
+      if (!entry.isDirectory()) continue;
+
+      const folder = entry.name;
+      const file = path.join(groupDir, folder, `${folder}.js`);
+
+      try {
+        const url = pathToFileURL(file).href;
+        const imported = await import(url);
+
+        const modUnknown = (imported?.default ?? imported) as unknown;
+
+        if (!isCommandModule(modUnknown)) {
+          logger.warn(
+            { folder, file },
+            "[commands] skipped: module does not export { data, execute }",
+          );
+          continue;
+        }
+
+        const command = modUnknown;
+
+        client.commands.set(command.data.name, command);
+        loaded++;
+
+        logger.info(
+          {
+            name: command.data.name,
+            adminOnly: Boolean(command.adminOnly),
+            group: command.group ?? "other",
+          },
+          "[commands] loaded",
+        );
+      } catch (err) {
+        logger.error({ err, folder, file }, "[commands] failed to load");
+      }
+    }
+  }
+
+  logger.info(
+    { loaded, names: [...client.commands.keys()] },
+    "[commands] registry ready",
+  );
+}

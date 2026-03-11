@@ -47,6 +47,7 @@ Not intended to be:
 - **Resilient interaction handling** – Defer early before heavy work, try/catch with fallback defer, safe reply wrappers, retry on transient API errors (including Discord 429 rate limits); logs include `interactionFailedRecovery: true` when recovering (reduces "failed to complete" occurrences)
 - **Autocomplete support** – Timezone, FAQ keys/tags, giveaway end/reroll IDs, remind cancel/snooze (IDs), quote remove; responds with `[]` by default when no handler
 - **Admin health dashboard** – `/admin health` shows database status, env vars, interaction errors, and optional API reachability (Weather, GitHub)
+- **Moderation role gating** – Optional `MODERATION_ALLOWED_ROLE_IDS` in `.env` restricts `/admin` timeout, kick, and ban to specific roles (and `ADMIN_USER_IDS`); see [Environment Setup](docs/setup-env.md#admin--moderation-optional)
 - **HTTP health & metrics** – Optional `METRICS_PORT` enables `/health` (200/503 with Discord status), `/metrics` (Prometheus; includes rate-limit hit counts), and `/dashboard` (web admin UI)
 - **Database integrity check** – `npm run db:check` to verify SQLite health
 - **Automated backup** – `npm run db:backup` copies DB to `data/backups/` (configurable); cron-friendly
@@ -113,6 +114,7 @@ docker compose up -d
 - [Grafana](docs/grafana.md) – Import dashboard for Prometheus metrics
 - [FAQ for server admins](docs/faq-admins.md) – Common questions when running the bot
 - [Improvement ideas](docs/improvements.md) – Optional next steps (beyond new commands)
+- [Games & UX ideas](docs/games-and-ux-ideas.md) – Making games more fun, addictive, and usable
 
 ---
 
@@ -143,6 +145,8 @@ docker compose up -d
 <details>
 <summary>📁 Click to expand file structure</summary>
 
+The tree below is a simplified overview. The repo uses **command groups** (`core/`, `games/`, `social/`, `other/`) and **service groups** (`core/`, `discord/`, `integrations/`, `stores/`). For the current layout, see [Project structure](docs/project-structure.md).
+
 ```plaintext
 
 .
@@ -171,6 +175,7 @@ docker compose up -d
 │   ├── dev-notes.md
 │   ├── faq-admins.md
 │   ├── faq.md
+│   ├── project-structure.md
 │   ├── grafana.md
 │   ├── i18n.md
 │   ├── improvements.md
@@ -493,13 +498,11 @@ docker compose up -d
 │   │   └── welcome
 │   │       ├── welcomeHandler.ts
 │   │       └── welcomeMessage.ts
-│   ├── constants.ts
-│   ├── test
-│   │   └── dbTestUtils.ts
 │   ├── types
 │   │   └── discord-client.d.ts
 │   ├── utils
 │   │   ├── colors.ts
+│   │   ├── constants.ts
 │   │   ├── interactions.ts
 │   │   └── logger.ts
 │   ├── bot.ts
@@ -533,7 +536,7 @@ docker compose up -d
 5. Run `npm test` to verify tests pass
 6. Submit a pull request
 
-**Project layout:** Help text lives in `src/commands/help/topics/*.ts` (meta/ has overview, changelog, summary). Interaction routing is in `src/services/discord/interaction/`; handlers (autocomplete, modals, buttons, context menus) are in `src/services/discord/handlers/`. Fun subcommands are split into `gamesGroup.ts` and `utilityGroup.ts`. See [Development Notes](docs/dev-notes.md) for more.
+**Project layout:** Commands are under `src/commands/{core,games,social,other}/`. Services are under `src/services/{core,discord,integrations,stores}/`. Help topics: `src/commands/core/help/topics/` (meta/ has overview, changelog, summary, commands). Discord routing: `src/services/discord/discord/interaction/` and `.../handlers/`. See [Project structure](docs/project-structure.md) and [Development Notes](docs/dev-notes.md) for details.
 
 ---
 
@@ -551,7 +554,7 @@ npm run db:seed       # Seed dev DB with sample FAQs/timezone (DATABASE_PATH=dat
 npm run dev:watch     # Run with hot reload (restarts on file change)
 ```
 
-25+ test files: unit tests (games, stores, services, rate limiting, metrics) and integration tests (dice, slots, ping, admin health).
+35+ test files (200+ tests): unit tests (games, stores, services, config, rate limiting, metrics) and integration tests (dice, slots, ping, admin, help, status, config, FAQ, rules, suggestion).
 
 ---
 

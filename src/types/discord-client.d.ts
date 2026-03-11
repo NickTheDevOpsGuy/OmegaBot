@@ -1,4 +1,4 @@
-import type { ReminderScheduler } from "../services/reminders/scheduler.js";
+import type { ReminderScheduler } from "../services/stores/reminders/scheduler.js";
 
 declare module "discord.js" {
   interface Client {

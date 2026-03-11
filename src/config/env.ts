@@ -61,6 +61,39 @@ export const env = {
 
   discordAutoRoleId: process.env.DISCORD_AUTO_ROLE_ID ?? null,
 
+  /**
+   * Discord user IDs allowed to use /admin moderation (timeout, kick, ban).
+   * Comma-separated; e.g. ADMIN_USER_IDS=123456789,987654321
+   * If set, these users can run admin commands even without Discord moderator roles.
+   */
+  adminUserIds: (() => {
+    const raw = process.env.ADMIN_USER_IDS?.trim();
+    if (!raw) return new Set<string>();
+    return new Set(
+      raw
+        .split(",")
+        .map((id) => id.trim())
+        .filter(Boolean),
+    );
+  })(),
+
+  /**
+   * Optional: Discord role IDs that are allowed to use /admin moderation (timeout, kick, ban).
+   * Comma-separated; e.g. MODERATION_ALLOWED_ROLE_IDS=111111111,222222222
+   * If set, only users with one of these roles (or in ADMIN_USER_IDS) can run timeout/kick/ban.
+   * If unset, normal moderator check applies (Administrator, Manage Server, Moderate Members, or /config moderator-role).
+   */
+  moderationAllowedRoleIds: (() => {
+    const raw = process.env.MODERATION_ALLOWED_ROLE_IDS?.trim();
+    if (!raw) return new Set<string>();
+    return new Set(
+      raw
+        .split(",")
+        .map((id) => id.trim())
+        .filter(Boolean),
+    );
+  })(),
+
   /* ---------------------------------------------------------------- */
   /* Summaries (OpenAI)                                               */
   /* ---------------------------------------------------------------- */

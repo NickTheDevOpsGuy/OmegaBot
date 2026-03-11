@@ -28,7 +28,7 @@ When users see "This interaction failed" or "Application did not respond" in Dis
    [interaction] Discord error (user may see 'failed to complete'): unknown_interaction
    ```
 
-   When we recover from collector or button errors without the user seeing "interaction failed", logs include `interactionFailedRecovery: true`. Use this to filter or alert on interaction issues:
+   When we recover (e.g. collector/button errors, or when `safeReply` falls back to `followUp` after a failed reply), logs include `interactionFailedRecovery: true`. Use this to filter or alert on interaction issues:
 
    ```bash
    grep "interactionFailedRecovery" /path/to/logs

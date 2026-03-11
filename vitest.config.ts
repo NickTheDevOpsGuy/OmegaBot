@@ -7,7 +7,7 @@ export default defineConfig({
     globals: true,
     clearMocks: true,
     restoreMocks: true,
-    include: ["src/**/*.test.ts", "src/**/*.spec.ts"],
+    include: ["src/**/*.test.ts", "src/**/*.spec.ts", "src/**/*.integration.test.ts"],
     coverage: {
       provider: "v8",
       reporter: ["text", "text-summary", "html", "lcov"],

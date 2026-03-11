@@ -2,7 +2,7 @@
 
 This file is the **single source of truth** for command behavior; update it when adding or changing commands.
 
-OmegaBot has **16 slash commands** organized into logical groups.
+OmegaBot has **17 slash commands** organized into logical groups.
 
 ---
 
@@ -29,7 +29,8 @@ The main hub for all games and fun features.
 | `/fun darts`              | Throw 3 darts (solo or PvP), stats, leaderboards (best/180/PvP) |
 | `/fun would-you-rather`   | WYR questions                                                   |
 | `/fun coinflip`           | Heads or tails                                                  |
-| `/fun dice`               | Custom dice rolls                                               |
+| `/fun choose`             | Pick one or more options at random (e.g. pizza, pasta, salad)   |
+| `/fun dice`               | Roll dice (notation: 2d6+3, or sides/count)                     |
 | `/fun poll`               | Create polls                                                    |
 
 **Rate limits** (per user, to prevent spam):
@@ -115,6 +116,7 @@ Get info about users or the server. Use `/help topic:info` for details.
 | -------------- | ------------------------------------------------------------------------------------- |
 | `/info user`   | View user information                                                                 |
 | `/info server` | View server statistics; optional **invite** creates a 24h invite link for the channel |
+| `/info time`   | Show current time for a user (uses their /profile timezone)                           |
 | `/info avatar` | View user's avatar (size: 128–4096, format: png/jpg/webp/gif)                         |
 
 ---
@@ -161,14 +163,19 @@ Use `/suggestion` to submit an idea. A modal opens for multi-line input (up to 1
 
 Requires **Manage Server** permission.
 
-| Command                    | Description             |
-| -------------------------- | ----------------------- |
-| `/config view`             | View all settings       |
-| `/config welcome set`      | Set welcome channel     |
-| `/config welcome clear`    | Clear welcome channel   |
-| `/config starboard set`    | Set up starboard        |
-| `/config starboard status` | View starboard settings |
-| `/config starboard clear`  | Disable starboard       |
+| Command                           | Description                  |
+| --------------------------------- | ---------------------------- |
+| `/config view`                    | View all settings            |
+| `/config welcome set`             | Set welcome channel          |
+| `/config welcome clear`          | Clear welcome channel        |
+| `/config starboard set`          | Set up starboard             |
+| `/config starboard status`       | View starboard settings      |
+| `/config starboard clear`        | Disable starboard            |
+| `/config rules set`              | Set rules channel            |
+| `/config rules clear`            | Clear rules channel          |
+| `/config moderator-role add`     | Add role that can use /admin |
+| `/config moderator-role remove`  | Remove moderator role        |
+| `/config moderator-role list`    | List moderator roles         |
 
 ---
 
@@ -195,12 +202,16 @@ Requires **Manage Server** permission.
 
 ## `/status` - Service Status
 
-Check external service status (Vercel, Supabase).
+Check external service status (infrastructure and LLM/AI).
 
-| Command            | Description              |
-| ------------------ | ------------------------ |
-| `/status vercel`   | Vercel platform status   |
-| `/status supabase` | Supabase platform status |
+| Command             | Description                    |
+| ------------------- | ------------------------------ |
+| `/status vercel`    | Vercel platform status         |
+| `/status supabase`  | Supabase platform status       |
+| `/status chatgpt`   | OpenAI / ChatGPT status       |
+| `/status claude`    | Anthropic Claude status       |
+| `/status cursor`    | Cursor IDE status             |
+| `/status llms`      | All LLM statuses at once       |
 
 ---
 
@@ -222,6 +233,20 @@ Check external service status (Vercel, Supabase).
 
 ---
 
+## `/admin` – Admin & Moderation
+
+Restricted to users in **`ADMIN_USER_IDS`** (in `.env`) or with a server moderator role (Administrator, Manage Server, Moderate Members, or `/config moderator-role`). If **`MODERATION_ALLOWED_ROLE_IDS`** is set in `.env`, only those roles (and `ADMIN_USER_IDS`) can use timeout, kick, and ban; stats and health still use the normal moderator check. See [FAQ – Who can use /admin?](faq-admins.md#who-can-use-admin) and [Environment Setup – Admin / Moderation](setup-env.md#admin--moderation-optional).
+
+| Subcommand   | Description                              |
+| ------------ | ---------------------------------------- |
+| `/admin timeout` | Timeout a user (5m–7d)                |
+| `/admin kick`    | Kick a user from the server           |
+| `/admin ban`     | Ban a user (optional message delete)   |
+| `/admin stats`   | Bot statistics (uptime, DB, commands) |
+| `/admin health`  | Health check (DB, env, errors)        |
+
+---
+
 ## Other Commands
 
 | Command     | Description                                                               |
@@ -229,10 +254,11 @@ Check external service status (Vercel, Supabase).
 | `/help`     | Command help (use `topic:changelog` for changelog)                        |
 | `/ping`     | Health check                                                              |
 | `/status`   | Vercel / Supabase status                                                  |
+| `/rules`    | View server rules (link to configured channel)                           |
 | `/summary`  | Summarize chat                                                            |
 | `/history`  | View chat history                                                         |
 | `/playback` | Transcript playback (`private`, `before`, `after` message IDs for paging) |
-| `/admin`    | Admin tools                                                               |
+| `/admin`    | Admin tools (see [§ /admin](#admin--admin--moderation))                    |
 
 ---
 
@@ -240,11 +266,11 @@ Check external service status (Vercel, Supabase).
 
 | Category          | Commands                                           |
 | ----------------- | -------------------------------------------------- |
-| Core              | 6 (help, ping, info, profile, achievements, admin) |
+| Core              | 7 (help, ping, info, profile, achievements, admin, rules) |
 | Fun               | 1 (with 25+ subcommands)                           |
 | Server Management | 3 (config, giveaway, suggestion)                   |
 | Content           | 4 (faq, summary, history, playback)                |
 | Integration       | 2 (gh, status)                                     |
-| **Total**         | **16 slash commands**                              |
+| **Total**         | **17 slash commands**                              |
 
 ---
