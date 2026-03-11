@@ -246,7 +246,9 @@ export async function run(
         if (removed) {
           await interaction.editReply(`✅ Quote #${id} removed.`);
         } else {
-          await interaction.editReply(`We couldn't remove quote #${id}. Try again in a moment.`);
+          await interaction.editReply(
+            `We couldn't remove quote #${id}. Try again in a moment.`,
+          );
         }
         break;
       }
@@ -280,6 +282,8 @@ export async function run(
     }
   } catch (err) {
     logger.error({ err, action, guildId }, "[fun/quote] quote action threw");
-    await interaction.editReply("We couldn't get or save that quote. Try again in a moment.");
+    await interaction.editReply(
+      "We couldn't get or save that quote. Try again in a moment.",
+    );
   }
 }

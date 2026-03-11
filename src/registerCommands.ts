@@ -94,7 +94,10 @@ async function registerCommands(): Promise<void> {
         const cmdName = (imported.data as { name?: string }).name ?? json.name ?? name;
         logger.info({ command: cmdName, file: relFile }, "[register] prepared");
       } catch (err) {
-        logger.warn({ err, group, name, file: relFile }, "[register] command module load threw");
+        logger.warn(
+          { err, group, name, file: relFile },
+          "[register] command module load threw",
+        );
       }
     }
   }

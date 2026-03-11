@@ -38,7 +38,10 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       "That option wasn't found. Use `start`, `guess`, `giveup`, or `words`. Use `/help topic:fun` for more.",
     );
   } catch (err) {
-    logger.error({ err, userId: interaction.user.id }, `[hangman] hangman handler threw: ${errMessage(err)}`);
+    logger.error(
+      { err, userId: interaction.user.id },
+      `[hangman] hangman handler threw: ${errMessage(err)}`,
+    );
     await interaction
       .editReply(`❌ Hangman hit a snag: ${getUserFacingReason(err)}`)
       .catch(() => {});

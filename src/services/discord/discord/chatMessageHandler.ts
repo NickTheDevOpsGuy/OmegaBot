@@ -113,7 +113,10 @@ export function setupChatMessageHandler(client: Client): void {
         const reply = `${result.text}\n\n_— ${label}_`;
         await message.reply({ content: reply }).catch(() => {});
       } catch (err) {
-        log.warn({ err, userId: message.author.id }, `[chat] message handler threw: ${errMessage(err)}`);
+        log.warn(
+          { err, userId: message.author.id },
+          `[chat] message handler threw: ${errMessage(err)}`,
+        );
         await message
           .reply({ content: `❌ ${getUserFacingReason(err)}` })
           .catch(() => {});

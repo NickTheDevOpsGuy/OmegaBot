@@ -21,7 +21,10 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
   try {
     return await runSlots(interaction);
   } catch (err) {
-    logger.error({ err, userId: interaction.user.id }, `[slots] slots handler threw: ${errMessage(err)}`);
+    logger.error(
+      { err, userId: interaction.user.id },
+      `[slots] slots handler threw: ${errMessage(err)}`,
+    );
     await interaction
       .editReply(`❌ Slots had a hiccup: ${getUserFacingReason(err)}`)
       .catch(() => {});

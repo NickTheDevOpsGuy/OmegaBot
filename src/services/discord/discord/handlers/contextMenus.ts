@@ -28,7 +28,10 @@ async function safeRepliableReply(
       });
       return;
     }
-    logger.warn({ err, interactionId: interaction.id }, `[interaction] context menu reply threw: ${errMessage(err)}`);
+    logger.warn(
+      { err, interactionId: interaction.id },
+      `[interaction] context menu reply threw: ${errMessage(err)}`,
+    );
   }
 }
 

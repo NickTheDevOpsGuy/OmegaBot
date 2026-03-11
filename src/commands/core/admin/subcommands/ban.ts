@@ -75,7 +75,10 @@ export async function handleBan(interaction: ChatInputCommandInteraction): Promi
       "[admin] user banned",
     );
   } catch (err) {
-    getContextLogger().error({ err, targetUser: targetUser.id }, "[admin] ban execution threw");
+    getContextLogger().error(
+      { err, targetUser: targetUser.id },
+      "[admin] ban execution threw",
+    );
     await safeReply(interaction, {
       content: userFacingError(err, locale),
       ephemeral: true,

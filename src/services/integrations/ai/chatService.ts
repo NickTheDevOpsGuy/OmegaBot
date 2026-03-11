@@ -68,7 +68,10 @@ export async function chatWithLLM(
       });
       const content = response.choices?.[0]?.message?.content?.trim();
       if (!content) {
-        return { ok: false, error: "The AI didn't return a response. Send your message again." };
+        return {
+          ok: false,
+          error: "The AI didn't return a response. Send your message again.",
+        };
       }
       logger.debug({ model: env.openAIModel }, "[chat] OpenAI reply");
       return { ok: true, text: truncateForDiscord(content), provider: "openai" };
@@ -146,7 +149,10 @@ export async function chatWithConversation(
       });
       const content = response.choices?.[0]?.message?.content?.trim();
       if (!content)
-        return { ok: false, error: "The AI didn't return a response. Send your message again." };
+        return {
+          ok: false,
+          error: "The AI didn't return a response. Send your message again.",
+        };
       return { ok: true, text: truncateForDiscord(content), provider: "openai" };
     } catch (err) {
       logger.warn({ err }, `[chat] OpenAI conversation call threw: ${errMessage(err)}`);

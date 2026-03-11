@@ -95,7 +95,12 @@ export async function execute(
       );
     }
   } catch (err) {
-    logger.error({ err, command: "summarize-message" }, "[summarize-message] summarize handler threw");
-    await interaction.editReply("❌ The summary couldn't be generated. Try again in a moment.");
+    logger.error(
+      { err, command: "summarize-message" },
+      "[summarize-message] summarize handler threw",
+    );
+    await interaction.editReply(
+      "❌ The summary couldn't be generated. Try again in a moment.",
+    );
   }
 }

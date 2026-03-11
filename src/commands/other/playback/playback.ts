@@ -176,7 +176,9 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
     try {
       if (interaction.replied || interaction.deferred) {
-        await interaction.editReply("Playback failed for this channel. Try again in a moment.");
+        await interaction.editReply(
+          "Playback failed for this channel. Try again in a moment.",
+        );
       } else {
         await interaction.reply({
           content: "Playback failed for this channel. Try again in a moment.",

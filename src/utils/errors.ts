@@ -18,7 +18,13 @@ function isSafeToShowUser(msg: string): boolean {
   if (msg.length > MAX_USER_MESSAGE_LENGTH) return false;
   if (low.includes(" at ") && (low.includes(".ts") || low.includes(".js"))) return false;
   if (low.includes("node_modules") || low.includes("stack")) return false;
-  if (low.includes("bearer") || low.includes("token") || low.includes("api_key") || low.includes("secret")) return false;
+  if (
+    low.includes("bearer") ||
+    low.includes("token") ||
+    low.includes("api_key") ||
+    low.includes("secret")
+  )
+    return false;
   if (/\d{15,}/.test(msg)) return false; // avoid exposing long IDs
   return true;
 }
@@ -31,22 +37,40 @@ export function getUserFacingReason(err: unknown): string {
   const msg = err instanceof Error ? err.message : String(err);
   const low = msg.toLowerCase();
 
-  if (low.includes("rate limit") || low.includes("429") || low.includes("too many requests")) {
+  if (
+    low.includes("rate limit") ||
+    low.includes("429") ||
+    low.includes("too many requests")
+  ) {
     return "You're going too fast. Wait a moment and try again.";
   }
   if (low.includes("timeout") || low.includes("etimedout") || low.includes("timed out")) {
     return "The request timed out. Try again in a moment.";
   }
-  if (low.includes("econnrefused") || low.includes("enotfound") || low.includes("network") || low.includes("unreachable")) {
+  if (
+    low.includes("econnrefused") ||
+    low.includes("enotfound") ||
+    low.includes("network") ||
+    low.includes("unreachable")
+  ) {
     return "The service is unreachable. Try again in a moment.";
   }
   if (low.includes("not found") || low.includes("404")) {
     return "That wasn't found. Check and try again.";
   }
-  if (low.includes("permission") || low.includes("403") || low.includes("401") || low.includes("forbidden")) {
+  if (
+    low.includes("permission") ||
+    low.includes("403") ||
+    low.includes("401") ||
+    low.includes("forbidden")
+  ) {
     return "I don't have permission to do that. Check my role and permissions.";
   }
-  if (low.includes("sqlite_busy") || low.includes("database is locked") || low.includes("busy")) {
+  if (
+    low.includes("sqlite_busy") ||
+    low.includes("database is locked") ||
+    low.includes("busy")
+  ) {
     return "The bot is busy. Try again in a moment.";
   }
   if (low.includes("unknown interaction") || low.includes("10062")) {

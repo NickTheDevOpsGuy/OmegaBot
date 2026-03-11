@@ -94,7 +94,10 @@ async function safeRepliableReply(
       });
       return;
     }
-    logger.warn({ err, interactionId: interaction.id }, `[interaction] slash command reply threw: ${errMessage(err)}`);
+    logger.warn(
+      { err, interactionId: interaction.id },
+      `[interaction] slash command reply threw: ${errMessage(err)}`,
+    );
   }
 }
 
@@ -232,7 +235,10 @@ async function handleChatCommand(
 
     const code = getDiscordErrorCode(err);
     const msg = getDiscordErrorMessage(err);
-    log.error({ ...meta, err, code, msg }, `[interaction] command execution threw: ${errMessage(err)}`);
+    log.error(
+      { ...meta, err, code, msg },
+      `[interaction] command execution threw: ${errMessage(err)}`,
+    );
 
     const userMsg = getUserFacingReason(err);
     await safeRepliableReply(interaction, `❌ ${userMsg}`, true);

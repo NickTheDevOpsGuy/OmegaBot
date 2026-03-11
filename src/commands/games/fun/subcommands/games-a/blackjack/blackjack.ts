@@ -84,7 +84,10 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
   try {
     return await runBlackjack(interaction);
   } catch (err) {
-    logger.error({ err, userId: interaction.user.id }, `[blackjack] game handler threw: ${errMessage(err)}`);
+    logger.error(
+      { err, userId: interaction.user.id },
+      `[blackjack] game handler threw: ${errMessage(err)}`,
+    );
     await interaction
       .editReply(`❌ Blackjack couldn't complete: ${getUserFacingReason(err)}`)
       .catch(() => {});

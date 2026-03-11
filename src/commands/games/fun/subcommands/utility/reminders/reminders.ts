@@ -97,7 +97,9 @@ export async function run(
         `✅ Cancelled reminder #${reminderId}: "${reminder.message.slice(0, 50)}..."`,
       );
     } else {
-      await interaction.editReply(`We couldn't cancel reminder #${reminderId}. It may already be gone—check your list.`);
+      await interaction.editReply(
+        `We couldn't cancel reminder #${reminderId}. It may already be gone—check your list.`,
+      );
     }
     return;
   }
@@ -125,7 +127,9 @@ export async function run(
     const newDueAt = Date.now() + durationMs;
     const updated = updateDueAt(reminderId, userId, newDueAt);
     if (!updated) {
-      await interaction.editReply(`We couldn't snooze reminder #${reminderId}. Check the time format and try again.`);
+      await interaction.editReply(
+        `We couldn't snooze reminder #${reminderId}. Check the time format and try again.`,
+      );
       return;
     }
 
@@ -184,6 +188,8 @@ export async function run(
     logger.info({ userId, reminderId: id, dueAt }, "[remind] reminder created");
   } catch (err) {
     logger.error({ err }, "[remind] create reminder threw");
-    await interaction.editReply("We couldn't create that reminder. Check the time format (e.g. 5m, 1h) and try again.");
+    await interaction.editReply(
+      "We couldn't create that reminder. Check the time format (e.g. 5m, 1h) and try again.",
+    );
   }
 }

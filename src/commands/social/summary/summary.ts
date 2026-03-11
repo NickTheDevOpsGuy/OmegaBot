@@ -88,7 +88,10 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
       await interaction.editReply("✅ Summary sent to your DMs.");
     } catch (dmErr) {
-      logger.warn({ dmErr, userId: interaction.user.id }, "[summary] send summary to user DM threw");
+      logger.warn(
+        { dmErr, userId: interaction.user.id },
+        "[summary] send summary to user DM threw",
+      );
       await interaction.editReply(
         "I generated the summary, but I could not DM you. Your DMs may be closed.",
       );

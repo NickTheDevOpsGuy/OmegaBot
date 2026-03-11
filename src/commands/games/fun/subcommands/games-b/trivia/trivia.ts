@@ -10,7 +10,10 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
   try {
     return await runTrivia(interaction);
   } catch (err) {
-    logger.error({ err, userId: interaction.user.id }, `[trivia] trivia handler threw: ${errMessage(err)}`);
+    logger.error(
+      { err, userId: interaction.user.id },
+      `[trivia] trivia handler threw: ${errMessage(err)}`,
+    );
     await interaction
       .editReply(`❌ Trivia couldn't load or continue: ${getUserFacingReason(err)}`)
       .catch(() => {});

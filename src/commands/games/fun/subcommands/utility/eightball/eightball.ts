@@ -45,7 +45,10 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
 
     await interaction.editReply(lines.join("\n"));
   } catch (err) {
-    logger.error({ err, userId: interaction.user.id }, "[fun/8ball] 8-ball handler threw");
+    logger.error(
+      { err, userId: interaction.user.id },
+      "[fun/8ball] 8-ball handler threw",
+    );
     await interaction.editReply("The magic 8-ball is cloudy. Ask again in a moment.");
   }
 }

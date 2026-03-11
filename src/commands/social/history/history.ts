@@ -112,6 +112,8 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     }
   } catch (error) {
     logger.error({ error, count }, "[history] fetch message history threw");
-    await interaction.editReply("❌ We couldn't load message history for this channel. Try again in a moment.");
+    await interaction.editReply(
+      "❌ We couldn't load message history for this channel. Try again in a moment.",
+    );
   }
 }

@@ -87,7 +87,7 @@ export async function handleJoke(
     default:
       await interaction.editReply({
         content:
-        "That option wasn't found. Use `add`, `remove`, or `list`. Use `/help topic:fun` for more.",
+          "That option wasn't found. Use `add`, `remove`, or `list`. Use `/help topic:fun` for more.",
       });
   }
 }

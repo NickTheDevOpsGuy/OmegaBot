@@ -233,7 +233,10 @@ export async function pollIssueAssigneesOnce(args: PollArgs): Promise<void> {
         "[github/assignees] announced",
       );
     } catch (err) {
-      logger.error({ err, number: n.number }, "[github/assignees] announce assignee threw");
+      logger.error(
+        { err, number: n.number },
+        "[github/assignees] announce assignee threw",
+      );
     }
   }
 
