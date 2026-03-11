@@ -179,7 +179,9 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     }
 
     // Safety net in case Discord sends something unexpected
-    await interaction.editReply("Unknown subcommand.");
+    await interaction.editReply(
+      "That command wasn't found. Use `add`, `get`, `remove`, or `list`. Use `/help` for more.",
+    );
   } catch (err) {
     getContextLogger().error({ err, sub }, "[faq] subcommand failed");
     await interaction.editReply("Something went wrong. Try again in a bit.");

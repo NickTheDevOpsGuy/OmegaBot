@@ -14,6 +14,7 @@ import {
   formatCooldownMessage,
   recordDartsThrow,
 } from "../../../../../../services/discord/discord/rateLimit/index.js";
+import { safeMessageEdit } from "../../../../../../services/discord/discord/safeReply.js";
 import { getNewlyUnlockedAchievementLine } from "../../../../achievements/achievements.js";
 import { getDb } from "../../../../../../services/core/database/db.js";
 import { recordSoloThrow } from "./dartsStore.js";
@@ -86,11 +87,15 @@ export async function runSoloThrow(
     await againClick.deferUpdate();
     const remaining2 = checkDartsCooldown(interaction.user.id);
     if (remaining2 > 0) {
-      await message.edit({
-        embeds: [embed],
-        components: [],
-        content: `⏱️ Wait ${remaining2}s before throwing again.`,
-      });
+      await safeMessageEdit(
+        message,
+        {
+          embeds: [embed],
+          components: [],
+          content: `⏱️ Wait ${remaining2}s before throwing again.`,
+        },
+        "darts.solo.cooldown",
+      ).catch(() => {});
       return;
     }
     const { hits: hits2, score: score2, is180: is1802 } = doThrow();
@@ -101,7 +106,11 @@ export async function runSoloThrow(
         )
       : (recordSoloThrow(interaction.user.id, score2, is1802), undefined);
     const embed2 = buildThrowEmbed(hits2, score2, is1802, achievementLine2);
-    await message.edit({ embeds: [embed2], components: [] });
+    await safeMessageEdit(
+      message,
+      { embeds: [embed2], components: [] },
+      "darts.solo.again",
+    ).catch(() => {});
   } catch {
     // Timeout
   }

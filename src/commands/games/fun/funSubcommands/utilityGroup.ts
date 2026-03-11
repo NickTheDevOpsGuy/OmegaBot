@@ -55,6 +55,39 @@ export function addUtilitySubcommands(
     )
     .addSubcommand((s) =>
       s
+        .setName("chat")
+        .setDescription("Chat with the bot using AI (OpenAI or Claude)")
+        .addStringOption((o) =>
+          o
+            .setName("message")
+            .setDescription("What you want to say")
+            .setRequired(true)
+            .setMaxLength(1000),
+        )
+        .addBooleanOption((o) =>
+          o.setName("private").setDescription("Only show the reply to you"),
+        ),
+    )
+    .addSubcommand((s) =>
+      s
+        .setName("roast")
+        .setDescription("Get a playful AI roast (or roast a friend)")
+        .addUserOption((o) =>
+          o.setName("user").setDescription("Who to roast (default: you)"),
+        )
+        .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+    )
+    .addSubcommand((s) =>
+      s
+        .setName("compliment")
+        .setDescription("Get a nice AI compliment (or compliment a friend)")
+        .addUserOption((o) =>
+          o.setName("user").setDescription("Who to compliment (default: you)"),
+        )
+        .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+    )
+    .addSubcommand((s) =>
+      s
         .setName("leaderboard")
         .setDescription("Fun command leaderboard")
         .addStringOption((o) =>

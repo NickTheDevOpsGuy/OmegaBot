@@ -25,6 +25,10 @@ export function buildFunHelp(): string {
     "**Utility**",
     "`/fun weather`        Current weather",
     "`/fun weather7`       7-day forecast",
+    "`/fun chat`           Chat with the bot (same thread as DMs/@mentions)",
+    '                     Or DM the bot or @mention it to chat. Say "new chat" to reset.',
+    "`/fun roast`          Playful AI roast (you or a friend)",
+    "`/fun compliment`     Nice AI compliment (you or a friend)",
     "`/fun fact`           Random interesting fact",
     "`/fun poll`           Create a poll",
   ].join("\n");

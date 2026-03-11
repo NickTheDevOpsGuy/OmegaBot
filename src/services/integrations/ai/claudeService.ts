@@ -63,6 +63,39 @@ export async function callClaude(
   }
 }
 
+export type ClaudeMessage = { role: "user" | "assistant"; content: string };
+
+/**
+ * Multi-turn conversation: pass full message history, get the next assistant reply.
+ * messages must alternate user/assistant and end with a user message.
+ */
+export async function callClaudeWithMessages(
+  systemPrompt: string,
+  messages: ClaudeMessage[],
+  options: { maxTokens?: number; temperature?: number } = {},
+): Promise<string> {
+  const { maxTokens = 1024, temperature = 0.7 } = options;
+
+  try {
+    const message = await anthropic.messages.create({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: maxTokens,
+      temperature,
+      system: systemPrompt,
+      messages: messages.map((m) => ({ role: m.role, content: m.content })),
+    });
+
+    const textContent = message.content.find((block) => block.type === "text");
+    if (!textContent || textContent.type !== "text") {
+      throw new Error("No text content in Claude response");
+    }
+    return textContent.text;
+  } catch (error) {
+    logger.error({ error }, "Claude API multi-turn call failed");
+    throw new Error("Failed to get response from Claude");
+  }
+}
+
 /**
  * Summarize GitHub commit history
  */

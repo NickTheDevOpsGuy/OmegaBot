@@ -19,6 +19,7 @@ import {
   DIFFICULTY_POINTS,
   type TriviaCategory,
 } from "./questions.js";
+import { safeMessageEdit } from "../../../../../../services/discord/discord/safeReply.js";
 import { TRIVIA_QUESTION_TIMEOUT_MS } from "../../../../../../utils/constants.js";
 
 const TRIVIA_TIMEOUT_MS = TRIVIA_QUESTION_TIMEOUT_MS;
@@ -246,7 +247,11 @@ async function waitForNextQuestion(
     const categoryLabel =
       question.category.charAt(0).toUpperCase() + question.category.slice(1);
     const embedColor = CATEGORY_COLORS[question.category] ?? 0x6366f1;
-    await message.edit({ embeds: [questionEmbed], components: [buttons] });
+    await safeMessageEdit(
+      message,
+      { embeds: [questionEmbed], components: [buttons] },
+      "trivia.question",
+    ).catch(() => {});
 
     const correctIndex = allAnswers.indexOf(question.correctAnswer);
     const response2 = await message.awaitMessageComponent({

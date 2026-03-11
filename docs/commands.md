@@ -10,7 +10,7 @@ OmegaBot has **17 slash commands** organized into logical groups.
 
 The main hub for all games and fun features.
 
-### Games (14)
+### Games
 
 | Command                   | Description                                                     |
 | ------------------------- | --------------------------------------------------------------- |
@@ -27,6 +27,9 @@ The main hub for all games and fun features.
 | `/fun wordle`             | Daily word puzzle                                               |
 | `/fun slots`              | Slot machine with jackpots                                      |
 | `/fun darts`              | Throw 3 darts (solo or PvP), stats, leaderboards (best/180/PvP) |
+| `/fun chess`              | Challenge someone to chess or get Lichess links (vs computer)   |
+| `/fun memory`             | Match pairs of cards (memory game)                              |
+| `/fun higherlower`        | Think of a number 1–100; bot guesses with Higher/Lower          |
 | `/fun would-you-rather`   | WYR questions                                                   |
 | `/fun coinflip`           | Heads or tails                                                  |
 | `/fun choose`             | Pick one or more options at random (e.g. pizza, pasta, salad)   |
@@ -88,11 +91,14 @@ Stats and leaderboard views are not rate limited.
 
 ### Utility
 
-| Command         | Description     |
-| --------------- | --------------- |
-| `/fun weather`  | Current weather |
-| `/fun weather7` | 7-day forecast  |
-| `/fun fact`     | Random facts    |
+| Command           | Description                                                |
+| ----------------- | ---------------------------------------------------------- |
+| `/fun weather`    | Current weather                                            |
+| `/fun weather7`   | 7-day forecast                                             |
+| `/fun chat`       | Chat with the bot (AI; same thread as DM / @mention)       |
+| `/fun roast`      | Playful AI roast (you or a friend; needs OPENAI/ANTHROPIC) |
+| `/fun compliment` | Nice AI compliment (you or a friend)                       |
+| `/fun fact`       | Random facts                                               |
 
 ---
 

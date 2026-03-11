@@ -114,6 +114,15 @@ export function addGamesSubcommands(
     )
     .addSubcommand((s) =>
       s
+        .setName("chess")
+        .setDescription("Challenge someone to chess or get links to play on Lichess")
+        .addUserOption((o) =>
+          o.setName("opponent").setDescription("Challenge this user to a game"),
+        )
+        .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+    )
+    .addSubcommand((s) =>
+      s
         .setName("would-you-rather")
         .setDescription("Would you rather… vote with buttons")
         .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
@@ -168,6 +177,18 @@ export function addGamesSubcommands(
         .addBooleanOption((o) =>
           o.setName("paytable").setDescription("Show payout table"),
         )
+        .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+    )
+    .addSubcommand((s) =>
+      s
+        .setName("memory")
+        .setDescription("Match pairs of cards (memory game)")
+        .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+    )
+    .addSubcommand((s) =>
+      s
+        .setName("higherlower")
+        .setDescription("Think of a number 1–100; bot guesses with Higher/Lower")
         .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
     )
     .addSubcommand((s) =>

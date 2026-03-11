@@ -21,6 +21,9 @@ export const TRIVIA_QUESTION_TIMEOUT_MS = 30_000;
 /** 60 seconds - Wordle modal submit timeout, Would You Rather vote timeout */
 export const SHORT_TIMEOUT_MS = 60_000;
 
+/** 2 seconds - Memory game: time to view two non-matching cards before they flip back */
+export const MEMORY_FLIP_BACK_MS = 2_000;
+
 /** Tic Tac Toe vs bot: 90 minutes max (9 moves × 10 min equivalent) */
 export const TICTACTOE_VS_BOT_TIMEOUT_MS = MOVE_TIMEOUT_MS * 9;
 

@@ -49,10 +49,14 @@ export async function playVsBot(interaction: ChatInputCommandInteraction): Promi
       if (action === "extend") {
         collector.resetTimer();
         await buttonInteraction.deferUpdate();
-        await message.edit({
-          content: `🎮 **Tic Tac Toe** — You (❌) vs Bot (⭕)\n\nYour turn! Click a square.\n\n⏱️ *Time extended!*`,
-          components: [...buildBoardButtons(gameId, board), buildExtendRow(gameId)],
-        });
+        await safeMessageEdit(
+          message,
+          {
+            content: `🎮 **Tic Tac Toe** — You (❌) vs Bot (⭕)\n\nYour turn! Click a square.\n\n⏱️ *Time extended!*`,
+            components: [...buildBoardButtons(gameId, board), buildExtendRow(gameId)],
+          },
+          "tictactoe.vsBot.extend",
+        ).catch(() => {});
         return;
       }
 
@@ -68,25 +72,33 @@ export async function playVsBot(interaction: ChatInputCommandInteraction): Promi
       if (winner === playerSymbol) {
         const winningCells = getWinningCells(board);
         collector.stop("player_win");
-        await message.edit({
-          content: `🎮 **Tic Tac Toe** — You (❌) vs Bot (⭕)\n\n🎉 **You win!**`,
-          components: [
-            ...buildBoardButtons(gameId, board, true, winningCells),
-            buildExtendRow(gameId, true),
-          ],
-        });
+        await safeMessageEdit(
+          message,
+          {
+            content: `🎮 **Tic Tac Toe** — You (❌) vs Bot (⭕)\n\n🎉 **You win!**`,
+            components: [
+              ...buildBoardButtons(gameId, board, true, winningCells),
+              buildExtendRow(gameId, true),
+            ],
+          },
+          "tictactoe.vsBot.playerWin",
+        ).catch(() => {});
         return;
       }
 
       if (isBoardFull(board)) {
         collector.stop("tie");
-        await message.edit({
-          content: `🎮 **Tic Tac Toe** — You (❌) vs Bot (⭕)\n\n🤝 **It's a tie!**`,
-          components: [
-            ...buildBoardButtons(gameId, board, true),
-            buildExtendRow(gameId, true),
-          ],
-        });
+        await safeMessageEdit(
+          message,
+          {
+            content: `🎮 **Tic Tac Toe** — You (❌) vs Bot (⭕)\n\n🤝 **It's a tie!**`,
+            components: [
+              ...buildBoardButtons(gameId, board, true),
+              buildExtendRow(gameId, true),
+            ],
+          },
+          "tictactoe.vsBot.tie",
+        ).catch(() => {});
         return;
       }
 
@@ -97,32 +109,44 @@ export async function playVsBot(interaction: ChatInputCommandInteraction): Promi
       if (winner === botSymbol) {
         const winningCells = getWinningCells(board);
         collector.stop("bot_win");
-        await message.edit({
-          content: `🎮 **Tic Tac Toe** — You (❌) vs Bot (⭕)\n\n😢 **Bot wins!**`,
-          components: [
-            ...buildBoardButtons(gameId, board, true, winningCells),
-            buildExtendRow(gameId, true),
-          ],
-        });
+        await safeMessageEdit(
+          message,
+          {
+            content: `🎮 **Tic Tac Toe** — You (❌) vs Bot (⭕)\n\n😢 **Bot wins!**`,
+            components: [
+              ...buildBoardButtons(gameId, board, true, winningCells),
+              buildExtendRow(gameId, true),
+            ],
+          },
+          "tictactoe.vsBot.botWin",
+        ).catch(() => {});
         return;
       }
 
       if (isBoardFull(board)) {
         collector.stop("tie");
-        await message.edit({
-          content: `🎮 **Tic Tac Toe** — You (❌) vs Bot (⭕)\n\n🤝 **It's a tie!**`,
-          components: [
-            ...buildBoardButtons(gameId, board, true),
-            buildExtendRow(gameId, true),
-          ],
-        });
+        await safeMessageEdit(
+          message,
+          {
+            content: `🎮 **Tic Tac Toe** — You (❌) vs Bot (⭕)\n\n🤝 **It's a tie!**`,
+            components: [
+              ...buildBoardButtons(gameId, board, true),
+              buildExtendRow(gameId, true),
+            ],
+          },
+          "tictactoe.vsBot.tie2",
+        ).catch(() => {});
         return;
       }
 
-      await message.edit({
-        content: `🎮 **Tic Tac Toe** — You (❌) vs Bot (⭕)\n\nYour turn! Click a square.`,
-        components: [...buildBoardButtons(gameId, board), buildExtendRow(gameId)],
-      });
+      await safeMessageEdit(
+        message,
+        {
+          content: `🎮 **Tic Tac Toe** — You (❌) vs Bot (⭕)\n\nYour turn! Click a square.`,
+          components: [...buildBoardButtons(gameId, board), buildExtendRow(gameId)],
+        },
+        "tictactoe.vsBot.turn",
+      ).catch(() => {});
     } catch (err) {
       if (isKnownInteractionError(err)) {
         logKnownInteractionError(err, "tictactoe.vsBot.collect", { gameId });

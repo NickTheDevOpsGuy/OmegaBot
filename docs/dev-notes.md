@@ -61,7 +61,7 @@ For the full folder layout (command and service groups), see [Project structure]
 ## Logging
 
 - **Logger:** Single pino instance in `src/utils/logger.ts`. Level via `LOG_LEVEL`; pretty output in dev when `LOG_PRETTY` is not `false`.
-- **Request context:** Every slash command runs inside `runWithContextAsync()` in the interaction handler. Context includes `requestId` (UUID), `userId`, `guildId`, `command`, `subcommand`, and `startedAt`.
+- **Request context:** Every slash command runs inside `runWithContextAsync()` in the interaction handler. Context includes `requestId` (UUID), `userId`, `guildId`, `command`, `subcommand`, and `startedAt`. Message-based chat (DM / @mention) creates its own context per message so chat logs are traceable.
 - **Correlation:** The handler and shared code (e.g. `safeReply`, `interactionErrors`) use `getContextLogger()` from `requestContext.ts`, so their log lines include `requestId`. To tie your command’s logs to the same request, use `getContextLogger()` instead of the base `logger` when logging inside a command or handler that runs within that context.
 - **Recovery:** When `safeReply` falls back to `followUp` after an initial failure, it logs with `interactionFailedRecovery: true`. Use this (and `[interaction] Discord error`) to debug “failed to complete” and rate limits; see [Troubleshooting](troubleshooting.md).
 

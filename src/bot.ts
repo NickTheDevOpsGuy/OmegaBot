@@ -5,6 +5,7 @@ import { initDatabase, closeDatabase } from "./services/core/database/db.js";
 import { startMetricsServer, stopMetricsServer } from "./services/core/metrics/server.js";
 
 import { Client, GatewayIntentBits, Partials } from "discord.js";
+import { setupChatMessageHandler } from "./services/discord/discord/chatMessageHandler.js";
 import { getDiscordErrorCode } from "./services/discord/discord/interaction/interactionErrors.js";
 import {
   loadCommands,
@@ -26,8 +27,10 @@ const client = new Client({
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessageReactions,
     GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.DirectMessages,
+    GatewayIntentBits.MessageContent,
   ],
-  partials: [Partials.Message, Partials.Reaction, Partials.User],
+  partials: [Partials.Message, Partials.Reaction, Partials.User, Partials.Channel],
 }) as CommandClient;
 
 client.commands = new Map();
@@ -84,6 +87,9 @@ client.once("clientReady", () => {
 
   // Setup starboard reaction listeners
   setupStarboardListeners(client);
+
+  // Chat via message: DM or @mention the bot (uses OPENAI_API_KEY / ANTHROPIC_API_KEY)
+  setupChatMessageHandler(client);
 
   logger.info(
     {

@@ -65,10 +65,14 @@ async function playDealerTurn(
   recordResult(userId, result);
   logger.info({ gameId, userId, result }, "[blackjack] game ended");
 
-  await message.edit({
-    embeds: [buildGameEmbed(playerHand, dealerHand, status, false)],
-    components: [buildButtons(gameId, true), buildExtendRow(gameId, true)],
-  });
+  await safeMessageEdit(
+    message,
+    {
+      embeds: [buildGameEmbed(playerHand, dealerHand, status, false)],
+      components: [buildButtons(gameId, true), buildExtendRow(gameId, true)],
+    },
+    "blackjack.playDealerTurn",
+  ).catch(() => {});
 }
 
 /* -------------------------------------------------------------------------- */
@@ -171,21 +175,25 @@ async function runBlackjack(interaction: ChatInputCommandInteraction): Promise<v
       if (action === "extend") {
         collector.resetTimer();
         await buttonInteraction.deferUpdate();
-        await message.edit({
-          embeds: [
-            buildGameEmbed(
-              playerHand,
-              dealerHand,
-              "playing",
-              true,
-              "⏱️ *Time extended! You have another hour.*",
-            ),
-          ],
-          components: [
-            buildButtons(gameId, false, playerHand.length === 2),
-            buildExtendRow(gameId),
-          ],
-        });
+        await safeMessageEdit(
+          message,
+          {
+            embeds: [
+              buildGameEmbed(
+                playerHand,
+                dealerHand,
+                "playing",
+                true,
+                "⏱️ *Time extended! You have another hour.*",
+              ),
+            ],
+            components: [
+              buildButtons(gameId, false, playerHand.length === 2),
+              buildExtendRow(gameId),
+            ],
+          },
+          "blackjack.extend",
+        ).catch(() => {});
         return;
       }
 
@@ -215,10 +223,14 @@ async function runBlackjack(interaction: ChatInputCommandInteraction): Promise<v
           collector.stop("bust");
           recordResult(userId, "loss");
           logger.info({ gameId, userId }, "[blackjack] player bust");
-          await message.edit({
-            embeds: [buildGameEmbed(playerHand, dealerHand, "player_bust", false)],
-            components: [buildButtons(gameId, true), buildExtendRow(gameId, true)],
-          });
+          await safeMessageEdit(
+            message,
+            {
+              embeds: [buildGameEmbed(playerHand, dealerHand, "player_bust", false)],
+              components: [buildButtons(gameId, true), buildExtendRow(gameId, true)],
+            },
+            "blackjack.bust",
+          ).catch(() => {});
           return;
         }
 
@@ -236,10 +248,14 @@ async function runBlackjack(interaction: ChatInputCommandInteraction): Promise<v
           return;
         }
 
-        await message.edit({
-          embeds: [buildGameEmbed(playerHand, dealerHand, "playing")],
-          components: [buildButtons(gameId, false, false), buildExtendRow(gameId)],
-        });
+        await safeMessageEdit(
+          message,
+          {
+            embeds: [buildGameEmbed(playerHand, dealerHand, "playing")],
+            components: [buildButtons(gameId, false, false), buildExtendRow(gameId)],
+          },
+          "blackjack.hit",
+        ).catch(() => {});
       } else if (action === "stand") {
         collector.stop("stand");
         await playDealerTurn(

@@ -27,7 +27,13 @@ export type FunCommandKey =
   | "slots"
   | "darts"
   | "stats"
-  | "choose";
+  | "choose"
+  | "chat"
+  | "chess"
+  | "roast"
+  | "compliment"
+  | "memory"
+  | "higherlower";
 
 type FunUsageStoreV1 = {
   version: 1;
@@ -79,6 +85,12 @@ const ALL_COMMANDS: FunCommandKey[] = [
   "darts",
   "stats",
   "choose",
+  "chat",
+  "chess",
+  "roast",
+  "compliment",
+  "memory",
+  "higherlower",
 ];
 
 function nowIso(): string {

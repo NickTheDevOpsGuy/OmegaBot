@@ -23,11 +23,11 @@ function friendlyWeatherError(err: unknown): string {
     return "Weather API is temporarily unavailable. Try again in a minute.";
   }
   if (msg.toLowerCase().includes("missing weatherapi_key")) {
-    return "Weather is not configured (missing WEATHERAPI_KEY). Ask an admin to set it in `.env`.";
+    return "Weather isn't available right now. Ask a server admin to set up the weather API.";
   }
 
   if (msg.toLowerCase().includes("auth error")) {
-    return "Weather is misconfigured (bad WEATHERAPI_KEY). Ask an admin to fix `.env`.";
+    return "Weather isn't available right now. Ask a server admin to check the weather API configuration.";
   }
 
   if (msg.toLowerCase().includes("rejected the location")) {

@@ -42,9 +42,10 @@ For full functionality, especially **admin/moderation commands**, the bot role n
 
 Enable in **Developer Portal → Bot → Privileged Gateway Intents**:
 
-- Server Members Intent (required)
+- **Server Members Intent** (required for auto-role, welcome, etc.)
+- **Message Content Intent** (required only if you want message-based chat: DM the bot or @mention it to get an LLM reply; uses `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`)
 
-Your code must also request the same intent.
+Your code requests these intents when enabled.
 
 ---
 

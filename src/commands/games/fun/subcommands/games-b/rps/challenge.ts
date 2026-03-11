@@ -8,11 +8,10 @@ import {
 } from "discord.js";
 import { logger } from "../../../../../../utils/logger.js";
 import { recordInteractionRecovery } from "../../../../../../services/core/metrics/server.js";
-import { safeReplyToButton } from "../../../../../../services/discord/discord/safeReply.js";
 import {
-  isKnownInteractionError,
-  logKnownInteractionError,
-} from "../../../../../../services/discord/discord/interaction/interactionErrors.js";
+  safeMessageEdit,
+  safeReplyToButton,
+} from "../../../../../../services/discord/discord/safeReply.js";
 import { recordPvpResult, getH2HStats } from "./rpsStore.js";
 import { CHOICES, EMOJI, CHOICE_LABELS, getResult, type Choice } from "./gameLogic.js";
 import { buildChoiceButtons, buildDeclineButton, buildExtendButton } from "./ui.js";
@@ -101,22 +100,26 @@ export async function handleChallenge(
         }
         collector.resetTimer();
         await buttonInteraction.deferUpdate();
-        await challengeMessage.edit({
-          content: [
-            `⚔️ **Rock Paper Scissors Challenge!**`,
-            ``,
-            `${challenger} challenges ${opponent} to a duel!`,
-            `${h2hText}`,
-            ``,
-            `Both players: click your choice below.`,
-            `⏱️ **Time extended!** You have another 24 hours.`,
-          ].join("\n"),
-          components: [
-            buildChoiceButtons(challengeId),
-            buildDeclineButton(challengeId),
-            buildExtendButton(challengeId),
-          ],
-        });
+        await safeMessageEdit(
+          challengeMessage,
+          {
+            content: [
+              `⚔️ **Rock Paper Scissors Challenge!**`,
+              ``,
+              `${challenger} challenges ${opponent} to a duel!`,
+              `${h2hText}`,
+              ``,
+              `Both players: click your choice below.`,
+              `⏱️ **Time extended!** You have another 24 hours.`,
+            ].join("\n"),
+            components: [
+              buildChoiceButtons(challengeId),
+              buildDeclineButton(challengeId),
+              buildExtendButton(challengeId),
+            ],
+          },
+          "rps.challenge.extend",
+        ).catch(() => {});
         return;
       }
 
@@ -195,8 +198,9 @@ export async function handleChallenge(
         logger.error({ err }, "[fun/rps] failed to record PvP result");
       }
 
-      try {
-        await challengeMessage.edit({
+      await safeMessageEdit(
+        challengeMessage,
+        {
           content: [
             `⚔️ **Rock Paper Scissors Result!**`,
             ``,
@@ -205,16 +209,9 @@ export async function handleChallenge(
             resultText,
           ].join("\n"),
           components: [buildChoiceButtons(challengeId, true)],
-        });
-      } catch (err) {
-        if (isKnownInteractionError(err)) {
-          logKnownInteractionError(err, "rps.challengeMessage.edit", {
-            challengeId,
-          });
-        } else {
-          logger.warn({ err, challengeId }, "[rps] failed to edit challenge message");
-        }
-      }
+        },
+        "rps.challenge.result",
+      ).catch(() => {});
     } else {
       const challengerChose = choices.has(challenger.id);
       const opponentChose = choices.has(opponent.id);
@@ -228,21 +225,15 @@ export async function handleChallenge(
         timeoutText = `${opponent} didn't make a choice in time.`;
       }
 
-      try {
-        await challengeMessage.edit({
+      await safeMessageEdit(
+        challengeMessage,
+        {
           content: `⏱️ **Challenge timed out!**\n\n${timeoutText}`,
           components: [buildChoiceButtons(challengeId, true)],
-        });
-        logger.warn({ challengeId }, "[rps] challenge timed out");
-      } catch (err) {
-        if (isKnownInteractionError(err)) {
-          logKnownInteractionError(err, "rps.challengeMessage.timeout", {
-            challengeId,
-          });
-        } else {
-          logger.warn({ err, challengeId }, "[rps] failed to edit timeout message");
-        }
-      }
+        },
+        "rps.challenge.timeout",
+      ).catch(() => {});
+      logger.warn({ challengeId }, "[rps] challenge timed out");
     }
   });
 }

@@ -36,7 +36,7 @@ Not intended to be:
 ## Features at a Glance
 
 - 16 slash commands with logical grouping; 4 context menus (View Profile, View Achievements, Summarize, Quote)
-- 14 interactive games
+- Interactive games: 8-ball, RPS, Tic Tac Toe, Trivia, Blackjack, Connect 4, Hangman, Wordle, Slots, Darts, Chess (Lichess), Memory (match pairs), Higher/Lower (guess your number), plus polls, choose, dice, coinflip
 - 19 unlockable achievements
 - Giveaway system with automatic winners
 - Starboard message highlights
@@ -104,6 +104,7 @@ docker compose up -d
 ## Documentation
 
 - [Command Reference](docs/commands.md)
+- [Conversational Chat & LLM](docs/chat-and-llm.md) – How chat works (DM / @mention / `/fun chat`), conversation memory in SQLite, clearing, and env
 - [Analytics](docs/analytics.md) – Daily game metrics (`game_usage_daily`), command usage (`command_usage_daily`)
 - [Discord Bot Setup](docs/setup-discord.md)
 - [Environment Setup](docs/setup-env.md)

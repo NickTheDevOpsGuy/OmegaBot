@@ -117,27 +117,35 @@ export async function runPlay(
           "[hangman] game ended",
         );
 
-        await message.edit({
-          embeds: [
-            buildHangmanEmbed(
-              word,
-              guessed,
-              wrongCount,
-              isWon ? "won" : "lost",
-              difficulty,
-              solveTimeSeconds,
-              extraLine,
-            ),
-          ],
-          components: buildLetterDropdowns(gameId, guessed, true),
-        });
+        await safeMessageEdit(
+          message,
+          {
+            embeds: [
+              buildHangmanEmbed(
+                word,
+                guessed,
+                wrongCount,
+                isWon ? "won" : "lost",
+                difficulty,
+                solveTimeSeconds,
+                extraLine,
+              ),
+            ],
+            components: buildLetterDropdowns(gameId, guessed, true),
+          },
+          "hangman.gameEnd",
+        ).catch(() => {});
         return;
       }
 
-      await message.edit({
-        embeds: [buildHangmanEmbed(word, guessed, wrongCount, "playing", difficulty)],
-        components: buildLetterDropdowns(gameId, guessed),
-      });
+      await safeMessageEdit(
+        message,
+        {
+          embeds: [buildHangmanEmbed(word, guessed, wrongCount, "playing", difficulty)],
+          components: buildLetterDropdowns(gameId, guessed),
+        },
+        "hangman.playing",
+      ).catch(() => {});
     } catch (err) {
       recordInteractionRecovery("hangman");
       logger.warn(

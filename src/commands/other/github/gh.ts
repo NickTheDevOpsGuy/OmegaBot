@@ -186,7 +186,9 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       return;
     }
 
-    await interaction.editReply("Unknown subcommand.");
+    await interaction.editReply(
+      "That command wasn't found. Use `/help topic:github` to see GitHub commands.",
+    );
   } catch (err) {
     const msg = getGitHubUserMessage(err);
     if (msg) {

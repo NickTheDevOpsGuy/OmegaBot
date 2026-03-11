@@ -33,6 +33,12 @@ import { run as runWordle } from "./subcommands/games-b/wordle/index.js";
 import { run as runDarts } from "./subcommands/games-a/darts/index.js";
 import { run as runSlots } from "./subcommands/games-b/slots/index.js";
 import { run as runStats } from "./subcommands/games-b/stats/index.js";
+import { run as runChat } from "./subcommands/utility/chat/index.js";
+import { run as runChess } from "./subcommands/games-a/chess/index.js";
+import { run as runRoast } from "./subcommands/utility/roast/index.js";
+import { run as runCompliment } from "./subcommands/utility/compliment/index.js";
+import { run as runMemory } from "./subcommands/games-b/memory/index.js";
+import { run as runHigherlower } from "./subcommands/games-b/higherlower/index.js";
 import {
   recordFunUsage,
   type FunCommandKey,
@@ -75,6 +81,12 @@ function funKeyFromSub(sub: string): FunCommandKey | null {
     darts: "darts",
     stats: "stats",
     choose: "choose",
+    chat: "chat",
+    chess: "chess",
+    roast: "roast",
+    compliment: "compliment",
+    memory: "memory",
+    higherlower: "higherlower",
   };
   return map[sub] ?? null;
 }
@@ -132,6 +144,12 @@ const HANDLERS: Record<string, FunHandler> = {
   coinflipstats: runCoinflipStats,
   darts: runDarts,
   poll: runPoll,
+  chat: runChat,
+  chess: runChess,
+  roast: runRoast,
+  compliment: runCompliment,
+  memory: runMemory,
+  higherlower: runHigherlower,
 };
 
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -203,7 +221,9 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       return;
     }
 
-    await interaction.editReply("Unknown fun subcommand.");
+    await interaction.editReply(
+      "That command wasn't found. Use `/help topic:fun` to see what's available.",
+    );
   } catch (err) {
     if (isKnownInteractionError(err)) {
       logKnownInteractionError(err, "fun.execute", { sub });
@@ -211,7 +231,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     }
     logger.error({ err, sub }, "[fun] command failed");
     try {
-      await interaction.editReply("Something went wrong. Try again later.");
+      await interaction.editReply("Something went wrong. Please try again in a moment.");
     } catch (editErr) {
       if (isKnownInteractionError(editErr)) {
         logKnownInteractionError(editErr, "fun.execute fallback edit", { sub });

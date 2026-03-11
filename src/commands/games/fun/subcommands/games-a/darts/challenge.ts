@@ -11,11 +11,10 @@ import { DARTS_COOLDOWN_MS } from "../../../../../../utils/constants.js";
 import { CHALLENGE_TIMEOUT_MS } from "../../../../../../utils/constants.js";
 import { logger } from "../../../../../../utils/logger.js";
 import { recordInteractionRecovery } from "../../../../../../services/core/metrics/server.js";
-import { safeReplyToButton } from "../../../../../../services/discord/discord/safeReply.js";
 import {
-  isKnownInteractionError,
-  logKnownInteractionError,
-} from "../../../../../../services/discord/discord/interaction/interactionErrors.js";
+  safeMessageEdit,
+  safeReplyToButton,
+} from "../../../../../../services/discord/discord/safeReply.js";
 import {
   checkDartsCooldown,
   formatCooldownMessage,
@@ -138,14 +137,18 @@ export async function handleChallenge(
           `${opponent} – click **Throw my darts** to take your turn!`,
           `⏱️ **Time extended!** You have another 24 hours.`,
         ].join("\n");
-        await challengeMessage.edit({
-          content,
-          components: [
-            buildThrowButton(challengeId),
-            buildDeclineButton(challengeId),
-            buildExtendButton(challengeId),
-          ],
-        });
+        await safeMessageEdit(
+          challengeMessage,
+          {
+            content,
+            components: [
+              buildThrowButton(challengeId),
+              buildDeclineButton(challengeId),
+              buildExtendButton(challengeId),
+            ],
+          },
+          "darts.challenge.extend",
+        ).catch(() => {});
         return;
       }
 
@@ -216,8 +219,9 @@ export async function handleChallenge(
           `${opponent.username}'s throw`,
         );
 
-        try {
-          await challengeMessage.edit({
+        await safeMessageEdit(
+          challengeMessage,
+          {
             content: [
               `🎯 **Darts Result!**`,
               ``,
@@ -234,14 +238,9 @@ export async function handleChallenge(
               resultText,
             ].join("\n"),
             components: [buildThrowButton(challengeId, true)],
-          });
-        } catch (err) {
-          if (isKnownInteractionError(err)) {
-            logKnownInteractionError(err, "darts.challengeResult", { challengeId });
-          } else {
-            logger.warn({ err, challengeId }, "[darts] failed to edit challenge result");
-          }
-        }
+          },
+          "darts.challenge.result",
+        ).catch(() => {});
         collector.stop("complete");
       } else if (action === "throw") {
         await safeReplyToButton(
@@ -266,19 +265,15 @@ export async function handleChallenge(
       return;
     }
 
-    try {
-      const timeoutText = `${opponent} didn't throw in time.`;
-      await challengeMessage.edit({
+    const timeoutText = `${opponent} didn't throw in time.`;
+    await safeMessageEdit(
+      challengeMessage,
+      {
         content: `⏱️ **Challenge timed out!**\n\n${timeoutText}`,
         components: [buildThrowButton(challengeId, true)],
-      });
-      logger.warn({ challengeId }, "[darts] challenge timed out");
-    } catch (err) {
-      if (isKnownInteractionError(err)) {
-        logKnownInteractionError(err, "darts.challengeTimeout", { challengeId });
-      } else {
-        logger.warn({ err, challengeId }, "[darts] failed to edit timeout message");
-      }
-    }
+      },
+      "darts.challenge.timeout",
+    ).catch(() => {});
+    logger.warn({ challengeId }, "[darts] challenge timed out");
   });
 }

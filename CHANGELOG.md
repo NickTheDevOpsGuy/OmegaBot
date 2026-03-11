@@ -1,3 +1,21 @@
+## [3.9.12] - 2026-02-12
+
+### Added
+
+- **Memory game** – `/fun memory`: match pairs of cards (8 cards, 4 pairs). Click to reveal; non-matching pair flips back after 2 seconds. Solo, in-memory game state.
+- **Higher/Lower game** – `/fun higherlower`: think of a number 1–100; the bot guesses and you reply Higher, Lower, or Correct. Binary-search style; ends when you say Correct or the range becomes impossible.
+- **Chess** – `/fun chess` (optional opponent): get Lichess links to play vs computer or create a game to share with a friend.
+- **AI chat (conversational)** – Message-based chat (DM or @mention) now keeps conversation history (last 20 messages) for ChatGPT-style back-and-forth. Say “new chat” (or “clear”, “reset”) to start fresh. `/fun chat` uses the same thread.
+- **Roast & Compliment** – `/fun roast` and `/fun compliment` (optional user): playful AI roasts or compliments using the same LLM as chat (OPENAI_API_KEY or ANTHROPIC_API_KEY).
+- **Chat conversation persistence** – Conversation history is stored in SQLite (`chat_messages` table, migration `007_chat_messages.sql`) so it survives restarts. See [Chat & LLM](docs/chat-and-llm.md).
+- **Docs: Chat & LLM** – [docs/chat-and-llm.md](docs/chat-and-llm.md) explains how conversational chat works (DM / @mention / `/fun chat`), conversation keys, SQLite storage, history limit, and clearing. Linked from README.
+
+### Changed
+
+- **Documentation** – All `.md` files updated: `docs/commands.md` (games table, utility with chat/roast/compliment), `README.md` (games list, link to Chat & LLM doc), `docs/project-structure.md` (fun subcommand groups), help topics `fun.ts` and `games.ts` (memory, higherlower, chess, roast, compliment, chat). Single source of truth for commands in `docs/commands.md`.
+
+---
+
 ## [3.9.11] - 2026-03-11
 
 ### Changed

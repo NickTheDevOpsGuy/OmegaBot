@@ -33,7 +33,9 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
     if (sub === "words_list") {
       return await runWordsList(interaction);
     }
-    await interaction.editReply("Unknown hangman subcommand.");
+    await interaction.editReply(
+      "That option wasn't found. Use `start`, `guess`, `giveup`, or `words`. Use `/help topic:fun` for more.",
+    );
   } catch (err) {
     logger.error({ err, userId: interaction.user.id }, "[hangman] handler failed");
     await interaction

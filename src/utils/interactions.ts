@@ -23,7 +23,7 @@ export async function deferredReply(
     }
   } catch (error) {
     await interaction.editReply({
-      content: "❌ An error occurred while processing your request.",
+      content: "❌ Something went wrong. Please try again.",
     });
     throw error;
   }
