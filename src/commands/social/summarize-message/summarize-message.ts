@@ -95,7 +95,7 @@ export async function execute(
       );
     }
   } catch (err) {
-    logger.error({ err, command: "summarize-message" }, "[summarize-message] failed");
-    await interaction.editReply("❌ Something went wrong while generating the summary.");
+    logger.error({ err, command: "summarize-message" }, "[summarize-message] summarize handler threw");
+    await interaction.editReply("❌ The summary couldn't be generated. Try again in a moment.");
   }
 }

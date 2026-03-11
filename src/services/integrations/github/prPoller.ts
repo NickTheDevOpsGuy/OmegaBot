@@ -90,6 +90,6 @@ export async function pollPullRequestsOnce(args: {
     const newest = oldestFirst[oldestFirst.length - 1];
     setLastSeenPr(owner, repo, newest.created_at);
   } catch (err) {
-    logger.error({ err, owner, repo, announceChannelId }, "GitHub PR polling failed");
+    logger.error({ err, owner, repo, announceChannelId }, "[github/prPoller] poll threw");
   }
 }

@@ -151,7 +151,7 @@ export async function playVsBot(interaction: ChatInputCommandInteraction): Promi
       if (isKnownInteractionError(err)) {
         logKnownInteractionError(err, "tictactoe.vsBot.collect", { gameId });
       } else {
-        logger.warn({ err, gameId }, "[tictactoe] vsBot collect failed");
+        logger.warn({ err, gameId }, "[tictactoe] vsBot button collect threw");
       }
     }
   });

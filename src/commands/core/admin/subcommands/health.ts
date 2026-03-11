@@ -125,9 +125,9 @@ export async function handleHealth(
     await safeReply(interaction, { embeds: [embed], ephemeral: true });
     getContextLogger().info({ userId: interaction.user.id }, "[admin] viewed health");
   } catch (error) {
-    getContextLogger().error({ error }, "[admin] health check failed");
+    getContextLogger().error({ error }, "[admin] health check threw");
     await safeReply(interaction, {
-      content: "❌ Failed to run health check",
+      content: "❌ Health check couldn't complete. Try again in a moment.",
       ephemeral: true,
     });
   }

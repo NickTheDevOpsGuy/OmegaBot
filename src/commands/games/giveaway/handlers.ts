@@ -118,7 +118,7 @@ export async function handleEnd(interaction: ChatInputCommandInteraction): Promi
       });
     }
   } catch (err) {
-    logger.warn({ err, giveawayId }, "[giveaway] failed to update message");
+    logger.warn({ err, giveawayId }, "[giveaway] update message threw");
   }
 
   await interaction.editReply({
@@ -207,7 +207,7 @@ export async function autoEndGiveaway(
       });
     }
   } catch (err) {
-    logger.warn({ err, giveawayId }, "[giveaway] failed to update message on auto-end");
+    logger.warn({ err, giveawayId }, "[giveaway] update message on auto-end threw");
   }
 
   if (winners.length > 0) {

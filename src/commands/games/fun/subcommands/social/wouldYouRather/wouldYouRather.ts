@@ -212,7 +212,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       recordInteractionRecovery("wouldYouRather");
       logger.warn(
         { err, interactionFailedRecovery: true },
-        "[fun/wouldYouRather] vote handler failed",
+        "[fun/wouldYouRather] vote record threw",
       );
       if (!buttonInteraction.replied && !buttonInteraction.deferred) {
         await buttonInteraction.deferUpdate().catch(() => {});

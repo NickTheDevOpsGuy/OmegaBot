@@ -83,7 +83,7 @@ async function safeFetchUser(
   try {
     return await interaction.client.users.fetch(userId);
   } catch (err) {
-    logger.debug({ err, userId }, "[fun/leaderboard] failed to fetch user");
+    logger.debug({ err, userId }, "[fun/leaderboard] fetch user threw");
     return null;
   }
 }

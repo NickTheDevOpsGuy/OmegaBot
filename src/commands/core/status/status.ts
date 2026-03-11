@@ -115,7 +115,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         const e = emoji(r.value.status.indicator);
         return `${e} **${r.value.page.name}** — ${r.value.status.description}\n   <${r.value.page.url}>`;
       }
-      return `❌ **${name}** — Failed to fetch`;
+      return `❌ **${name}** — Couldn't fetch status. The service may be unreachable.`;
     });
     await interaction.editReply(["**LLM status**", "", ...lines].join("\n"));
     return;
@@ -127,10 +127,10 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
     await interaction.editReply(formatted);
   } catch (err) {
-    logger.warn({ err, service: sub }, "[status] fetch failed");
+    logger.warn({ err, service: sub }, "[status] status fetch threw");
 
     await interaction.editReply(
-      `Failed to fetch ${sub} status. The service may be unreachable. Try again in a moment.`,
+      `We couldn't fetch ${sub} status. The service may be unreachable. Try again in a moment.`,
     );
   }
 }

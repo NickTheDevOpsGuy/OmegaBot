@@ -39,7 +39,7 @@ async function withRetries<T>(fn: () => Promise<T>, label: string): Promise<T> {
     } catch (err) {
       lastErr = err;
       const retry = isRetryable(err) && i < delays.length;
-      logger.warn({ err, attempt: i + 1, label, retry }, "[summary/llm] call failed");
+      logger.warn({ err, attempt: i + 1, label, retry }, "[summary/llm] LLM call threw");
 
       if (!retry) break;
       await sleep(delays[i]!);
@@ -59,7 +59,7 @@ async function withRetries<T>(fn: () => Promise<T>, label: string): Promise<T> {
  */
 export async function llmSummary(text: string): Promise<string> {
   if (!client) {
-    return "LLM mode requested but no API key is configured.";
+    return "Summary isn't available right now. The server admin needs to set up an API key.";
   }
 
   const trimmed = text.trim();
@@ -130,7 +130,7 @@ export async function llmSummary(text: string): Promise<string> {
 
     return out || "LLM returned no content.";
   } catch (err) {
-    logger.error({ err }, "[summary/llm] summary generation failed");
-    return "Failed to generate summary via LLM.";
+    logger.error({ err }, "[summary/llm] summary generation threw");
+    return "Summary isn't available right now. The server admin may need to set up an API key.";
   }
 }

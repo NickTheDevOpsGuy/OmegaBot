@@ -118,7 +118,7 @@ export async function setUserTimezone(args: {
   try {
     await saveStore(store);
   } catch (err) {
-    logger.error({ err }, "[timezoneStore] failed to save");
+    logger.error({ err }, "[timezoneStore] save threw");
   }
 
   return tz;
@@ -150,7 +150,7 @@ export async function clearUserTimezone(args: {
   try {
     await saveStore(store);
   } catch (err) {
-    logger.error({ err }, "[timezoneStore] failed to save after clear");
+    logger.error({ err }, "[timezoneStore] save after clear threw");
   }
 
   return true;

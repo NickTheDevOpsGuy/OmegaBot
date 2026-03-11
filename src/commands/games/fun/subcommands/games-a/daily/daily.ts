@@ -100,7 +100,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       return;
     }
 
-    logger.error({ err, userId: interaction.user.id }, "[fun/daily] failed");
-    await interaction.editReply("Something went wrong with check-in.");
+    logger.error({ err, userId: interaction.user.id }, "[fun/daily] daily check-in handler threw");
+    await interaction.editReply("Daily check-in didn't go through. Try again in a moment.");
   }
 }

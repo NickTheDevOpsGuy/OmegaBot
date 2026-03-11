@@ -25,7 +25,7 @@ async function replyOrEditModal(
     }
     logger.warn(
       { err, customId: interaction.customId },
-      "[interaction] failed to send error reply",
+      "[interaction] send error reply for modal threw",
     );
   }
 }
@@ -43,7 +43,7 @@ export async function handleModalSubmit(
       );
       await replyOrEditModal(
         interaction,
-        "Something went wrong submitting your suggestion. Try again later.",
+        "Your suggestion couldn't be posted. Try again, or check that the bot can send messages here.",
       );
     }
   }

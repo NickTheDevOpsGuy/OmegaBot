@@ -56,7 +56,7 @@ export async function fetchChannelMessages(
         before,
         after,
       },
-      "Failed to fetch channel messages",
+      "fetch channel messages threw",
     );
 
     /**

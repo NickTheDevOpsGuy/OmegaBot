@@ -11,9 +11,9 @@ const translations: Record<Locale, Record<string, string>> = {
     "rate_limit.slow_down": "Slow down!",
     "rate_limit.cooldown_full":
       "⏱️ Slow down! Try again in **{seconds}** seconds (rate limit: {cooldownSec}s).",
-    "error.generic": "Something went wrong. Try again later.",
+    "error.generic": "That didn't work. Try again in a moment.",
     "error.api_unavailable": "API is temporarily unavailable. Try again in a minute.",
-    "error.interaction_failed": "Something went wrong. Try again later.",
+    "error.interaction_failed": "The command didn't complete. Try again in a moment.",
     "quote.saved": "Quote #{id} saved!",
     "suggestion.posted": "Suggestion posted.",
     "help.no_commands": "No commands found. Check the command loader.",
@@ -34,16 +34,16 @@ const translations: Record<Locale, Record<string, string>> = {
       "I am missing required permissions. Check my role permissions, and make sure my role is above the target user's role.",
     "admin.interaction_expired":
       "That took too long and Discord expired the command. Try again.",
-    "admin.command_failed": "Command failed. Check my permissions and role position.",
+    "admin.command_failed": "The moderation command didn't complete. Check my permissions and role position.",
   },
   es: {
     "rate_limit.try_again": "Intenta de nuevo en {seconds}s",
     "rate_limit.slow_down": "¡Más despacio!",
     "rate_limit.cooldown_full":
       "⏱️ ¡Más despacio! Intenta en **{seconds}** segundos (límite: {cooldownSec}s).",
-    "error.generic": "Algo salió mal. Intenta de nuevo más tarde.",
+    "error.generic": "Eso no funcionó. Intenta de nuevo en un momento.",
     "error.api_unavailable": "La API no está disponible. Intenta en un minuto.",
-    "error.interaction_failed": "Algo salió mal. Intenta de nuevo más tarde.",
+    "error.interaction_failed": "El comando no se completó. Intenta de nuevo en un momento.",
     "quote.saved": "¡Cita #{id} guardada!",
     "suggestion.posted": "Sugerencia publicada.",
     "help.no_commands": "No se encontraron comandos.",
@@ -66,16 +66,16 @@ const translations: Record<Locale, Record<string, string>> = {
     "admin.interaction_expired":
       "Tardó demasiado y Discord cerró el comando. Intenta de nuevo.",
     "admin.command_failed":
-      "El comando falló. Revisa mis permisos y la posición de mi rol.",
+      "El comando de moderación no se completó. Revisa mis permisos y la posición de mi rol.",
   },
   de: {
     "rate_limit.try_again": "Versuche es in {seconds}s erneut",
     "rate_limit.slow_down": "Langsamer!",
     "rate_limit.cooldown_full":
       "⏱️ Langsamer! Versuche in **{seconds}** Sekunden erneut (Limit: {cooldownSec}s).",
-    "error.generic": "Etwas ist schiefgelaufen. Versuche es später erneut.",
+    "error.generic": "Das hat nicht funktioniert. Versuche es in einem Moment erneut.",
     "error.api_unavailable": "Die API ist vorübergehend nicht verfügbar.",
-    "error.interaction_failed": "Etwas ist schiefgelaufen. Versuche es später erneut.",
+    "error.interaction_failed": "Der Befehl wurde nicht ausgeführt. Versuche es in einem Moment erneut.",
     "quote.saved": "Zitat #{id} gespeichert!",
     "suggestion.posted": "Vorschlag eingereicht.",
     "help.no_commands": "Keine Befehle gefunden.",
@@ -98,7 +98,7 @@ const translations: Record<Locale, Record<string, string>> = {
     "admin.interaction_expired":
       "Das hat zu lange gedauert, Discord hat den Befehl abgebrochen. Versuche es erneut.",
     "admin.command_failed":
-      "Befehl fehlgeschlagen. Prüfe meine Berechtigungen und meine Rollenposition.",
+      "Der Moderationsbefehl wurde nicht ausgeführt. Prüfe meine Berechtigungen und meine Rollenposition.",
   },
 };
 

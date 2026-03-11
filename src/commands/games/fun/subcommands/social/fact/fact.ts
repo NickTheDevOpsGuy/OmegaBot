@@ -135,7 +135,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
 
     await interaction.editReply({ embeds: [embed] });
   } catch (err) {
-    logger.error({ err, userId }, "[fact] failed");
-    await interaction.editReply("Something went wrong fetching a fact. Try again.");
+    logger.error({ err, userId }, "[fact] fact fetch threw");
+    await interaction.editReply("We couldn't fetch a fact right now. Try again in a moment.");
   }
 }

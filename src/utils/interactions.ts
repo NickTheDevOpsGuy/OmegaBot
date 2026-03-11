@@ -2,6 +2,7 @@
 // Helper utilities for interaction handling
 
 import type { ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
+import { getUserFacingReason } from "./errors.js";
 
 /**
  * Helper for commands that might take a while.
@@ -23,7 +24,7 @@ export async function deferredReply(
     }
   } catch (error) {
     await interaction.editReply({
-      content: "❌ Something went wrong. Please try again.",
+      content: `❌ ${getUserFacingReason(error)}`,
     });
     throw error;
   }

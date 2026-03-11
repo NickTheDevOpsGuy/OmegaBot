@@ -122,7 +122,7 @@ export async function pollIssueAssigneesOnce(args: PollArgs): Promise<void> {
   try {
     items = await githubFetchJson<GitHubIssueItem[]>(url, token);
   } catch (err) {
-    logger.error({ err, owner, repo }, "[github/assignees] fetch failed");
+    logger.error({ err, owner, repo }, "[github/assignees] fetch assignees threw");
     return;
   }
 
@@ -198,7 +198,7 @@ export async function pollIssueAssigneesOnce(args: PollArgs): Promise<void> {
   try {
     saveGithubAssigneeState(owner, repo, nextState);
   } catch (err) {
-    logger.error({ err }, "[github/assignees] failed to save state");
+    logger.error({ err }, "[github/assignees] save state threw");
   }
 
   // Baseline-first: no notifications on first successful run
@@ -233,7 +233,7 @@ export async function pollIssueAssigneesOnce(args: PollArgs): Promise<void> {
         "[github/assignees] announced",
       );
     } catch (err) {
-      logger.error({ err, number: n.number }, "[github/assignees] failed to announce");
+      logger.error({ err, number: n.number }, "[github/assignees] announce assignee threw");
     }
   }
 
@@ -256,7 +256,7 @@ export async function pollIssueAssigneesOnce(args: PollArgs): Promise<void> {
     } catch (err) {
       logger.error(
         { err, number: c.number },
-        "[github/assignees] failed to announce closure",
+        "[github/assignees] announce closure threw",
       );
     }
   }

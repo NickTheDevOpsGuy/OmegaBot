@@ -74,7 +74,7 @@ export async function execute(
       embeds: [embed],
     });
   } catch (err) {
-    logger.error({ err, command: "quote-message" }, "[quote-message] failed");
-    await interaction.editReply("Something went wrong saving the quote.");
+    logger.error({ err, command: "quote-message" }, "[quote-message] save quote threw");
+    await interaction.editReply("The quote couldn't be saved. Try again in a moment.");
   }
 }

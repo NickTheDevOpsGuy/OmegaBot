@@ -252,7 +252,7 @@ export async function handleChallenge(
       recordInteractionRecovery("darts");
       logger.warn(
         { err, challengeId, interactionFailedRecovery: true },
-        "[darts] collect handler failed",
+        "[darts] challenge button collect threw",
       );
       if (!buttonInteraction.replied && !buttonInteraction.deferred) {
         await buttonInteraction.deferUpdate().catch(() => {});

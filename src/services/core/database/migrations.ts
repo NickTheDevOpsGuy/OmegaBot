@@ -43,7 +43,7 @@ export function runMigrations(database: Database.Database): void {
         .run(name, Date.now());
       logger.info({ migration: name }, "[db] migration applied");
     } catch (err) {
-      logger.error({ err, migration: name }, "[db] migration failed");
+      logger.error({ err, migration: name }, "[db] migration threw");
       throw err;
     }
   }

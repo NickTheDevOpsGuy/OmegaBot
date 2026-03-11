@@ -13,6 +13,7 @@
 ### Changed
 
 - **Documentation** – All `.md` files updated: `docs/commands.md` (games table, utility with chat/roast/compliment), `README.md` (games list, link to Chat & LLM doc), `docs/project-structure.md` (fun subcommand groups), help topics `fun.ts` and `games.ts` (memory, higherlower, chess, roast, compliment, chat). Single source of truth for commands in `docs/commands.md`.
+- **User-facing error messages** – Discord replies are now non-technical and user-friendly: chat/LLM errors no longer mention `.env` or API key names (users see “Chat isn’t available right now…” or “The AI service didn’t respond…”). Unknown subcommand messages for `/fun`, `/faq`, `/gh`, hangman, joke, and config now suggest next steps (e.g. “Use `/help topic:fun` to see what’s available”). Weather, config, hangman words, ping, and LLM summary errors were updated similarly. See [Troubleshooting](docs/troubleshooting.md#user-facing-errors) for the policy.
 
 ---
 

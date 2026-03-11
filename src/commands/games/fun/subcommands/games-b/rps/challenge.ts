@@ -157,7 +157,7 @@ export async function handleChallenge(
       recordInteractionRecovery("rps");
       logger.warn(
         { err, challengeId, interactionFailedRecovery: true },
-        "[rps] collect handler failed",
+        "[rps] challenge button collect threw",
       );
       if (!buttonInteraction.replied && !buttonInteraction.deferred) {
         await buttonInteraction.deferUpdate().catch(() => {});
@@ -195,7 +195,7 @@ export async function handleChallenge(
         recordPvpResult(winnerId, loserId, challenger.id, opponent.id);
         logger.info({ challengeId, winnerId, loserId }, "[rps] PvP complete");
       } catch (err) {
-        logger.error({ err }, "[fun/rps] failed to record PvP result");
+        logger.error({ err }, "[fun/rps] record PvP result threw");
       }
 
       await safeMessageEdit(

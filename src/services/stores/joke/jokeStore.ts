@@ -67,7 +67,7 @@ export function addJoke(jokeText: string, category: JokeCategory, userId: string
     logger.info({ jokeId: joke.id, category, userId }, "Joke added");
     return joke;
   } catch (error) {
-    logger.error({ error, category, userId }, "Failed to add joke");
+    logger.error({ error, category, userId }, "[joke/store] add joke threw");
     throw error;
   }
 }
@@ -97,7 +97,7 @@ export function getRandomJoke(category?: JokeCategory): Joke | null {
 
     return joke || null;
   } catch (error) {
-    logger.error({ error, category }, "Failed to get random joke");
+    logger.error({ error, category }, "[joke/store] get random joke threw");
     throw error;
   }
 }
@@ -117,7 +117,7 @@ export function removeJoke(jokeId: number): boolean {
 
     return success;
   } catch (error) {
-    logger.error({ error, jokeId }, "Failed to remove joke");
+    logger.error({ error, jokeId }, "[joke/store] remove joke threw");
     throw error;
   }
 }
@@ -129,7 +129,7 @@ export function getJoke(jokeId: number): Joke | null {
     const row = getRow<Joke>(db.prepare("SELECT * FROM jokes WHERE id = ?"), jokeId);
     return row ?? null;
   } catch (error) {
-    logger.error({ error, jokeId }, "Failed to get joke");
+    logger.error({ error, jokeId }, "[joke/store] get joke threw");
     throw error;
   }
 }
@@ -151,7 +151,7 @@ export function listJokes(category?: JokeCategory, limit: number = 50): Joke[] {
 
     return getAll<Joke>(db.prepare(query), ...params);
   } catch (error) {
-    logger.error({ error, category, limit }, "Failed to list jokes");
+    logger.error({ error, category, limit }, "[joke/store] list jokes threw");
     throw error;
   }
 }
@@ -188,7 +188,7 @@ export function getJokeStats(): { total: number; byCategory: Record<string, numb
       byCategory: categoryMap,
     };
   } catch (error) {
-    logger.error({ error }, "Failed to get joke stats");
+    logger.error({ error }, "[joke/store] get joke stats threw");
     throw error;
   }
 }

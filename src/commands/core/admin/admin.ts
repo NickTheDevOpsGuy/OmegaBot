@@ -125,7 +125,7 @@ export async function isModerator(
 
     return roles.some((r) => memberRoles.has(r.role_id));
   } catch (err) {
-    getContextLogger().error({ err }, "[admin] failed to check moderator role");
+    getContextLogger().error({ err }, "[admin] moderator role check threw");
     return false;
   }
 }
@@ -216,7 +216,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
   } catch (err) {
     getContextLogger().error(
       { err, command: "admin", userId: interaction.user.id, subcommand },
-      "[admin] command failed",
+      "[admin] admin command threw",
     );
     const locale = resolveLocale(interaction.guild?.preferredLocale ?? null);
     await safeReply(interaction, {

@@ -151,7 +151,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       "[dice] roll complete",
     );
   } catch (err) {
-    getContextLogger().error({ err }, "[fun/dice] failed");
+    getContextLogger().error({ err }, "[fun/dice] dice handler threw");
     await interaction.editReply("🎲 The dice fell off the table. Try again.");
   }
 }

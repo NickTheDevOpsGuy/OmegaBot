@@ -12,7 +12,7 @@ export async function summarize(text: string): Promise<string> {
     try {
       return await llmSummary(text);
     } catch (err) {
-      logger.warn({ err }, "[summary] LLM failed, falling back to local");
+      logger.warn({ err }, "[summary] LLM call threw, falling back to local");
       return localSummary(text);
     }
   }

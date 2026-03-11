@@ -91,7 +91,7 @@ export async function loadCommands(client: CommandClient): Promise<void> {
           "[commands] loaded",
         );
       } catch (err) {
-        logger.error({ err, folder, file }, "[commands] failed to load");
+        logger.error({ err, folder, file }, "[commands] command module load threw");
       }
     }
   }

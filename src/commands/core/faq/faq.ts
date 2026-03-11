@@ -183,8 +183,8 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       "That command wasn't found. Use `add`, `get`, `remove`, or `list`. Use `/help` for more.",
     );
   } catch (err) {
-    getContextLogger().error({ err, sub }, "[faq] subcommand failed");
-    await interaction.editReply("Something went wrong. Try again in a bit.");
+    getContextLogger().error({ err, sub }, "[faq] subcommand threw");
+    await interaction.editReply("The FAQ command hit a snag. Try again in a moment.");
   }
 }
 

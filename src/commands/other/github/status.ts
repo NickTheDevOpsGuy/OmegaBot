@@ -42,10 +42,10 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
     await interaction.reply({ content: lines.join("\n"), flags: MessageFlags.Ephemeral });
   } catch (err) {
-    logger.error({ err }, "[/status] failed");
+    logger.error({ err }, "[/status] GitHub status build or fetch threw");
 
     // Best-effort reply (avoid throwing twice)
-    const msg = "Something went wrong while building GitHub status.";
+    const msg = "GitHub status couldn't be loaded. Try again in a moment.";
     if (interaction.deferred || interaction.replied) {
       await interaction.editReply({ content: msg });
     } else {

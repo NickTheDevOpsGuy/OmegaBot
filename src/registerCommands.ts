@@ -94,7 +94,7 @@ async function registerCommands(): Promise<void> {
         const cmdName = (imported.data as { name?: string }).name ?? json.name ?? name;
         logger.info({ command: cmdName, file: relFile }, "[register] prepared");
       } catch (err) {
-        logger.warn({ err, group, name, file: relFile }, "[register] failed to load");
+        logger.warn({ err, group, name, file: relFile }, "[register] command module load threw");
       }
     }
   }
@@ -159,6 +159,6 @@ async function registerCommands(): Promise<void> {
 }
 
 registerCommands().catch((err) => {
-  logger.error({ err }, "Command registration failed");
+  logger.error({ err }, "[register] Discord API command registration threw");
   process.exit(1);
 });

@@ -49,8 +49,8 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       return;
     }
 
-    logger.warn({ err, owner, repo, number }, "[pr] GitHub request failed");
-    await interaction.editReply("GitHub request failed. Please try again in a bit.");
+    logger.warn({ err, owner, repo, number }, "[pr] GitHub PR fetch threw");
+    await interaction.editReply("GitHub didn't respond. Try again in a moment.");
     return;
   }
 }

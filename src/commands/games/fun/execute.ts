@@ -39,6 +39,7 @@ import { run as runRoast } from "./subcommands/utility/roast/index.js";
 import { run as runCompliment } from "./subcommands/utility/compliment/index.js";
 import { run as runMemory } from "./subcommands/games-b/memory/index.js";
 import { run as runHigherlower } from "./subcommands/games-b/higherlower/index.js";
+import { errMessage, getUserFacingReason } from "../../../utils/errors.js";
 import {
   recordFunUsage,
   type FunCommandKey,
@@ -119,7 +120,7 @@ async function maybeRecordUsage(
       recordDailyPlay(interaction.user.id, metric);
     }
   } catch (err) {
-    logger.warn({ err, sub }, "[fun] usage tracking failed");
+    logger.warn({ err, sub }, "[fun] usage tracking threw");
   }
 }
 
@@ -229,9 +230,9 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       logKnownInteractionError(err, "fun.execute", { sub });
       return;
     }
-    logger.error({ err, sub }, "[fun] command failed");
+    logger.error({ err, sub }, `[fun] subcommand threw: ${errMessage(err)}`);
     try {
-      await interaction.editReply("Something went wrong. Please try again in a moment.");
+      await interaction.editReply(`❌ ${getUserFacingReason(err)}`);
     } catch (editErr) {
       if (isKnownInteractionError(editErr)) {
         logKnownInteractionError(editErr, "fun.execute fallback edit", { sub });

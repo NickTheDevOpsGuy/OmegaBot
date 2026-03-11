@@ -158,7 +158,7 @@ export async function playVsPlayer(
         try {
           recordResult(winnerUser.id, loserUser.id, challenger.id, opponent.id);
         } catch (err) {
-          logger.error({ err }, "[fun/tictactoe] failed to record result");
+          logger.error({ err }, "[fun/tictactoe] record result threw");
         }
 
         collector.stop("win");
@@ -185,7 +185,7 @@ export async function playVsPlayer(
         try {
           recordResult(null, null, challenger.id, opponent.id);
         } catch (err) {
-          logger.error({ err }, "[fun/tictactoe] failed to record tie");
+          logger.error({ err }, "[fun/tictactoe] record tie threw");
         }
 
         collector.stop("tie");
@@ -232,7 +232,7 @@ export async function playVsPlayer(
       if (isKnownInteractionError(err)) {
         logKnownInteractionError(err, "tictactoe.vsPlayer.collect", { gameId });
       } else {
-        logger.warn({ err, gameId }, "[tictactoe] vsPlayer collect failed");
+        logger.warn({ err, gameId }, "[tictactoe] vsPlayer button collect threw");
       }
     }
   });
@@ -250,7 +250,7 @@ export async function playVsPlayer(
       try {
         recordResult(timeoutWinner.id, timeoutLoser.id, challenger.id, opponent.id);
       } catch (err) {
-        logger.error({ err }, "[fun/tictactoe] failed to record timeout result");
+        logger.error({ err }, "[fun/tictactoe] record timeout result threw");
       }
 
       await safeMessageEdit(

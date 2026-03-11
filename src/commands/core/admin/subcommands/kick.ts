@@ -66,7 +66,7 @@ export async function handleKick(
       "[admin] user kicked",
     );
   } catch (err) {
-    getContextLogger().error({ err, targetUser: targetUser.id }, "[admin] kick failed");
+    getContextLogger().error({ err, targetUser: targetUser.id }, "[admin] kick execution threw");
     await safeReply(interaction, {
       content: userFacingError(err, locale),
       ephemeral: true,

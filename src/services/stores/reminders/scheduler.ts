@@ -143,8 +143,8 @@ export function createReminderScheduler(client: Client) {
       if (c.level === "debug")
         logger.debug(payload, "[reminders] channel delivery failed");
       else if (c.level === "warn")
-        logger.warn({ ...payload, err }, "[reminders] channel delivery failed");
-      else logger.error({ ...payload, err }, "[reminders] channel delivery failed");
+        logger.warn({ ...payload, err }, "[reminders] channel delivery threw");
+      else logger.error({ ...payload, err }, "[reminders] channel delivery threw");
 
       return false;
     }
@@ -169,8 +169,8 @@ export function createReminderScheduler(client: Client) {
 
       if (c.level === "debug") logger.debug(payload, "[reminders] DM delivery failed");
       else if (c.level === "warn")
-        logger.warn({ ...payload, err }, "[reminders] DM delivery failed");
-      else logger.error({ ...payload, err }, "[reminders] DM delivery failed");
+        logger.warn({ ...payload, err }, "[reminders] DM delivery threw");
+      else logger.error({ ...payload, err }, "[reminders] DM delivery threw");
 
       return false;
     }
@@ -211,7 +211,7 @@ export function createReminderScheduler(client: Client) {
         }
       }
     } catch (err) {
-      logger.error({ err }, "[reminders] deliverOnce failed");
+      logger.error({ err }, "[reminders] deliverOnce threw");
     } finally {
       running = false;
 

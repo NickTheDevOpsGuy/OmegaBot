@@ -86,7 +86,8 @@ export async function handleJoke(
       break;
     default:
       await interaction.editReply({
-        content: "Unknown subcommand",
+        content:
+        "That option wasn't found. Use `add`, `remove`, or `list`. Use `/help topic:fun` for more.",
       });
   }
 }

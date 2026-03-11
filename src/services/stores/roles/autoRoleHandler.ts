@@ -37,17 +37,17 @@ export async function handleAutoRole(member: GuildMember): Promise<void> {
   const botMember = member.guild.members.me;
 
   if (!botMember) {
-    logger.warn("auto-role failed: could not resolve bot member in guild");
+    logger.warn("[auto-role] could not resolve bot member in guild");
     return;
   }
 
   if (!botMember.permissions.has(PermissionFlagsBits.ManageRoles)) {
-    logger.warn("auto-role failed: missing Manage Roles permission");
+    logger.warn("[auto-role] missing Manage Roles permission");
     return;
   }
 
   if (role.position >= botMember.roles.highest.position) {
-    logger.warn("auto-role failed: role is higher than bot's highest role");
+    logger.warn("[auto-role] role is higher than bot's highest role");
     return;
   }
 

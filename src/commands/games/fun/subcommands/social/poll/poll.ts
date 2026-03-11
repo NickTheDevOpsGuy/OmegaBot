@@ -200,11 +200,11 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
         components: buildPollButtons(latestPoll),
       });
     } catch (err) {
-      logger.warn({ err }, "[fun/poll] vote handling failed");
+      logger.warn({ err }, "[fun/poll] vote record threw");
       try {
         if (!btn.replied && !btn.deferred) {
           await btn.reply({
-            content: "Something went wrong recording that vote.",
+            content: "Your vote wasn't recorded. Try voting again.",
             flags: MessageFlags.Ephemeral,
           });
         }
@@ -222,7 +222,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
         components: buildPollButtons(latestPoll, { disabled: true }),
       });
     } catch (err) {
-      logger.debug({ err }, "[fun/poll] failed to disable buttons on end");
+      logger.debug({ err }, "[fun/poll] disable buttons on end threw");
     }
   });
 }

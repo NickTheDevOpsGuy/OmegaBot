@@ -29,7 +29,7 @@ export async function handleStats(
       return row.count;
     });
   } catch (err) {
-    getContextLogger().error({ err }, "[admin] stats DB counts failed");
+    getContextLogger().error({ err }, "[admin] stats DB counts fetch threw");
   }
 
   try {
@@ -43,7 +43,7 @@ export async function handleStats(
     );
     uniqueUsers = Object.keys(funUsage?.totalsByUser ?? {}).length;
   } catch (err) {
-    getContextLogger().error({ err }, "[admin] stats fun usage failed");
+    getContextLogger().error({ err }, "[admin] stats fun usage fetch threw");
   }
 
   try {
@@ -85,9 +85,9 @@ export async function handleStats(
     await safeReply(interaction, { embeds: [embed] });
     getContextLogger().info({ userId: interaction.user.id }, "[admin] viewed stats");
   } catch (err) {
-    getContextLogger().error({ err }, "[admin] stats reply failed");
+    getContextLogger().error({ err }, "[admin] stats reply threw");
     await safeReply(interaction, {
-      content: "❌ Failed to get statistics",
+      content: "❌ We couldn't load statistics. Try again in a moment.",
       ephemeral: true,
     });
   }

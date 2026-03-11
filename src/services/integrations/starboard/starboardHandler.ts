@@ -31,7 +31,7 @@ export async function handleStarboardReaction(
       try {
         await reaction.fetch();
       } catch (err) {
-        logger.debug({ err }, "[starboard] failed to fetch partial reaction");
+        logger.debug({ err }, "[starboard] fetch partial reaction threw");
         return;
       }
     }
@@ -46,7 +46,7 @@ export async function handleStarboardReaction(
       try {
         await message.fetch();
       } catch (err) {
-        logger.debug({ err }, "[starboard] failed to fetch partial message");
+        logger.debug({ err }, "[starboard] fetch partial message threw");
         return;
       }
     }
@@ -102,7 +102,7 @@ export async function handleStarboardReaction(
             "[starboard] removed post (below threshold)",
           );
         } catch (err) {
-          logger.debug({ err }, "[starboard] failed to delete starboard message");
+          logger.debug({ err }, "[starboard] delete starboard message threw");
         }
       } else {
         try {
@@ -116,7 +116,7 @@ export async function handleStarboardReaction(
             updateStarCount(message.id, starCount);
           }
         } catch (err) {
-          logger.debug({ err }, "[starboard] failed to update starboard message");
+          logger.debug({ err }, "[starboard] update starboard message threw");
         }
       }
     } else if (starCount >= threshold) {
@@ -140,11 +140,11 @@ export async function handleStarboardReaction(
           "[starboard] created new starboard post",
         );
       } catch (err) {
-        logger.error({ err }, "[starboard] failed to create starboard post");
+        logger.error({ err }, "[starboard] create starboard post threw");
       }
     }
   } catch (err) {
-    logger.error({ err }, "[starboard] handler error");
+    logger.error({ err }, "[starboard] starboard handler threw");
   }
 }
 

@@ -25,7 +25,7 @@ export async function runWordsAdd(
 ): Promise<void> {
   if (!isHangmanAdmin(interaction)) {
     await interaction.editReply(
-      "You need the Hangman admin role (configured via `HANGMAN_ADMIN_ROLE_ID` in .env) to add words.",
+      "You need the Hangman admin role to add words. Ask a server admin to configure it.",
     );
     return;
   }

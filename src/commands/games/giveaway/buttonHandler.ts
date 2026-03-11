@@ -59,13 +59,13 @@ export async function handleGiveawayButton(
       const embed = buildGiveawayEmbed(giveaway, getEntryCount(giveawayId));
       await interaction.message.edit({ embeds: [embed] });
     } catch (err) {
-      logger.warn({ err, giveawayId }, "[giveaway] failed to update entry count");
+      logger.warn({ err, giveawayId }, "[giveaway] update entry count threw");
     }
   } catch (err) {
     recordInteractionRecovery("giveaway");
     logger.warn(
       { err, interactionFailedRecovery: true },
-      "[giveaway] button handler failed",
+      "[giveaway] button handler threw",
     );
     if (!interaction.replied && !interaction.deferred) {
       await interaction.deferUpdate().catch(() => {});

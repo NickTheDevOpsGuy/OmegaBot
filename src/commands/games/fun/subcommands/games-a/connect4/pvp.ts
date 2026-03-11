@@ -128,7 +128,7 @@ export async function runPvP(
         try {
           recordResult(winnerId, loserId, p1.id, p2.id);
         } catch (err) {
-          logger.error({ err }, "[connect4] failed to record result");
+          logger.error({ err }, "[connect4] record result threw");
         }
 
         collector.stop("win");
@@ -152,7 +152,7 @@ export async function runPvP(
         try {
           recordResult(null, null, p1.id, p2.id);
         } catch (err) {
-          logger.error({ err }, "[connect4] failed to record tie");
+          logger.error({ err }, "[connect4] record tie threw");
         }
 
         collector.stop("draw");
@@ -185,7 +185,7 @@ export async function runPvP(
       recordInteractionRecovery("connect4");
       logger.warn(
         { err, interactionFailedRecovery: true },
-        "[fun/connect4] handler failed",
+        "[fun/connect4] connect4 handler threw",
       );
     }
   });
@@ -200,7 +200,7 @@ export async function runPvP(
     try {
       recordResult(timeoutWinner.id, timeoutLoser.id, p1.id, p2.id);
     } catch (err) {
-      logger.error({ err }, "[connect4] failed to record timeout result");
+      logger.error({ err }, "[connect4] record timeout result threw");
     }
 
     await safeEditReply(

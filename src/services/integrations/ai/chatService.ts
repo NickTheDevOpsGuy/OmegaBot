@@ -4,6 +4,7 @@
 
 import OpenAI from "openai";
 import { env } from "../../../config/env.js";
+import { errMessage } from "../../../utils/errors.js";
 import { logger } from "../../../utils/logger.js";
 import {
   callClaude,
@@ -67,15 +68,15 @@ export async function chatWithLLM(
       });
       const content = response.choices?.[0]?.message?.content?.trim();
       if (!content) {
-        return { ok: false, error: "The AI didn't return a response. Please try again." };
+        return { ok: false, error: "The AI didn't return a response. Send your message again." };
       }
       logger.debug({ model: env.openAIModel }, "[chat] OpenAI reply");
       return { ok: true, text: truncateForDiscord(content), provider: "openai" };
     } catch (err) {
-      logger.warn({ err }, "[chat] OpenAI failed");
+      logger.warn({ err }, `[chat] OpenAI single-message call threw: ${errMessage(err)}`);
       return {
         ok: false,
-        error: "The AI service didn't respond. Please try again in a moment.",
+        error: "The AI service didn't respond. Try again in a moment.",
       };
     }
   }
@@ -90,10 +91,10 @@ export async function chatWithLLM(
       logger.debug({}, "[chat] Claude reply");
       return { ok: true, text: truncateForDiscord(text), provider: "claude" };
     } catch (err) {
-      logger.warn({ err }, "[chat] Claude failed");
+      logger.warn({ err }, `[chat] Claude single-message call threw: ${errMessage(err)}`);
       return {
         ok: false,
-        error: "The AI service didn't respond. Please try again in a moment.",
+        error: "The AI service didn't respond. Try again in a moment.",
       };
     }
   }
@@ -117,11 +118,11 @@ export async function chatWithConversation(
   options: { maxTokens?: number } = {},
 ): Promise<ChatResult> {
   if (messages.length === 0) {
-    return { ok: false, error: "Something went wrong. Please try again." };
+    return { ok: false, error: "Your message couldn't be processed. Send it again." };
   }
   const last = messages[messages.length - 1];
   if (last.role !== "user") {
-    return { ok: false, error: "Something went wrong. Please try again." };
+    return { ok: false, error: "Your message couldn't be processed. Send it again." };
   }
 
   const { maxTokens = 1024 } = options;
@@ -145,13 +146,13 @@ export async function chatWithConversation(
       });
       const content = response.choices?.[0]?.message?.content?.trim();
       if (!content)
-        return { ok: false, error: "The AI didn't return a response. Please try again." };
+        return { ok: false, error: "The AI didn't return a response. Send your message again." };
       return { ok: true, text: truncateForDiscord(content), provider: "openai" };
     } catch (err) {
-      logger.warn({ err }, "[chat] OpenAI conversation failed");
+      logger.warn({ err }, `[chat] OpenAI conversation call threw: ${errMessage(err)}`);
       return {
         ok: false,
-        error: "The AI service didn't respond. Please try again in a moment.",
+        error: "The AI service didn't respond. Try again in a moment.",
       };
     }
   }
@@ -168,10 +169,10 @@ export async function chatWithConversation(
       });
       return { ok: true, text: truncateForDiscord(text), provider: "claude" };
     } catch (err) {
-      logger.warn({ err }, "[chat] Claude conversation failed");
+      logger.warn({ err }, `[chat] Claude conversation call threw: ${errMessage(err)}`);
       return {
         ok: false,
-        error: "The AI service didn't respond. Please try again in a moment.",
+        error: "The AI service didn't respond. Try again in a moment.",
       };
     }
   }

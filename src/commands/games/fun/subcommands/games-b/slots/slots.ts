@@ -5,6 +5,7 @@
 
 import { EmbedBuilder, type ChatInputCommandInteraction } from "discord.js";
 import { SLOTS_COOLDOWN_MS } from "../../../../../../utils/constants.js";
+import { errMessage, getUserFacingReason } from "../../../../../../utils/errors.js";
 import { logger } from "../../../../../../utils/logger.js";
 import {
   checkSlotsCooldown,
@@ -20,9 +21,9 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
   try {
     return await runSlots(interaction);
   } catch (err) {
-    logger.error({ err, userId: interaction.user.id }, "[slots] handler failed");
+    logger.error({ err, userId: interaction.user.id }, `[slots] slots handler threw: ${errMessage(err)}`);
     await interaction
-      .editReply("Something went wrong with slots. Try again.")
+      .editReply(`❌ Slots had a hiccup: ${getUserFacingReason(err)}`)
       .catch(() => {});
   }
 }

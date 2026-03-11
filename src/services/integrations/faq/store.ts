@@ -79,7 +79,7 @@ export function loadStore(): FaqStoreV1 {
     );
     return { version: 1, entries: {} };
   } catch (err) {
-    logger.error({ err }, "[faq] failed to load store, falling back to empty store");
+    logger.error({ err }, "[faq] load store threw, falling back to empty store");
     return { version: 1, entries: {} };
   }
 }

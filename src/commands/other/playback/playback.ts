@@ -171,20 +171,20 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
   } catch (err) {
     logger.error(
       { err, command: "playback", userId: interaction.user.id },
-      "[playback] command failed",
+      "[playback] playback command threw",
     );
 
     try {
       if (interaction.replied || interaction.deferred) {
-        await interaction.editReply("Something went wrong during playback.");
+        await interaction.editReply("Playback failed for this channel. Try again in a moment.");
       } else {
         await interaction.reply({
-          content: "Something went wrong during playback.",
+          content: "Playback failed for this channel. Try again in a moment.",
           ephemeral,
         });
       }
     } catch (replyErr) {
-      logger.error({ err: replyErr }, "[playback] failed to send fallback error message");
+      logger.error({ err: replyErr }, "[playback] send fallback error reply threw");
     }
   }
 }

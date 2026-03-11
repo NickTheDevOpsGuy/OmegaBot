@@ -58,8 +58,8 @@ export async function callClaude(
 
     return textContent.text;
   } catch (error) {
-    logger.error({ error }, "Claude API call failed");
-    throw new Error("Failed to get response from Claude");
+    logger.error({ error }, "[claude] single-message API call threw");
+    throw new Error("Claude API did not return a response");
   }
 }
 
@@ -91,8 +91,8 @@ export async function callClaudeWithMessages(
     }
     return textContent.text;
   } catch (error) {
-    logger.error({ error }, "Claude API multi-turn call failed");
-    throw new Error("Failed to get response from Claude");
+    logger.error({ error }, "[claude] multi-turn API call threw");
+    throw new Error("Claude API did not return a response");
   }
 }
 

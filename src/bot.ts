@@ -121,7 +121,7 @@ client.once("clientReady", () => {
     client.reminderScheduler?.start();
     logger.info("Reminder scheduler started");
   } catch (err) {
-    logger.error({ err }, "Failed to start reminder scheduler");
+    logger.error({ err }, "[bot] start reminder scheduler threw");
   }
 
   if (githubPrPollingEnabled) {
@@ -170,7 +170,7 @@ async function shutdown(signal: string): Promise<void> {
     client.reminderScheduler?.stop();
     logger.info("Reminder scheduler stopped");
   } catch (err) {
-    logger.warn({ err }, "Failed to stop reminder scheduler cleanly");
+    logger.warn({ err }, "[bot] stop reminder scheduler threw");
   }
 
   stopMetricsServer();
@@ -178,7 +178,7 @@ async function shutdown(signal: string): Promise<void> {
   try {
     await client.destroy();
   } catch (err) {
-    logger.warn({ err }, "Error closing Discord connection");
+    logger.warn({ err }, "[bot] Discord connection close threw");
   }
 
   closeDatabase();
@@ -199,7 +199,7 @@ if (githubPrPollingEnabled || githubAssigneePollingEnabled) {
         repo: env.githubRepo!,
         announceChannelId: env.githubPrAnnounceChannelId!,
       }).catch((err) => {
-        logger.error({ err }, "[github] pollPullRequestsOnce failed");
+        logger.error({ err }, "[github] pollPullRequestsOnce threw");
       });
     }
 
@@ -210,7 +210,7 @@ if (githubPrPollingEnabled || githubAssigneePollingEnabled) {
         repo: env.githubRepo!,
         announceChannelId: env.githubAssigneeAnnounceChannelId!,
       }).catch((err) => {
-        logger.error({ err }, "[github] pollIssueAssigneesOnce failed");
+        logger.error({ err }, "[github] pollIssueAssigneesOnce threw");
       });
     }
   }, env.githubPollIntervalMs);

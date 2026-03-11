@@ -174,7 +174,7 @@ export async function handleFaqSubcommandError(
   tag: string,
 ): Promise<void> {
   getContextLogger().error({ err }, tag);
-  await interaction.editReply("❌ Something went wrong. Try again in a bit.");
+  await interaction.editReply("❌ We couldn't load or save that FAQ. Try again in a moment.");
 }
 
 /* -------------------------------------------------------------------------- */

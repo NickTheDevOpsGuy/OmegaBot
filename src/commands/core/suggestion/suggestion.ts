@@ -108,7 +108,7 @@ export async function handleModalSubmit(
       "code" in err &&
       (err as { code: number }).code === 50013
         ? "Couldn't post the suggestion. The bot may lack **Send Messages** or **Embed Links** in this channel."
-        : "Couldn't post the suggestion. Please try again or check channel permissions.";
+        : "We couldn't post your suggestion. Try again or check that the bot can send messages in this channel.";
     await interaction.editReply(msg);
   }
 }

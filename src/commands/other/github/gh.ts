@@ -196,7 +196,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       return;
     }
 
-    logger.warn({ err, sub }, "[gh] GitHub request failed");
-    await interaction.editReply("GitHub request failed. Please try again in a bit.");
+    logger.warn({ err, sub }, "[gh] GitHub API request threw for subcommand");
+    await interaction.editReply("GitHub didn't respond. Try again in a moment.");
   }
 }

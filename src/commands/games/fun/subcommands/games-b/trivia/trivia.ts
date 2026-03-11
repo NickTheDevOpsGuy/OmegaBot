@@ -1,5 +1,6 @@
 // src/commands/fun/subcommands/trivia.ts
 import type { ChatInputCommandInteraction } from "discord.js";
+import { errMessage, getUserFacingReason } from "../../../../../../utils/errors.js";
 import { logger } from "../../../../../../utils/logger.js";
 import { getStats, getTriviaLeaderboard } from "./triviaStore.js";
 import type { TriviaCategory } from "./questions.js";
@@ -9,9 +10,9 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
   try {
     return await runTrivia(interaction);
   } catch (err) {
-    logger.error({ err, userId: interaction.user.id }, "[trivia] handler failed");
+    logger.error({ err, userId: interaction.user.id }, `[trivia] trivia handler threw: ${errMessage(err)}`);
     await interaction
-      .editReply("Something went wrong with trivia. Try again.")
+      .editReply(`❌ Trivia couldn't load or continue: ${getUserFacingReason(err)}`)
       .catch(() => {});
   }
 }

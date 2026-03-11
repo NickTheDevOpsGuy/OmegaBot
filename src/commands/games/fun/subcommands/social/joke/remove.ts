@@ -64,7 +64,7 @@ export async function handleJokeRemove(
     });
   } else {
     await interaction.editReply({
-      content: `Failed to remove joke #${jokeId}.`,
+      content: `We couldn't remove joke #${jokeId}. Try again in a moment.`,
     });
   }
 }

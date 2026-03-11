@@ -77,7 +77,7 @@ function attemptDatabaseRecovery(dbPath: string): boolean {
           }
           logger.info({ table: table.name, rows: rows.length }, "Recovered table");
         } catch (err) {
-          logger.warn({ table: table.name, err }, "Failed to recover table");
+          logger.warn({ table: table.name, err }, "[db] table recovery threw");
         }
       }
 
@@ -106,7 +106,7 @@ function attemptDatabaseRecovery(dbPath: string): boolean {
       return true; // Let it create a fresh database
     }
   } catch (err) {
-    logger.error({ err }, "Database recovery failed completely");
+    logger.error({ err }, "[db] full database recovery threw");
     return false;
   }
 }
@@ -178,7 +178,7 @@ export function initDatabase(): Database.Database {
   }
 
   if (!db) {
-    throw new Error("Failed to initialize database after recovery attempts");
+    throw new Error("Database initialization threw after recovery attempts");
   }
 
   // WAL is great for file-backed DBs; avoid it for ":memory:".
@@ -214,7 +214,7 @@ export function initDatabase(): Database.Database {
       );
     } catch (err) {
       // Never crash the bot on a best-effort migration.
-      logger.error({ err }, "[db] coin_flips migration failed");
+      logger.error({ err }, "[db] coin_flips migration threw");
     }
   }
 
@@ -234,7 +234,7 @@ export function initDatabase(): Database.Database {
         );
       }
     } catch (err) {
-      logger.error({ err }, "[db] hangman_stats migration failed");
+      logger.error({ err }, "[db] hangman_stats migration threw");
     }
   }
   ensureHangmanStatsSchema();

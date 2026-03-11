@@ -32,7 +32,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
     // Do NOT hide this. If stats are wrong, this is usually why.
     logger.error(
       { err, userId: interaction.user.id, result: stored },
-      "[fun/coinflip] failed to record coin flip",
+      "[fun/coinflip] record coin flip threw",
     );
   }
 

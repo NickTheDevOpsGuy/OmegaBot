@@ -150,7 +150,7 @@ export async function runPlay(
       recordInteractionRecovery("hangman");
       logger.warn(
         { err, gameId, interactionFailedRecovery: true },
-        "[hangman] collect handler failed",
+        "[hangman] letter button collect threw",
       );
       if (!selectInteraction.replied && !selectInteraction.deferred) {
         await selectInteraction.deferUpdate().catch(() => {});

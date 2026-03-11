@@ -6,6 +6,7 @@ import {
   type ButtonInteraction,
   type Message,
 } from "discord.js";
+import { errMessage, getUserFacingReason } from "../../../../../../utils/errors.js";
 import { logger } from "../../../../../../utils/logger.js";
 import { recordInteractionRecovery } from "../../../../../../services/core/metrics/server.js";
 import {
@@ -83,9 +84,9 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
   try {
     return await runBlackjack(interaction);
   } catch (err) {
-    logger.error({ err, userId: interaction.user.id }, "[blackjack] handler failed");
+    logger.error({ err, userId: interaction.user.id }, `[blackjack] game handler threw: ${errMessage(err)}`);
     await interaction
-      .editReply("Something went wrong with blackjack. Try again.")
+      .editReply(`❌ Blackjack couldn't complete: ${getUserFacingReason(err)}`)
       .catch(() => {});
   }
 }
@@ -272,7 +273,7 @@ async function runBlackjack(interaction: ChatInputCommandInteraction): Promise<v
       recordInteractionRecovery("blackjack");
       logger.warn(
         { err, gameId, interactionFailedRecovery: true },
-        "[blackjack] collect handler failed",
+        "[blackjack] game button collect threw",
       );
       if (!buttonInteraction.replied && !buttonInteraction.deferred) {
         await buttonInteraction.deferUpdate().catch(() => {});

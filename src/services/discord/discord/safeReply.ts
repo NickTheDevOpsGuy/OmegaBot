@@ -74,7 +74,7 @@ export async function safeReply(
     const log = getContextLogger();
     log.warn(
       { error, commandName: interaction.commandName, requestId: getRequestId() },
-      "Failed to reply to interaction, trying followUp",
+      "reply to interaction threw, trying followUp",
     );
     try {
       await interaction.followUp(replyOptions);
@@ -99,7 +99,7 @@ export async function safeReply(
           commandName: interaction.commandName,
           requestId: getRequestId(),
         },
-        "Failed to followUp on interaction - interaction may be expired",
+        "followUp on interaction threw (interaction may be expired)",
       );
     }
   }

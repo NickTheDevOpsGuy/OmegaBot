@@ -159,7 +159,8 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     await handleModeratorRole(interaction, sub);
   } else {
     await interaction.reply({
-      content: "Unknown config option.",
+      content:
+        "That option wasn't found. Use `rules`, `moderator-role`, or other config options. Use `/help` for more.",
       flags: MessageFlags.Ephemeral,
     });
   }

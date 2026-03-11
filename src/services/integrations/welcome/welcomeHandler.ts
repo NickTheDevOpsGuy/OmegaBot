@@ -80,7 +80,7 @@ export async function onGuildMemberAdd(member: GuildMember): Promise<void> {
   } catch (err) {
     logger.error(
       { err, guildId: member.guild.id, userId: member.user.id },
-      "Welcome handler failed",
+      "[welcome] welcome handler threw",
     );
   }
 }

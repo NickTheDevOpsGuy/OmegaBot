@@ -1,4 +1,5 @@
 import { SlashCommandBuilder, type ChatInputCommandInteraction } from "discord.js";
+import { errMessage, getUserFacingReason } from "../../../utils/errors.js";
 import { logger } from "../../../utils/logger.js";
 
 /**
@@ -57,12 +58,12 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     /**
      * Extremely unlikely path, but included for consistency with other commands.
      */
-    logger.error({ err }, "[ping] command failed");
-
+    logger.error({ err }, `[ping] latency check threw: ${errMessage(err)}`);
+    const msg = `❌ ${getUserFacingReason(err)}`;
     if (interaction.replied || interaction.deferred) {
-      await interaction.editReply("Ping failed unexpectedly.");
+      await interaction.editReply(msg);
     } else {
-      await interaction.reply("Ping failed unexpectedly.");
+      await interaction.reply(msg);
     }
   }
 }

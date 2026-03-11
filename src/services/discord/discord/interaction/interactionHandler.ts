@@ -12,8 +12,8 @@ import {
   getContextLogger,
   getRequestId,
 } from "../../../core/logging/requestContext.js";
-import { t, resolveLocale } from "../../../../i18n/index.js";
 import { MessageFlags } from "discord.js";
+import { errMessage, getUserFacingReason } from "../../../../utils/errors.js";
 import { logger } from "../../../../utils/logger.js";
 import type { CommandClient } from "../commandLoader.js";
 import type { CommandModule } from "../commandTypes.js";
@@ -94,7 +94,7 @@ async function safeRepliableReply(
       });
       return;
     }
-    logger.warn({ err, interactionId: interaction.id }, "[interaction] failed to reply");
+    logger.warn({ err, interactionId: interaction.id }, `[interaction] slash command reply threw: ${errMessage(err)}`);
   }
 }
 
@@ -232,19 +232,10 @@ async function handleChatCommand(
 
     const code = getDiscordErrorCode(err);
     const msg = getDiscordErrorMessage(err);
-    log.error({ ...meta, err, code, msg }, "[interaction] command failed");
+    log.error({ ...meta, err, code, msg }, `[interaction] command execution threw: ${errMessage(err)}`);
 
-    const hint =
-      code != null ? `Discord error code: ${code}` : msg ? `Error: ${msg}` : null;
-
-    const guildLocale = (interaction as { guild?: { preferredLocale?: string } }).guild
-      ?.preferredLocale;
-    const genericMsg = t("error.generic", resolveLocale(guildLocale));
-    await safeRepliableReply(
-      interaction,
-      hint ? `${genericMsg}\n${hint}` : genericMsg,
-      true,
-    );
+    const userMsg = getUserFacingReason(err);
+    await safeRepliableReply(interaction, `❌ ${userMsg}`, true);
   } finally {
     const ms = Math.round(performance.now() - start);
     log.debug({ ...meta, ms }, "[interaction] command timing");

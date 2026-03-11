@@ -97,9 +97,9 @@ function handleMetrics(res: http.ServerResponse): void {
       res.end(output);
     })
     .catch((err: unknown) => {
-      logger.warn({ err }, "[metrics] failed to collect");
+      logger.warn({ err }, "[metrics] Prometheus collect threw");
       res.writeHead(500, { "Content-Type": "text/plain" });
-      res.end("Failed to collect metrics");
+      res.end("Metrics collection threw");
     });
 }
 

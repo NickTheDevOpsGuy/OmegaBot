@@ -38,7 +38,7 @@ function friendlyWeatherError(err: unknown): string {
     return "WeatherAPI rate limit hit. Try again in a bit.";
   }
 
-  return "Weather API is being dramatic. Try again later.";
+  return "Weather had a hiccup. Try again in a moment.";
 }
 
 export async function run(
@@ -139,7 +139,7 @@ export async function run(
       "[fun/weather] sent",
     );
   } catch (err) {
-    logger.error({ err, mode }, "[fun/weather] failed");
+    logger.error({ err, mode }, "[fun/weather] weather fetch threw");
     await interaction.editReply(friendlyWeatherError(err));
   }
 }

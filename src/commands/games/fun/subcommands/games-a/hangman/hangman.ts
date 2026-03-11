@@ -4,6 +4,7 @@
 // Play flow in hangman/play.ts, stats in hangman/statsDisplay.ts, admin words in hangman/words.ts.
 
 import type { ChatInputCommandInteraction } from "discord.js";
+import { errMessage, getUserFacingReason } from "../../../../../../utils/errors.js";
 import { logger } from "../../../../../../utils/logger.js";
 import type { HangmanDifficulty } from "./hangmanWordStore.js";
 import { runPlay } from "./play.js";
@@ -37,9 +38,9 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       "That option wasn't found. Use `start`, `guess`, `giveup`, or `words`. Use `/help topic:fun` for more.",
     );
   } catch (err) {
-    logger.error({ err, userId: interaction.user.id }, "[hangman] handler failed");
+    logger.error({ err, userId: interaction.user.id }, `[hangman] hangman handler threw: ${errMessage(err)}`);
     await interaction
-      .editReply("Something went wrong with hangman. Try again.")
+      .editReply(`❌ Hangman hit a snag: ${getUserFacingReason(err)}`)
       .catch(() => {});
   }
 }

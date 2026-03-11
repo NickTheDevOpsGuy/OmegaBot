@@ -67,7 +67,7 @@ Clearing deletes all `chat_messages` rows for that conversation key.
 - **OpenAI (preferred when set):** Uses `OPENAI_API_KEY` and `OPENAI_MODEL` (default `gpt-4o-mini`) from `.env`. Same token as used for `/fun chat` and summaries when `SUMMARY_MODE=llm`.
 - **Anthropic (fallback):** If `OPENAI_API_KEY` is not set, uses `ANTHROPIC_API_KEY` for Claude.
 
-If neither key is set, message-based chat is disabled (the handler is not registered). `/fun chat` will then reply with an error asking you to set one of the keys.
+If neither key is set, message-based chat is disabled (the handler is not registered). `/fun chat` (and DM/@mention) will reply that chat isn’t available and the server admin needs to set up an API key.
 
 See [Environment Setup](setup-env.md) and `.env.example` for where to get API keys.
 

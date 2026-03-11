@@ -42,6 +42,6 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       { err, userId: interaction.user.id, targetId: target.id },
       "[fun/coinflipstats] failed",
     );
-    await interaction.editReply("Failed to load coin flip stats. Try again in a bit.");
+    await interaction.editReply("Coin flip stats didn't load. Try again in a moment.");
   }
 }

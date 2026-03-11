@@ -146,7 +146,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       // Timeout — leave the result as is
     }
   } catch (err) {
-    logger.error({ err, userId }, "[fun/rps] failed");
-    await interaction.editReply("Something went wrong. Try again!");
+    logger.error({ err, userId }, "[fun/rps] RPS handler threw");
+    await interaction.editReply("Rock-paper-scissors couldn't complete that. Try again!");
   }
 }

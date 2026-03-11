@@ -97,7 +97,7 @@ export async function createPoll(args: {
   try {
     await saveStore(store);
   } catch (err) {
-    logger.error({ err }, "[fun/pollStore] failed to save poll store");
+    logger.error({ err }, "[fun/pollStore] save poll store threw");
   }
 
   return poll;
@@ -139,7 +139,7 @@ export async function recordVote(args: {
   try {
     await saveStore(store);
   } catch (err) {
-    logger.error({ err }, "[fun/pollStore] failed to save poll store");
+    logger.error({ err }, "[fun/pollStore] save poll store threw");
   }
 
   return { kind: "ok", poll };

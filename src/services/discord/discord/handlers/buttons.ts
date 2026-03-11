@@ -25,7 +25,7 @@ async function replyOrEditButton(
     }
     logger.warn(
       { err, customId: interaction.customId },
-      "[interaction] failed to send error reply",
+      "[interaction] send error reply for button threw",
     );
   }
 }
@@ -41,7 +41,7 @@ export async function handleButton(interaction: ButtonInteraction): Promise<void
       );
       await replyOrEditButton(
         interaction,
-        "Something went wrong with that action. Try again later.",
+        "That button action didn't complete. Try again in a moment.",
       );
     }
   }

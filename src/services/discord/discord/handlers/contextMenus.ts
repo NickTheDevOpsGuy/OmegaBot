@@ -2,6 +2,7 @@ import type {
   UserContextMenuCommandInteraction,
   MessageContextMenuCommandInteraction,
 } from "discord.js";
+import { errMessage, getUserFacingReason } from "../../../../utils/errors.js";
 import { logger } from "../../../../utils/logger.js";
 import {
   isKnownInteractionError,
@@ -27,7 +28,7 @@ async function safeRepliableReply(
       });
       return;
     }
-    logger.warn({ err, interactionId: interaction.id }, "[interaction] failed to reply");
+    logger.warn({ err, interactionId: interaction.id }, `[interaction] context menu reply threw: ${errMessage(err)}`);
   }
 }
 
@@ -55,9 +56,9 @@ export async function handleUserContextMenu(
       }
       logger.error(
         { err, command: interaction.commandName },
-        "[interaction] context menu failed",
+        `[interaction] context menu threw: ${errMessage(err)}`,
       );
-      await safeRepliableReply(interaction, "Something went wrong. Try again later.");
+      await safeRepliableReply(interaction, `❌ ${getUserFacingReason(err)}`);
     }
   }
 }
@@ -86,9 +87,9 @@ export async function handleMessageContextMenu(
       }
       logger.error(
         { err, command: interaction.commandName },
-        "[interaction] context menu failed",
+        `[interaction] context menu threw: ${errMessage(err)}`,
       );
-      await safeRepliableReply(interaction, "Something went wrong. Try again later.");
+      await safeRepliableReply(interaction, `❌ ${getUserFacingReason(err)}`);
     }
   }
 }

@@ -134,11 +134,11 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     try {
       if (interaction.deferred || interaction.replied) {
         await interaction.editReply({
-          content: "Help failed unexpectedly. Please try again later.",
+          content: "Help couldn't load. Try again in a moment.",
         });
       }
     } catch (err2) {
-      log.error({ err: err2 }, "[help] failed to send fallback editReply");
+      log.error({ err: err2 }, "[help] send fallback editReply threw");
     }
   }
 }

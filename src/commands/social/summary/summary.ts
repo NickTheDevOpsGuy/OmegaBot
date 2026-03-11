@@ -88,21 +88,21 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
       await interaction.editReply("✅ Summary sent to your DMs.");
     } catch (dmErr) {
-      logger.warn({ dmErr, userId: interaction.user.id }, "[summary] DM failed");
+      logger.warn({ dmErr, userId: interaction.user.id }, "[summary] send summary to user DM threw");
       await interaction.editReply(
         "I generated the summary, but I could not DM you. Your DMs may be closed.",
       );
     }
   } catch (err) {
-    logger.error({ err, command: "summary" }, "[summary] command failed");
+    logger.error({ err, command: "summary" }, "[summary] summary command threw");
 
     if (interaction.deferred || interaction.replied) {
       await interaction.editReply(
-        "❌ Something went wrong while generating the summary.",
+        "❌ The summary couldn't be generated. Try again in a moment.",
       );
     } else {
       await interaction.reply({
-        content: "❌ Something went wrong while generating the summary.",
+        content: "❌ The summary couldn't be generated. Try again in a moment.",
         flags: MessageFlags.Ephemeral,
       });
     }

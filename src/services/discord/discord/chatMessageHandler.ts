@@ -14,12 +14,13 @@ import {
   wantsToClear,
 } from "../../integrations/ai/conversationStore.js";
 import { env } from "../../../config/env.js";
+import { errMessage, getUserFacingReason } from "../../../utils/errors.js";
 import { logger } from "../../../utils/logger.js";
 import {
   createRequestContext,
   runWithContextAsync,
   getContextLogger,
-} from "../../../core/logging/requestContext.js";
+} from "../../core/logging/requestContext.js";
 
 function hasLLMConfigured(): boolean {
   return Boolean(env.openAIKey || process.env.ANTHROPIC_API_KEY?.trim());
@@ -112,9 +113,9 @@ export function setupChatMessageHandler(client: Client): void {
         const reply = `${result.text}\n\n_— ${label}_`;
         await message.reply({ content: reply }).catch(() => {});
       } catch (err) {
-        log.warn({ err, userId: message.author.id }, "[chat] message handler failed");
+        log.warn({ err, userId: message.author.id }, `[chat] message handler threw: ${errMessage(err)}`);
         await message
-          .reply({ content: "Something went wrong with the chat. Please try again in a moment." })
+          .reply({ content: `❌ ${getUserFacingReason(err)}` })
           .catch(() => {});
       }
     });

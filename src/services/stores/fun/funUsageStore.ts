@@ -235,7 +235,7 @@ export async function recordFunUsage(args: {
   try {
     await saveStore(store);
   } catch (err) {
-    logger.error({ err }, "[fun/usage] failed to save fun usage store");
+    logger.error({ err }, "[fun/usage] save fun usage store threw");
   }
 }
 

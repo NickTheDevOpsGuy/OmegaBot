@@ -146,7 +146,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       try {
         await buttonInteraction.showModal(modal);
       } catch (err) {
-        logger.warn({ err, gameId }, "[wordle] failed to show modal");
+        logger.warn({ err, gameId }, "[wordle] show guess modal threw");
         await buttonInteraction.deferUpdate().catch(() => {});
         await safeMessageEdit(
           message,
@@ -250,7 +250,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       recordInteractionRecovery("wordle");
       logger.warn(
         { err, gameId, interactionFailedRecovery: true },
-        "[wordle] collect handler failed",
+        "[wordle] game button collect threw",
       );
       if (!buttonInteraction.replied && !buttonInteraction.deferred) {
         await buttonInteraction.deferUpdate().catch(() => {});
