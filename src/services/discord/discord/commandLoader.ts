@@ -44,7 +44,7 @@ export async function loadCommands(client: CommandClient): Promise<void> {
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
 
-  const commandsDir = path.resolve(__dirname, "../../commands");
+  const commandsDir = path.resolve(__dirname, "../../../commands");
 
   logger.info({ commandsDir }, "[commands] loading");
 
