@@ -12,7 +12,7 @@ describe("guildConfigStore", () => {
     vi.mocked(fs.existsSync).mockReturnValue(true);
     vi.mocked(fs.readFileSync).mockReturnValue("{}");
     vi.mocked(fs.writeFileSync).mockImplementation(() => {});
-    vi.mocked(fs.mkdirSync).mockImplementation(() => {});
+    vi.mocked(fs.mkdirSync).mockImplementation(() => undefined);
   });
 
   it("getGuildConfig returns defaults when guild has no stored config", () => {

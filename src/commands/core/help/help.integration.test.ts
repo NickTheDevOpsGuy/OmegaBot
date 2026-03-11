@@ -31,7 +31,7 @@ describe("help integration", () => {
 
     expect(mock.deferReply).toHaveBeenCalled();
     expect(mock.editReply).toHaveBeenCalled();
-    const content = mock.editReply.mock.calls[0]?.[0]?.content ?? "";
+    const content = (mock.editReply as ReturnType<typeof vi.fn>).mock.calls[0]?.[0]?.content ?? "";
     expect(content).toMatch(/overview|OmegaBot|help/i);
   });
 
@@ -41,7 +41,7 @@ describe("help integration", () => {
     await execute(mock);
 
     expect(mock.editReply).toHaveBeenCalled();
-    const content = mock.editReply.mock.calls[0]?.[0]?.content ?? "";
+    const content = (mock.editReply as ReturnType<typeof vi.fn>).mock.calls[0]?.[0]?.content ?? "";
     expect(content.length).toBeGreaterThan(0);
   });
 });

@@ -33,7 +33,7 @@ describe("status integration", () => {
 
     expect(mock.deferReply).toHaveBeenCalled();
     expect(mock.editReply).toHaveBeenCalled();
-    const content = mock.editReply.mock.calls[0]?.[0] ?? "";
+    const content = (mock.editReply as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] ?? "";
     expect(content).toMatch(/Vercel|Operational|vercel\.com/i);
   });
 });
