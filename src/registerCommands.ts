@@ -53,38 +53,43 @@ async function registerCommands(): Promise<void> {
     throw new Error(`dist/commands not found. Did you forget to run "npm run build"?`);
   }
 
-  const folders = readCommandFolders(commandsPath);
-
+  // Structure: dist/commands/<group>/<name>/<name>.js (group = core, games, social, other)
+  const groups = readCommandFolders(commandsPath);
   const commands: CommandJson[] = [];
 
-  for (const folder of folders) {
-    const file = path.join(commandsPath, folder, `${folder}.js`);
-    const relFile = path.relative(process.cwd(), file).replaceAll("\\", "/");
+  for (const group of groups) {
+    const groupPath = path.join(commandsPath, group);
+    const names = readCommandFolders(groupPath);
 
-    if (!fs.existsSync(file)) {
-      logger.debug({ folder, file: relFile }, "[register] skip (missing entry file)");
-      continue;
-    }
+    for (const name of names) {
+      const file = path.join(groupPath, name, `${name}.js`);
+      const relFile = path.relative(process.cwd(), file).replaceAll("\\", "/");
 
-    try {
-      const moduleUrl = pathToFileURL(file).href;
-      const imported = (await import(moduleUrl)) as Partial<CommandModule>;
-
-      if (
-        !imported.data ||
-        typeof (imported.data as { toJSON?: unknown }).toJSON !== "function"
-      ) {
-        logger.warn({ folder, file: relFile }, "[register] skip (missing exported data)");
+      if (!fs.existsSync(file)) {
+        logger.debug({ group, name, file: relFile }, "[register] skip (missing entry file)");
         continue;
       }
 
-      const json = (imported.data as { toJSON: () => CommandJson }).toJSON();
+      try {
+        const moduleUrl = pathToFileURL(file).href;
+        const imported = (await import(moduleUrl)) as Partial<CommandModule>;
 
-      commands.push(json);
-      const cmdName = (imported.data as { name?: string }).name ?? json.name ?? folder;
-      logger.info({ command: cmdName, file: relFile }, "[register] prepared");
-    } catch (err) {
-      logger.warn({ err, folder, file: relFile }, "[register] failed to load");
+        if (
+          !imported.data ||
+          typeof (imported.data as { toJSON?: unknown }).toJSON !== "function"
+        ) {
+          logger.warn({ group, name, file: relFile }, "[register] skip (missing exported data)");
+          continue;
+        }
+
+        const json = (imported.data as { toJSON: () => CommandJson }).toJSON();
+
+        commands.push(json);
+        const cmdName = (imported.data as { name?: string }).name ?? json.name ?? name;
+        logger.info({ command: cmdName, file: relFile }, "[register] prepared");
+      } catch (err) {
+        logger.warn({ err, group, name, file: relFile }, "[register] failed to load");
+      }
     }
   }
 
