@@ -1,12 +1,13 @@
 // src/services/discord/safeReply.ts
+import { MessageFlags } from "discord.js";
 import type {
+  ButtonInteraction,
   ChatInputCommandInteraction,
   InteractionEditReplyOptions,
   InteractionReplyOptions,
   Message,
   MessageComponentInteraction,
   MessageEditOptions,
-  MessageFlags,
 } from "discord.js";
 import { getContextLogger, getRequestId } from "../../core/logging/requestContext.js";
 import {
