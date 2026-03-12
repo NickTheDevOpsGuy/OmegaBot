@@ -44,6 +44,5 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
   }
 
   appendAndTrim(key, message, result.text);
-  const label = result.provider === "openai" ? "OpenAI" : "Claude";
-  await interaction.editReply({ content: `${result.text}\n\n_— ${label}_` });
+  await interaction.editReply({ content: result.text });
 }

@@ -109,9 +109,7 @@ export function setupChatMessageHandler(client: Client): void {
 
         appendAndTrim(key, prompt, result.text);
 
-        const label = result.provider === "openai" ? "OpenAI" : "Claude";
-        const reply = `${result.text}\n\n_— ${label}_`;
-        await message.reply({ content: reply }).catch(() => {});
+        await message.reply({ content: result.text }).catch(() => {});
       } catch (err) {
         log.warn(
           { err, userId: message.author.id },
