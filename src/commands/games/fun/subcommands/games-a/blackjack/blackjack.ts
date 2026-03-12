@@ -187,6 +187,10 @@ async function runBlackjack(interaction: ChatInputCommandInteraction): Promise<v
       // Acknowledge immediately so heavy work doesn't cause "interaction failed"
       await buttonInteraction.deferUpdate();
 
+      if (action !== "hit" && action !== "stand" && action !== "double") {
+        return;
+      }
+
       if (action === "double") {
         playerHand.push(deck.pop()!);
         collector.stop("stand");

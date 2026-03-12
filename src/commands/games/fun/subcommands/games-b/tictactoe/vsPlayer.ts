@@ -152,6 +152,17 @@ export async function playVsPlayer(
       const [, , rowStr, colStr] = buttonInteraction.customId.split(":");
       const row = parseInt(rowStr, 10);
       const col = parseInt(colStr, 10);
+      if (
+        Number.isNaN(row) ||
+        Number.isNaN(col) ||
+        row < 0 ||
+        row > 2 ||
+        col < 0 ||
+        col > 2 ||
+        board[row][col] !== ""
+      ) {
+        return;
+      }
 
       const symbol: CellValue = currentPlayer.id === xPlayer.id ? "X" : "O";
       board[row][col] = symbol;

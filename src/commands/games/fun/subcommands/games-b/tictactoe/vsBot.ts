@@ -64,6 +64,10 @@ export async function playVsBot(interaction: ChatInputCommandInteraction): Promi
         await buttonInteraction.deferUpdate().catch(() => {});
         return;
       }
+      if (board[row][col] !== "") {
+        await buttonInteraction.deferUpdate().catch(() => {});
+        return;
+      }
 
       await buttonInteraction.deferUpdate();
 
