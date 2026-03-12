@@ -34,7 +34,8 @@ export function buildBoardButtons(
       row.addComponents(
         new ButtonBuilder()
           .setCustomId(`ttt:${gameId}:${r}:${c}`)
-          .setLabel(emoji)
+          .setLabel("\u200B")
+          .setEmoji(emoji)
           .setStyle(style)
           .setDisabled(disabled || cell !== ""),
       );

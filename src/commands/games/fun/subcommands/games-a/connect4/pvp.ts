@@ -8,6 +8,7 @@ import {
   safeReplyToButton,
   safeDeferUpdate,
   safeEditReply,
+  notifyGameMessageGone,
 } from "../../../../../../services/discord/discord/safeReply.js";
 import { recordResult } from "./connect4Store.js";
 import { newBoard, drop, has4, full, type Cell } from "./gameLogic.js";
@@ -81,7 +82,7 @@ export async function runPvP(
         collector.resetTimer();
         scheduleWarning();
         if (await safeDeferUpdate(btn)) {
-          await safeEditReply(
+          const ok = await safeEditReply(
             interaction,
             {
               content: render("⏱️ **Time extended!** +30 min for this move."),
@@ -89,6 +90,7 @@ export async function runPvP(
             },
             "connect4.extend",
           );
+          if (!ok) await notifyGameMessageGone(btn, "connect4").catch(() => {});
         }
         return;
       }
@@ -132,7 +134,7 @@ export async function runPvP(
         }
 
         collector.stop("win");
-        await safeEditReply(
+        const okWin = await safeEditReply(
           interaction,
           {
             content: [
@@ -145,6 +147,7 @@ export async function runPvP(
           },
           "connect4.win",
         );
+        if (!okWin) await notifyGameMessageGone(btn, "connect4").catch(() => {});
         return;
       }
 
@@ -156,7 +159,7 @@ export async function runPvP(
         }
 
         collector.stop("draw");
-        await safeEditReply(
+        const okDraw = await safeEditReply(
           interaction,
           {
             content: ["🏁 **Game over**", "It's a draw.", "", renderBoard(board)].join(
@@ -166,6 +169,7 @@ export async function runPvP(
           },
           "connect4.draw",
         );
+        if (!okDraw) await notifyGameMessageGone(btn, "connect4").catch(() => {});
         return;
       }
 
@@ -173,7 +177,7 @@ export async function runPvP(
       collector.resetTimer();
       scheduleWarning();
 
-      await safeEditReply(
+      const okTurn = await safeEditReply(
         interaction,
         {
           content: render(),
@@ -181,6 +185,7 @@ export async function runPvP(
         },
         "connect4.turn",
       );
+      if (!okTurn) await notifyGameMessageGone(btn, "connect4").catch(() => {});
     } catch (err) {
       recordInteractionRecovery("connect4");
       logger.warn(

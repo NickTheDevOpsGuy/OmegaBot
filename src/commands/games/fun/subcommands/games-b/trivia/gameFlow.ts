@@ -36,6 +36,11 @@ const CATEGORY_COLORS: Record<string, number> = {
 
 type TriviaQuestion = Awaited<ReturnType<typeof getRandomQuestion>>;
 
+/** Discord button label: non-empty, max 80 chars, so buttons never show "Edit". */
+function safeButtonLabel(answer: string, i: number): string {
+  return (String(answer).trim() || `Option ${i + 1}`).slice(0, 80);
+}
+
 function buildQuestionEmbed(
   question: TriviaQuestion,
   triviaId: string,
@@ -62,7 +67,7 @@ function buildQuestionEmbed(
     allAnswers.map((answer, i) =>
       new ButtonBuilder()
         .setCustomId(`${triviaId}:${i}`)
-        .setLabel(answer)
+        .setLabel(safeButtonLabel(answer, i))
         .setStyle(ButtonStyle.Secondary),
     ),
   );
@@ -112,7 +117,7 @@ export async function runTriviaGame(
       allAnswers.map((answer, i) =>
         new ButtonBuilder()
           .setCustomId(`${triviaId}:${i}`)
-          .setLabel(answer)
+          .setLabel(safeButtonLabel(answer, i))
           .setStyle(
             i === correctIndex
               ? ButtonStyle.Success
@@ -196,7 +201,7 @@ export async function runTriviaGame(
       allAnswers.map((answer, i) =>
         new ButtonBuilder()
           .setCustomId(`${triviaId}:${i}`)
-          .setLabel(answer)
+          .setLabel(safeButtonLabel(answer, i))
           .setStyle(i === correctIndex ? ButtonStyle.Success : ButtonStyle.Secondary)
           .setDisabled(true),
       ),
@@ -267,7 +272,7 @@ async function waitForNextQuestion(
       allAnswers.map((answer, i) =>
         new ButtonBuilder()
           .setCustomId(`${triviaId2}:${i}`)
-          .setLabel(answer)
+          .setLabel(safeButtonLabel(answer, i))
           .setStyle(
             i === correctIndex
               ? ButtonStyle.Success

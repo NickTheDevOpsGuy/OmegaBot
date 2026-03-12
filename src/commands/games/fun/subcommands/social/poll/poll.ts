@@ -50,12 +50,13 @@ function buildPollButtons(
   const row = new ActionRowBuilder<ButtonBuilder>();
 
   for (let i = 0; i < poll.options.length; i += 1) {
-    const label = poll.options[i] ?? `Option ${i + 1}`;
+    const raw = poll.options[i] ?? `Option ${i + 1}`;
+    const label = (String(raw).trim() || `Option ${i + 1}`).slice(0, 80);
 
     row.addComponents(
       new ButtonBuilder()
         .setCustomId(`funpoll:${poll.messageId}:${i}`)
-        .setLabel(label.length > 80 ? `${label.slice(0, 77)}...` : label)
+        .setLabel(label)
         .setStyle(ButtonStyle.Secondary)
         .setDisabled(disabled),
     );

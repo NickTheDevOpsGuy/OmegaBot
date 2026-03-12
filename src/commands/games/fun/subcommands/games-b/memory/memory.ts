@@ -58,13 +58,14 @@ function buildComponents(
   const row2 = new ActionRowBuilder<ButtonBuilder>();
   for (let i = 0; i < TOTAL; i++) {
     const isRevealed = state.revealed.includes(i) || state.matched.includes(i);
-    const label = isRevealed ? EMOJIS[state.slots[i]]! : "?";
+    const emoji = isRevealed ? EMOJIS[state.slots[i]]! : null;
     const disabled = state.matched.includes(i);
     const btn = new ButtonBuilder()
       .setCustomId(`mem:${gameId}:${i}`)
-      .setLabel(label)
+      .setLabel(emoji ? "\u200B" : "?")
       .setStyle(disabled ? ButtonStyle.Success : ButtonStyle.Secondary)
       .setDisabled(disabled);
+    if (emoji) btn.setEmoji(emoji);
     if (i < 4) row1.addComponents(btn);
     else row2.addComponents(btn);
   }

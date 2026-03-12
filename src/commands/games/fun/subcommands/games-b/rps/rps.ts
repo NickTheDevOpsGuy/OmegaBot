@@ -7,7 +7,10 @@ import {
   EmbedBuilder,
   type ChatInputCommandInteraction,
 } from "discord.js";
-import { safeMessageEdit } from "../../../../../../services/discord/discord/safeReply.js";
+import {
+  safeMessageEdit,
+  notifyGameMessageGone,
+} from "../../../../../../services/discord/discord/safeReply.js";
 import { logger } from "../../../../../../utils/logger.js";
 import { recordSoloResult } from "./rpsStore.js";
 import {
@@ -116,12 +119,16 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
           .setEmoji("✂️")
           .setStyle(ButtonStyle.Secondary),
       );
-      await safeMessageEdit(
+      const ok = await safeMessageEdit(
         message,
         { content: "Pick your choice:", embeds: [], components: [choiceRow] },
         "rps.solo.choice",
         interaction,
-      ).catch(() => {});
+      ).catch(() => false);
+      if (!ok) {
+        await notifyGameMessageGone(againClick, "rps").catch(() => {});
+        return;
+      }
       const choiceClick = await message.awaitMessageComponent({
         componentType: ComponentType.Button,
         filter: (i) =>

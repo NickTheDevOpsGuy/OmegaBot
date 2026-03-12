@@ -33,10 +33,11 @@ export function buildControls(args: {
 }): ActionRowBuilder<ButtonBuilder>[] {
   const { gameId, board, disabled } = args;
 
-  const mk = (col: number, label: string) =>
+  const mk = (col: number, emoji: string) =>
     new ButtonBuilder()
       .setCustomId(`c4:${col}:${gameId}`)
-      .setLabel(label)
+      .setLabel("\u200B")
+      .setEmoji(emoji)
       .setStyle(ButtonStyle.Secondary)
       .setDisabled(disabled || board[0][col] !== 0);
 
