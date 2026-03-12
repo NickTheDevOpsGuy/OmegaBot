@@ -202,8 +202,8 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       const ok = await safeEditReply(
         interaction,
         {
-        embeds: [buildEmbed()],
-        components: [buildButtons()],
+          embeds: [buildEmbed()],
+          components: [buildButtons()],
         },
         "wouldYouRather.vote",
       ).catch(() => false);
