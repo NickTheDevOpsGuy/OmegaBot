@@ -74,6 +74,10 @@ printf "🛠️ TypeScript — type check\n"
 npx --no-install tsc --noEmit --pretty false
 printf "✅ TypeScript passed.\n"
 
+# -------- Rebuild native modules (match current Node so tests don't fail with MODULE_VERSION) --------
+printf "🔧 Rebuilding native modules for current Node...\n"
+npm rebuild better-sqlite3 2>/dev/null || true
+
 # -------- Tests --------
 printf "🧪 Tests (single run)\n"
 npm run test:run
