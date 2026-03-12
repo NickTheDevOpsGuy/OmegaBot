@@ -8,12 +8,12 @@ import { SlashCommandBuilder as SlashCommandBuilderClass } from "discord.js";
 import { buildJokeSubcommands } from "../subcommands/social/joke/index.js";
 import { buildQuoteGroup } from "./quoteGroup.js";
 import { buildHangmanGroup } from "./hangmanGroup.js";
-import { buildRemindGroup } from "./remindGroup.js";
 import { addGamesSubcommands } from "./gamesGroup.js";
-import { addUtilitySubcommands } from "./utilityGroup.js";
+import { buildRemindGroup } from "./remindGroup.js";
+import { buildUtilityGroup } from "./utilityGroup.js";
 
 export function buildFunCommand(): SlashCommandBuilder {
-  // After addSubcommandGroup, builder becomes SlashCommandSubcommandsOnlyBuilder
+  // Discord allows max 25 top-level options (groups + subcommands). We use groups for joke, quote, hangman, utility, remind; flat subcommands for games.
   const withGroups = new SlashCommandBuilderClass()
     .setName("fun")
     .setDescription("Fun and utility commands")
@@ -22,7 +22,7 @@ export function buildFunCommand(): SlashCommandBuilder {
     .addSubcommandGroup(buildHangmanGroup);
 
   const withGames = addGamesSubcommands(withGroups);
-  const withUtility = addUtilitySubcommands(withGames);
+  const withUtility = withGames.addSubcommandGroup(buildUtilityGroup);
 
   return withUtility.addSubcommandGroup(buildRemindGroup) as SlashCommandBuilder;
 }

@@ -34,7 +34,7 @@ The main hub for all games and fun features.
 | `/fun coinflip`           | Heads or tails                                                  |
 | `/fun choose`             | Pick one or more options at random (e.g. pizza, pasta, salad)   |
 | `/fun dice`               | Roll dice (notation: 2d6+3, or sides/count)                     |
-| `/fun poll`               | Create polls                                                    |
+| `/fun utility poll`       | Create polls                                                    |
 
 **Rate limits** (per user, to prevent spam):
 
@@ -66,7 +66,7 @@ Stats and leaderboard views are not rate limited.
 | ------------------ | ------------------------- |
 | `/fun daily`       | Daily check-in for points |
 | `/fun stats`       | View all game stats       |
-| `/fun leaderboard` | Top players               |
+| `/fun utility leaderboard` | Top players             |
 
 ### Reminders
 
@@ -91,14 +91,16 @@ Stats and leaderboard views are not rate limited.
 
 ### Utility
 
-| Command           | Description                                                |
-| ----------------- | ---------------------------------------------------------- |
-| `/fun weather`    | Current weather                                            |
-| `/fun weather7`   | 7-day forecast                                             |
-| `/fun chat`       | Chat with the bot (AI; same thread as DM / @mention)       |
-| `/fun roast`      | Playful AI roast (you or a friend; needs OPENAI/ANTHROPIC) |
-| `/fun compliment` | Nice AI compliment (you or a friend)                       |
-| `/fun fact`       | Random facts                                               |
+| Command                    | Description                                                |
+| -------------------------- | ---------------------------------------------------------- |
+| `/fun utility poll`        | Create polls                                               |
+| `/fun utility weather`     | Current weather                                            |
+| `/fun utility weather7`    | 7-day forecast                                             |
+| `/fun utility chat`        | Chat with the bot (AI; same thread as DM / @mention)       |
+| `/fun utility roast`       | Playful AI roast (you or a friend; needs OPENAI/ANTHROPIC) |
+| `/fun utility compliment`  | Nice AI compliment (you or a friend)                       |
+| `/fun utility leaderboard` | Top players                                                |
+| `/fun fact`                | Random facts                                               |
 
 ---
 

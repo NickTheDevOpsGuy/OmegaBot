@@ -1,12 +1,14 @@
-// src/commands/fun/funSubcommands/utilityGroup.ts
-// Utility subcommands for /fun (poll, weather, leaderboard)
+// src/commands/games/fun/funSubcommands/utilityGroup.ts
+// Utility subcommands for /fun (poll, weather, chat, etc.). Grouped to stay under Discord's 25-option limit.
 
-import type { SlashCommandSubcommandsOnlyBuilder } from "discord.js";
+import type { SlashCommandSubcommandGroupBuilder } from "discord.js";
 
-export function addUtilitySubcommands(
-  builder: SlashCommandSubcommandsOnlyBuilder,
-): SlashCommandSubcommandsOnlyBuilder {
-  return builder
+export function buildUtilityGroup(
+  group: SlashCommandSubcommandGroupBuilder,
+): SlashCommandSubcommandGroupBuilder {
+  return group
+    .setName("utility")
+    .setDescription("Poll, weather, chat, leaderboard, and more")
     .addSubcommand((s) =>
       s
         .setName("poll")

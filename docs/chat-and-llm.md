@@ -10,7 +10,7 @@ Users can start or continue a conversation in three ways:
 
 1. **DM the bot** – Any message you send the bot in a direct message is treated as chat. The bot replies in the same DM.
 2. **@mention the bot in a channel** – In a server channel, mention the bot (e.g. `@OmegaBot what’s the weather?`). The bot replies in that channel. The part of your message after the mention is the prompt.
-3. **`/fun chat message:<text>`** – Slash command that sends a message into the **same** conversation thread as DM or @mention for that context (see below).
+3. **`/fun utility chat message:<text>`** – Slash command that sends a message into the **same** conversation thread as DM or @mention for that context (see below).
 
 No slash command is required for normal chat; messaging the bot is enough.
 
@@ -23,7 +23,7 @@ Conversations are scoped so that:
 - **DMs** – One thread per user. Key: `dm:<userId>`.
 - **Channels** – One thread per user per channel. Key: `ch:<channelId>:<userId>`.
 
-So if you DM the bot, that’s one thread. If you @mention it in `#general`, that’s a separate thread for you in that channel. If you use `/fun chat` in `#general`, it uses the same thread as @mentioning the bot in `#general`.
+So if you DM the bot, that’s one thread. If you @mention it in `#general`, that’s a separate thread for you in that channel. If you use `/fun utility chat` in `#general`, it uses the same thread as @mentioning the bot in `#general`.
 
 ---
 
@@ -64,10 +64,10 @@ Clearing deletes all `chat_messages` rows for that conversation key.
 
 ## LLM Provider & Env
 
-- **OpenAI (preferred when set):** Uses `OPENAI_API_KEY` and `OPENAI_MODEL` (default `gpt-4o-mini`) from `.env`. Same token as used for `/fun chat` and summaries when `SUMMARY_MODE=llm`.
+- **OpenAI (preferred when set):** Uses `OPENAI_API_KEY` and `OPENAI_MODEL` (default `gpt-4o-mini`) from `.env`. Same token as used for `/fun utility chat` and summaries when `SUMMARY_MODE=llm`.
 - **Anthropic (fallback):** If `OPENAI_API_KEY` is not set, uses `ANTHROPIC_API_KEY` for Claude.
 
-If neither key is set, message-based chat is disabled (the handler is not registered). `/fun chat` (and DM/@mention) will reply that chat isn’t available and the server admin needs to set up an API key.
+If neither key is set, message-based chat is disabled (the handler is not registered). `/fun utility chat` (and DM/@mention) will reply that chat isn’t available and the server admin needs to set up an API key.
 
 See [Environment Setup](setup-env.md) and `.env.example` for where to get API keys.
 
@@ -83,7 +83,7 @@ To read DM and channel message content, the bot needs the **Message Content** pr
 
 | What           | Where / How                                    |
 | -------------- | ---------------------------------------------- |
-| Start chatting | DM the bot, @mention it, or `/fun chat`        |
+| Start chatting | DM the bot, @mention it, or `/fun utility chat` |
 | Threads        | One per user in DMs; one per user per channel  |
 | Storage        | SQLite table `chat_messages`                   |
 | Limit          | Last 20 messages per thread                    |

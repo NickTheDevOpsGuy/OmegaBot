@@ -104,7 +104,7 @@ docker compose up -d
 ## Documentation
 
 - [Command Reference](docs/commands.md)
-- [Conversational Chat & LLM](docs/chat-and-llm.md) – How chat works (DM / @mention / `/fun chat`), conversation memory in SQLite, clearing, and env
+- [Conversational Chat & LLM](docs/chat-and-llm.md) – How chat works (DM / @mention / `/fun utility chat`), conversation memory in SQLite, clearing, and env
 - [Analytics](docs/analytics.md) – Daily game metrics (`game_usage_daily`), command usage (`command_usage_daily`)
 - [Discord Bot Setup](docs/setup-discord.md)
 - [Environment Setup](docs/setup-env.md)

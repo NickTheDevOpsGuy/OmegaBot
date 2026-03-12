@@ -55,7 +55,7 @@ You already have “Play again” / “Next question” where it fits. Ensure ev
 
 ### 7. **`/fun stats` – “vs server” hint**
 
-Add one line when viewing own stats: _"See how you rank: `/fun leaderboard`"_ or _"Compare with server: `/fun leaderboard users`."_
+Add one line when viewing own stats: _"See how you rank: `/fun utility leaderboard`"_ or _"Compare with server: `/fun utility leaderboard users`."_
 
 ### 8. **`/fun daily` – next check-in time**
 
@@ -71,7 +71,7 @@ You have paytable in a subcommand or embed. Ensure **first-time** or “rules”
 
 ### 11. **Autocomplete for game names**
 
-Where it makes sense (e.g. `/fun leaderboard` “by game” or a future “challenge in game X”), add autocomplete for game names (wordle, slots, trivia, …) for faster input.
+Where it makes sense (e.g. `/fun utility leaderboard` “by game” or a future “challenge in game X”), add autocomplete for game names (wordle, slots, trivia, …) for faster input.
 
 ### 12. **Consistent “private” default**
 
@@ -97,7 +97,7 @@ Your `improvements.md` says to prefer subcommands over new top-level commands. S
 
 1. **Achievement pop on unlock** (after game end) – big feel-good, reuses existing achievement system.
 2. **First-win + “try /fun stats”** line on first win in each game – easy, teaches features.
-3. **One line in `/fun stats`**: “See ranking: `/fun leaderboard`”.
+3. **One line in `/fun stats`**: “See ranking: `/fun utility leaderboard`”.
 4. **Trivia: show category (and difficulty) in the question embed.**
 5. **Slots/Darts: one-line leaderboard teaser** in the result (e.g. “You’re #3 this week”).
 
