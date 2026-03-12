@@ -62,11 +62,11 @@ Stats and leaderboard views are not rate limited.
 
 ### Stats & Daily
 
-| Command            | Description               |
-| ------------------ | ------------------------- |
-| `/fun daily`       | Daily check-in for points |
-| `/fun stats`       | View all game stats       |
-| `/fun utility leaderboard` | Top players             |
+| Command                    | Description               |
+| -------------------------- | ------------------------- |
+| `/fun daily`               | Daily check-in for points |
+| `/fun stats`               | View all game stats       |
+| `/fun utility leaderboard` | Top players               |
 
 ### Reminders
 

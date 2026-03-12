@@ -81,11 +81,11 @@ To read DM and channel message content, the bot needs the **Message Content** pr
 
 ## Summary
 
-| What           | Where / How                                    |
-| -------------- | ---------------------------------------------- |
+| What           | Where / How                                     |
+| -------------- | ----------------------------------------------- |
 | Start chatting | DM the bot, @mention it, or `/fun utility chat` |
-| Threads        | One per user in DMs; one per user per channel  |
-| Storage        | SQLite table `chat_messages`                   |
-| Limit          | Last 20 messages per thread                    |
-| Clear          | Say “new chat”, “clear”, “reset”, etc.         |
-| Provider       | OpenAI if `OPENAI_API_KEY` set, else Anthropic |
+| Threads        | One per user in DMs; one per user per channel   |
+| Storage        | SQLite table `chat_messages`                    |
+| Limit          | Last 20 messages per thread                     |
+| Clear          | Say “new chat”, “clear”, “reset”, etc.          |
+| Provider       | OpenAI if `OPENAI_API_KEY` set, else Anthropic  |
