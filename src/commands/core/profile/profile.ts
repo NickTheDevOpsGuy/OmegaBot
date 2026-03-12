@@ -68,10 +68,13 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     return;
   }
 
-  await interaction.reply({
-    content: "Unknown option. Use `view`, `afk`, or `timezone`. Use `/help topic:profile` for more.",
-    ephemeral: true,
-  }).catch(() => {});
+  await interaction
+    .reply({
+      content:
+        "Unknown option. Use `view`, `afk`, or `timezone`. Use `/help topic:profile` for more.",
+      ephemeral: true,
+    })
+    .catch(() => {});
 }
 
 export async function autocomplete(interaction: AutocompleteInteraction): Promise<void> {
