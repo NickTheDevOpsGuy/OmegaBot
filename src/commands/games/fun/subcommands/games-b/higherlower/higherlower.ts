@@ -13,7 +13,10 @@ import {
 } from "discord.js";
 import { randomUUID } from "node:crypto";
 import { SHORT_TIMEOUT_MS } from "../../../../../../utils/constants.js";
-import { safeMessageEdit } from "../../../../../../services/discord/discord/safeReply.js";
+import {
+  safeMessageEdit,
+  notifyGameMessageGone,
+} from "../../../../../../services/discord/discord/safeReply.js";
 
 type HLState = { low: number; high: number; guesses: number; userId: string };
 const games = new Map<string, HLState>();
@@ -97,14 +100,15 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
     if (action === "correct") {
       games.delete(gameId);
       collector.stop("complete");
-      await safeMessageEdit(
+      const okCorrect = await safeMessageEdit(
         message,
         {
           embeds: [buildEmbed(current, g, true)],
           components: [buildRow(gameId, true)],
         },
         "higherlower.correct",
-      ).catch(() => {});
+      ).catch(() => false);
+      if (!okCorrect) await notifyGameMessageGone(btn, "higherlower");
       return;
     }
 
@@ -117,7 +121,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
     if (current.low > current.high) {
       games.delete(gameId);
       collector.stop("impossible");
-      await safeMessageEdit(
+      const okImpossible = await safeMessageEdit(
         message,
         {
           embeds: [
@@ -131,21 +135,26 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
           components: [buildRow(gameId, true)],
         },
         "higherlower.impossible",
-      ).catch(() => {});
+      ).catch(() => false);
+      if (!okImpossible) await notifyGameMessageGone(btn, "higherlower");
       return;
     }
 
     const nextGuess = mid(current);
     current.guesses += 1;
 
-    await safeMessageEdit(
+    const okNext = await safeMessageEdit(
       message,
       {
         embeds: [buildEmbed(current, nextGuess, false)],
         components: [buildRow(gameId, false)],
       },
       "higherlower.next",
-    ).catch(() => {});
+    ).catch(() => false);
+    if (!okNext) {
+      collector.stop("message_gone");
+      await notifyGameMessageGone(btn, "higherlower");
+    }
   });
 
   collector.on("end", (_, reason) => {

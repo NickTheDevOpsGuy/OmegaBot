@@ -15,6 +15,7 @@ import {
 import {
   safeReplyToButton,
   safeMessageEdit,
+  notifyGameMessageGone,
 } from "../../../../../../services/discord/discord/safeReply.js";
 import {
   createEmptyBoard,
@@ -118,7 +119,7 @@ export async function playVsPlayer(
         collector.resetTimer();
         scheduleWarning();
         await buttonInteraction.deferUpdate();
-        await safeMessageEdit(
+        const ok = await safeMessageEdit(
           message,
           {
             content: [
@@ -131,7 +132,11 @@ export async function playVsPlayer(
             components: [...buildBoardButtons(gameId, board), buildExtendRow(gameId)],
           },
           "tictactoe.extend",
-        );
+        ).catch(() => false);
+        if (!ok) {
+          collector.stop("message_gone");
+          await notifyGameMessageGone(buttonInteraction, "tictactoe");
+        }
         return;
       }
 
@@ -162,7 +167,7 @@ export async function playVsPlayer(
         }
 
         collector.stop("win");
-        await safeMessageEdit(
+        const okWin = await safeMessageEdit(
           message,
           {
             content: [
@@ -177,7 +182,10 @@ export async function playVsPlayer(
             ],
           },
           "tictactoe.vsPlayer.win",
-        );
+        ).catch(() => false);
+        if (!okWin) {
+          await notifyGameMessageGone(buttonInteraction, "tictactoe");
+        }
         return;
       }
 
@@ -189,7 +197,7 @@ export async function playVsPlayer(
         }
 
         collector.stop("tie");
-        await safeMessageEdit(
+        const okTie = await safeMessageEdit(
           message,
           {
             content: [
@@ -204,7 +212,10 @@ export async function playVsPlayer(
             ],
           },
           "tictactoe.vsPlayer.tie",
-        );
+        ).catch(() => false);
+        if (!okTie) {
+          await notifyGameMessageGone(buttonInteraction, "tictactoe");
+        }
         return;
       }
 
@@ -214,7 +225,7 @@ export async function playVsPlayer(
       collector.resetTimer();
       scheduleWarning();
 
-      await safeMessageEdit(
+      const okTurn = await safeMessageEdit(
         message,
         {
           content: [
@@ -227,7 +238,11 @@ export async function playVsPlayer(
           components: [...buildBoardButtons(gameId, board), buildExtendRow(gameId)],
         },
         "tictactoe.vsPlayer.turn",
-      );
+      ).catch(() => false);
+      if (!okTurn) {
+        collector.stop("message_gone");
+        await notifyGameMessageGone(buttonInteraction, "tictactoe");
+      }
     } catch (err) {
       if (isKnownInteractionError(err)) {
         logKnownInteractionError(err, "tictactoe.vsPlayer.collect", { gameId });

@@ -16,7 +16,10 @@ import {
   MEMORY_FLIP_BACK_MS,
   GAME_TIMEOUT_MS,
 } from "../../../../../../utils/constants.js";
-import { safeMessageEdit } from "../../../../../../services/discord/discord/safeReply.js";
+import {
+  safeMessageEdit,
+  notifyGameMessageGone,
+} from "../../../../../../services/discord/discord/safeReply.js";
 
 const EMOJIS = ["🍎", "🍊", "🍋", "🍇"];
 const PAIRS = 4;
@@ -123,14 +126,18 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       current.firstPick = idx;
       current.revealed = [idx];
       current.moves += 1;
-      await safeMessageEdit(
+      const ok1 = await safeMessageEdit(
         message,
         {
           embeds: [buildEmbed(current, false)],
           components: buildComponents(gameId, current),
         },
         "memory.reveal1",
-      ).catch(() => {});
+      ).catch(() => false);
+      if (!ok1) {
+        collector.stop("message_gone");
+        await notifyGameMessageGone(btn, "memory");
+      }
       return;
     }
 
@@ -144,14 +151,18 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       current.matched.push(firstIdx, idx);
       current.revealed = [];
       const done = current.matched.length === TOTAL;
-      await safeMessageEdit(
+      const okMatch = await safeMessageEdit(
         message,
         {
           embeds: [buildEmbed(current, done)],
           components: buildComponents(gameId, current),
         },
         "memory.match",
-      ).catch(() => {});
+      ).catch(() => false);
+      if (!okMatch) {
+        if (done) collector.stop("message_gone");
+        await notifyGameMessageGone(btn, "memory");
+      }
 
       if (done) {
         games.delete(gameId);
@@ -160,14 +171,18 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       return;
     }
 
-    await safeMessageEdit(
+    const ok2 = await safeMessageEdit(
       message,
       {
         embeds: [buildEmbed(current, false)],
         components: buildComponents(gameId, current),
       },
       "memory.reveal2",
-    ).catch(() => {});
+    ).catch(() => false);
+    if (!ok2) {
+      collector.stop("message_gone");
+      await notifyGameMessageGone(btn, "memory");
+    }
 
     setTimeout(() => {
       const s = games.get(gameId);

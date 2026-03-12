@@ -11,6 +11,7 @@ import { recordInteractionRecovery } from "../../../../../../services/core/metri
 import {
   safeMessageEdit,
   safeReplyToButton,
+  notifyGameMessageGone,
 } from "../../../../../../services/discord/discord/safeReply.js";
 import { recordPvpResult, getH2HStats } from "./rpsStore.js";
 import { CHOICES, EMOJI, CHOICE_LABELS, getResult, type Choice } from "./gameLogic.js";
@@ -100,7 +101,7 @@ export async function handleChallenge(
         }
         collector.resetTimer();
         await buttonInteraction.deferUpdate();
-        await safeMessageEdit(
+        const ok = await safeMessageEdit(
           challengeMessage,
           {
             content: [
@@ -119,7 +120,11 @@ export async function handleChallenge(
             ],
           },
           "rps.challenge.extend",
-        ).catch(() => {});
+        ).catch(() => false);
+        if (!ok) {
+          collector.stop("message_gone");
+          await notifyGameMessageGone(buttonInteraction, "rps");
+        }
         return;
       }
 

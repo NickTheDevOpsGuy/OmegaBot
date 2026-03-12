@@ -19,7 +19,10 @@ import { getDb } from "../../../../../../services/core/database/db.js";
 import { getStats, recordResult } from "./blackjackStore.js";
 import { createDeck, handValue, isBlackjack, type Card } from "./gameLogic.js";
 import { buildGameEmbed, buildButtons, buildExtendRow, type GameStatus } from "./ui.js";
-import { safeMessageEdit } from "../../../../../../services/discord/discord/safeReply.js";
+import {
+  safeMessageEdit,
+  notifyGameMessageGone,
+} from "../../../../../../services/discord/discord/safeReply.js";
 
 import {
   BLACKJACK_COOLDOWN_MS,
@@ -38,6 +41,7 @@ async function playDealerTurn(
   deck: Card[],
   gameId: string,
   userId: string,
+  buttonInteraction?: ButtonInteraction,
 ): Promise<void> {
   while (handValue(dealerHand) < 17) {
     dealerHand.push(deck.pop()!);
@@ -66,14 +70,17 @@ async function playDealerTurn(
   recordResult(userId, result);
   logger.info({ gameId, userId, result }, "[blackjack] game ended");
 
-  await safeMessageEdit(
+  const ok = await safeMessageEdit(
     message,
     {
       embeds: [buildGameEmbed(playerHand, dealerHand, status, false)],
       components: [buildButtons(gameId, true), buildExtendRow(gameId, true)],
     },
     "blackjack.playDealerTurn",
-  ).catch(() => {});
+  ).catch(() => false);
+  if (!ok && buttonInteraction) {
+    await notifyGameMessageGone(buttonInteraction, "blackjack");
+  }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -179,7 +186,7 @@ async function runBlackjack(interaction: ChatInputCommandInteraction): Promise<v
       if (action === "extend") {
         collector.resetTimer();
         await buttonInteraction.deferUpdate();
-        await safeMessageEdit(
+        const ok = await safeMessageEdit(
           message,
           {
             embeds: [
@@ -197,7 +204,11 @@ async function runBlackjack(interaction: ChatInputCommandInteraction): Promise<v
             ],
           },
           "blackjack.extend",
-        ).catch(() => {});
+        ).catch(() => false);
+        if (!ok) {
+          collector.stop("message_gone");
+          await notifyGameMessageGone(buttonInteraction, "blackjack");
+        }
         return;
       }
 
@@ -215,6 +226,7 @@ async function runBlackjack(interaction: ChatInputCommandInteraction): Promise<v
           deck,
           gameId,
           userId,
+          buttonInteraction,
         );
         return;
       }
@@ -227,14 +239,17 @@ async function runBlackjack(interaction: ChatInputCommandInteraction): Promise<v
           collector.stop("bust");
           recordResult(userId, "loss");
           logger.info({ gameId, userId }, "[blackjack] player bust");
-          await safeMessageEdit(
+          const ok = await safeMessageEdit(
             message,
             {
               embeds: [buildGameEmbed(playerHand, dealerHand, "player_bust", false)],
               components: [buildButtons(gameId, true), buildExtendRow(gameId, true)],
             },
             "blackjack.bust",
-          ).catch(() => {});
+          ).catch(() => false);
+          if (!ok) {
+            await notifyGameMessageGone(buttonInteraction, "blackjack");
+          }
           return;
         }
 
@@ -248,18 +263,23 @@ async function runBlackjack(interaction: ChatInputCommandInteraction): Promise<v
             deck,
             gameId,
             userId,
+            buttonInteraction,
           );
           return;
         }
 
-        await safeMessageEdit(
+        const ok = await safeMessageEdit(
           message,
           {
             embeds: [buildGameEmbed(playerHand, dealerHand, "playing")],
             components: [buildButtons(gameId, false, false), buildExtendRow(gameId)],
           },
           "blackjack.hit",
-        ).catch(() => {});
+        ).catch(() => false);
+        if (!ok) {
+          collector.stop("message_gone");
+          await notifyGameMessageGone(buttonInteraction, "blackjack");
+        }
       } else if (action === "stand") {
         collector.stop("stand");
         await playDealerTurn(
@@ -270,6 +290,7 @@ async function runBlackjack(interaction: ChatInputCommandInteraction): Promise<v
           deck,
           gameId,
           userId,
+          buttonInteraction,
         );
       }
     } catch (err) {

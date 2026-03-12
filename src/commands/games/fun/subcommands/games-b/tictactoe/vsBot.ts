@@ -11,7 +11,10 @@ import {
   isKnownInteractionError,
   logKnownInteractionError,
 } from "../../../../../../services/discord/discord/interaction/interactionErrors.js";
-import { safeMessageEdit } from "../../../../../../services/discord/discord/safeReply.js";
+import {
+  safeMessageEdit,
+  notifyGameMessageGone,
+} from "../../../../../../services/discord/discord/safeReply.js";
 import {
   checkWinner,
   isBoardFull,
@@ -49,14 +52,18 @@ export async function playVsBot(interaction: ChatInputCommandInteraction): Promi
       if (action === "extend") {
         collector.resetTimer();
         await buttonInteraction.deferUpdate();
-        await safeMessageEdit(
+        const ok = await safeMessageEdit(
           message,
           {
             content: `🎮 **Tic Tac Toe** — You (❌) vs Bot (⭕)\n\nYour turn! Click a square.\n\n⏱️ *Time extended!*`,
             components: [...buildBoardButtons(gameId, board), buildExtendRow(gameId)],
           },
           "tictactoe.vsBot.extend",
-        ).catch(() => {});
+        ).catch(() => false);
+        if (!ok) {
+          collector.stop("message_gone");
+          await notifyGameMessageGone(buttonInteraction, "tictactoe");
+        }
         return;
       }
 
@@ -72,7 +79,7 @@ export async function playVsBot(interaction: ChatInputCommandInteraction): Promi
       if (winner === playerSymbol) {
         const winningCells = getWinningCells(board);
         collector.stop("player_win");
-        await safeMessageEdit(
+        const ok1 = await safeMessageEdit(
           message,
           {
             content: `🎮 **Tic Tac Toe** — You (❌) vs Bot (⭕)\n\n🎉 **You win!**`,
@@ -82,13 +89,14 @@ export async function playVsBot(interaction: ChatInputCommandInteraction): Promi
             ],
           },
           "tictactoe.vsBot.playerWin",
-        ).catch(() => {});
+        ).catch(() => false);
+        if (!ok1) await notifyGameMessageGone(buttonInteraction, "tictactoe");
         return;
       }
 
       if (isBoardFull(board)) {
         collector.stop("tie");
-        await safeMessageEdit(
+        const okTie1 = await safeMessageEdit(
           message,
           {
             content: `🎮 **Tic Tac Toe** — You (❌) vs Bot (⭕)\n\n🤝 **It's a tie!**`,
@@ -98,7 +106,8 @@ export async function playVsBot(interaction: ChatInputCommandInteraction): Promi
             ],
           },
           "tictactoe.vsBot.tie",
-        ).catch(() => {});
+        ).catch(() => false);
+        if (!okTie1) await notifyGameMessageGone(buttonInteraction, "tictactoe");
         return;
       }
 
@@ -109,7 +118,7 @@ export async function playVsBot(interaction: ChatInputCommandInteraction): Promi
       if (winner === botSymbol) {
         const winningCells = getWinningCells(board);
         collector.stop("bot_win");
-        await safeMessageEdit(
+        const okBot = await safeMessageEdit(
           message,
           {
             content: `🎮 **Tic Tac Toe** — You (❌) vs Bot (⭕)\n\n😢 **Bot wins!**`,
@@ -119,13 +128,14 @@ export async function playVsBot(interaction: ChatInputCommandInteraction): Promi
             ],
           },
           "tictactoe.vsBot.botWin",
-        ).catch(() => {});
+        ).catch(() => false);
+        if (!okBot) await notifyGameMessageGone(buttonInteraction, "tictactoe");
         return;
       }
 
       if (isBoardFull(board)) {
         collector.stop("tie");
-        await safeMessageEdit(
+        const okTie2 = await safeMessageEdit(
           message,
           {
             content: `🎮 **Tic Tac Toe** — You (❌) vs Bot (⭕)\n\n🤝 **It's a tie!**`,
@@ -135,18 +145,23 @@ export async function playVsBot(interaction: ChatInputCommandInteraction): Promi
             ],
           },
           "tictactoe.vsBot.tie2",
-        ).catch(() => {});
+        ).catch(() => false);
+        if (!okTie2) await notifyGameMessageGone(buttonInteraction, "tictactoe");
         return;
       }
 
-      await safeMessageEdit(
+      const okTurn = await safeMessageEdit(
         message,
         {
           content: `🎮 **Tic Tac Toe** — You (❌) vs Bot (⭕)\n\nYour turn! Click a square.`,
           components: [...buildBoardButtons(gameId, board), buildExtendRow(gameId)],
         },
         "tictactoe.vsBot.turn",
-      ).catch(() => {});
+      ).catch(() => false);
+      if (!okTurn) {
+        collector.stop("message_gone");
+        await notifyGameMessageGone(buttonInteraction, "tictactoe");
+      }
     } catch (err) {
       if (isKnownInteractionError(err)) {
         logKnownInteractionError(err, "tictactoe.vsBot.collect", { gameId });

@@ -13,7 +13,10 @@ import {
   formatCooldownMessage,
   recordHangmanGame,
 } from "../../../../../../services/discord/discord/rateLimit/index.js";
-import { safeMessageEdit } from "../../../../../../services/discord/discord/safeReply.js";
+import {
+  safeMessageEdit,
+  notifyGameMessageGone,
+} from "../../../../../../services/discord/discord/safeReply.js";
 import { getRandomWord, type HangmanDifficulty } from "./hangmanWordStore.js";
 import { MAX_WRONG_GUESSES, buildHangmanEmbed, buildLetterDropdowns } from "./ui.js";
 import { getNewlyUnlockedAchievementLine } from "../../../../achievements/achievements.js";
@@ -117,7 +120,7 @@ export async function runPlay(
           "[hangman] game ended",
         );
 
-        await safeMessageEdit(
+        const okEnd = await safeMessageEdit(
           message,
           {
             embeds: [
@@ -134,18 +137,23 @@ export async function runPlay(
             components: buildLetterDropdowns(gameId, guessed, true),
           },
           "hangman.gameEnd",
-        ).catch(() => {});
+        ).catch(() => false);
+        if (!okEnd) await notifyGameMessageGone(selectInteraction, "hangman");
         return;
       }
 
-      await safeMessageEdit(
+      const okPlaying = await safeMessageEdit(
         message,
         {
           embeds: [buildHangmanEmbed(word, guessed, wrongCount, "playing", difficulty)],
           components: buildLetterDropdowns(gameId, guessed),
         },
         "hangman.playing",
-      ).catch(() => {});
+      ).catch(() => false);
+      if (!okPlaying) {
+        collector.stop("message_gone");
+        await notifyGameMessageGone(selectInteraction, "hangman");
+      }
     } catch (err) {
       recordInteractionRecovery("hangman");
       logger.warn(

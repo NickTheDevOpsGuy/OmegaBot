@@ -97,6 +97,10 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     await handleTime(interaction);
   } else if (sub === "avatar") {
     await handleAvatar(interaction);
+  } else {
+    await interaction.editReply(
+      "Unknown option. Use `user`, `server`, `time`, or `avatar`. Use `/help topic:info` for more.",
+    );
   }
 }
 

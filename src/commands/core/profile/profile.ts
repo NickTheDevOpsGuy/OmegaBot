@@ -67,6 +67,11 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     await runTimezone(interaction);
     return;
   }
+
+  await interaction.reply({
+    content: "Unknown option. Use `view`, `afk`, or `timezone`. Use `/help topic:profile` for more.",
+    ephemeral: true,
+  }).catch(() => {});
 }
 
 export async function autocomplete(interaction: AutocompleteInteraction): Promise<void> {

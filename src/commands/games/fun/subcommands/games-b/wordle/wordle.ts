@@ -35,7 +35,10 @@ import { getNewlyUnlockedAchievementLine } from "../../../../achievements/achiev
 import { getDb } from "../../../../../../services/core/database/db.js";
 import { getTodayWord, isWordInList } from "./gameLogic.js";
 import { buildGameMessage, buildGuessButton } from "./ui.js";
-import { safeMessageEdit } from "../../../../../../services/discord/discord/safeReply.js";
+import {
+  safeMessageEdit,
+  notifyGameMessageGone,
+} from "../../../../../../services/discord/discord/safeReply.js";
 
 /* -------------------------------------------------------------------------- */
 /* Command Handler                                                             */
@@ -148,7 +151,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       } catch (err) {
         logger.warn({ err, gameId }, "[wordle] show guess modal threw");
         await buttonInteraction.deferUpdate().catch(() => {});
-        await safeMessageEdit(
+        const ok = await safeMessageEdit(
           message,
           {
             content:
@@ -157,7 +160,8 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
             components: [buildGuessButton(gameId)],
           },
           "wordle.showModal",
-        ).catch(() => {});
+        ).catch(() => false);
+        if (!ok) await notifyGameMessageGone(buttonInteraction, "wordle");
         return;
       }
 
@@ -235,7 +239,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       } catch (err) {
         logger.debug({ err, gameId }, "[wordle] modal timeout or error");
         // Modal expired or user closed it — update message so they know to try again
-        await safeMessageEdit(
+        const ok = await safeMessageEdit(
           message,
           {
             content:
@@ -244,7 +248,8 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
             components: [buildGuessButton(gameId)],
           },
           "wordle.modalTimeout",
-        ).catch(() => {});
+        ).catch(() => false);
+        if (!ok) await notifyGameMessageGone(buttonInteraction, "wordle");
       }
     } catch (err) {
       recordInteractionRecovery("wordle");

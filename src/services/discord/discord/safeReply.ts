@@ -1,10 +1,10 @@
 // src/services/discord/safeReply.ts
 import type {
-  ButtonInteraction,
   ChatInputCommandInteraction,
   InteractionEditReplyOptions,
   InteractionReplyOptions,
   Message,
+  MessageComponentInteraction,
   MessageEditOptions,
   MessageFlags,
 } from "discord.js";
@@ -30,6 +30,26 @@ function isRetryableError(err: unknown): boolean {
     );
   }
   return false;
+}
+
+/** Message shown when a game message was deleted (10008) and we can't edit it. */
+const GAME_MESSAGE_GONE_PREFIX =
+  "The game message was removed or is no longer available. Start a new game with ";
+
+/**
+ * Notify the user (ephemeral followUp) when a game message is gone so they're not stuck.
+ * Call this when safeMessageEdit returns false and you have the component interaction.
+ */
+export async function notifyGameMessageGone(
+  interaction: MessageComponentInteraction,
+  gameCommand: string,
+): Promise<void> {
+  await interaction
+    .followUp({
+      content: `${GAME_MESSAGE_GONE_PREFIX}/fun ${gameCommand}.`,
+      flags: MessageFlags.Ephemeral,
+    })
+    .catch(() => {});
 }
 
 export interface SafeReplyOptions {

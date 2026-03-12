@@ -14,6 +14,7 @@ import { recordInteractionRecovery } from "../../../../../../services/core/metri
 import {
   safeMessageEdit,
   safeReplyToButton,
+  notifyGameMessageGone,
 } from "../../../../../../services/discord/discord/safeReply.js";
 import {
   checkDartsCooldown,
@@ -137,7 +138,7 @@ export async function handleChallenge(
           `${opponent} – click **Throw my darts** to take your turn!`,
           `⏱️ **Time extended!** You have another 24 hours.`,
         ].join("\n");
-        await safeMessageEdit(
+        const ok = await safeMessageEdit(
           challengeMessage,
           {
             content,
@@ -148,7 +149,11 @@ export async function handleChallenge(
             ],
           },
           "darts.challenge.extend",
-        ).catch(() => {});
+        ).catch(() => false);
+        if (!ok) {
+          collector.stop("message_gone");
+          await notifyGameMessageGone(buttonInteraction, "darts");
+        }
         return;
       }
 
@@ -219,7 +224,7 @@ export async function handleChallenge(
           `${opponent.username}'s throw`,
         );
 
-        await safeMessageEdit(
+        const ok = await safeMessageEdit(
           challengeMessage,
           {
             content: [
@@ -240,7 +245,10 @@ export async function handleChallenge(
             components: [buildThrowButton(challengeId, true)],
           },
           "darts.challenge.result",
-        ).catch(() => {});
+        ).catch(() => false);
+        if (!ok) {
+          await notifyGameMessageGone(buttonInteraction, "darts");
+        }
         collector.stop("complete");
       } else if (action === "throw") {
         await safeReplyToButton(
