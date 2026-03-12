@@ -53,7 +53,14 @@ export async function playVsBot(interaction: ChatInputCommandInteraction): Promi
       const colStr = parts[3];
       const row = parseInt(rowStr, 10);
       const col = parseInt(colStr, 10);
-      if (Number.isNaN(row) || Number.isNaN(col) || row < 0 || row > 2 || col < 0 || col > 2) {
+      if (
+        Number.isNaN(row) ||
+        Number.isNaN(col) ||
+        row < 0 ||
+        row > 2 ||
+        col < 0 ||
+        col > 2
+      ) {
         await buttonInteraction.deferUpdate().catch(() => {});
         return;
       }
