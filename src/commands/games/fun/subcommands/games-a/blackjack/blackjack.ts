@@ -77,7 +77,7 @@ async function playDealerTurn(
       components: [buildButtons(gameId, true)],
     },
     "blackjack.playDealerTurn",
-    _interaction,
+    buttonInteraction ?? _interaction,
   ).catch(() => false);
   if (!ok && buttonInteraction) {
     await notifyGameMessageGone(buttonInteraction, "blackjack").catch(() => {});
@@ -218,7 +218,7 @@ async function runBlackjack(interaction: ChatInputCommandInteraction): Promise<v
               components: [buildButtons(gameId, true)],
             },
             "blackjack.bust",
-            interaction,
+            buttonInteraction,
           ).catch(() => false);
           if (!ok) {
             await notifyGameMessageGone(buttonInteraction, "blackjack");
@@ -248,7 +248,7 @@ async function runBlackjack(interaction: ChatInputCommandInteraction): Promise<v
             components: [buildButtons(gameId, false, false)],
           },
           "blackjack.hit",
-          interaction,
+          buttonInteraction,
         ).catch(() => false);
         if (!ok) {
           collector.stop("message_gone");
