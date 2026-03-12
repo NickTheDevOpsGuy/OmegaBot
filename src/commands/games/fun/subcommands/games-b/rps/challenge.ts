@@ -120,6 +120,7 @@ export async function handleChallenge(
             ],
           },
           "rps.challenge.extend",
+          interaction,
         ).catch(() => false);
         if (!ok) {
           collector.stop("message_gone");
@@ -216,6 +217,7 @@ export async function handleChallenge(
           components: [buildChoiceButtons(challengeId, true)],
         },
         "rps.challenge.result",
+        interaction,
       ).catch(() => {});
     } else {
       const challengerChose = choices.has(challenger.id);
@@ -237,6 +239,7 @@ export async function handleChallenge(
           components: [buildChoiceButtons(challengeId, true)],
         },
         "rps.challenge.timeout",
+        interaction,
       ).catch(() => {});
       logger.warn({ challengeId }, "[rps] challenge timed out");
     }

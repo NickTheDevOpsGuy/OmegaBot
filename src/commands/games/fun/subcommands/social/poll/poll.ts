@@ -10,6 +10,7 @@ import {
   type ChatInputCommandInteraction,
 } from "discord.js";
 import { logger } from "../../../../../../utils/logger.js";
+import { safeEditReply } from "../../../../../../services/discord/discord/safeReply.js";
 import {
   createPoll,
   recordVote,
@@ -195,10 +196,17 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       // Updated poll snapshot
       latestPoll = result.poll;
 
-      await interaction.editReply({
-        embeds: [buildPollEmbed(latestPoll)],
-        components: buildPollButtons(latestPoll),
-      });
+      const ok = await safeEditReply(
+        interaction,
+        {
+          embeds: [buildPollEmbed(latestPoll)],
+          components: buildPollButtons(latestPoll),
+        },
+        "poll.vote",
+      ).catch(() => false);
+      if (!ok) {
+        collector.stop("message_gone");
+      }
     } catch (err) {
       logger.warn({ err }, "[fun/poll] vote record threw");
       try {
@@ -217,10 +225,14 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
   collector.on("end", async () => {
     // Disable buttons when done
     try {
-      await interaction.editReply({
-        embeds: [buildPollEmbed(latestPoll)],
-        components: buildPollButtons(latestPoll, { disabled: true }),
-      });
+      await safeEditReply(
+        interaction,
+        {
+          embeds: [buildPollEmbed(latestPoll)],
+          components: buildPollButtons(latestPoll, { disabled: true }),
+        },
+        "poll.end",
+      );
     } catch (err) {
       logger.debug({ err }, "[fun/poll] disable buttons on end threw");
     }

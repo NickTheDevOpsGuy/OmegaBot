@@ -100,6 +100,7 @@ export async function playVsPlayer(
           components: buildBoardButtons(gameId, board),
         },
         "tictactoe.warning",
+        interaction,
       );
     }, MOVE_TIMEOUT_MS - WARNING_BEFORE_MS);
   };
@@ -132,6 +133,7 @@ export async function playVsPlayer(
             components: [...buildBoardButtons(gameId, board), buildExtendRow(gameId)],
           },
           "tictactoe.extend",
+          interaction,
         ).catch(() => false);
         if (!ok) {
           collector.stop("message_gone");
@@ -182,6 +184,7 @@ export async function playVsPlayer(
             ],
           },
           "tictactoe.vsPlayer.win",
+          interaction,
         ).catch(() => false);
         if (!okWin) {
           await notifyGameMessageGone(buttonInteraction, "tictactoe");
@@ -212,6 +215,7 @@ export async function playVsPlayer(
             ],
           },
           "tictactoe.vsPlayer.tie",
+          interaction,
         ).catch(() => false);
         if (!okTie) {
           await notifyGameMessageGone(buttonInteraction, "tictactoe");
@@ -238,6 +242,7 @@ export async function playVsPlayer(
           components: [...buildBoardButtons(gameId, board), buildExtendRow(gameId)],
         },
         "tictactoe.vsPlayer.turn",
+        interaction,
       ).catch(() => false);
       if (!okTurn) {
         collector.stop("message_gone");
@@ -284,6 +289,7 @@ export async function playVsPlayer(
           ],
         },
         "tictactoe.vsPlayer.timeout",
+        interaction,
       ).catch(() => {});
     }
   });

@@ -137,6 +137,7 @@ export async function runPlay(
             components: buildLetterDropdowns(gameId, guessed, true),
           },
           "hangman.gameEnd",
+          interaction,
         ).catch(() => false);
         if (!okEnd) await notifyGameMessageGone(selectInteraction, "hangman");
         return;
@@ -149,6 +150,7 @@ export async function runPlay(
           components: buildLetterDropdowns(gameId, guessed),
         },
         "hangman.playing",
+        interaction,
       ).catch(() => false);
       if (!okPlaying) {
         collector.stop("message_gone");
@@ -187,6 +189,7 @@ export async function runPlay(
           components: buildLetterDropdowns(gameId, guessed, true),
         },
         "hangman.timeout",
+        interaction,
       ).catch(() => {});
     }
   });

@@ -80,6 +80,7 @@ export async function playVsBot(interaction: ChatInputCommandInteraction): Promi
             components: buildBoardButtons(gameId, board, true, winningCells),
           },
           "tictactoe.vsBot.playerWin",
+          interaction,
         ).catch(() => false);
         if (!ok1) await notifyGameMessageGone(buttonInteraction, "tictactoe");
         return;
@@ -94,6 +95,7 @@ export async function playVsBot(interaction: ChatInputCommandInteraction): Promi
             components: buildBoardButtons(gameId, board, true),
           },
           "tictactoe.vsBot.tie",
+          interaction,
         ).catch(() => false);
         if (!okTie1) await notifyGameMessageGone(buttonInteraction, "tictactoe");
         return;
@@ -113,6 +115,7 @@ export async function playVsBot(interaction: ChatInputCommandInteraction): Promi
             components: buildBoardButtons(gameId, board, true, winningCells),
           },
           "tictactoe.vsBot.botWin",
+          interaction,
         ).catch(() => false);
         if (!okBot) await notifyGameMessageGone(buttonInteraction, "tictactoe");
         return;
@@ -127,6 +130,7 @@ export async function playVsBot(interaction: ChatInputCommandInteraction): Promi
             components: buildBoardButtons(gameId, board, true),
           },
           "tictactoe.vsBot.tie2",
+          interaction,
         ).catch(() => false);
         if (!okTie2) await notifyGameMessageGone(buttonInteraction, "tictactoe");
         return;
@@ -139,6 +143,7 @@ export async function playVsBot(interaction: ChatInputCommandInteraction): Promi
           components: buildBoardButtons(gameId, board),
         },
         "tictactoe.vsBot.turn",
+        interaction,
       ).catch(() => false);
       if (!okTurn) {
         collector.stop("message_gone");
@@ -163,6 +168,7 @@ export async function playVsBot(interaction: ChatInputCommandInteraction): Promi
           components: buildBoardButtons(gameId, board, true),
         },
         "tictactoe.vsBot.timeout",
+        interaction,
       ).catch(() => {});
     }
   });

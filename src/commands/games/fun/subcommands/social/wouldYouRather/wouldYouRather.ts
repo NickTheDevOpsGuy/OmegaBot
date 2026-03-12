@@ -10,6 +10,7 @@ import {
 } from "discord.js";
 import { logger } from "../../../../../../utils/logger.js";
 import { recordInteractionRecovery } from "../../../../../../services/core/metrics/server.js";
+import { safeEditReply } from "../../../../../../services/discord/discord/safeReply.js";
 
 type Wyr = [string, string];
 
@@ -198,10 +199,18 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       await buttonInteraction.deferUpdate();
 
       votes.set(buttonInteraction.user.id, choice);
-      await interaction.editReply({
+      const ok = await safeEditReply(
+        interaction,
+        {
         embeds: [buildEmbed()],
         components: [buildButtons()],
-      });
+        },
+        "wouldYouRather.vote",
+      ).catch(() => false);
+      if (!ok) {
+        collector.stop("message_gone");
+        return;
+      }
 
       const changeText = previousVote ? " (changed vote)" : "";
       await buttonInteraction.followUp({
@@ -222,10 +231,14 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
 
   collector.on("end", async () => {
     try {
-      await interaction.editReply({
-        embeds: [buildEmbed(true)],
-        components: [buildButtons(true)],
-      });
+      await safeEditReply(
+        interaction,
+        {
+          embeds: [buildEmbed(true)],
+          components: [buildButtons(true)],
+        },
+        "wouldYouRather.end",
+      );
     } catch (err) {
       logger.debug({ err }, "[fun/wouldYouRather] end edit failed");
     }

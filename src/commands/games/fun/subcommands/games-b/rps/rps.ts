@@ -120,6 +120,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
         message,
         { content: "Pick your choice:", embeds: [], components: [choiceRow] },
         "rps.solo.choice",
+        interaction,
       ).catch(() => {});
       const choiceClick = await message.awaitMessageComponent({
         componentType: ComponentType.Button,

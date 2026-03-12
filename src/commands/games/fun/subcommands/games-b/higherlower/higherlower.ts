@@ -107,6 +107,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
           components: [buildRow(gameId, true)],
         },
         "higherlower.correct",
+        interaction,
       ).catch(() => false);
       if (!okCorrect) await notifyGameMessageGone(btn, "higherlower");
       return;
@@ -135,6 +136,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
           components: [buildRow(gameId, true)],
         },
         "higherlower.impossible",
+        interaction,
       ).catch(() => false);
       if (!okImpossible) await notifyGameMessageGone(btn, "higherlower");
       return;
@@ -150,6 +152,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
         components: [buildRow(gameId, false)],
       },
       "higherlower.next",
+      interaction,
     ).catch(() => false);
     if (!okNext) {
       collector.stop("message_gone");

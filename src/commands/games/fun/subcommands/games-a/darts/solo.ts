@@ -95,6 +95,7 @@ export async function runSoloThrow(
           content: `⏱️ Wait ${remaining2}s before throwing again.`,
         },
         "darts.solo.cooldown",
+        interaction,
       ).catch(() => {});
       return;
     }
@@ -110,6 +111,7 @@ export async function runSoloThrow(
       message,
       { embeds: [embed2], components: [] },
       "darts.solo.again",
+      interaction,
     ).catch(() => {});
   } catch {
     // Timeout

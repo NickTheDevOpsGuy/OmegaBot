@@ -133,6 +133,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
           components: buildComponents(gameId, current),
         },
         "memory.reveal1",
+        interaction,
       ).catch(() => false);
       if (!ok1) {
         collector.stop("message_gone");
@@ -158,6 +159,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
           components: buildComponents(gameId, current),
         },
         "memory.match",
+        interaction,
       ).catch(() => false);
       if (!okMatch) {
         if (done) collector.stop("message_gone");
@@ -178,6 +180,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
         components: buildComponents(gameId, current),
       },
       "memory.reveal2",
+      interaction,
     ).catch(() => false);
     if (!ok2) {
       collector.stop("message_gone");
@@ -201,6 +204,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
           components: buildComponents(gameId, s),
         },
         "memory.flipback",
+        interaction,
       ).catch(() => {});
     }, MEMORY_FLIP_BACK_MS);
   });

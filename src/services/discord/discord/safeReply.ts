@@ -11,6 +11,8 @@ import type {
 } from "discord.js";
 import { getContextLogger, getRequestId } from "../../core/logging/requestContext.js";
 import {
+  CODE_UNKNOWN_MESSAGE,
+  getDiscordErrorCode,
   isKnownInteractionError,
   logKnownInteractionError,
 } from "./interaction/interactionErrors.js";
@@ -217,6 +219,7 @@ export async function safeMessageEdit(
   message: Message,
   options: MessageEditOptions,
   context?: string,
+  fallbackInteraction?: ChatInputCommandInteraction | MessageComponentInteraction,
 ): Promise<boolean> {
   const log = getContextLogger();
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
@@ -224,6 +227,24 @@ export async function safeMessageEdit(
       await message.edit(options);
       return true;
     } catch (err) {
+      if (
+        fallbackInteraction &&
+        getDiscordErrorCode(err) === CODE_UNKNOWN_MESSAGE &&
+        (fallbackInteraction.replied || fallbackInteraction.deferred)
+      ) {
+        try {
+          await fallbackInteraction.editReply(options as InteractionEditReplyOptions);
+          return true;
+        } catch (fallbackErr) {
+          if (isKnownInteractionError(fallbackErr)) {
+            logKnownInteractionError(fallbackErr, context ?? "safeMessageEdit.fallback", {
+              messageId: message.id,
+            });
+            return false;
+          }
+          throw fallbackErr;
+        }
+      }
       if (isKnownInteractionError(err)) {
         logKnownInteractionError(err, context ?? "safeMessageEdit", {
           messageId: message.id,

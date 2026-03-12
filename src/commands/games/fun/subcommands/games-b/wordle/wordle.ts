@@ -147,6 +147,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
             components: [buildGuessButton(gameId)],
           },
           "wordle.showModal",
+          interaction,
         ).catch(() => false);
         if (!ok) await notifyGameMessageGone(buttonInteraction, "wordle");
         return;
@@ -235,6 +236,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
             components: [buildGuessButton(gameId)],
           },
           "wordle.modalTimeout",
+          interaction,
         ).catch(() => false);
         if (!ok) await notifyGameMessageGone(buttonInteraction, "wordle");
       }
@@ -262,6 +264,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
           components: [buildGuessButton(gameId, true)],
         },
         "wordle.timeout",
+        interaction,
       ).catch(() => {});
     }
   });

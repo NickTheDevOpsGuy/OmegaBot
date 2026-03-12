@@ -251,6 +251,7 @@ async function waitForNextQuestion(
       message,
       { embeds: [questionEmbed], components: [buttons] },
       "trivia.question",
+      interaction,
     ).catch(() => {});
 
     const correctIndex = allAnswers.indexOf(question.correctAnswer);

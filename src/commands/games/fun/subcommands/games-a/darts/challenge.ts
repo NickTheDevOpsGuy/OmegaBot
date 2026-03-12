@@ -149,6 +149,7 @@ export async function handleChallenge(
             ],
           },
           "darts.challenge.extend",
+          interaction,
         ).catch(() => false);
         if (!ok) {
           collector.stop("message_gone");
@@ -245,6 +246,7 @@ export async function handleChallenge(
             components: [buildThrowButton(challengeId, true)],
           },
           "darts.challenge.result",
+          interaction,
         ).catch(() => false);
         if (!ok) {
           await notifyGameMessageGone(buttonInteraction, "darts");
@@ -281,6 +283,7 @@ export async function handleChallenge(
         components: [buildThrowButton(challengeId, true)],
       },
       "darts.challenge.timeout",
+      interaction,
     ).catch(() => {});
     logger.warn({ challengeId }, "[darts] challenge timed out");
   });

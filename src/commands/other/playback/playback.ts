@@ -16,6 +16,7 @@ import {
 } from "../../../services/stores/transcript/defaults.js";
 import { logger } from "../../../utils/logger.js";
 import { recordInteractionRecovery } from "../../../services/core/metrics/server.js";
+import { safeEditReply } from "../../../services/discord/discord/safeReply.js";
 
 function chunkText(text: string, maxChars: number): string[] {
   if (text.length <= maxChars) return [text];
@@ -162,7 +163,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     collector.on("end", async () => {
       try {
         // disable buttons after timeout
-        await interaction.editReply({ components: [] });
+        await safeEditReply(interaction, { components: [] }, "playback.end");
       } catch (err) {
         // ignore
         logger.debug({ err }, "[playback] cleanup after collector end failed");
