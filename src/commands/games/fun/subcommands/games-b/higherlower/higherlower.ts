@@ -34,7 +34,7 @@ function buildEmbed(
   const title = done ? "🎯 Higher/Lower — Got it!" : "🎯 Higher/Lower";
   const desc = done
     ? (message ??
-      `I got it in **${state.guesses}** guess${state.guesses === 1 ? "" : "es"}!`)
+      `I got it in **${state.guesses}** guess${state.guesses === 1 ? "" : "es"}!${state.guesses === 1 ? " 🎉" : ""}`)
     : `Think of a number **1–100**. Is it **${guess}**?`;
   return new EmbedBuilder()
     .setTitle(title)
@@ -50,16 +50,19 @@ function buildRow(gameId: string, done: boolean): ActionRowBuilder<ButtonBuilder
       .setCustomId(`hl:${gameId}:higher`)
       .setLabel("Higher")
       .setStyle(ButtonStyle.Primary)
+      .setEmoji("📈")
       .setDisabled(done),
     new ButtonBuilder()
       .setCustomId(`hl:${gameId}:lower`)
       .setLabel("Lower")
       .setStyle(ButtonStyle.Secondary)
+      .setEmoji("📉")
       .setDisabled(done),
     new ButtonBuilder()
       .setCustomId(`hl:${gameId}:correct`)
       .setLabel("Correct!")
       .setStyle(ButtonStyle.Success)
+      .setEmoji("✅")
       .setDisabled(done),
   );
   return row;

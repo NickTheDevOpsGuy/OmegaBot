@@ -75,7 +75,7 @@ function buildEmbed(state: MemoryState, done: boolean): EmbedBuilder {
   const title = done ? "🎴 Memory — You won!" : "🎴 Memory — Find the pairs";
   const pairsLeft = PAIRS - state.matched.length / 2;
   const desc = done
-    ? `You matched all pairs in **${state.moves}** moves!`
+    ? `You matched all pairs in **${state.moves}** moves!${state.moves <= 6 ? " 🔥" : ""}`
     : `Pairs left: **${pairsLeft}** | Moves: **${state.moves}**`;
   return new EmbedBuilder().setTitle(title).setDescription(desc).setColor(0x5865f2);
 }

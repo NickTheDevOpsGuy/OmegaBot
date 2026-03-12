@@ -30,10 +30,11 @@ export function buildBoardButtons(
       else if (cell === "O") style = ButtonStyle.Danger;
       if (isWinningCell) style = ButtonStyle.Success;
 
+      const emoji = CELL_EMOJI[cell];
       row.addComponents(
         new ButtonBuilder()
           .setCustomId(`ttt:${gameId}:${r}:${c}`)
-          .setEmoji(CELL_EMOJI[cell])
+          .setLabel(emoji)
           .setStyle(style)
           .setDisabled(disabled || cell !== ""),
       );

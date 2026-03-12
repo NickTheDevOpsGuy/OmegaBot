@@ -24,6 +24,8 @@ export function renderBoard(board: Cell[][]): string {
   return lines.join("\n");
 }
 
+const COL_EMOJI = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣"] as const;
+
 export function buildControls(args: {
   gameId: string;
   board: Cell[][];
@@ -40,15 +42,15 @@ export function buildControls(args: {
 
   return [
     new ActionRowBuilder<ButtonBuilder>().addComponents(
-      mk(0, "1"),
-      mk(1, "2"),
-      mk(2, "3"),
-      mk(3, "4"),
+      mk(0, COL_EMOJI[0]),
+      mk(1, COL_EMOJI[1]),
+      mk(2, COL_EMOJI[2]),
+      mk(3, COL_EMOJI[3]),
     ),
     new ActionRowBuilder<ButtonBuilder>().addComponents(
-      mk(4, "5"),
-      mk(5, "6"),
-      mk(6, "7"),
+      mk(4, COL_EMOJI[4]),
+      mk(5, COL_EMOJI[5]),
+      mk(6, COL_EMOJI[6]),
     ),
     new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()

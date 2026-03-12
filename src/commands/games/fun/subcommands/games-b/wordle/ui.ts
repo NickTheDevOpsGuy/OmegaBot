@@ -95,7 +95,9 @@ export function buildGameMessage(
   } else if (status === "lost") {
     lines.push(`😢 **Game Over!** The word was **${word.toUpperCase()}**`);
   } else {
-    lines.push(`Guess ${guesses.length + 1}/${MAX_GUESSES} - Click the button to guess!`);
+    lines.push(
+      `Guess ${guesses.length + 1}/${MAX_GUESSES} — tap the button below to guess. Good luck! 🍀`,
+    );
   }
 
   return lines.join("\n");
