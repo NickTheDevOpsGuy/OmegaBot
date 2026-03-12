@@ -69,20 +69,29 @@ export function logKnownInteractionError(
   }
 
   const log = getContextLogger();
-  log.info(
-    {
-      err,
-      code,
-      codeLabel,
-      context,
-      requestId: getRequestId(),
-      totalThisCode:
-        codeLabel in interactionErrorCounts
-          ? interactionErrorCounts[codeLabel as keyof typeof interactionErrorCounts]
-          : undefined,
-      ...meta,
-    },
-    "[interaction] Discord error (user may see 'failed to complete'): %s",
+  const payload = {
+    err,
+    code,
     codeLabel,
-  );
+    context,
+    requestId: getRequestId(),
+    totalThisCode:
+      codeLabel in interactionErrorCounts
+        ? interactionErrorCounts[codeLabel as keyof typeof interactionErrorCounts]
+        : undefined,
+    ...meta,
+  };
+  if (code === CODE_UNKNOWN_MESSAGE) {
+    log.debug(
+      payload,
+      "[interaction] Game/msg deleted (10008), caller notifies user: %s",
+      codeLabel,
+    );
+  } else {
+    log.info(
+      payload,
+      "[interaction] Discord error (user may see 'failed to complete'): %s",
+      codeLabel,
+    );
+  }
 }

@@ -79,7 +79,7 @@ async function playDealerTurn(
     "blackjack.playDealerTurn",
   ).catch(() => false);
   if (!ok && buttonInteraction) {
-    await notifyGameMessageGone(buttonInteraction, "blackjack");
+    await notifyGameMessageGone(buttonInteraction, "blackjack").catch(() => {});
   }
 }
 
