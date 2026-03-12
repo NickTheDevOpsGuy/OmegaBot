@@ -112,11 +112,5 @@ export function buildGuessButton(
       .setStyle(ButtonStyle.Primary)
       .setEmoji("📝")
       .setDisabled(disabled),
-    new ButtonBuilder()
-      .setCustomId(`wordle:${gameId}:extend`)
-      .setLabel("Extend time")
-      .setStyle(ButtonStyle.Secondary)
-      .setEmoji("⏱️")
-      .setDisabled(disabled),
   );
 }

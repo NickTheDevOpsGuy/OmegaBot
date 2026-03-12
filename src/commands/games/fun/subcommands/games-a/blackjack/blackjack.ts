@@ -18,7 +18,7 @@ import { getNewlyUnlockedAchievementLine } from "../../../../achievements/achiev
 import { getDb } from "../../../../../../services/core/database/db.js";
 import { getStats, recordResult } from "./blackjackStore.js";
 import { createDeck, handValue, isBlackjack, type Card } from "./gameLogic.js";
-import { buildGameEmbed, buildButtons, buildExtendRow, type GameStatus } from "./ui.js";
+import { buildGameEmbed, buildButtons, type GameStatus } from "./ui.js";
 import {
   safeMessageEdit,
   notifyGameMessageGone,
@@ -74,7 +74,7 @@ async function playDealerTurn(
     message,
     {
       embeds: [buildGameEmbed(playerHand, dealerHand, status, false)],
-      components: [buildButtons(gameId, true), buildExtendRow(gameId, true)],
+      components: [buildButtons(gameId, true)],
     },
     "blackjack.playDealerTurn",
   ).catch(() => false);
@@ -169,7 +169,7 @@ async function runBlackjack(interaction: ChatInputCommandInteraction): Promise<v
   const canDouble = playerHand.length === 2;
   const message = await interaction.editReply({
     embeds: [buildGameEmbed(playerHand, dealerHand, "playing")],
-    components: [buildButtons(gameId, false, canDouble), buildExtendRow(gameId)],
+    components: [buildButtons(gameId, false, canDouble)],
   });
 
   const collector = message.createMessageComponentCollector({
@@ -182,35 +182,6 @@ async function runBlackjack(interaction: ChatInputCommandInteraction): Promise<v
   collector.on("collect", async (buttonInteraction: ButtonInteraction) => {
     try {
       const action = buttonInteraction.customId.split(":")[2];
-
-      if (action === "extend") {
-        collector.resetTimer();
-        await buttonInteraction.deferUpdate();
-        const ok = await safeMessageEdit(
-          message,
-          {
-            embeds: [
-              buildGameEmbed(
-                playerHand,
-                dealerHand,
-                "playing",
-                true,
-                "⏱️ *Time extended! You have another hour.*",
-              ),
-            ],
-            components: [
-              buildButtons(gameId, false, playerHand.length === 2),
-              buildExtendRow(gameId),
-            ],
-          },
-          "blackjack.extend",
-        ).catch(() => false);
-        if (!ok) {
-          collector.stop("message_gone");
-          await notifyGameMessageGone(buttonInteraction, "blackjack");
-        }
-        return;
-      }
 
       // Acknowledge immediately so heavy work doesn't cause "interaction failed"
       await buttonInteraction.deferUpdate();
@@ -243,7 +214,7 @@ async function runBlackjack(interaction: ChatInputCommandInteraction): Promise<v
             message,
             {
               embeds: [buildGameEmbed(playerHand, dealerHand, "player_bust", false)],
-              components: [buildButtons(gameId, true), buildExtendRow(gameId, true)],
+              components: [buildButtons(gameId, true)],
             },
             "blackjack.bust",
           ).catch(() => false);
@@ -272,7 +243,7 @@ async function runBlackjack(interaction: ChatInputCommandInteraction): Promise<v
           message,
           {
             embeds: [buildGameEmbed(playerHand, dealerHand, "playing")],
-            components: [buildButtons(gameId, false, false), buildExtendRow(gameId)],
+            components: [buildButtons(gameId, false, false)],
           },
           "blackjack.hit",
         ).catch(() => false);
@@ -321,7 +292,7 @@ async function runBlackjack(interaction: ChatInputCommandInteraction): Promise<v
               "⏱️ *You didn't play in time — round forfeited.*",
             ),
           ],
-          components: [buildButtons(gameId, true), buildExtendRow(gameId, true)],
+          components: [buildButtons(gameId, true)],
         },
         "blackjack.timeout",
       ).catch(() => {});
