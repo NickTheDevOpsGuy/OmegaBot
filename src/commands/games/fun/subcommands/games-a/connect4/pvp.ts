@@ -14,6 +14,7 @@ import { recordResult } from "./connect4Store.js";
 import { newBoard, drop, has4, full, type Cell } from "./gameLogic.js";
 import { renderBoard, buildControls, buildHeader, EMOJI } from "./ui.js";
 import { MOVE_TIMEOUT_MS, WARNING_BEFORE_MS } from "../../../../../../utils/constants.js";
+import { awardXp } from "../../../../../../services/stores/progression/progressionStore.js";
 
 export async function runPvP(
   interaction: ChatInputCommandInteraction,
@@ -132,6 +133,8 @@ export async function runPvP(
         } catch (err) {
           logger.error({ err }, "[connect4] record result threw");
         }
+        const winnerXp = awardXp(winnerId, 22);
+        const loserXp = awardXp(loserId, 8);
 
         collector.stop("win");
         const okWin = await safeEditReply(
@@ -140,6 +143,8 @@ export async function runPvP(
             content: [
               "🏁 **Game over**",
               `${turn === 1 ? EMOJI.p1 : EMOJI.p2} ${btn.user.toString()} wins!`,
+              `✨ Winner: +${winnerXp.amount} XP${winnerXp.leveledUp ? ` (Level ${winnerXp.after.level}!)` : ""}`,
+              `✨ Other player: +${loserXp.amount} XP${loserXp.leveledUp ? ` (Level ${loserXp.after.level}!)` : ""}`,
               "",
               renderBoard(board),
             ].join("\n"),
@@ -157,14 +162,21 @@ export async function runPvP(
         } catch (err) {
           logger.error({ err }, "[connect4] record tie threw");
         }
+        const p1Xp = awardXp(p1.id, 12);
+        const p2Xp = awardXp(p2.id, 12);
 
         collector.stop("draw");
         const okDraw = await safeEditReply(
           interaction,
           {
-            content: ["🏁 **Game over**", "It's a draw.", "", renderBoard(board)].join(
-              "\n",
-            ),
+            content: [
+              "🏁 **Game over**",
+              "It's a draw.",
+              `✨ ${p1.username}: +${p1Xp.amount} XP${p1Xp.leveledUp ? ` (Level ${p1Xp.after.level}!)` : ""}`,
+              `✨ ${p2.username}: +${p2Xp.amount} XP${p2Xp.leveledUp ? ` (Level ${p2Xp.after.level}!)` : ""}`,
+              "",
+              renderBoard(board),
+            ].join("\n"),
             components: buildControls({ gameId, board, disabled: true }),
           },
           "connect4.draw",
@@ -207,6 +219,8 @@ export async function runPvP(
     } catch (err) {
       logger.error({ err }, "[connect4] record timeout result threw");
     }
+    const winnerXp = awardXp(timeoutWinner.id, 18);
+    const loserXp = awardXp(timeoutLoser.id, 6);
 
     await safeEditReply(
       interaction,
@@ -215,6 +229,8 @@ export async function runPvP(
           "⏱️ **Connect 4 expired**",
           `${timeoutLoser.toString()} ran out of time!`,
           `${timeoutWinner.toString()} wins by timeout!`,
+          `✨ Winner: +${winnerXp.amount} XP${winnerXp.leveledUp ? ` (Level ${winnerXp.after.level}!)` : ""}`,
+          `✨ Other player: +${loserXp.amount} XP${loserXp.leveledUp ? ` (Level ${loserXp.after.level}!)` : ""}`,
           "",
           renderBoard(board),
         ].join("\n"),

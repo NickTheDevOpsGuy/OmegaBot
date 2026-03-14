@@ -11,6 +11,7 @@ import {
   callClaudeWithMessages,
   type ClaudeMessage,
 } from "./claudeService.js";
+import type { ChatMode } from "./conversationStore.js";
 
 const REPLY_MAX_LENGTH = 1950;
 
@@ -32,7 +33,85 @@ Avoid huge blocks of text; use short paragraphs or bullets when helpful.`;
 export const CHAT_SYSTEM_PROMPT_CONVERSATIONAL = `You are a friendly, helpful assistant in a Discord server. 
 You have an ongoing conversation with the user—remember what they said and reply in context.
 Keep replies concise and readable in chat. Use clear, casual language. 
-Avoid huge blocks of text; use short paragraphs or bullets when helpful.`;
+Avoid huge blocks of text; use short paragraphs or bullets when helpful.
+Be especially good at supportive "catch-up" conversations: ask gentle follow-up questions, reflect what the user shared, and help them feel heard.
+Do not claim to be a therapist, counselor, or mental health professional, and do not present your support as therapy.
+If a user sounds distressed, respond with empathy, encourage reaching out to trusted people or local professional/crisis support, and avoid shaming or alarmist language.`;
+
+const CHAT_MODE_PROMPTS: Record<ChatMode, string> = {
+  supportive:
+    "Default to a warm, supportive tone. Reflect what the user said, validate gently, and ask one thoughtful follow-up question when helpful.",
+  casual:
+    "Keep the tone relaxed and conversational. Be friendly and light, but still attentive and respectful.",
+  practical:
+    "Focus on concrete next steps, problem-solving, and clarity. Keep emotional reflection brief but kind.",
+  grounding:
+    "Respond calmly and steadily. Prioritize reassurance, breathing/grounding suggestions, and one simple next step at a time.",
+};
+
+export type DistressLevel = "none" | "support" | "crisis";
+
+export function detectDistressLevel(text: string): DistressLevel {
+  const t = text.toLowerCase();
+  const crisisPatterns = [
+    /kill myself/,
+    /want to die/,
+    /end my life/,
+    /suicid/,
+    /self[- ]harm/,
+    /hurt myself/,
+    /can't go on/,
+  ];
+  if (crisisPatterns.some((pattern) => pattern.test(t))) return "crisis";
+
+  const supportPatterns = [
+    /panic/,
+    /anxious/,
+    /depress/,
+    /overwhelm/,
+    /hopeless/,
+    /lonely/,
+    /burnt? out/,
+    /burned out/,
+    /stressed/,
+    /can't cope/,
+  ];
+  if (supportPatterns.some((pattern) => pattern.test(t))) return "support";
+  return "none";
+}
+
+export function buildConversationSystemPrompt(args: {
+  mode: ChatMode;
+  memorySummary?: string;
+  distressLevel?: DistressLevel;
+}): string {
+  const parts = [CHAT_SYSTEM_PROMPT_CONVERSATIONAL, CHAT_MODE_PROMPTS[args.mode]];
+  if (args.memorySummary?.trim()) {
+    parts.push(
+      "Use this saved conversation context only as helpful background, and do not overstate certainty:",
+      args.memorySummary.trim(),
+    );
+  }
+  if (args.distressLevel === "support") {
+    parts.push(
+      "The user may be emotionally distressed. Prioritize empathy, gentle reflection, and one calming next step.",
+    );
+  }
+  if (args.distressLevel === "crisis") {
+    parts.push(
+      "The user may be in crisis or at risk of self-harm. Respond with empathy, encourage immediate support from a trusted person and local crisis/emergency services, avoid any harmful detail, and keep the response direct and caring.",
+    );
+  }
+  return parts.join("\n\n");
+}
+
+export function appendSafetyFollowup(text: string, distressLevel: DistressLevel): string {
+  if (distressLevel !== "crisis") return text;
+  if (/988|crisis|emergency/i.test(text)) return truncateForDiscord(text);
+  return truncateForDiscord(
+    `${text}\n\nIf you're in the U.S. or Canada, call or text 988 now. If you're elsewhere, contact local emergency or crisis services, or get someone with you right away.`,
+  );
+}
 
 export type ChatOptions = {
   systemPrompt?: string;

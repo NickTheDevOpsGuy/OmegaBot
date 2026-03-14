@@ -23,6 +23,8 @@ import {
   safeMessageEdit,
   notifyGameMessageGone,
 } from "../../../../../../services/discord/discord/safeReply.js";
+import { buildMilestoneLine } from "../../shared/gameFeedback.js";
+import { awardXp } from "../../../../../../services/stores/progression/progressionStore.js";
 
 import {
   BLACKJACK_COOLDOWN_MS,
@@ -43,6 +45,7 @@ async function playDealerTurn(
   userId: string,
   buttonInteraction?: ButtonInteraction,
 ): Promise<void> {
+  const statsBefore = getStats(userId);
   while (handValue(dealerHand) < 17) {
     dealerHand.push(deck.pop()!);
   }
@@ -69,11 +72,29 @@ async function playDealerTurn(
 
   recordResult(userId, result);
   logger.info({ gameId, userId, result }, "[blackjack] game ended");
+  const statsAfter = getStats(userId);
+  const xpResult = awardXp(userId, result === "win" ? 18 : result === "tie" ? 10 : 6);
+  const extraLines = [
+    result === "win"
+      ? buildMilestoneLine(
+          statsBefore.wins,
+          statsAfter.wins,
+          [1, 5, 10, 25],
+          "blackjack wins",
+        )
+      : undefined,
+    xpResult.leveledUp
+      ? `✨ +${xpResult.amount} XP • Level ${xpResult.after.level}!`
+      : `✨ +${xpResult.amount} XP`,
+    "See your stats: /fun blackjack stats",
+  ]
+    .filter(Boolean)
+    .join("\n");
 
   const ok = await safeMessageEdit(
     message,
     {
-      embeds: [buildGameEmbed(playerHand, dealerHand, status, false)],
+      embeds: [buildGameEmbed(playerHand, dealerHand, status, false, extraLines)],
       components: [buildButtons(gameId, true)],
     },
     "blackjack.playDealerTurn",
@@ -148,20 +169,32 @@ async function runBlackjack(interaction: ChatInputCommandInteraction): Promise<v
 
   if (isBlackjack(playerHand)) {
     const db = getDb();
-    const achievementLine = getNewlyUnlockedAchievementLine(userId, db, () =>
-      recordResult(userId, "win", true),
-    );
+    const statsBefore = getStats(userId);
+    let xpLine: string | undefined;
+    const achievementLine = getNewlyUnlockedAchievementLine(userId, db, () => {
+      recordResult(userId, "win", true);
+      const xpResult = awardXp(userId, 28);
+      xpLine = xpResult.leveledUp
+        ? `✨ +${xpResult.amount} XP • Level ${xpResult.after.level}!`
+        : `✨ +${xpResult.amount} XP`;
+    });
+    const statsAfter = getStats(userId);
+    const extraLines = [
+      buildMilestoneLine(
+        statsBefore.wins,
+        statsAfter.wins,
+        [1, 5, 10, 25],
+        "blackjack wins",
+      ),
+      xpLine,
+      "See your stats: /fun blackjack stats",
+      achievementLine,
+    ]
+      .filter(Boolean)
+      .join("\n");
     logger.info({ gameId, userId }, "[blackjack] blackjack");
     await interaction.editReply({
-      embeds: [
-        buildGameEmbed(
-          playerHand,
-          dealerHand,
-          "blackjack",
-          false,
-          achievementLine ? `\n${achievementLine}` : undefined,
-        ),
-      ],
+      embeds: [buildGameEmbed(playerHand, dealerHand, "blackjack", false, extraLines)],
       components: [],
     });
     return;
@@ -213,12 +246,31 @@ async function runBlackjack(interaction: ChatInputCommandInteraction): Promise<v
 
         if (playerValue > 21) {
           collector.stop("bust");
+          const statsBefore = getStats(userId);
           recordResult(userId, "loss");
+          const xpResult = awardXp(userId, 6);
           logger.info({ gameId, userId }, "[blackjack] player bust");
           const ok = await safeMessageEdit(
             message,
             {
-              embeds: [buildGameEmbed(playerHand, dealerHand, "player_bust", false)],
+              embeds: [
+                buildGameEmbed(
+                  playerHand,
+                  dealerHand,
+                  "player_bust",
+                  false,
+                  [
+                    xpResult.leveledUp
+                      ? `✨ +${xpResult.amount} XP • Level ${xpResult.after.level}!`
+                      : `✨ +${xpResult.amount} XP`,
+                    statsBefore.wins > 0
+                      ? "See your stats: /fun blackjack stats"
+                      : undefined,
+                  ]
+                    .filter(Boolean)
+                    .join("\n"),
+                ),
+              ],
               components: [buildButtons(gameId, true)],
             },
             "blackjack.bust",
@@ -296,7 +348,7 @@ async function runBlackjack(interaction: ChatInputCommandInteraction): Promise<v
               dealerHand,
               "dealer_win",
               false,
-              "⏱️ *You didn't play in time — round forfeited.*",
+              "⏱️ *You didn't play in time — round forfeited.*\nSee your stats: /fun blackjack stats",
             ),
           ],
           components: [buildButtons(gameId, true)],

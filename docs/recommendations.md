@@ -56,11 +56,11 @@ Suggestions for new slash commands and other improvements. Prioritized by impact
 ### Integrations
 
 - **GitHub:** You have `/gh status`, `pr`, `issue`, `issues`, `prs`. Optional: `/gh repo` for repo summary (stars, description, link) or `/gh contribute` that links to CONTRIBUTING or good first issues.
-- **Status:** You added ChatGPT, Claude, Cursor. Optional: one command that shows all at once, e.g. `/status llms` returning a short summary for each (or a link to each status page).
+- **Status:** `/status llms` is now the combined view for ChatGPT, Claude, and Cursor. Optional next step: add richer outage summaries or direct incident links per provider.
 
 ### Docs & Ops
 
-- **commands.md:** Update the “Other Commands” table so `/status` lists all subcommands (vercel, supabase, chatgpt, claude, cursor) if not already.
+- **commands.md:** Keep the `/status` table aligned with all live subcommands (vercel, supabase, chatgpt, claude, cursor, llms).
 - **Changelog:** When you ship a release, add a short entry to the in-repo changelog (and optionally to `/help topic:changelog`).
 - **Runbook:** Add a “Common tasks” section (e.g. “Add admin user”, “Change welcome channel”, “Back up DB”) with one-line commands or links to the right doc.
 

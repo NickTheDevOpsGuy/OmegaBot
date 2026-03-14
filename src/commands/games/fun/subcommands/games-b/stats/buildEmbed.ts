@@ -14,7 +14,12 @@ import type {
   DartsRow,
   DartsPvpRow,
   CoinRow,
+  ProgressionRow,
 } from "./fetchers.js";
+import {
+  buildProgressBar,
+  getLevelFromXp,
+} from "../../../../../../services/stores/progression/progressionStore.js";
 
 export type StatsData = {
   rps: RPSRow | null;
@@ -28,6 +33,7 @@ export type StatsData = {
   darts: DartsRow | null;
   dartsPvp: DartsPvpRow | null;
   coins: CoinRow | null;
+  progression: ProgressionRow | null;
 };
 
 export function buildStatsEmbed(
@@ -39,6 +45,36 @@ export function buildStatsEmbed(
     .setTitle(`📊 Stats for ${username}`)
     .setThumbnail(avatarURL)
     .setColor(0x5865f2);
+
+  if (data.progression) {
+    const level = getLevelFromXp(data.progression.xp);
+    const currentFloor =
+      level <= 1
+        ? 0
+        : (() => {
+            let total = 0;
+            for (let current = 1; current < level; current += 1)
+              total += 100 + (current - 1) * 50;
+            return total;
+          })();
+    const nextFloor = (() => {
+      let total = 0;
+      for (let current = 1; current <= level; current += 1)
+        total += 100 + (current - 1) * 50;
+      return total;
+    })();
+    const intoLevel = data.progression.xp - currentFloor;
+    const forNext = nextFloor - currentFloor;
+    embed.addFields({
+      name: "✨ Progression",
+      value: [
+        `Level **${level}**`,
+        `XP: **${data.progression.xp}**`,
+        `[${buildProgressBar(intoLevel, forNext)}] ${intoLevel}/${forNext}`,
+      ].join("\n"),
+      inline: false,
+    });
+  }
 
   const gameLines: string[] = [];
 
@@ -147,13 +183,14 @@ export function buildStatsEmbed(
     data.wordle ||
     data.slots ||
     data.darts ||
-    data.coins;
+    data.coins ||
+    data.progression;
 
   if (!hasAny) {
     embed.setDescription("No stats yet! Start playing some games!");
   } else {
     embed.setFooter({
-      text: "See how you rank: /fun leaderboard",
+      text: "See how you rank: /fun utility leaderboard",
     });
   }
 

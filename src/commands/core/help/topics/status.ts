@@ -12,6 +12,7 @@ export function buildStatusHelp(): string {
     "`/status chatgpt`   OpenAI / ChatGPT status (API, chat, Sora, etc.)",
     "`/status claude`    Anthropic Claude status (claude.ai, API, Claude Code)",
     "`/status cursor`    Cursor IDE status (app, chat, tab, codebase indexing)",
+    "`/status llms`      Combined view of ChatGPT, Claude, and Cursor",
     "",
     "Shows overall status, degraded components, and active incidents.",
     "Uses public Statuspage APIs—no API keys required.",

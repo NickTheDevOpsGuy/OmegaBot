@@ -193,6 +193,12 @@ export function addGamesSubcommands(
     )
     .addSubcommand((s) =>
       s
+        .setName("quest")
+        .setDescription("View today's rotating quests and auto-claim rewards")
+        .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+    )
+    .addSubcommand((s) =>
+      s
         .setName("stats")
         .setDescription("View all your fun command stats in one place")
         .addUserOption((o) => o.setName("user").setDescription("User to view stats for"))

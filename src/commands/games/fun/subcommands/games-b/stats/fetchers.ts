@@ -42,6 +42,7 @@ export type SlotsRow = { spins: number; wins: number; jackpots: number };
 export type DartsRow = { throws: number; best_round: number; count_180: number };
 export type DartsPvpRow = { wins: number; losses: number; ties: number };
 export type CoinRow = { heads: number; tails: number };
+export type ProgressionRow = { xp: number };
 
 export function getRPSStats(db: ReturnType<typeof getDb>, userId: string): RPSRow | null {
   return safeQuery(() =>
@@ -191,4 +192,16 @@ export function getCoinStats(
     if (heads == null || tails == null) return undefined;
     return { heads: heads.count, tails: tails.count };
   });
+}
+
+export function getProgressionStats(
+  db: ReturnType<typeof getDb>,
+  userId: string,
+): ProgressionRow | null {
+  return safeQuery(() =>
+    getRow<ProgressionRow>(
+      db.prepare(`SELECT xp FROM user_progression WHERE user_id = ?`),
+      userId,
+    ),
+  );
 }

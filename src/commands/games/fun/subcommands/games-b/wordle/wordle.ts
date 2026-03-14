@@ -39,6 +39,7 @@ import {
   safeMessageEdit,
   notifyGameMessageGone,
 } from "../../../../../../services/discord/discord/safeReply.js";
+import { awardXp } from "../../../../../../services/stores/progression/progressionStore.js";
 
 /* -------------------------------------------------------------------------- */
 /* Command Handler                                                             */
@@ -74,6 +75,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
 
   const word = getTodayWord();
   const existingGame = getTodayGame(interaction.user.id);
+  const statsBefore = getStats(interaction.user.id);
 
   if (existingGame) {
     const status = existingGame.won
@@ -188,19 +190,36 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
 
         if (won || lost) {
           collector.stop(won ? "won" : "lost");
-          const achievementLine = getNewlyUnlockedAchievementLine(userId, getDb(), () =>
-            saveGame(userId, guesses, won, word),
-          );
+          let xpLine: string | undefined;
+          const achievementLine = getNewlyUnlockedAchievementLine(userId, getDb(), () => {
+            saveGame(userId, guesses, won, word);
+            const xpResult = awardXp(
+              userId,
+              won ? Math.max(15, 35 - guesses.length * 3) : 8,
+            );
+            xpLine = xpResult.leveledUp
+              ? `✨ +${xpResult.amount} XP • Level ${xpResult.after.level}!`
+              : `✨ +${xpResult.amount} XP`;
+          });
+          const statsAfter = getStats(userId);
           logger.info(
             { gameId, userId, won, guesses: guesses.length },
             "[wordle] game ended",
           );
 
           const statsHint = "*See your stats: `/fun wordle stats`*";
+          const streakLine =
+            won && statsAfter.currentStreak > 1
+              ? `🔥 Streak: **${statsAfter.currentStreak}** (best **${statsAfter.maxStreak}**)`
+              : !won && statsBefore.currentStreak > 0
+                ? `🌅 Your ${statsBefore.currentStreak}-day streak ended, but tomorrow is a fresh puzzle.`
+                : undefined;
           const content =
             buildGameMessage(guesses, word, won ? "won" : "lost") +
             "\n\n" +
             statsHint +
+            (xpLine ? `\n${xpLine}` : "") +
+            (streakLine ? `\n${streakLine}` : "") +
             (achievementLine ? `\n\n${achievementLine}` : "");
 
           await interaction.editReply({

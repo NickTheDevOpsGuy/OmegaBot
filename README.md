@@ -38,6 +38,8 @@ Not intended to be:
 - 16 slash commands with logical grouping; 4 context menus (View Profile, View Achievements, Summarize, Quote)
 - Interactive games: 8-ball, RPS, Tic Tac Toe, Trivia, Blackjack, Connect 4, Hangman, Wordle, Slots, Darts, Chess (Lichess), Memory (match pairs), Higher/Lower (guess your number), plus polls, choose, dice, coinflip
 - 19 unlockable achievements
+- **Shared XP & levels** – Daily check-ins and supported games award XP toward a persistent progression level shown in profile and stats views
+- **Daily quests** – `/fun quest` shows rotating goals and auto-claims bonus XP when completed
 - Giveaway system with automatic winners
 - Starboard message highlights
 - AFK and timezone management
@@ -106,6 +108,7 @@ docker compose up -d
 - [Command Reference](docs/commands.md)
 - [Conversational Chat & LLM](docs/chat-and-llm.md) – How chat works (DM / @mention / `/fun utility chat`), conversation memory in SQLite, clearing, and env
 - [Analytics](docs/analytics.md) – Daily game metrics (`game_usage_daily`), command usage (`command_usage_daily`)
+- [Progression](docs/progression.md) – Shared XP, level curve, and where progression appears
 - [Discord Bot Setup](docs/setup-discord.md)
 - [Environment Setup](docs/setup-env.md)
 - [Development Notes](docs/dev-notes.md)
@@ -121,7 +124,7 @@ docker compose up -d
 
 ## Tech Stack
 
-- **Runtime**: Node.js 18+ (20 recommended; see `.nvmrc` – use `nvm use` or `fnm use` if you use a version manager)
+- **Runtime**: Node.js 18+ (20 recommended; `.nvmrc` is `20`; use `nvm use` or `fnm use` if you use a version manager)
 - **Language**: TypeScript 5.x
 - **Discord**: discord.js v14
 - **Database**: SQLite (better-sqlite3)

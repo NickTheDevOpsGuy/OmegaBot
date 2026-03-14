@@ -2,6 +2,10 @@
 import { EmbedBuilder, type ChatInputCommandInteraction } from "discord.js";
 import { logger } from "../../../../../../utils/logger.js";
 import { getStats, doCheckIn, getDailyLeaderboard } from "./dailyStore.js";
+import { getNewlyUnlockedAchievementLine } from "../../../../achievements/achievements.js";
+import { getDb } from "../../../../../../services/core/database/db.js";
+import { buildRankTeaser, findLeaderboardRank } from "../../shared/gameFeedback.js";
+import { awardXp } from "../../../../../../services/stores/progression/progressionStore.js";
 
 export { doCheckIn } from "./dailyStore.js";
 
@@ -53,7 +57,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
         embed.setFooter({ text: "✨ You can check in now!" });
       } else {
         embed.setFooter({
-          text: `⏰ Next check-in available in ${stats.hoursUntilReset}h`,
+          text: `⏰ Next check-in available in ${stats.hoursUntilReset}h • resets at day rollover`,
         });
       }
 
@@ -65,14 +69,33 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
 
     if (!stats.canCheckIn) {
       await interaction.editReply(
-        `⏰ You've already checked in today!\n\nCome back in **${stats.hoursUntilReset} hours** to continue your streak.\n🔥 Current streak: **${stats.streak} days**`,
+        `⏰ You've already checked in today!\n\nCome back in **${stats.hoursUntilReset} hours** to continue your streak.\n🔥 Current streak: **${stats.streak} days**\n📊 See the standings: **/fun daily leaderboard:true**`,
       );
       return;
     }
 
-    const result = doCheckIn(interaction.user.id);
+    let result!: ReturnType<typeof doCheckIn>;
+    let xpAwardLine: string | undefined;
+    const achievementLine = getNewlyUnlockedAchievementLine(
+      interaction.user.id,
+      getDb(),
+      () => {
+        result = doCheckIn(interaction.user.id);
+        const xpResult = awardXp(interaction.user.id, 20 + Math.min(result.streak, 10));
+        xpAwardLine = xpResult.leveledUp
+          ? `✨ +${xpResult.amount} XP • Level up! You're now level ${xpResult.after.level}.`
+          : `✨ +${xpResult.amount} XP`;
+      },
+    );
 
     const streakEmoji = result.streak >= 30 ? "👑" : result.streak >= 7 ? "🔥" : "✨";
+    const rankLine = buildRankTeaser(
+      findLeaderboardRank(
+        getDailyLeaderboard(25),
+        (row) => row.userId === interaction.user.id,
+      ),
+      "daily check-in",
+    );
 
     const embed = new EmbedBuilder()
       .setTitle("📅 Daily Check-in!")
@@ -84,18 +107,23 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
           `${streakEmoji} **Streak: ${result.streak} days**`,
           result.isNewBest ? "🎉 **New personal best!**" : "",
           result.milestone ?? "",
+          xpAwardLine ?? "",
+          achievementLine ?? "",
+          rankLine ?? "",
         ]
           .filter(Boolean)
           .join("\n"),
       )
-      .setFooter({ text: "Come back tomorrow to keep your streak!" });
+      .setFooter({
+        text: "Come back tomorrow to keep your streak • /fun daily stats:true • /fun daily leaderboard:true",
+      });
 
     await interaction.editReply({ embeds: [embed] });
   } catch (err) {
     if (err instanceof Error && err.message === "Already checked in today") {
       const stats = getStats(interaction.user.id);
       await interaction.editReply(
-        `⏰ You've already checked in today!\n\nCome back in **${stats.hoursUntilReset} hours**.\n🔥 Current streak: **${stats.streak} days**`,
+        `⏰ You've already checked in today!\n\nCome back in **${stats.hoursUntilReset} hours**.\n🔥 Current streak: **${stats.streak} days**\n📊 See the standings: **/fun daily leaderboard:true**`,
       );
       return;
     }

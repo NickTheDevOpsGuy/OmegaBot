@@ -62,11 +62,12 @@ Stats and leaderboard views are not rate limited.
 
 ### Stats & Daily
 
-| Command                    | Description               |
-| -------------------------- | ------------------------- |
-| `/fun daily`               | Daily check-in for points |
-| `/fun stats`               | View all game stats       |
-| `/fun utility leaderboard` | Top players               |
+| Command                    | Description                           |
+| -------------------------- | ------------------------------------- |
+| `/fun daily`               | Daily check-in for points             |
+| `/fun quest`               | Daily rotating quests with XP rewards |
+| `/fun stats`               | View all game stats                   |
+| `/fun utility leaderboard` | Top players                           |
 
 ### Reminders
 
@@ -96,7 +97,7 @@ Stats and leaderboard views are not rate limited.
 | `/fun utility poll`        | Create polls                                               |
 | `/fun utility weather`     | Current weather                                            |
 | `/fun utility weather7`    | 7-day forecast                                             |
-| `/fun utility chat`        | Chat with the bot (AI; same thread as DM / @mention)       |
+| `/fun utility chat`        | Chat tools: send, check-in, recap, remember, forget        |
 | `/fun utility roast`       | Playful AI roast (you or a friend; needs OPENAI/ANTHROPIC) |
 | `/fun utility compliment`  | Nice AI compliment (you or a friend)                       |
 | `/fun utility leaderboard` | Top players                                                |
@@ -218,6 +219,7 @@ Check external service status (infrastructure and LLM/AI).
 | `/status supabase` | Supabase platform status |
 | `/status chatgpt`  | OpenAI / ChatGPT status  |
 | `/status claude`   | Anthropic Claude status  |
+| `/status llms`     | Combined LLM status view |
 | `/status cursor`   | Cursor IDE status        |
 | `/status llms`     | All LLM statuses at once |
 

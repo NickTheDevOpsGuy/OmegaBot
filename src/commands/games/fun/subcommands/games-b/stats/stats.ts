@@ -20,6 +20,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
     darts: fetchers.getDartsStats(db, targetUser.id),
     dartsPvp: fetchers.getDartsPvpStats(db, targetUser.id),
     coins: fetchers.getCoinStats(db, targetUser.id),
+    progression: fetchers.getProgressionStats(db, targetUser.id),
   };
 
   const embed = buildStatsEmbed(targetUser.username, targetUser.displayAvatarURL(), data);

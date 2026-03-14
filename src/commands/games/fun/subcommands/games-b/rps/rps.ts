@@ -13,6 +13,7 @@ import {
 } from "../../../../../../services/discord/discord/safeReply.js";
 import { logger } from "../../../../../../utils/logger.js";
 import { recordSoloResult } from "./rpsStore.js";
+import { awardXp } from "../../../../../../services/stores/progression/progressionStore.js";
 import {
   CHOICES,
   EMOJI,
@@ -65,6 +66,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
     logger.info({ userId, result }, "[rps] solo game");
 
     recordSoloResult(userId, result);
+    const xpResult = awardXp(userId, result === "win" ? 14 : result === "tie" ? 8 : 5);
 
     const resultColors: Record<import("./gameLogic.js").Result, number> = {
       win: 0x22c55e,
@@ -78,6 +80,10 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
           `**You** ${EMOJI[playerChoice]}  vs  ${EMOJI[botChoice]} **Bot**`,
           "",
           `${getResultEmoji(result)} **${getResultText(result).toUpperCase()}**`,
+          "",
+          xpResult.leveledUp
+            ? `✨ +${xpResult.amount} XP • Level ${xpResult.after.level}!`
+            : `✨ +${xpResult.amount} XP`,
         ].join("\n"),
       )
       .setColor(resultColors[result]);
@@ -139,6 +145,10 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       const nextBot = getBotChoice();
       const nextResult = getResult(nextChoice, nextBot);
       recordSoloResult(userId, nextResult);
+      const nextXpResult = awardXp(
+        userId,
+        nextResult === "win" ? 14 : nextResult === "tie" ? 8 : 5,
+      );
       const nextEmbed = new EmbedBuilder()
         .setTitle("🪨 Rock Paper Scissors")
         .setDescription(
@@ -146,6 +156,10 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
             `**You** ${EMOJI[nextChoice]}  vs  ${EMOJI[nextBot]} **Bot**`,
             "",
             `${getResultEmoji(nextResult)} **${getResultText(nextResult).toUpperCase()}**`,
+            "",
+            nextXpResult.leveledUp
+              ? `✨ +${nextXpResult.amount} XP • Level ${nextXpResult.after.level}!`
+              : `✨ +${nextXpResult.amount} XP`,
           ].join("\n"),
         )
         .setColor(resultColors[nextResult] ?? 0x94a3b8);

@@ -19,6 +19,10 @@ import {
   getTotalWins,
   getTotalGamesPlayed,
 } from "../../../services/stores/gameStats/gameStats.js";
+import {
+  buildProgressBar,
+  getProgression,
+} from "../../../services/stores/progression/progressionStore.js";
 
 export const data = new ContextMenuCommandBuilder()
   .setName("View Profile")
@@ -40,6 +44,7 @@ export async function execute(
   const daily = getDailyStreak(db, targetUser.id);
   const afk = getAfkStatus(db, targetUser.id);
   const timezone = getTimezone(db, targetUser.id);
+  const progression = getProgression(targetUser.id);
 
   const embed = new EmbedBuilder()
     .setTitle(`${targetUser.username}'s Profile`)
@@ -83,6 +88,16 @@ export async function execute(
       inline: true,
     });
   }
+
+  embed.addFields({
+    name: "✨ Progression",
+    value: [
+      `Level: **${progression.level}**`,
+      `XP: **${progression.xp}** total`,
+      `[${buildProgressBar(progression.xpIntoLevel, progression.xpForNextLevel)}] ${progression.xpIntoLevel}/${progression.xpForNextLevel}`,
+    ].join("\n"),
+    inline: true,
+  });
 
   const progressBarLength = 10;
   const filledCount = Math.round(

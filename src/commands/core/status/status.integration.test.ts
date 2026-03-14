@@ -1,10 +1,10 @@
 // src/commands/core/status/status.integration.test.ts
 // Integration test: /status with mocked statuspage API.
 
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { execute } from "./status.js";
 
-vi.mock("../../../services/integrations/statuspage/statuspageApi.js", () => ({
+const mocks = vi.hoisted(() => ({
   fetchStatuspageSummary: vi.fn().mockResolvedValue({
     page: {
       name: "Vercel",
@@ -15,6 +15,10 @@ vi.mock("../../../services/integrations/statuspage/statuspageApi.js", () => ({
     components: [],
     incidents: [],
   }),
+}));
+
+vi.mock("../../../services/integrations/statuspage/statuspageApi.js", () => ({
+  fetchStatuspageSummary: mocks.fetchStatuspageSummary,
 }));
 
 function createMockInteraction(subcommand: string) {
@@ -30,6 +34,10 @@ function createMockInteraction(subcommand: string) {
 }
 
 describe("status integration", () => {
+  beforeEach(() => {
+    mocks.fetchStatuspageSummary.mockClear();
+  });
+
   it("defers then edits with formatted status for vercel", async () => {
     const mock = createMockInteraction("vercel");
 
@@ -39,5 +47,15 @@ describe("status integration", () => {
     expect(mock.editReply).toHaveBeenCalled();
     const content = (mock.editReply as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] ?? "";
     expect(content).toMatch(/Vercel|Operational|vercel\.com/i);
+  });
+
+  it("shows a combined llm status view", async () => {
+    const mock = createMockInteraction("llms");
+
+    await execute(mock);
+
+    expect(mocks.fetchStatuspageSummary).toHaveBeenCalledTimes(3);
+    const content = (mock.editReply as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] ?? "";
+    expect(content).toMatch(/LLM status/i);
   });
 });

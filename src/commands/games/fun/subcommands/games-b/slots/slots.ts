@@ -16,6 +16,12 @@ import { getNewlyUnlockedAchievementLine } from "../../../../achievements/achiev
 import { getDb } from "../../../../../../services/core/database/db.js";
 import { SYMBOLS, TOTAL_WEIGHT, spinReel, calculatePayout } from "./gameLogic.js";
 import { getStats, getLeaderboard, recordSpin } from "./slotsStore.js";
+import {
+  buildMilestoneLine,
+  buildRankTeaser,
+  findLeaderboardRank,
+} from "../../shared/gameFeedback.js";
+import { awardXp } from "../../../../../../services/stores/progression/progressionStore.js";
 
 export async function run(interaction: ChatInputCommandInteraction): Promise<void> {
   try {
@@ -113,6 +119,7 @@ async function runSlots(interaction: ChatInputCommandInteraction): Promise<void>
   }
 
   const userId = interaction.user.id;
+  const statsBefore = getStats(userId);
   const reels: [
     ReturnType<typeof spinReel>,
     ReturnType<typeof spinReel>,
@@ -125,16 +132,40 @@ async function runSlots(interaction: ChatInputCommandInteraction): Promise<void>
   logger.info({ userId, payout, isJackpot }, "[slots] spin");
 
   let achievementLine: string | undefined;
+  let xpLine: string | undefined;
   if (isJackpot) {
-    achievementLine = getNewlyUnlockedAchievementLine(userId, getDb(), () =>
-      recordSpin(userId, isWin, isJackpot, payout),
-    );
+    achievementLine = getNewlyUnlockedAchievementLine(userId, getDb(), () => {
+      recordSpin(userId, isWin, isJackpot, payout);
+      const xpResult = awardXp(userId, 40);
+      xpLine = xpResult.leveledUp
+        ? `✨ +${xpResult.amount} XP • Level ${xpResult.after.level}!`
+        : `✨ +${xpResult.amount} XP`;
+    });
   } else {
     recordSpin(userId, isWin, isJackpot, payout);
+    const xpResult = awardXp(userId, isWin ? 12 : 5);
+    xpLine = xpResult.leveledUp
+      ? `✨ +${xpResult.amount} XP • Level ${xpResult.after.level}!`
+      : `✨ +${xpResult.amount} XP`;
   }
   recordSlotsSpin(userId);
+  const statsAfter = getStats(userId);
 
   const reelDisplay = reels.map((r) => r.emoji).join(" │ ");
+  const milestoneLine =
+    buildMilestoneLine(statsBefore.wins, statsAfter.wins, [1, 5, 10, 25], "slots wins") ??
+    buildMilestoneLine(
+      statsBefore.jackpots,
+      statsAfter.jackpots,
+      [1, 3, 5, 10],
+      "jackpots",
+    );
+  const rankLine = isJackpot
+    ? buildRankTeaser(
+        findLeaderboardRank(getLeaderboard(25), (row) => row.user_id === userId),
+        "jackpot",
+      )
+    : undefined;
 
   const embed = new EmbedBuilder()
     .setTitle("🎰 Slot Machine")
@@ -169,7 +200,12 @@ async function runSlots(interaction: ChatInputCommandInteraction): Promise<void>
     });
   }
 
-  const footerLines = ["3-of-kind: 5–100× │ Two match: 2× │ /fun slots stats"];
+  const footerLines = [
+    "3-of-kind: 5–100× │ Two match: 2× │ /fun slots stats │ /fun utility leaderboard",
+  ];
+  if (milestoneLine) footerLines.push(milestoneLine);
+  if (rankLine) footerLines.push(rankLine);
+  if (xpLine) footerLines.push(xpLine);
   if (achievementLine) footerLines.push(achievementLine);
   embed.setFooter({ text: footerLines.join(" • ") });
 

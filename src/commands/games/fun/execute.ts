@@ -39,6 +39,7 @@ import { run as runRoast } from "./subcommands/utility/roast/index.js";
 import { run as runCompliment } from "./subcommands/utility/compliment/index.js";
 import { run as runMemory } from "./subcommands/games-b/memory/index.js";
 import { run as runHigherlower } from "./subcommands/games-b/higherlower/index.js";
+import { run as runQuest } from "./subcommands/utility/quest/index.js";
 import { errMessage, getUserFacingReason } from "../../../utils/errors.js";
 import {
   recordFunUsage,
@@ -88,6 +89,7 @@ function funKeyFromSub(sub: string): FunCommandKey | null {
     compliment: "compliment",
     memory: "memory",
     higherlower: "higherlower",
+    quest: "quest",
   };
   return map[sub] ?? null;
 }
@@ -151,6 +153,7 @@ const HANDLERS: Record<string, FunHandler> = {
   compliment: runCompliment,
   memory: runMemory,
   higherlower: runHigherlower,
+  quest: runQuest,
 };
 
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {

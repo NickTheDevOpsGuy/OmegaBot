@@ -33,7 +33,8 @@ export type FunCommandKey =
   | "roast"
   | "compliment"
   | "memory"
-  | "higherlower";
+  | "higherlower"
+  | "quest";
 
 type FunUsageStoreV1 = {
   version: 1;
@@ -91,6 +92,7 @@ const ALL_COMMANDS: FunCommandKey[] = [
   "compliment",
   "memory",
   "higherlower",
+  "quest",
 ];
 
 function nowIso(): string {

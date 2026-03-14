@@ -17,6 +17,7 @@ import { recordPvpResult, getH2HStats } from "./rpsStore.js";
 import { CHOICES, EMOJI, CHOICE_LABELS, getResult, type Choice } from "./gameLogic.js";
 import { buildChoiceButtons, buildDeclineButton, buildExtendButton } from "./ui.js";
 import { CHALLENGE_TIMEOUT_MS } from "../../../../../../utils/constants.js";
+import { awardXp } from "../../../../../../services/stores/progression/progressionStore.js";
 
 export async function handleChallenge(
   interaction: ChatInputCommandInteraction,
@@ -204,6 +205,15 @@ export async function handleChallenge(
         logger.error({ err }, "[fun/rps] record PvP result threw");
       }
 
+      const challengerXp = awardXp(
+        challenger.id,
+        result === "win" ? 16 : result === "tie" ? 10 : 6,
+      );
+      const opponentXp = awardXp(
+        opponent.id,
+        result === "lose" ? 16 : result === "tie" ? 10 : 6,
+      );
+
       await safeMessageEdit(
         challengeMessage,
         {
@@ -213,6 +223,9 @@ export async function handleChallenge(
             `${EMOJI[challengerChoice]} ${challenger} vs ${opponent} ${EMOJI[opponentChoice]}`,
             ``,
             resultText,
+            ``,
+            `${challenger.username}: +${challengerXp.amount} XP${challengerXp.leveledUp ? ` (Level ${challengerXp.after.level}!)` : ""}`,
+            `${opponent.username}: +${opponentXp.amount} XP${opponentXp.leveledUp ? ` (Level ${opponentXp.after.level}!)` : ""}`,
           ].join("\n"),
           components: [buildChoiceButtons(challengeId, true)],
         },

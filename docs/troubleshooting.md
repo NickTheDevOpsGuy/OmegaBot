@@ -75,6 +75,41 @@ Use these for load balancer health checks, Kubernetes probes, or monitoring dash
 - Run `npm run db:check` to verify integrity.
 - Check `migrations/` for schema changes. Migrations run automatically on startup.
 
+### `better-sqlite3` native module / Node ABI mismatch
+
+If tests or startup fail with a message like:
+
+```text
+was compiled against a different Node.js version using NODE_MODULE_VERSION ...
+```
+
+your installed `better-sqlite3` binary was built for a different Node version than the one you're running now.
+
+What to do:
+
+1. Use the repo's recommended runtime:
+
+   ```bash
+   nvm use
+   ```
+
+   `.nvmrc` currently points to **Node 20**.
+
+2. Rebuild the native module:
+
+   ```bash
+   npm rebuild better-sqlite3
+   ```
+
+3. If that still fails, reinstall dependencies under the correct Node version:
+
+   ```bash
+   rm -rf node_modules
+   npm install
+   ```
+
+This usually affects local testing more than bot logic, but it will block DB-backed tests until the native module matches your runtime.
+
 ---
 
 ## User-facing errors

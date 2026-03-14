@@ -3,14 +3,18 @@
 
 import type { Client, Message } from "discord.js";
 import {
+  appendSafetyFollowup,
+  buildConversationSystemPrompt,
   chatWithConversation,
-  CHAT_SYSTEM_PROMPT_CONVERSATIONAL,
+  detectDistressLevel,
 } from "../../integrations/ai/chatService.js";
 import {
+  getConversationProfile,
   conversationKey,
   getHistory,
   appendAndTrim,
   clear,
+  updateConversationMemoryFromTurn,
   wantsToClear,
 } from "../../integrations/ai/conversationStore.js";
 import { env } from "../../../config/env.js";
@@ -31,12 +35,17 @@ function hasLLMConfigured(): boolean {
  * - In DMs: the full message content.
  * - When @mentioned in a channel: the rest of the message after the mention.
  */
-function getChatPrompt(message: Message, client: Client): string | null {
+export function getChatPrompt(message: Message, client: Client): string | null {
   const content = (message.content ?? "").trim();
   if (!content) return null;
 
   if (message.channel.isDMBased()) {
     return content;
+  }
+
+  // Ignore server-wide callouts like @everyone/@here even if the bot is also mentioned.
+  if (message.mentions.everyone) {
+    return null;
   }
 
   const me = client.user;
@@ -95,21 +104,27 @@ export function setupChatMessageHandler(client: Client): void {
         await message.channel.sendTyping();
 
         const history = getHistory(key);
+        const profile = getConversationProfile(key);
+        const distressLevel = detectDistressLevel(prompt);
+        const systemPrompt = buildConversationSystemPrompt({
+          mode: profile.preferredMode,
+          memorySummary: profile.memoryEnabled ? profile.memorySummary : "",
+          distressLevel,
+        });
         const messagesWithNew = [...history, { role: "user" as const, content: prompt }];
 
-        const result = await chatWithConversation(
-          CHAT_SYSTEM_PROMPT_CONVERSATIONAL,
-          messagesWithNew,
-        );
+        const result = await chatWithConversation(systemPrompt, messagesWithNew);
 
         if (!result.ok) {
           await message.reply({ content: `❌ ${result.error}` }).catch(() => {});
           return;
         }
 
-        appendAndTrim(key, prompt, result.text);
+        updateConversationMemoryFromTurn(key, prompt);
+        const safeText = appendSafetyFollowup(result.text, distressLevel);
+        appendAndTrim(key, prompt, safeText);
 
-        await message.reply({ content: result.text }).catch(() => {});
+        await message.reply({ content: safeText }).catch(() => {});
       } catch (err) {
         log.warn(
           { err, userId: message.author.id },

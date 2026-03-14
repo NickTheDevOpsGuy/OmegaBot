@@ -2,7 +2,7 @@ export function buildProfileHelp(): string {
   return [
     "**Help: Profile**",
     "",
-    "Manage your profile, AFK status, and timezone.",
+    "Manage your profile, AFK status, timezone, and see your shared progression.",
     "",
     "**Commands**",
     "`/profile view`           View your or another user's profile",
@@ -17,6 +17,7 @@ export function buildProfileHelp(): string {
     "`/info server`     Server statistics",
     "`/info avatar`     View avatars (size 128–4096, format png/jpg/webp/gif)",
     "`/achievements`    View unlocked achievements",
+    "`/fun stats`       See game-specific stats plus your progression level",
     "",
     "**Avatar note**",
     "GIF format shows animated avatars; if the user's avatar isn't animated, a static image is returned.",

@@ -2,7 +2,7 @@ export function buildGamesHelp(): string {
   return [
     "**Help: Games**",
     "",
-    "OmegaBot has many games! Most track stats and have achievements.",
+    "OmegaBot has many games! Most track stats, achievements, and XP progression.",
     "",
     "**Solo Games**",
     "`/fun 8ball`          Ask the magic 8-ball",
@@ -27,8 +27,15 @@ export function buildGamesHelp(): string {
     "**Other**",
     "`/fun would-you-rather`   Vote on WYR questions",
     "",
+    "**Progression**",
+    "Trivia, Wordle, Blackjack, Slots, Darts, and Daily all award XP.",
+    "RPS and Connect 4 PvP also award XP when matches finish.",
+    "Use `/fun quest` to see today's rotating bonus objectives.",
+    "Big rounds can trigger milestone callouts, leaderboard nudges, and level-up messages.",
+    "",
     "**View Stats**",
     "Most games support `stats:true` to see your record.",
     "Example: `/fun blackjack stats:true`",
+    "Use `/fun stats` or `/profile view` to see your overall progression level.",
   ].join("\n");
 }

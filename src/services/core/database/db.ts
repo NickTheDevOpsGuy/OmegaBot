@@ -239,6 +239,21 @@ export function initDatabase(): Database.Database {
   }
   ensureHangmanStatsSchema();
 
+  function ensureProgressionSchema(): void {
+    try {
+      db!.exec(`
+        CREATE TABLE IF NOT EXISTS user_progression (
+          user_id TEXT PRIMARY KEY,
+          xp INTEGER NOT NULL DEFAULT 0,
+          updated_at INTEGER NOT NULL
+        );
+      `);
+    } catch (err) {
+      logger.error({ err }, "[db] user_progression migration threw");
+    }
+  }
+  ensureProgressionSchema();
+
   logger.info("Database tables created");
   return db;
 }

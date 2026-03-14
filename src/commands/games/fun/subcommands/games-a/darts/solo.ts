@@ -20,22 +20,71 @@ import {
 } from "../../../../../../services/discord/discord/safeReply.js";
 import { getNewlyUnlockedAchievementLine } from "../../../../achievements/achievements.js";
 import { getDb } from "../../../../../../services/core/database/db.js";
-import { recordSoloThrow } from "./dartsStore.js";
+import {
+  getBestRoundLeaderboard,
+  get180Leaderboard,
+  getStats,
+  recordSoloThrow,
+} from "./dartsStore.js";
 import { DARTBOARD_ART, doThrow, formatThrowLines } from "./gameLogic.js";
+import {
+  buildMilestoneLine,
+  buildRankTeaser,
+  findLeaderboardRank,
+} from "../../shared/gameFeedback.js";
+import { awardXp } from "../../../../../../services/stores/progression/progressionStore.js";
 
 function buildThrowEmbed(
   hits: ReturnType<typeof doThrow>["hits"],
   score: number,
   is180: boolean,
-  achievementLine?: string,
+  extraLines: string[] = [],
 ): EmbedBuilder {
   const throwLines = formatThrowLines(hits, score);
   const embed = new EmbedBuilder()
     .setTitle("🎯 Darts")
     .setDescription([DARTBOARD_ART, "", throwLines.join("\n")].join("\n"))
     .setColor(is180 ? 0xffd700 : score >= 100 ? 0x22c55e : 0x64748b);
-  if (achievementLine) embed.setFooter({ text: achievementLine });
+  if (extraLines.length > 0) embed.setFooter({ text: extraLines.join(" • ") });
   return embed;
+}
+
+function buildSoloFeedback(
+  userId: string,
+  score: number,
+  is180: boolean,
+  xpLine?: string,
+  achievementLine?: string,
+): string[] {
+  const stats = getStats(userId);
+  const lines = [
+    buildMilestoneLine(stats.throws - 1, stats.throws, [1, 10, 25, 50], "darts rounds"),
+    buildMilestoneLine(
+      Math.max(0, stats.count180 - (is180 ? 1 : 0)),
+      stats.count180,
+      [1, 3, 5],
+      "180s",
+    ),
+    score >= stats.bestRound
+      ? buildRankTeaser(
+          findLeaderboardRank(
+            getBestRoundLeaderboard(25),
+            (row) => row.user_id === userId,
+          ),
+          "best-round darts",
+        )
+      : undefined,
+    is180
+      ? buildRankTeaser(
+          findLeaderboardRank(get180Leaderboard(25), (row) => row.user_id === userId),
+          "180",
+        )
+      : undefined,
+    xpLine,
+    achievementLine,
+    "Try /fun darts leaderboard:best for the full board.",
+  ];
+  return lines.filter((line): line is string => Boolean(line));
 }
 
 export async function runSoloThrow(
@@ -55,14 +104,38 @@ export async function runSoloThrow(
   }
 
   const { hits, score, is180 } = doThrow();
+  const statsBefore = getStats(interaction.user.id);
   recordDartsThrow(interaction.user.id);
+  let xpLine: string | undefined;
   const achievementLine = is180
-    ? getNewlyUnlockedAchievementLine(interaction.user.id, getDb(), () =>
-        recordSoloThrow(interaction.user.id, score, is180),
-      )
-    : (recordSoloThrow(interaction.user.id, score, is180), undefined);
+    ? getNewlyUnlockedAchievementLine(interaction.user.id, getDb(), () => {
+        recordSoloThrow(interaction.user.id, score, is180);
+        const xpResult = awardXp(interaction.user.id, 30);
+        xpLine = xpResult.leveledUp
+          ? `✨ +${xpResult.amount} XP • Level ${xpResult.after.level}!`
+          : `✨ +${xpResult.amount} XP`;
+      })
+    : (recordSoloThrow(interaction.user.id, score, is180),
+      (() => {
+        const xpResult = awardXp(interaction.user.id, score >= 100 ? 18 : 10);
+        xpLine = xpResult.leveledUp
+          ? `✨ +${xpResult.amount} XP • Level ${xpResult.after.level}!`
+          : `✨ +${xpResult.amount} XP`;
+        return undefined;
+      })());
 
-  const embed = buildThrowEmbed(hits, score, is180, achievementLine);
+  const embed = buildThrowEmbed(
+    hits,
+    score,
+    is180,
+    buildSoloFeedback(
+      interaction.user.id,
+      Math.max(score, statsBefore.bestRound),
+      is180,
+      xpLine,
+      achievementLine,
+    ),
+  );
   const throwAgainRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
       .setCustomId("darts-solo-again")
@@ -104,13 +177,37 @@ export async function runSoloThrow(
       return;
     }
     const { hits: hits2, score: score2, is180: is1802 } = doThrow();
+    const statsBefore2 = getStats(interaction.user.id);
     recordDartsThrow(interaction.user.id);
+    let xpLine2: string | undefined;
     const achievementLine2 = is1802
-      ? getNewlyUnlockedAchievementLine(interaction.user.id, getDb(), () =>
-          recordSoloThrow(interaction.user.id, score2, is1802),
-        )
-      : (recordSoloThrow(interaction.user.id, score2, is1802), undefined);
-    const embed2 = buildThrowEmbed(hits2, score2, is1802, achievementLine2);
+      ? getNewlyUnlockedAchievementLine(interaction.user.id, getDb(), () => {
+          recordSoloThrow(interaction.user.id, score2, is1802);
+          const xpResult = awardXp(interaction.user.id, 30);
+          xpLine2 = xpResult.leveledUp
+            ? `✨ +${xpResult.amount} XP • Level ${xpResult.after.level}!`
+            : `✨ +${xpResult.amount} XP`;
+        })
+      : (recordSoloThrow(interaction.user.id, score2, is1802),
+        (() => {
+          const xpResult = awardXp(interaction.user.id, score2 >= 100 ? 18 : 10);
+          xpLine2 = xpResult.leveledUp
+            ? `✨ +${xpResult.amount} XP • Level ${xpResult.after.level}!`
+            : `✨ +${xpResult.amount} XP`;
+          return undefined;
+        })());
+    const embed2 = buildThrowEmbed(
+      hits2,
+      score2,
+      is1802,
+      buildSoloFeedback(
+        interaction.user.id,
+        Math.max(score2, statsBefore2.bestRound),
+        is1802,
+        xpLine2,
+        achievementLine2,
+      ),
+    );
     const ok = await safeMessageEdit(
       message,
       { embeds: [embed2], components: [] },

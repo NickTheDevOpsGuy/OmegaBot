@@ -61,10 +61,33 @@ export function buildUtilityGroup(
         .setDescription("Chat with the bot using AI (OpenAI or Claude)")
         .addStringOption((o) =>
           o
+            .setName("action")
+            .setDescription("What chat tool to use")
+            .addChoices(
+              { name: "Send message", value: "send" },
+              { name: "Gentle check-in", value: "checkin" },
+              { name: "Recap conversation", value: "recap" },
+              { name: "Remember note", value: "remember" },
+              { name: "Forget saved context", value: "forget" },
+            ),
+        )
+        .addStringOption((o) =>
+          o
             .setName("message")
-            .setDescription("What you want to say")
-            .setRequired(true)
+            .setDescription("What you want to say or remember")
+            .setRequired(false)
             .setMaxLength(1000),
+        )
+        .addStringOption((o) =>
+          o
+            .setName("mode")
+            .setDescription("Conversation style")
+            .addChoices(
+              { name: "Supportive", value: "supportive" },
+              { name: "Casual", value: "casual" },
+              { name: "Practical", value: "practical" },
+              { name: "Grounding", value: "grounding" },
+            ),
         )
         .addBooleanOption((o) =>
           o.setName("private").setDescription("Only show the reply to you"),

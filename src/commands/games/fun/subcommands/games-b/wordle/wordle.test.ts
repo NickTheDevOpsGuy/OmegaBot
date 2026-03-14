@@ -16,7 +16,7 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import { useInMemoryDb } from "../../../../../../services/core/database/dbTestUtils.js";
 import { getDb } from "../../../../../../services/core/database/db.js";
-import { getLetterResult, formatGuessResults } from "./gameLogic.js";
+import { getLetterResult, formatGuessResults, isWordInList } from "./gameLogic.js";
 
 useInMemoryDb();
 
@@ -238,6 +238,16 @@ describe("wordle game", () => {
       const jun = getDayNumber("2024-06-15");
 
       expect(jun).toBeGreaterThan(jan);
+    });
+  });
+
+  describe("guess validation", () => {
+    it("accepts words from the built-in list", () => {
+      expect(isWordInList("apple")).toBe(true);
+    });
+
+    it("rejects unknown words without treating them as valid guesses", () => {
+      expect(isWordInList("qzxyk")).toBe(false);
     });
   });
 });
