@@ -234,9 +234,7 @@ async function runSlots(interaction: ChatInputCommandInteraction): Promise<void>
     } else {
       const spinEmbed = new EmbedBuilder()
         .setTitle("🎰 Spinning…")
-        .setDescription(
-          [...buildReelBox(showReels), "*spinning…*"].join("\n"),
-        )
+        .setDescription([...buildReelBox(showReels), "*spinning…*"].join("\n"))
         .setColor(0x5865f2);
       await interaction.editReply({ embeds: [spinEmbed] });
       await sleep(SPIN_DELAY_MS);
