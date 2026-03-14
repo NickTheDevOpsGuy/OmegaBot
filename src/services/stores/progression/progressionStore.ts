@@ -1,6 +1,5 @@
 import { getDb } from "../../core/database/db.js";
 import {
-  buildProgressBar,
   getLevelFromXp,
   xpRequiredForLevel,
 } from "./progressionMath.js";

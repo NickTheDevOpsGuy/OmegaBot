@@ -25,6 +25,8 @@ CREATE TABLE game_usage_daily (
 - `slots`, `blackjack`, `rps`, `trivia`, `hangman`, `wordle`
 - `connect4`, `tictactoe`, `dice`, `coinflip`, `darts`
 
+This same daily usage data also powers rotating quest progress where relevant.
+
 ### Usage
 
 Data is recorded automatically when users run these commands. No configuration required.

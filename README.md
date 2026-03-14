@@ -13,62 +13,28 @@
 
 # OmegaBot
 
-A **self-hosted**, modular Discord bot with games, engagement features, and server management tools.
-Built with clean architecture, TypeScript, and SQLite persistence.
+A self-hosted Discord bot for community servers, built with TypeScript, Discord.js v14, and SQLite.
+OmegaBot combines games, progression, moderation, utility commands, and AI-assisted chat in one modular codebase.
 
----
+## What It Does
 
-## Who This Is For
+- Runs a broad `/fun` command hub with games, reminders, polls, quotes, weather, chat, and leaderboards.
+- Tracks progression with achievements, shared XP/levels, and daily quests.
+- Supports server utility features like FAQ, rules, welcome flows, starboard, suggestions, and status checks.
+- Includes admin-focused health, metrics, backup, and troubleshooting support for self-hosted operation.
+- Stores persistent data in SQLite so state survives restarts.
 
-OmegaBot is designed for:
+## Good Fit For
 
-- Medium to large Discord servers
-- Servers that want games, moderation, and automation in one bot
-- Developers who want a clean Discord.js v14 reference codebase
+- Community Discord servers that want games, utility, and moderation in one bot.
+- Self-hosters who want a feature-rich bot they can run themselves.
+- Developers looking for a larger Discord.js reference project with tests, docs, and operational tooling.
 
-Not intended to be:
+## Not Trying To Be
 
-- A hosted SaaS bot
-- A minimal example bot
-
----
-
-## Features at a Glance
-
-- 16 slash commands with logical grouping; 4 context menus (View Profile, View Achievements, Summarize, Quote)
-- Interactive games: 8-ball, RPS, Tic Tac Toe, Trivia, Blackjack, Connect 4, Hangman, Wordle, Slots, Darts, Chess (Lichess), Memory (match pairs), Higher/Lower (guess your number), plus polls, choose, dice, coinflip
-- 19 unlockable achievements
-- **Shared XP & levels** – Daily check-ins and supported games award XP toward a persistent progression level shown in profile and stats views
-- **Daily quests** – `/fun quest` shows rotating goals and auto-claims bonus XP when completed
-- Giveaway system with automatic winners
-- Starboard message highlights
-- AFK and timezone management
-- GitHub PR and issue lookups
-- Vercel and Supabase status checks (`/status vercel`, `/status supabase`)
-- SQLite persistence for all data
-- **Resilient interaction handling** – Defer early before heavy work, try/catch with fallback defer, safe reply wrappers, retry on transient API errors (including Discord 429 rate limits); logs include `interactionFailedRecovery: true` when recovering (reduces "failed to complete" occurrences)
-- **Autocomplete support** – Timezone, FAQ keys/tags, giveaway end/reroll IDs, remind cancel/snooze (IDs), quote remove; responds with `[]` by default when no handler
-- **Admin health dashboard** – `/admin health` shows database status, env vars, interaction errors, and optional API reachability (Weather, GitHub)
-- **Moderation role gating** – Optional `MODERATION_ALLOWED_ROLE_IDS` in `.env` restricts `/admin` timeout, kick, and ban to specific roles (and `ADMIN_USER_IDS`); see [Environment Setup](docs/setup-env.md#admin--moderation-optional)
-- **HTTP health & metrics** – Optional `METRICS_PORT` enables `/health` (200/503 with Discord status), `/metrics` (Prometheus; includes rate-limit hit counts), and `/dashboard` (web admin UI)
-- **Database integrity check** – `npm run db:check` to verify SQLite health
-- **Automated backup** – `npm run db:backup` copies DB to `data/backups/` (configurable); cron-friendly
-- **Graceful shutdown** – SIGINT/SIGTERM close Discord cleanly, then DB
-- **Rate limiting** – slots (3s), blackjack (5s), dice (2s), darts (2s), hangman (10s) cooldowns with i18n "Try again in Xs" (en/es/de)
-- **Daily game metrics** – per-command, per-user play counts; `command_usage_daily` for non-game commands
-- **Long game timeouts** – Blackjack, Hangman, Wordle: 1 hour; RPS and Darts challenges: 24 hours; Connect 4 and Tic Tac Toe: 30 min per move (starter can extend)
-- **Extend time** – The person who started the game can add more time via an "Extend time" button (Blackjack, Connect 4, Tic Tac Toe, Wordle, RPS challenge)
-- **Timeout reminders** – Connect 4 and Tic Tac Toe warn 1 minute before move timeout
-- **Hangman** – Dropdown letter pick (A–M / N–Z), difficulty levels, words in SQLite, solve-time stats; admins (role in `HANGMAN_ADMIN_ROLE_ID`) can add words
-- **Changelog in Discord** – `/help topic:changelog` for recent release notes
-- **Reminders** – `/fun remind set`, list, **snooze** (reschedule by ID + time), cancel, clear; IDs have autocomplete for cancel/snooze
-- **Info server invite** – `/info server` optional **invite** creates a 24h invite link for the channel (when bot has Create Invite)
-- **Ephemeral by default** – Profile, info, achievements, help, FAQ, and playback reply privately unless you pass `private: false`
-- **Quote context menu** – Right-click any message → Quote; supports embeds and bot messages; `/help topic:quotes` for details
-- **i18n** – Rate-limit and error messages use guild locale (en/es/de); see [i18n docs](docs/i18n.md)
-- **Correlation IDs** – Interaction logs include `requestId` for tracing failures
-- **Summary fallback** – When LLM API is down, falls back to local summary
-- **E2E tests** – `npm run test:e2e` validates Discord connection (needs secrets in CI)
+- A hosted SaaS bot.
+- A minimal starter template.
+- A clinical mental health product. Supportive chat exists, but it is not therapy.
 
 ---
 
@@ -93,38 +59,79 @@ docker compose up -d
 
 ---
 
-## Operational Notes
+## Feature Highlights
+
+### Community and games
+
+- Games: 8-ball, RPS, Tic Tac Toe, Trivia, Blackjack, Connect 4, Hangman, Wordle, Slots, Darts, Chess, Memory, Higher/Lower, Dice, Coinflip, Choose, Would You Rather
+- Daily check-ins, shared XP/levels, and rotating daily quests
+- Achievements and per-game stats
+- Quotes, jokes, polls, reminders, and leaderboards
+
+### AI and utility
+
+- DM or mention-based chat plus `/fun utility chat`
+- Supportive chat modes, recaps, saved context, and gentle check-ins
+- GitHub and service status lookups
+- Weather, timezone-aware profile info, server info, and invite helpers
+
+### Server operations
+
+- FAQ, rules, welcome handling, starboard, and suggestions
+- `/admin health`, metrics, dashboard, DB backup, and DB integrity checks
+- Graceful shutdown, rate limiting, and resilient interaction recovery
+
+## Runtime Notes
 
 - Designed to run as a long-lived process
 - Safe to restart (state persisted in SQLite)
 - Background pollers never crash the process
 - Optional features auto-disable when misconfigured
 - **Backup**: Run `npm run db:backup` periodically, or copy `data/omegabot.db`; see [Runbook](docs/runbook.md)
+- **Runtime**: Node.js 18+ is supported; Node 20 is recommended, and `.nvmrc` is set to `20`
 
 ---
 
-## Documentation
+## Documentation Map
 
-- [Command Reference](docs/commands.md)
-- [Conversational Chat & LLM](docs/chat-and-llm.md) – How chat works (DM / @mention / `/fun utility chat`), conversation memory in SQLite, clearing, and env
-- [Analytics](docs/analytics.md) – Daily game metrics (`game_usage_daily`), command usage (`command_usage_daily`)
-- [Progression](docs/progression.md) – Shared XP, level curve, and where progression appears
-- [Discord Bot Setup](docs/setup-discord.md)
-- [Environment Setup](docs/setup-env.md)
-- [Development Notes](docs/dev-notes.md)
-- [Troubleshooting](docs/troubleshooting.md) – Debugging "failed to complete" and common issues
-- [Runbook](docs/runbook.md) – Deploy, restart, backup, health, Docker
-- [Localization (i18n)](docs/i18n.md) – Multi-language skeleton and usage
-- [Grafana](docs/grafana.md) – Import dashboard for Prometheus metrics
-- [FAQ for server admins](docs/faq-admins.md) – Common questions when running the bot
-- [Improvement ideas](docs/improvements.md) – Optional next steps (beyond new commands)
-- [Games & UX ideas](docs/games-and-ux-ideas.md) – Making games more fun, addictive, and usable
+Every Markdown file in [`docs/`](docs/) is linked here.
+
+### Start here
+
+- [Command Reference](docs/commands.md) – Command behavior and user-facing command details
+- [Discord Bot Setup](docs/setup-discord.md) – Create the bot app, intents, scopes, and permissions
+- [Environment Setup](docs/setup-env.md) – `.env` configuration and optional features
+- [Runbook](docs/runbook.md) – Deploy, restart, backup, health checks, Docker
+- [Troubleshooting](docs/troubleshooting.md) – Common failures, interaction issues, native module mismatch notes
+
+### User-facing systems
+
+- [Conversational Chat & LLM](docs/chat-and-llm.md) – Chat modes, memory, recap, supportive chat behavior
+- [Progression](docs/progression.md) – Shared XP, level curve, quest rewards, and where progression appears
+- [Analytics](docs/analytics.md) – Daily game metrics and usage tracking
+- [Localization (i18n)](docs/i18n.md) – Locale support and translation patterns
+- [Transcripts & Summaries](docs/transcripts.md) – Transcript pipeline and summary modes
+- [FAQ for Server Admins](docs/faq-admins.md) – Hosting/admin questions and common operational answers
+- [FAQ System Design](docs/faq.md) – FAQ storage model and entry format
+
+### Development and architecture
+
+- [Development Notes](docs/dev-notes.md) – Conventions, file sizing, and architectural guidance
+- [Project Structure](docs/project-structure.md) – Folder layout and where major systems live
+- [Grafana Dashboard](docs/grafana.md) – Metrics visualization setup
+
+### Product and roadmap docs
+
+- [Gameplay Improvements](docs/gameplay-improvements.md) – Play-feel and balance ideas
+- [Games & UX Ideas](docs/games-and-ux-ideas.md) – Engagement and usability ideas
+- [Improvement Ideas](docs/improvements.md) – Maintainability, ops, and quality ideas
+- [Recommendations](docs/recommendations.md) – Command and feature recommendations
 
 ---
 
 ## Tech Stack
 
-- **Runtime**: Node.js 18+ (20 recommended; `.nvmrc` is `20`; use `nvm use` or `fnm use` if you use a version manager)
+- **Runtime**: Node.js 18+ (20 recommended; use `nvm use` or `fnm use` if you use a version manager)
 - **Language**: TypeScript 5.x
 - **Discord**: discord.js v14
 - **Database**: SQLite (better-sqlite3)
@@ -134,7 +141,7 @@ docker compose up -d
 
 ---
 
-## Project Structure
+## Code Layout
 
 - **Games**: `gameLogic.ts` (pure rules), `ui.ts` (Discord components), `*Store.ts` (database). Shared stats in `services/gameStats/`. Timeouts in `src/constants.ts`. Long flows split into subfolders: `tictactoe/vsBot.ts`, `vsPlayer.ts`; `darts/stats.ts`, `solo.ts`, `challenge.ts`; `slots/gameLogic.ts`, `slotsStore.ts`; `hangman/play.ts`, `statsDisplay.ts`, `words.ts`; `connect4/pvp.ts`. **Daily** in `daily/dailyStore.ts`. **Stats** in `stats/fetchers.ts`, `stats/buildEmbed.ts`. **Achievements** in `achievements/definitions.ts`, `embedBuilder.ts`. **Starboard** in `services/starboard/starboardStore.ts`, `starboardEmbed.ts`.
 - **Database**: SQLite via `services/database/db.ts`; `getRow<T>()` and `getAll<T>()` for typed query results. Giveaway store, joke store, reminders, stats fetchers, and quote use these helpers.
@@ -146,6 +153,8 @@ docker compose up -d
 - **Logging context**: Request IDs in `services/logging/requestContext.ts`.
 - **i18n**: `src/i18n/index.ts`; see [i18n docs](docs/i18n.md).
 
+For the full folder walkthrough, see [Project Structure](docs/project-structure.md).
+
 <details>
 <summary>📁 Click to expand file structure</summary>
 
@@ -154,6 +163,8 @@ The tree below is a simplified overview. The repo uses **command groups** (`core
 ```plaintext
 
 .
+├── .devcontainer
+│   └── devcontainer.json
 ├── .github
 │   ├── ISSUE_TEMPLATE
 │   │   ├── bug.yml
@@ -164,25 +175,270 @@ The tree below is a simplified overview. The repo uses **command groups** (`core
 │   │   └── question_discussion.yml
 │   ├── workflows
 │   │   └── OmegaBot.yml
+│   ├── dependabot.yml
 │   └── pull_request_template.md
 ├── .husky
+│   ├── _
+│   │   ├── .gitignore
+│   │   ├── applypatch-msg
+│   │   ├── commit-msg
+│   │   ├── h
+│   │   ├── husky.sh
+│   │   ├── post-applypatch
+│   │   ├── post-checkout
+│   │   ├── post-commit
+│   │   ├── post-merge
+│   │   ├── post-rewrite
+│   │   ├── pre-applypatch
+│   │   ├── pre-auto-gc
+│   │   ├── pre-commit
+│   │   ├── pre-merge-commit
+│   │   ├── pre-push
+│   │   ├── pre-rebase
+│   │   └── prepare-commit-msg
 │   ├── pre-commit
 │   └── pre-push
 ├── assets
 │   ├── banner.png
 │   └── omegabot.png
+├── coverage
+│   ├── lcov-report
+│   │   ├── src
+│   │   │   ├── commands
+│   │   │   │   ├── admin
+│   │   │   │   │   ├── subcommands
+│   │   │   │   │   │   ├── health.ts.html
+│   │   │   │   │   │   └── index.html
+│   │   │   │   │   ├── index.html
+│   │   │   │   │   └── utils.ts.html
+│   │   │   │   ├── fun
+│   │   │   │   │   ├── subcommands
+│   │   │   │   │   │   ├── daily
+│   │   │   │   │   │   │   ├── dailyStore.ts.html
+│   │   │   │   │   │   │   └── index.html
+│   │   │   │   │   │   ├── hangman
+│   │   │   │   │   │   │   ├── hangmanStats.ts.html
+│   │   │   │   │   │   │   └── index.html
+│   │   │   │   │   │   ├── slots
+│   │   │   │   │   │   │   ├── gameLogic.ts.html
+│   │   │   │   │   │   │   ├── index.html
+│   │   │   │   │   │   │   └── slotsStore.ts.html
+│   │   │   │   │   │   ├── wordle
+│   │   │   │   │   │   │   ├── gameLogic.ts.html
+│   │   │   │   │   │   │   └── index.html
+│   │   │   │   │   │   ├── daily.ts.html
+│   │   │   │   │   │   ├── dice.ts.html
+│   │   │   │   │   │   ├── index.html
+│   │   │   │   │   │   ├── slots.ts.html
+│   │   │   │   │   │   └── tictactoeStore.ts.html
+│   │   │   │   │   ├── coinflipStore.ts.html
+│   │   │   │   │   └── index.html
+│   │   │   │   ├── giveaway
+│   │   │   │   │   ├── giveawayStore.ts.html
+│   │   │   │   │   └── index.html
+│   │   │   │   ├── help
+│   │   │   │   │   ├── topics
+│   │   │   │   │   │   ├── admin.ts.html
+│   │   │   │   │   │   ├── changelog.ts.html
+│   │   │   │   │   │   ├── commands.ts.html
+│   │   │   │   │   │   ├── fun.ts.html
+│   │   │   │   │   │   ├── games.ts.html
+│   │   │   │   │   │   ├── github.ts.html
+│   │   │   │   │   │   ├── index.html
+│   │   │   │   │   │   ├── overview.ts.html
+│   │   │   │   │   │   ├── profile.ts.html
+│   │   │   │   │   │   ├── quotes.ts.html
+│   │   │   │   │   │   ├── status.ts.html
+│   │   │   │   │   │   └── summary.ts.html
+│   │   │   │   │   ├── helpText.ts.html
+│   │   │   │   │   └── index.html
+│   │   │   │   ├── ping
+│   │   │   │   │   ├── index.html
+│   │   │   │   │   └── ping.ts.html
+│   │   │   │   └── profile
+│   │   │   │       ├── index.html
+│   │   │   │       └── timezones.ts.html
+│   │   │   ├── config
+│   │   │   │   ├── env.ts.html
+│   │   │   │   └── index.html
+│   │   │   ├── i18n
+│   │   │   │   ├── index.html
+│   │   │   │   └── index.ts.html
+│   │   │   ├── services
+│   │   │   │   ├── dashboard
+│   │   │   │   │   ├── dashboard.ts.html
+│   │   │   │   │   └── index.html
+│   │   │   │   ├── database
+│   │   │   │   │   ├── db.ts.html
+│   │   │   │   │   ├── index.html
+│   │   │   │   │   └── migrations.ts.html
+│   │   │   │   ├── discord
+│   │   │   │   │   ├── index.html
+│   │   │   │   │   ├── interactionErrors.ts.html
+│   │   │   │   │   └── rateLimit.ts.html
+│   │   │   │   ├── faq
+│   │   │   │   │   ├── index.html
+│   │   │   │   │   ├── services.ts.html
+│   │   │   │   │   ├── store.ts.html
+│   │   │   │   │   └── types.ts.html
+│   │   │   │   ├── fun
+│   │   │   │   │   ├── funUsageStore.ts.html
+│   │   │   │   │   ├── gameUsageMetrics.ts.html
+│   │   │   │   │   └── index.html
+│   │   │   │   ├── gameStats
+│   │   │   │   │   ├── gameStats.ts.html
+│   │   │   │   │   └── index.html
+│   │   │   │   ├── metrics
+│   │   │   │   │   ├── index.html
+│   │   │   │   │   └── server.ts.html
+│   │   │   │   └── quotes
+│   │   │   │       ├── index.html
+│   │   │   │       └── quoteStore.ts.html
+│   │   │   ├── test
+│   │   │   │   ├── dbTestUtils.ts.html
+│   │   │   │   └── index.html
+│   │   │   ├── utils
+│   │   │   │   ├── colors.ts.html
+│   │   │   │   ├── index.html
+│   │   │   │   └── logger.ts.html
+│   │   │   ├── constants.ts.html
+│   │   │   └── index.html
+│   │   ├── base.css
+│   │   ├── block-navigation.js
+│   │   ├── favicon.png
+│   │   ├── index.html
+│   │   ├── prettify.css
+│   │   ├── prettify.js
+│   │   ├── sort-arrow-sprite.png
+│   │   └── sorter.js
+│   ├── src
+│   │   ├── commands
+│   │   │   ├── admin
+│   │   │   │   ├── subcommands
+│   │   │   │   │   ├── health.ts.html
+│   │   │   │   │   └── index.html
+│   │   │   │   ├── index.html
+│   │   │   │   └── utils.ts.html
+│   │   │   ├── fun
+│   │   │   │   ├── subcommands
+│   │   │   │   │   ├── daily
+│   │   │   │   │   │   ├── dailyStore.ts.html
+│   │   │   │   │   │   └── index.html
+│   │   │   │   │   ├── hangman
+│   │   │   │   │   │   ├── hangmanStats.ts.html
+│   │   │   │   │   │   └── index.html
+│   │   │   │   │   ├── slots
+│   │   │   │   │   │   ├── gameLogic.ts.html
+│   │   │   │   │   │   ├── index.html
+│   │   │   │   │   │   └── slotsStore.ts.html
+│   │   │   │   │   ├── wordle
+│   │   │   │   │   │   ├── gameLogic.ts.html
+│   │   │   │   │   │   └── index.html
+│   │   │   │   │   ├── daily.ts.html
+│   │   │   │   │   ├── dice.ts.html
+│   │   │   │   │   ├── index.html
+│   │   │   │   │   ├── slots.ts.html
+│   │   │   │   │   └── tictactoeStore.ts.html
+│   │   │   │   ├── coinflipStore.ts.html
+│   │   │   │   └── index.html
+│   │   │   ├── giveaway
+│   │   │   │   ├── giveawayStore.ts.html
+│   │   │   │   └── index.html
+│   │   │   ├── help
+│   │   │   │   ├── topics
+│   │   │   │   │   ├── admin.ts.html
+│   │   │   │   │   ├── changelog.ts.html
+│   │   │   │   │   ├── commands.ts.html
+│   │   │   │   │   ├── fun.ts.html
+│   │   │   │   │   ├── games.ts.html
+│   │   │   │   │   ├── github.ts.html
+│   │   │   │   │   ├── index.html
+│   │   │   │   │   ├── overview.ts.html
+│   │   │   │   │   ├── profile.ts.html
+│   │   │   │   │   ├── quotes.ts.html
+│   │   │   │   │   ├── status.ts.html
+│   │   │   │   │   └── summary.ts.html
+│   │   │   │   ├── helpText.ts.html
+│   │   │   │   └── index.html
+│   │   │   ├── ping
+│   │   │   │   ├── index.html
+│   │   │   │   └── ping.ts.html
+│   │   │   └── profile
+│   │   │       ├── index.html
+│   │   │       └── timezones.ts.html
+│   │   ├── config
+│   │   │   ├── env.ts.html
+│   │   │   └── index.html
+│   │   ├── i18n
+│   │   │   ├── index.html
+│   │   │   └── index.ts.html
+│   │   ├── services
+│   │   │   ├── dashboard
+│   │   │   │   ├── dashboard.ts.html
+│   │   │   │   └── index.html
+│   │   │   ├── database
+│   │   │   │   ├── db.ts.html
+│   │   │   │   ├── index.html
+│   │   │   │   └── migrations.ts.html
+│   │   │   ├── discord
+│   │   │   │   ├── index.html
+│   │   │   │   ├── interactionErrors.ts.html
+│   │   │   │   └── rateLimit.ts.html
+│   │   │   ├── faq
+│   │   │   │   ├── index.html
+│   │   │   │   ├── services.ts.html
+│   │   │   │   ├── store.ts.html
+│   │   │   │   └── types.ts.html
+│   │   │   ├── fun
+│   │   │   │   ├── funUsageStore.ts.html
+│   │   │   │   ├── gameUsageMetrics.ts.html
+│   │   │   │   └── index.html
+│   │   │   ├── gameStats
+│   │   │   │   ├── gameStats.ts.html
+│   │   │   │   └── index.html
+│   │   │   ├── metrics
+│   │   │   │   ├── index.html
+│   │   │   │   └── server.ts.html
+│   │   │   └── quotes
+│   │   │       ├── index.html
+│   │   │       └── quoteStore.ts.html
+│   │   ├── test
+│   │   │   ├── dbTestUtils.ts.html
+│   │   │   └── index.html
+│   │   ├── utils
+│   │   │   ├── colors.ts.html
+│   │   │   ├── index.html
+│   │   │   └── logger.ts.html
+│   │   ├── constants.ts.html
+│   │   └── index.html
+│   ├── base.css
+│   ├── block-navigation.js
+│   ├── favicon.png
+│   ├── index.html
+│   ├── lcov.info
+│   ├── prettify.css
+│   ├── prettify.js
+│   ├── sort-arrow-sprite.png
+│   └── sorter.js
 ├── data
-│   └── fun-usage.json
+│   ├── fun-usage.json
+│   ├── omegabot.db
+│   └── test-seed.db
 ├── docs
 │   ├── analytics.md
+│   ├── chat-and-llm.md
 │   ├── commands.md
 │   ├── dev-notes.md
 │   ├── faq-admins.md
 │   ├── faq.md
-│   ├── project-structure.md
+│   ├── gameplay-improvements.md
+│   ├── games-and-ux-ideas.md
 │   ├── grafana.md
 │   ├── i18n.md
 │   ├── improvements.md
+│   ├── progression.md
+│   ├── project-structure.md
+│   ├── recommendations.md
 │   ├── runbook.md
 │   ├── setup-discord.md
 │   ├── setup-env.md
@@ -190,13 +446,15 @@ The tree below is a simplified overview. The repo uses **command groups** (`core
 │   └── troubleshooting.md
 ├── grafana
 │   └── omegabot-dashboard.json
-├── .devcontainer
-│   └── devcontainer.json
 ├── migrations
-│   ├── 001_*.sql
+│   ├── 001_rps_stats.sql
+│   ├── 002_game_usage_daily.sql
+│   ├── 003_darts_stats.sql
 │   ├── 004_command_usage_daily.sql
-│   ├── schema.sql
-│   └── ...
+│   ├── 005_hangman_seed_words.sql
+│   ├── 006_moderator_roles.sql
+│   ├── 007_chat_messages.sql
+│   └── schema.sql
 ├── scripts
 │   ├── backup-db.sh
 │   ├── check-discord-version.mjs
@@ -206,317 +464,441 @@ The tree below is a simplified overview. The repo uses **command groups** (`core
 │   └── seed-dev-db.mjs
 ├── src
 │   ├── commands
-│   │   ├── achievements
-│   │   │   ├── achievements.test.ts
-│   │   │   ├── achievements.ts
-│   │   │   ├── definitions.ts
-│   │   │   └── embedBuilder.ts
-│   │   ├── admin
-│   │   │   ├── subcommands
-│   │   │   │   ├── ban.ts
-│   │   │   │   ├── health.integration.test.ts
-│   │   │   │   ├── health.ts
-│   │   │   │   ├── kick.ts
-│   │   │   │   ├── stats.ts
-│   │   │   │   └── timeout.ts
-│   │   │   ├── admin.ts
-│   │   │   └── utils.ts
-│   │   ├── config
-│   │   │   └── config.ts
-│   │   ├── faq
-│   │   │   ├── subcommands
-│   │   │   │   ├── add.ts
-│   │   │   │   ├── get.ts
-│   │   │   │   ├── list.ts
-│   │   │   │   └── remove.ts
-│   │   │   └── faq.ts
-│   │   ├── fun
-│   │   │   ├── autocomplete.ts
-│   │   │   ├── execute.ts
-│   │   │   ├── subcommands
-│   │   │   │   ├── blackjack
-│   │   │   │   │   ├── gameLogic.ts
-│   │   │   │   │   └── ui.ts
-│   │   │   │   ├── connect4
-│   │   │   │   │   ├── gameLogic.ts
-│   │   │   │   │   ├── pvp.ts
-│   │   │   │   │   └── ui.ts
-│   │   │   │   ├── darts
-│   │   │   │   │   ├── challenge.ts
-│   │   │   │   │   ├── gameLogic.ts
-│   │   │   │   │   ├── solo.ts
+│   │   ├── core
+│   │   │   ├── admin
+│   │   │   │   ├── subcommands
+│   │   │   │   │   ├── ban.ts
+│   │   │   │   │   ├── health.integration.test.ts
+│   │   │   │   │   ├── health.ts
+│   │   │   │   │   ├── kick.ts
 │   │   │   │   │   ├── stats.ts
-│   │   │   │   │   └── ui.ts
-│   │   │   │   ├── hangman
-│   │   │   │   │   ├── hangmanStats.ts
-│   │   │   │   │   ├── play.ts
-│   │   │   │   │   ├── statsDisplay.ts
-│   │   │   │   │   ├── ui.ts
-│   │   │   │   │   ├── words.ts
-│   │   │   │   ├── joke
+│   │   │   │   │   └── timeout.ts
+│   │   │   │   ├── admin.integration.test.ts
+│   │   │   │   ├── admin.ts
+│   │   │   │   └── utils.ts
+│   │   │   ├── config
+│   │   │   │   ├── config.integration.test.ts
+│   │   │   │   ├── config.ts
+│   │   │   │   ├── moderatorRole.ts
+│   │   │   │   ├── rules.ts
+│   │   │   │   ├── starboard.ts
+│   │   │   │   ├── view.ts
+│   │   │   │   └── welcome.ts
+│   │   │   ├── faq
+│   │   │   │   ├── subcommands
+│   │   │   │   │   ├── add.integration.test.ts
 │   │   │   │   │   ├── add.ts
-│   │   │   │   │   ├── index.ts
+│   │   │   │   │   ├── get.ts
 │   │   │   │   │   ├── list.ts
-│   │   │   │   │   ├── random.ts
 │   │   │   │   │   └── remove.ts
-│   │   │   │   ├── rps
-│   │   │   │   │   ├── challenge.ts
-│   │   │   │   │   ├── gameLogic.ts
-│   │   │   │   │   ├── stats.ts
-│   │   │   │   │   └── ui.ts
-│   │   │   │   ├── slots
-│   │   │   │   │   ├── gameLogic.ts
-│   │   │   │   │   └── slotsStore.ts
-│   │   │   │   ├── tictactoe
-│   │   │   │   │   ├── gameLogic.ts
-│   │   │   │   │   ├── ui.ts
-│   │   │   │   │   ├── vsBot.ts
-│   │   │   │   │   └── vsPlayer.ts
-│   │   │   │   ├── trivia
-│   │   │   │   │   └── questions.ts
-│   │   │   │   ├── wordle
-│   │   │   │   │   ├── gameLogic.ts
-│   │   │   │   │   └── ui.ts
-│   │   │   │   ├── blackjack.ts
-│   │   │   │   ├── blackjackStore.ts
-│   │   │   │   ├── coinflip.ts
-│   │   │   │   ├── coinflipstats.ts
-│   │   │   │   ├── connect4.ts
-│   │   │   │   ├── connect4Store.ts
-│   │   │   │   ├── daily
-│   │   │   │   │   └── dailyStore.ts
-│   │   │   │   ├── daily.test.ts
-│   │   │   │   ├── daily.ts
-│   │   │   │   ├── darts.ts
-│   │   │   │   ├── dartsStore.ts
-│   │   │   │   ├── dice.integration.test.ts
-│   │   │   │   ├── dice.ts
-│   │   │   │   ├── eightball.ts
-│   │   │   │   ├── fact.ts
-│   │   │   │   ├── hangman.test.ts
-│   │   │   │   ├── hangman.ts
-│   │   │   │   ├── leaderboard.ts
-│   │   │   │   ├── poll.ts
-│   │   │   │   ├── quote.ts
-│   │   │   │   ├── reminders.ts
-│   │   │   │   ├── rps.test.ts
-│   │   │   │   ├── rps.ts
-│   │   │   │   ├── rpsStore.ts
-│   │   │   │   ├── slots.integration.test.ts
-│   │   │   │   ├── slots.test.ts
-│   │   │   │   ├── slots.ts
-│   │   │   │   ├── stats
-│   │   │   │   │   ├── buildEmbed.ts
-│   │   │   │   │   └── fetchers.ts
-│   │   │   │   ├── stats.ts
-│   │   │   │   ├── tictactoe.ts
-│   │   │   │   ├── tictactoeStore.test.ts
-│   │   │   │   ├── tictactoeStore.ts
-│   │   │   │   ├── trivia.test.ts
-│   │   │   │   ├── trivia.ts
-│   │   │   │   ├── triviaStore.ts
-│   │   │   │   ├── weather.ts
-│   │   │   │   ├── wordle.test.ts
-│   │   │   │   ├── wordle.ts
-│   │   │   │   ├── wordleStore.ts
-│   │   │   │   └── wouldYouRather.ts
-│   │   │   ├── coinflipStore.test.ts
-│   │   │   ├── coinflipStore.ts
-│   │   │   ├── coinStore.ts
-│   │   │   ├── fun.ts
-│   │   │   └── funSubcommands
-│   │   │       ├── gamesGroup.ts
-│   │   │       ├── hangmanGroup.ts
-│   │   │       ├── index.ts
-│   │   │       ├── quoteGroup.ts
-│   │   │       ├── remindGroup.ts
-│   │   │       └── utilityGroup.ts
-│   │   ├── github
-│   │   │   ├── gh.ts
-│   │   │   ├── github.ts
-│   │   │   ├── pr.ts
-│   │   │   └── status.ts
-│   │   ├── giveaway
-│   │   │   ├── buttonHandler.ts
-│   │   │   ├── giveaway.ts
-│   │   │   ├── giveawayStore.test.ts
-│   │   │   └── giveawayStore.ts
-│   │   ├── help
-│   │   │   ├── help.ts
-│   │   │   ├── helpText.ts
-│   │   │   └── topics
-│   │   │       ├── meta
-│   │   │       │   ├── changelog.ts
-│   │   │       │   ├── overview.ts
-│   │   │       │   └── summary.ts
-│   │   │       ├── admin.ts
-│   │   │       ├── commands.ts
-│   │   │       ├── fun.ts
-│   │   │       ├── games.ts
-│   │   │       ├── github.ts
-│   │   │       ├── info.ts
-│   │   │       ├── profile.ts
-│   │   │       ├── quotes.ts
-│   │   │       └── status.ts
-│   │   ├── history
-│   │   │   └── history.ts
-│   │   ├── info
-│   │   │   ├── handlers
-│   │   │   │   ├── avatar.ts
-│   │   │   │   ├── serverInfo.ts
-│   │   │   │   └── userInfo.ts
-│   │   │   └── info.ts
-│   │   ├── ping
-│   │   │   ├── ping.integration.test.ts
-│   │   │   └── ping.ts
-│   │   ├── playback
-│   │   │   └── playback.ts
-│   │   ├── quote-message
-│   │   │   └── quote-message.ts
-│   │   ├── profile
-│   │   │   ├── profile.ts
-│   │   │   ├── profileHelpers.ts
-│   │   │   ├── timezones.ts
-│   │   │   └── subcommands
-│   │   │       ├── afk.ts
-│   │   │       ├── timezone.ts
-│   │   │       └── view.ts
-│   │   ├── status
-│   │   │   └── status.ts
-│   │   ├── summarize-message
-│   │   │   └── summarize-message.ts
-│   │   ├── suggestion
-│   │   │   └── suggestion.ts
-│   │   ├── summary
-│   │   │   └── summary.ts
-│   │   ├── view-achievements
-│   │   │   └── view-achievements.ts
-│   │   └── view-profile
-│   │       └── view-profile.ts
+│   │   │   │   └── faq.ts
+│   │   │   ├── help
+│   │   │   │   ├── topics
+│   │   │   │   │   ├── meta
+│   │   │   │   │   │   ├── changelog.ts
+│   │   │   │   │   │   ├── commands.ts
+│   │   │   │   │   │   ├── overview.ts
+│   │   │   │   │   │   └── summary.ts
+│   │   │   │   │   ├── admin.ts
+│   │   │   │   │   ├── fun.ts
+│   │   │   │   │   ├── games.ts
+│   │   │   │   │   ├── github.ts
+│   │   │   │   │   ├── info.ts
+│   │   │   │   │   ├── profile.ts
+│   │   │   │   │   ├── quotes.ts
+│   │   │   │   │   └── status.ts
+│   │   │   │   ├── help.integration.test.ts
+│   │   │   │   ├── help.ts
+│   │   │   │   ├── helpText.test.ts
+│   │   │   │   └── helpText.ts
+│   │   │   ├── info
+│   │   │   │   ├── handlers
+│   │   │   │   │   ├── avatar.ts
+│   │   │   │   │   ├── serverInfo.ts
+│   │   │   │   │   └── userInfo.ts
+│   │   │   │   └── info.ts
+│   │   │   ├── profile
+│   │   │   │   ├── subcommands
+│   │   │   │   │   ├── afk.ts
+│   │   │   │   │   ├── timezone.ts
+│   │   │   │   │   └── view.ts
+│   │   │   │   ├── profile.ts
+│   │   │   │   ├── profileHelpers.ts
+│   │   │   │   ├── timezones.test.ts
+│   │   │   │   └── timezones.ts
+│   │   │   ├── rules
+│   │   │   │   ├── rules.integration.test.ts
+│   │   │   │   └── rules.ts
+│   │   │   ├── status
+│   │   │   │   ├── status.integration.test.ts
+│   │   │   │   └── status.ts
+│   │   │   └── suggestion
+│   │   │       ├── suggestion.integration.test.ts
+│   │   │       └── suggestion.ts
+│   │   ├── games
+│   │   │   ├── achievements
+│   │   │   │   ├── achievements.social.test.ts
+│   │   │   │   ├── achievements.test.ts
+│   │   │   │   ├── achievements.testHelpers.ts
+│   │   │   │   ├── achievements.ts
+│   │   │   │   ├── definitions.ts
+│   │   │   │   └── embedBuilder.ts
+│   │   │   ├── fun
+│   │   │   │   ├── fun
+│   │   │   │   ├── funSubcommands
+│   │   │   │   │   ├── gamesGroup.ts
+│   │   │   │   │   ├── hangmanGroup.ts
+│   │   │   │   │   ├── index.ts
+│   │   │   │   │   ├── quoteGroup.ts
+│   │   │   │   │   ├── remindGroup.ts
+│   │   │   │   │   └── utilityGroup.ts
+│   │   │   │   ├── subcommands
+│   │   │   │   │   ├── games-a
+│   │   │   │   │   │   ├── blackjack
+│   │   │   │   │   │   │   ├── blackjack.ts
+│   │   │   │   │   │   │   ├── blackjackStore.ts
+│   │   │   │   │   │   │   ├── gameLogic.ts
+│   │   │   │   │   │   │   ├── index.ts
+│   │   │   │   │   │   │   └── ui.ts
+│   │   │   │   │   │   ├── chess
+│   │   │   │   │   │   │   ├── chess.ts
+│   │   │   │   │   │   │   └── index.ts
+│   │   │   │   │   │   ├── connect4
+│   │   │   │   │   │   │   ├── connect4.ts
+│   │   │   │   │   │   │   ├── connect4Store.ts
+│   │   │   │   │   │   │   ├── gameLogic.ts
+│   │   │   │   │   │   │   ├── index.ts
+│   │   │   │   │   │   │   ├── pvp.ts
+│   │   │   │   │   │   │   └── ui.ts
+│   │   │   │   │   │   ├── daily
+│   │   │   │   │   │   │   ├── daily.test.ts
+│   │   │   │   │   │   │   ├── daily.ts
+│   │   │   │   │   │   │   ├── dailyStore.ts
+│   │   │   │   │   │   │   └── index.ts
+│   │   │   │   │   │   ├── darts
+│   │   │   │   │   │   │   ├── challenge.ts
+│   │   │   │   │   │   │   ├── darts.ts
+│   │   │   │   │   │   │   ├── dartsStore.ts
+│   │   │   │   │   │   │   ├── gameLogic.ts
+│   │   │   │   │   │   │   ├── index.ts
+│   │   │   │   │   │   │   ├── solo.ts
+│   │   │   │   │   │   │   ├── stats.ts
+│   │   │   │   │   │   │   └── ui.ts
+│   │   │   │   │   │   ├── dice
+│   │   │   │   │   │   │   ├── dice.integration.test.ts
+│   │   │   │   │   │   │   ├── dice.ts
+│   │   │   │   │   │   │   └── index.ts
+│   │   │   │   │   │   └── hangman
+│   │   │   │   │   │       ├── tests
+│   │   │   │   │   │       │   ├── hangman.test.ts
+│   │   │   │   │   │       │   └── hangmanStats.test.ts
+│   │   │   │   │   │       ├── hangman.ts
+│   │   │   │   │   │       ├── hangmanStats.ts
+│   │   │   │   │   │       ├── hangmanWordStore.ts
+│   │   │   │   │   │       ├── index.ts
+│   │   │   │   │   │       ├── play.ts
+│   │   │   │   │   │       ├── statsDisplay.ts
+│   │   │   │   │   │       ├── ui.ts
+│   │   │   │   │   │       └── words.ts
+│   │   │   │   │   ├── games-b
+│   │   │   │   │   │   ├── higherlower
+│   │   │   │   │   │   │   ├── higherlower.ts
+│   │   │   │   │   │   │   └── index.ts
+│   │   │   │   │   │   ├── memory
+│   │   │   │   │   │   │   ├── index.ts
+│   │   │   │   │   │   │   └── memory.ts
+│   │   │   │   │   │   ├── rps
+│   │   │   │   │   │   │   ├── challenge.ts
+│   │   │   │   │   │   │   ├── gameLogic.ts
+│   │   │   │   │   │   │   ├── index.ts
+│   │   │   │   │   │   │   ├── rps.test.ts
+│   │   │   │   │   │   │   ├── rps.ts
+│   │   │   │   │   │   │   ├── rpsStore.ts
+│   │   │   │   │   │   │   ├── stats.ts
+│   │   │   │   │   │   │   └── ui.ts
+│   │   │   │   │   │   ├── slots
+│   │   │   │   │   │   │   ├── gameLogic.ts
+│   │   │   │   │   │   │   ├── index.ts
+│   │   │   │   │   │   │   ├── slots.integration.test.ts
+│   │   │   │   │   │   │   ├── slots.test.ts
+│   │   │   │   │   │   │   ├── slots.ts
+│   │   │   │   │   │   │   └── slotsStore.ts
+│   │   │   │   │   │   ├── stats
+│   │   │   │   │   │   │   ├── buildEmbed.ts
+│   │   │   │   │   │   │   ├── fetchers.ts
+│   │   │   │   │   │   │   ├── index.ts
+│   │   │   │   │   │   │   └── stats.ts
+│   │   │   │   │   │   ├── tictactoe
+│   │   │   │   │   │   │   ├── gameLogic.ts
+│   │   │   │   │   │   │   ├── index.ts
+│   │   │   │   │   │   │   ├── tictactoe.ts
+│   │   │   │   │   │   │   ├── tictactoeStore.test.ts
+│   │   │   │   │   │   │   ├── tictactoeStore.ts
+│   │   │   │   │   │   │   ├── ui.ts
+│   │   │   │   │   │   │   ├── vsBot.ts
+│   │   │   │   │   │   │   └── vsPlayer.ts
+│   │   │   │   │   │   ├── trivia
+│   │   │   │   │   │   │   ├── gameFlow.ts
+│   │   │   │   │   │   │   ├── index.ts
+│   │   │   │   │   │   │   ├── questions.ts
+│   │   │   │   │   │   │   ├── trivia.test.ts
+│   │   │   │   │   │   │   ├── trivia.ts
+│   │   │   │   │   │   │   └── triviaStore.ts
+│   │   │   │   │   │   └── wordle
+│   │   │   │   │   │       ├── gameLogic.ts
+│   │   │   │   │   │       ├── index.ts
+│   │   │   │   │   │       ├── ui.ts
+│   │   │   │   │   │       ├── wordle.test.ts
+│   │   │   │   │   │       ├── wordle.ts
+│   │   │   │   │   │       └── wordleStore.ts
+│   │   │   │   │   ├── shared
+│   │   │   │   │   │   ├── gameFeedback.test.ts
+│   │   │   │   │   │   └── gameFeedback.ts
+│   │   │   │   │   ├── social
+│   │   │   │   │   │   ├── fact
+│   │   │   │   │   │   │   ├── fact.ts
+│   │   │   │   │   │   │   └── index.ts
+│   │   │   │   │   │   ├── joke
+│   │   │   │   │   │   │   ├── add.ts
+│   │   │   │   │   │   │   ├── index.ts
+│   │   │   │   │   │   │   ├── list.ts
+│   │   │   │   │   │   │   ├── random.ts
+│   │   │   │   │   │   │   └── remove.ts
+│   │   │   │   │   │   ├── leaderboard
+│   │   │   │   │   │   │   ├── index.ts
+│   │   │   │   │   │   │   └── leaderboard.ts
+│   │   │   │   │   │   ├── poll
+│   │   │   │   │   │   │   ├── index.ts
+│   │   │   │   │   │   │   └── poll.ts
+│   │   │   │   │   │   ├── quote
+│   │   │   │   │   │   │   ├── index.ts
+│   │   │   │   │   │   │   └── quote.ts
+│   │   │   │   │   │   └── wouldYouRather
+│   │   │   │   │   │       ├── index.ts
+│   │   │   │   │   │       └── wouldYouRather.ts
+│   │   │   │   │   └── utility
+│   │   │   │   │       ├── chat
+│   │   │   │   │       │   ├── chat.ts
+│   │   │   │   │       │   └── index.ts
+│   │   │   │   │       ├── choose
+│   │   │   │   │       │   ├── choose.ts
+│   │   │   │   │       │   └── index.ts
+│   │   │   │   │       ├── coinflip
+│   │   │   │   │       │   ├── coinflip.ts
+│   │   │   │   │       │   └── index.ts
+│   │   │   │   │       ├── coinflipstats
+│   │   │   │   │       │   ├── coinflipstats.ts
+│   │   │   │   │       │   └── index.ts
+│   │   │   │   │       ├── compliment
+│   │   │   │   │       │   ├── compliment.ts
+│   │   │   │   │       │   └── index.ts
+│   │   │   │   │       ├── eightball
+│   │   │   │   │       │   ├── eightball.ts
+│   │   │   │   │       │   └── index.ts
+│   │   │   │   │       ├── quest
+│   │   │   │   │       │   ├── index.ts
+│   │   │   │   │       │   └── quest.ts
+│   │   │   │   │       ├── reminders
+│   │   │   │   │       │   ├── index.ts
+│   │   │   │   │       │   └── reminders.ts
+│   │   │   │   │       ├── roast
+│   │   │   │   │       │   ├── index.ts
+│   │   │   │   │       │   └── roast.ts
+│   │   │   │   │       └── weather
+│   │   │   │   │           ├── index.ts
+│   │   │   │   │           └── weather.ts
+│   │   │   │   ├── autocomplete.ts
+│   │   │   │   ├── coinflipStore.test.ts
+│   │   │   │   ├── coinflipStore.ts
+│   │   │   │   ├── coinStore.ts
+│   │   │   │   ├── execute.ts
+│   │   │   │   └── fun.ts
+│   │   │   ├── giveaway
+│   │   │   │   ├── buttonHandler.ts
+│   │   │   │   ├── giveaway.ts
+│   │   │   │   ├── giveawayStore.test.ts
+│   │   │   │   ├── giveawayStore.ts
+│   │   │   │   ├── handlers.ts
+│   │   │   │   ├── ui.ts
+│   │   │   │   └── utils.ts
+│   │   │   └── view-achievements
+│   │   │       └── view-achievements.ts
+│   │   ├── other
+│   │   │   ├── github
+│   │   │   │   ├── gh.ts
+│   │   │   │   ├── github.ts
+│   │   │   │   ├── pr.ts
+│   │   │   │   └── status.ts
+│   │   │   ├── ping
+│   │   │   │   ├── ping.integration.test.ts
+│   │   │   │   └── ping.ts
+│   │   │   ├── playback
+│   │   │   │   └── playback.ts
+│   │   │   └── view-profile
+│   │   │       └── view-profile.ts
+│   │   └── social
+│   │       ├── history
+│   │       │   └── history.ts
+│   │       ├── quote-message
+│   │       │   └── quote-message.ts
+│   │       ├── summarize-message
+│   │       │   └── summarize-message.ts
+│   │       └── summary
+│   │           └── summary.ts
 │   ├── config
 │   │   └── env.ts
 │   ├── i18n
 │   │   └── index.ts
 │   ├── services
-│   │   ├── starboard
-│   │   │   ├── starboardEmbed.ts
-│   │   │   ├── starboardHandler.ts
-│   │   │   ├── starboardStore.test.ts
-│   │   │   └── starboardStore.ts
-│   │   ├── analytics
-│   │   │   └── commandUsageStore.ts
-│   │   ├── ai
-│   │   │   └── claudeService.ts
-│   │   ├── cache
-│   │   │   └── simpleCache.ts
-│   │   ├── circuitBreaker
-│   │   │   ├── breakers.ts
-│   │   │   └── circuitBreaker.ts
-│   │   ├── config
-│   │   │   ├── guildConfigStore.ts
-│   │   │   ├── index.ts
-│   │   │   └── types.ts
-│   │   ├── database
-│   │   │   ├── db.ts
-│   │   │   └── migrations.ts
-│   │   ├── metrics
-│   │   │   └── server.ts
+│   │   ├── core
+│   │   │   ├── analytics
+│   │   │   │   └── commandUsageStore.ts
+│   │   │   ├── cache
+│   │   │   │   └── simpleCache.ts
+│   │   │   ├── circuitBreaker
+│   │   │   │   ├── breakers.ts
+│   │   │   │   └── circuitBreaker.ts
+│   │   │   ├── config
+│   │   │   │   ├── guildConfigStore.test.ts
+│   │   │   │   ├── guildConfigStore.ts
+│   │   │   │   ├── index.ts
+│   │   │   │   └── types.ts
+│   │   │   ├── dashboard
+│   │   │   │   └── dashboard.ts
+│   │   │   ├── database
+│   │   │   │   ├── db.ts
+│   │   │   │   ├── dbTestUtils.ts
+│   │   │   │   └── migrations.ts
+│   │   │   ├── logging
+│   │   │   │   ├── index.ts
+│   │   │   │   └── requestContext.ts
+│   │   │   ├── metrics
+│   │   │   │   └── server.ts
+│   │   │   └── time
+│   │   │       ├── formatTimestamp.ts
+│   │   │       └── validateTimezone.ts
 │   │   ├── discord
-│   │   │   ├── handlers
-│   │   │   │   ├── autocomplete.ts
-│   │   │   │   ├── buttons.ts
-│   │   │   │   ├── contextMenus.ts
-│   │   │   │   └── modals.ts
-│   │   │   ├── interaction
-│   │   │   │   ├── interactionErrors.ts
-│   │   │   │   ├── interactionHandler.ts
-│   │   │   │   └── tracedInteractionHandler.ts
-│   │   │   ├── commandLoader.ts
-│   │   │   ├── commandMeta.ts
-│   │   │   ├── commandTypes.ts
-│   │   │   ├── cooldowns.ts
-│   │   │   ├── fetchChannelMessages.ts
-│   │   │   ├── rateLimit.test.ts
-│   │   │   ├── rateLimit.ts
-│   │   │   └── safeReply.ts
-│   │   ├── gameStats
-│   │   │   ├── gameStats.test.ts
-│   │   │   └── gameStats.ts
-│   │   ├── faq
-│   │   │   ├── _shared.ts
-│   │   │   ├── faqService.ts
-│   │   │   ├── permissions.ts
-│   │   │   ├── services.test.ts
-│   │   │   ├── services.ts
-│   │   │   ├── store.test.ts
-│   │   │   ├── store.ts
-│   │   │   └── types.ts
-│   │   ├── fun
-│   │   │   ├── funUsageStore.test.ts
-│   │   │   ├── funUsageStore.ts
-│   │   │   ├── gameUsageMetrics.test.ts
-│   │   │   ├── gameUsageMetrics.ts
-│   │   │   └── pollStore.ts
-│   │   ├── github
-│   │   │   ├── githubApi.ts
-│   │   │   ├── githubCache.ts
-│   │   │   ├── githubClient.ts
-│   │   │   ├── githubErrorMessage.ts
-│   │   │   ├── issueAssigneePoller.ts
-│   │   │   ├── issueAssigneePollerState.ts
-│   │   │   ├── lastSeenStore.ts
-│   │   │   ├── prFormatter.ts
-│   │   │   ├── prPoller.ts
-│   │   │   └── types.ts
-│   │   ├── joke
-│   │   │   └── jokeStore.ts
-│   │   ├── logging
-│   │   │   ├── index.ts
-│   │   │   └── requestContext.ts
-│   │   ├── quotes
-│   │   │   └── quoteStore.ts
-│   │   ├── reminders
-│   │   │   ├── index.ts
-│   │   │   ├── scheduler.ts
-│   │   │   ├── schema.ts
-│   │   │   └── store.ts
-│   │   ├── roles
-│   │   │   └── autoRoleHandler.ts
-│   │   ├── statuspage
-│   │   │   └── statuspageApi.ts
-│   │   ├── summary
-│   │   │   ├── llmSummary.ts
-│   │   │   ├── localSummary.ts
-│   │   │   └── summarizer.ts
-│   │   ├── time
-│   │   │   ├── formatTimestamp.ts
-│   │   │   └── validateTimezone.ts
-│   │   ├── timezone
-│   │   │   └── timezoneStore.ts
-│   │   ├── transcript
-│   │   │   ├── buildTranscript.ts
-│   │   │   └── defaults.ts
-│   │   ├── weather
-│   │   │   ├── forecast.ts
-│   │   │   └── types.ts
-│   │   └── welcome
-│   │       ├── welcomeHandler.ts
-│   │       └── welcomeMessage.ts
+│   │   │   └── discord
+│   │   │       ├── handlers
+│   │   │       │   ├── autocomplete.ts
+│   │   │       │   ├── buttons.ts
+│   │   │       │   ├── contextMenus.ts
+│   │   │       │   └── modals.ts
+│   │   │       ├── interaction
+│   │   │       │   ├── interactionErrors.ts
+│   │   │       │   ├── interactionHandler.ts
+│   │   │       │   └── tracedInteractionHandler.ts
+│   │   │       ├── rateLimit
+│   │   │       │   ├── index.ts
+│   │   │       │   ├── rateLimit.test.ts
+│   │   │       │   └── rateLimit.ts
+│   │   │       ├── chatMessageHandler.test.ts
+│   │   │       ├── chatMessageHandler.ts
+│   │   │       ├── commandLoader.ts
+│   │   │       ├── commandMeta.ts
+│   │   │       ├── commandTypes.ts
+│   │   │       ├── cooldowns.ts
+│   │   │       ├── fetchChannelMessages.ts
+│   │   │       └── safeReply.ts
+│   │   ├── integrations
+│   │   │   ├── ai
+│   │   │   │   ├── chatService.test.ts
+│   │   │   │   ├── chatService.ts
+│   │   │   │   ├── claudeService.ts
+│   │   │   │   └── conversationStore.ts
+│   │   │   ├── faq
+│   │   │   │   ├── _shared.ts
+│   │   │   │   ├── faqService.ts
+│   │   │   │   ├── permissions.ts
+│   │   │   │   ├── services.test.ts
+│   │   │   │   ├── services.ts
+│   │   │   │   ├── store.test.ts
+│   │   │   │   ├── store.ts
+│   │   │   │   └── types.ts
+│   │   │   ├── github
+│   │   │   │   ├── shared
+│   │   │   │   │   ├── githubErrorMessage.ts
+│   │   │   │   │   └── types.ts
+│   │   │   │   ├── githubApi.ts
+│   │   │   │   ├── githubCache.ts
+│   │   │   │   ├── githubClient.ts
+│   │   │   │   ├── issueAssigneePoller.ts
+│   │   │   │   ├── issueAssigneePollerState.ts
+│   │   │   │   ├── lastSeenStore.ts
+│   │   │   │   ├── prFormatter.ts
+│   │   │   │   └── prPoller.ts
+│   │   │   ├── starboard
+│   │   │   │   ├── starboardEmbed.ts
+│   │   │   │   ├── starboardHandler.ts
+│   │   │   │   ├── starboardStore.test.ts
+│   │   │   │   └── starboardStore.ts
+│   │   │   ├── statuspage
+│   │   │   │   └── statuspageApi.ts
+│   │   │   ├── summary
+│   │   │   │   ├── llmSummary.ts
+│   │   │   │   ├── localSummary.ts
+│   │   │   │   └── summarizer.ts
+│   │   │   ├── weather
+│   │   │   │   ├── forecast.ts
+│   │   │   │   └── types.ts
+│   │   │   └── welcome
+│   │   │       ├── welcomeHandler.ts
+│   │   │       ├── welcomeMessage.test.ts
+│   │   │       └── welcomeMessage.ts
+│   │   └── stores
+│   │       ├── fun
+│   │       │   ├── funUsageStore.test.ts
+│   │       │   ├── funUsageStore.ts
+│   │       │   ├── gameUsageMetrics.test.ts
+│   │       │   ├── gameUsageMetrics.ts
+│   │       │   └── pollStore.ts
+│   │       ├── gameStats
+│   │       │   ├── gameStats.test.ts
+│   │       │   └── gameStats.ts
+│   │       ├── joke
+│   │       │   └── jokeStore.ts
+│   │       ├── progression
+│   │       │   ├── progressionMath.ts
+│   │       │   ├── progressionStore.test.ts
+│   │       │   ├── progressionStore.ts
+│   │       │   ├── questStore.test.ts
+│   │       │   └── questStore.ts
+│   │       ├── quotes
+│   │       │   ├── quoteStore.test.ts
+│   │       │   └── quoteStore.ts
+│   │       ├── reminders
+│   │       │   ├── index.ts
+│   │       │   ├── scheduler.ts
+│   │       │   ├── schema.ts
+│   │       │   └── store.ts
+│   │       ├── roles
+│   │       │   └── autoRoleHandler.ts
+│   │       ├── timezone
+│   │       │   └── timezoneStore.ts
+│   │       └── transcript
+│   │           ├── buildTranscript.ts
+│   │           └── defaults.ts
+│   ├── test
 │   ├── types
 │   │   └── discord-client.d.ts
 │   ├── utils
 │   │   ├── colors.ts
 │   │   ├── constants.ts
+│   │   ├── errors.ts
 │   │   ├── interactions.ts
 │   │   └── logger.ts
 │   ├── bot.ts
 │   └── registerCommands.ts
+├── .dockerignore
 ├── .env.example
 ├── .gitignore
+├── .nvmrc
 ├── .prettierignore
 ├── .prettierrc.yml
 ├── CHANGELOG.md
 ├── CONTRIBUTORS.md
+├── docker-compose.yml
+├── Dockerfile
 ├── eslint.config.ts
 ├── LICENSE
 ├── package-lock.json

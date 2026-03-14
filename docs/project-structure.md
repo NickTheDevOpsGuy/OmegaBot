@@ -14,7 +14,7 @@ Commands are grouped into four top-level folders (≤10 items each). The loader 
 | **other/**  | github, ping, playback, view-profile                               |
 
 - **Help topics:** `core/help/topics/*.ts`; meta content (overview, changelog, summary, commands) in `topics/meta/`.
-- **Fun command:** `games/fun/` (execute, autocomplete, funSubcommands). Subcommands live under `fun/subcommands/` in four groups: **games-a/** (blackjack, chess, connect4, daily, darts, dice, hangman), **games-b/** (higherlower, memory, rps, slots, stats, tictactoe, trivia, wordle), **social/** (joke, leaderboard, poll, quote, wouldYouRather, fact), **utility/** (chat, compliment, reminders, roast, weather, choose, coinflip, coinflipstats, eightball). Hangman has a `tests/` subfolder for its unit tests.
+- **Fun command:** `games/fun/` (execute, autocomplete, funSubcommands). Subcommands live under `fun/subcommands/` in four groups: **games-a/** (blackjack, chess, connect4, daily, darts, dice, hangman), **games-b/** (higherlower, memory, rps, slots, stats, tictactoe, trivia, wordle), **social/** (joke, leaderboard, poll, quote, wouldYouRather, fact), **utility/** (chat, compliment, quest, reminders, roast, weather, choose, coinflip, coinflipstats, eightball). Hangman has a `tests/` subfolder for its unit tests.
 
 ## Services (`src/services/`)
 
@@ -25,7 +25,7 @@ Services are grouped into four top-level folders (≤10 items each).
 | **core/**         | config, database, logging, metrics, cache, dashboard, circuitBreaker, analytics, time    |
 | **discord/**      | discord/ (commandLoader, commandMeta, handlers/, interaction/, rateLimit/, safeReply, …) |
 | **integrations/** | ai, github, statuspage, faq, welcome, starboard, summary, weather                        |
-| **stores/**       | quotes, reminders, timezone, transcript, gameStats, fun, joke, roles                     |
+| **stores/**       | quotes, reminders, timezone, transcript, gameStats, fun, joke, progression, roles        |
 
 - **Database:** `core/database/` — `db.ts`, `migrations.ts`, `dbTestUtils.ts` (in-memory DB helper for tests).
 - **Discord:** `discord/discord/` — interaction routing in `interaction/`, handlers in `handlers/`, rate limiting in `rateLimit/` (folder with index + implementation + test).
