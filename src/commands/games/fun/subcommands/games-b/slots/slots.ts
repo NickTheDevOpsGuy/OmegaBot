@@ -14,7 +14,13 @@ import {
 } from "../../../../../../services/discord/discord/rateLimit/index.js";
 import { getNewlyUnlockedAchievementLine } from "../../../../achievements/achievements.js";
 import { getDb } from "../../../../../../services/core/database/db.js";
-import { SYMBOLS, TOTAL_WEIGHT, spinReel, calculatePayout } from "./gameLogic.js";
+import {
+  SYMBOLS,
+  TOTAL_WEIGHT,
+  type Symbol,
+  spinReel,
+  calculatePayout,
+} from "./gameLogic.js";
 import { getStats, getLeaderboard, recordSpin } from "./slotsStore.js";
 import {
   buildMilestoneLine,
@@ -22,6 +28,27 @@ import {
   findLeaderboardRank,
 } from "../../shared/gameFeedback.js";
 import { awardXp } from "../../../../../../services/stores/progression/progressionStore.js";
+
+const SPIN_FRAMES = 6;
+const SPIN_DELAY_MS = 280;
+
+function randomSymbol(): Symbol {
+  return SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)]!;
+}
+
+function buildReelBox(reels: [Symbol, Symbol, Symbol]): string[] {
+  return [
+    "┌─────────┬─────────┬─────────┐",
+    `│   ${reels[0].emoji}   │   ${reels[1].emoji}   │   ${reels[2].emoji}   │`,
+    "└─────────┴─────────┴─────────┘",
+    "",
+    reels.map((r) => r.emoji).join(" │ "),
+  ];
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 export async function run(interaction: ChatInputCommandInteraction): Promise<void> {
   try {
@@ -120,11 +147,7 @@ async function runSlots(interaction: ChatInputCommandInteraction): Promise<void>
 
   const userId = interaction.user.id;
   const statsBefore = getStats(userId);
-  const reels: [
-    ReturnType<typeof spinReel>,
-    ReturnType<typeof spinReel>,
-    ReturnType<typeof spinReel>,
-  ] = [spinReel(), spinReel(), spinReel()];
+  const reels: [Symbol, Symbol, Symbol] = [spinReel(), spinReel(), spinReel()];
   const { payout, type } = calculatePayout(reels);
   const isWin = payout > 0;
   const isJackpot = payout >= 100;
@@ -151,7 +174,6 @@ async function runSlots(interaction: ChatInputCommandInteraction): Promise<void>
   recordSlotsSpin(userId);
   const statsAfter = getStats(userId);
 
-  const reelDisplay = reels.map((r) => r.emoji).join(" │ ");
   const milestoneLine =
     buildMilestoneLine(statsBefore.wins, statsAfter.wins, [1, 5, 10, 25], "slots wins") ??
     buildMilestoneLine(
@@ -167,39 +189,7 @@ async function runSlots(interaction: ChatInputCommandInteraction): Promise<void>
       )
     : undefined;
 
-  const embed = new EmbedBuilder()
-    .setTitle("🎰 Slot Machine")
-    .setDescription(
-      [
-        "┌─────────┬─────────┬─────────┐",
-        `│   ${reels[0].emoji}   │   ${reels[1].emoji}   │   ${reels[2].emoji}   │`,
-        "└─────────┴─────────┴─────────┘",
-        "",
-        reelDisplay,
-      ].join("\n"),
-    )
-    .setColor(isJackpot ? 0xffd700 : isWin ? 0x22c55e : 0x64748b);
-
-  if (isJackpot) {
-    embed.addFields({
-      name: "💎 JACKPOT!",
-      value: `**${payout}×** — ${type}\n*You hit the top tier!*`,
-      inline: false,
-    });
-  } else if (isWin) {
-    embed.addFields({
-      name: "✨ Winner!",
-      value: `${type} — **${payout}×**`,
-      inline: false,
-    });
-  } else {
-    embed.addFields({
-      name: "—",
-      value: "No match this spin. Try again!",
-      inline: false,
-    });
-  }
-
+  // Spinning animation: show random reels then reveal result
   const footerLines = [
     "3-of-kind: 5–100× │ Two match: 2× │ /fun slots stats │ /fun utility leaderboard",
   ];
@@ -207,7 +197,49 @@ async function runSlots(interaction: ChatInputCommandInteraction): Promise<void>
   if (rankLine) footerLines.push(rankLine);
   if (xpLine) footerLines.push(xpLine);
   if (achievementLine) footerLines.push(achievementLine);
-  embed.setFooter({ text: footerLines.join(" • ") });
 
-  await interaction.editReply({ embeds: [embed] });
+  for (let frame = 0; frame < SPIN_FRAMES; frame++) {
+    const isLast = frame === SPIN_FRAMES - 1;
+    const showReels: [Symbol, Symbol, Symbol] = isLast
+      ? reels
+      : [randomSymbol(), randomSymbol(), randomSymbol()];
+
+    if (isLast) {
+      const embed = new EmbedBuilder()
+        .setTitle("🎰 Slot Machine")
+        .setDescription(buildReelBox(reels).join("\n"))
+        .setColor(isJackpot ? 0xffd700 : isWin ? 0x22c55e : 0x64748b);
+
+      if (isJackpot) {
+        embed.addFields({
+          name: "💎 JACKPOT!",
+          value: `**${payout}×** — ${type}\n*You hit the top tier!*`,
+          inline: false,
+        });
+      } else if (isWin) {
+        embed.addFields({
+          name: "✨ Winner!",
+          value: `${type} — **${payout}×**`,
+          inline: false,
+        });
+      } else {
+        embed.addFields({
+          name: "—",
+          value: "No match this spin. Try again!",
+          inline: false,
+        });
+      }
+      embed.setFooter({ text: footerLines.join(" • ") });
+      await interaction.editReply({ embeds: [embed] });
+    } else {
+      const spinEmbed = new EmbedBuilder()
+        .setTitle("🎰 Spinning…")
+        .setDescription(
+          [...buildReelBox(showReels), "*spinning…*"].join("\n"),
+        )
+        .setColor(0x5865f2);
+      await interaction.editReply({ embeds: [spinEmbed] });
+      await sleep(SPIN_DELAY_MS);
+    }
+  }
 }
