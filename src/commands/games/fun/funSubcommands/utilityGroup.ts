@@ -135,5 +135,59 @@ export function buildUtilityGroup(
             .setMinValue(1)
             .setMaxValue(25),
         ),
+    )
+    .addSubcommand((s) =>
+      s
+        .setName("remind_set")
+        .setDescription("Set a new reminder")
+        .addStringOption((o) =>
+          o
+            .setName("time")
+            .setDescription("When (e.g., 5m, 1h, 1d, 1h30m)")
+            .setRequired(true),
+        )
+        .addStringOption((o) =>
+          o
+            .setName("message")
+            .setDescription("Reminder message")
+            .setRequired(true)
+            .setMaxLength(500),
+        ),
+    )
+    .addSubcommand((s) =>
+      s.setName("remind_list").setDescription("View your pending reminders"),
+    )
+    .addSubcommand((s) =>
+      s
+        .setName("remind_cancel")
+        .setDescription("Cancel a reminder")
+        .addIntegerOption((o) =>
+          o
+            .setName("id")
+            .setDescription("Reminder ID to cancel")
+            .setRequired(true)
+            .setAutocomplete(true),
+        ),
+    )
+    .addSubcommand((s) =>
+      s
+        .setName("remind_snooze")
+        .setDescription("Reschedule a reminder (e.g. 30m, 1h)")
+        .addIntegerOption((o) =>
+          o
+            .setName("id")
+            .setDescription("Reminder ID to snooze")
+            .setRequired(true)
+            .setAutocomplete(true),
+        )
+        .addStringOption((o) =>
+          o
+            .setName("time")
+            .setDescription("When to remind (e.g. 30m, 1h, 1d)")
+            .setRequired(true),
+        ),
+    )
+    .addSubcommand((s) =>
+      s.setName("remind_clear").setDescription("Cancel all your reminders"),
     );
 }

@@ -175,13 +175,6 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       await maybeRecordUsage(interaction, "quote");
       return;
     }
-    if (group === "remind") {
-      await runReminders(
-        interaction,
-        sub as "set" | "list" | "cancel" | "snooze" | "clear",
-      );
-      return;
-    }
     if (group === "hangman") {
       await runHangman(interaction);
       await maybeRecordUsage(interaction, "hangman");
@@ -215,6 +208,11 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       const unit = parseTempUnit(interaction.options.getString("unit"));
       await runWeather(interaction, { kind: "7day", location, unit });
       await maybeRecordUsage(interaction, sub);
+      return;
+    }
+    if (group === "utility" && sub.startsWith("remind_")) {
+      const action = sub.slice(7) as "set" | "list" | "cancel" | "snooze" | "clear";
+      await runReminders(interaction, action);
       return;
     }
 
