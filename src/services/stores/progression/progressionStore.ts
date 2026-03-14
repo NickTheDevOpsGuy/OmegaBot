@@ -1,8 +1,5 @@
 import { getDb } from "../../core/database/db.js";
-import {
-  getLevelFromXp,
-  xpRequiredForLevel,
-} from "./progressionMath.js";
+import { getLevelFromXp, xpRequiredForLevel } from "./progressionMath.js";
 
 export type Progression = {
   xp: number;
