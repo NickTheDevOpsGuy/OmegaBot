@@ -1,6 +1,6 @@
 # Project structure
 
-This doc describes the current folder layout. See [Development Notes](dev-notes.md) for conventions (file/folder limits, testing, logging).
+This doc describes the current folder layout. See [Development Notes](dev-notes.md) for conventions (file/folder limits, testing, logging). For an expandable full directory tree, see [File & folder structure](file-structure.md).
 
 ## Commands (`src/commands/`)
 
