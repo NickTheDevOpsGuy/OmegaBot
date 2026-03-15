@@ -26,10 +26,16 @@ Services are grouped into four top-level folders (≤10 items each).
 | **discord/**      | discord/ (commandLoader, commandMeta, handlers/, interaction/, rateLimit/, safeReply, …) |
 | **integrations/** | ai, github, statuspage, faq, welcome, starboard, summary, weather                        |
 | **stores/**       | quotes, reminders, timezone, transcript, gameStats, fun, joke, progression, roles        |
+| **games/**        | gameResultRenderer, progressionEngine, randomEvents, sessionManager, imageRenderer, gameEngine |
+| **platform/**     | userService, eventsService, postsService, profileService, leaderboardService (web + Discord)  |
 
 - **Database:** `core/database/` — `db.ts`, `migrations.ts`, `dbTestUtils.ts` (in-memory DB helper for tests).
 - **Discord:** `discord/discord/` — interaction routing in `interaction/`, handlers in `handlers/`, rate limiting in `rateLimit/` (folder with index + implementation + test).
 - **GitHub:** `integrations/github/` — shared types and error messages in `shared/`.
+
+- **Games:** `services/games/` — shared game services (result renderer, progression, random events, session manager, image placeholder, game engine facade). See [Games development](games-development.md).
+- **Platform:** `services/platform/` — users, events, posts, profile, leaderboards for Discord and web. See [Web platform](web-platform.md).
+- **Web API:** `web/server.ts` + `web/api/*` — optional HTTP API; run with `npm run api`. See [Web platform](web-platform.md).
 
 ## Other under `src/`
 

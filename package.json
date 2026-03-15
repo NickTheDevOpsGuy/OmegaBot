@@ -23,7 +23,8 @@
     "db:seed": "node scripts/seed-dev-db.mjs",
     "dev:watch": "npm run build && node --watch dist/bot.js",
     "test:e2e": "npm run build && node scripts/e2e-discord.mjs",
-    "check:discord": "node scripts/check-discord-version.mjs"
+    "check:discord": "node scripts/check-discord-version.mjs",
+    "api": "npm run build && node dist/web/server.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",

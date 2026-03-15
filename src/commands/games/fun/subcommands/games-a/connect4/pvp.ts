@@ -1,79 +1,226 @@
-// src/commands/fun/subcommands/connect4/pvp.ts
-// Connect 4 PvP: collector, moves, extend, timeout.
+// src/commands/games/fun/subcommands/connect4/pvp.ts
+// Connect 4 PvP: persistent sessions, 72h expiry, turn-based async play.
 
-import { ComponentType, type ChatInputCommandInteraction, type User } from "discord.js";
+import {
+  ComponentType,
+  type ChatInputCommandInteraction,
+  type Message,
+  type User,
+} from "discord.js";
+import { randomUUID } from "node:crypto";
 import { logger } from "../../../../../../utils/logger.js";
 import { recordInteractionRecovery } from "../../../../../../services/core/metrics/server.js";
 import {
   safeReplyToButton,
   safeDeferUpdate,
-  safeEditReply,
   notifyGameMessageGone,
 } from "../../../../../../services/discord/discord/safeReply.js";
+import {
+  getSession,
+  getSessionInternal,
+  saveSession,
+  updateSessionStatus,
+  getExpiryForGameType,
+  type GameSession,
+} from "../../../../../../services/games/sessionManager.js";
 import { recordResult } from "./connect4Store.js";
-import { newBoard, drop, has4, full, type Cell } from "./gameLogic.js";
+import { drop, has4, full, type Cell } from "./gameLogic.js";
 import { renderBoard, buildControls, buildHeader, EMOJI } from "./ui.js";
-import { MOVE_TIMEOUT_MS, WARNING_BEFORE_MS } from "../../../../../../utils/constants.js";
 import { awardXp } from "../../../../../../services/stores/progression/progressionStore.js";
+import {
+  serializeState,
+  deserializeState,
+  initialState,
+  type Connect4State,
+} from "./sessionPersistence.js";
+
+const GAME_TYPE = "connect4";
+/** Collector lives 72h so players can take turns asynchronously. */
+const COLLECTOR_MS = 72 * 60 * 60 * 1000;
+/** Extend session by 24h on each move so active games don't expire mid-game. */
+const EXTEND_ON_MOVE_MS = 24 * 60 * 60 * 1000;
+
+function headerFromSession(session: GameSession, turn: 1 | 2): string {
+  const p1 = { toString: () => `<@${session.player1Id}>` };
+  const p2 = { toString: () => `<@${session.player2Id}>` };
+  return buildHeader(p1, p2, turn);
+}
+
+function renderContent(session: GameSession, state: Connect4State, statusLine?: string): string {
+  return [
+    headerFromSession(session, state.turn),
+    "",
+    renderBoard(state.board),
+    "",
+    statusLine ?? "Pick a column. ⏱️ Game stays active for 72 hours — take your time!",
+  ].join("\n");
+}
+
+async function updateGameMessage(
+  message: Message,
+  session: GameSession,
+  state: Connect4State,
+  options: { disabled?: boolean; contentOverride?: string } = {},
+): Promise<boolean> {
+  try {
+    const content = options.contentOverride ?? renderContent(session, state);
+    await message.edit({
+      content,
+      components: buildControls({
+        gameId: session.gameId,
+        board: state.board,
+        disabled: options.disabled ?? false,
+      }),
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export async function runPvP(
   interaction: ChatInputCommandInteraction,
   p1: User,
   p2: User,
 ): Promise<void> {
-  const board = newBoard();
-  let turn: 1 | 2 = 1;
-  const gameId = interaction.id;
+  const gameId = randomUUID();
+  const state = initialState();
 
-  logger.info({ gameId, p1Id: p1.id, p2Id: p2.id }, "[connect4] game started");
+  const guildId = interaction.guildId ?? null;
+  const channelId = interaction.channelId ?? null;
 
-  const render = (statusLine?: string) =>
-    [
-      buildHeader(p1, p2, turn),
-      "",
-      renderBoard(board),
-      "",
-      statusLine ?? "Pick a column. ⏱️ 30 min per move (starter can extend)",
-    ].join("\n");
+  saveSession({
+    gameId,
+    gameType: GAME_TYPE,
+    guildId,
+    channelId,
+    messageId: null,
+    player1Id: p1.id,
+    player2Id: p2.id,
+    boardState: serializeState(state.board, state.turn),
+    currentTurn: p1.id,
+    expiresAt: Date.now() + getExpiryForGameType(GAME_TYPE),
+    status: "active",
+  });
+
+  logger.info({ gameId, p1Id: p1.id, p2Id: p2.id }, "[connect4] persistent game started");
+
+  const initialSession: GameSession = {
+    gameId,
+    gameType: GAME_TYPE,
+    guildId,
+    channelId,
+    messageId: null,
+    player1Id: p1.id,
+    player2Id: p2.id,
+    boardState: serializeState(state.board, state.turn),
+    currentTurn: p1.id,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    expiresAt: Date.now() + getExpiryForGameType(GAME_TYPE),
+    status: "active",
+  };
+  const content = renderContent(initialSession, state);
 
   const msg = await interaction.editReply({
-    content: render(),
-    components: buildControls({ gameId, board, disabled: false }),
+    content,
+    components: buildControls({ gameId, board: state.board, disabled: false }),
   });
 
+  saveSession({
+    gameId,
+    gameType: GAME_TYPE,
+    guildId,
+    channelId,
+    messageId: msg.id,
+    player1Id: p1.id,
+    player2Id: p2.id,
+    boardState: serializeState(state.board, state.turn),
+    currentTurn: p1.id,
+    expiresAt: Date.now() + getExpiryForGameType(GAME_TYPE),
+    status: "active",
+  });
+
+  runCollector(msg, gameId);
+}
+
+/** Interaction that can editReply (slash or button). */
+type EditableInteraction = {
+  editReply(options: Parameters<ChatInputCommandInteraction["editReply"]>[0]): Promise<Message>;
+  user: User;
+};
+
+/** Resume an existing game: show board and run collector on the given message. */
+export async function runResume(
+  interaction: ChatInputCommandInteraction | EditableInteraction,
+  gameId: string,
+): Promise<void> {
+  const session = getSession(gameId);
+  if (!session) {
+    await interaction.editReply({
+      content: "That game has ended or expired. Start a new one with `/fun connect4 user:@opponent`.",
+    });
+    return;
+  }
+  const state = deserializeState(session.boardState);
+  if (!state) {
+    await interaction.editReply("This game’s data is invalid. Start a new game with `/fun connect4 user:@opponent`.");
+    return;
+  }
+  if (interaction.user.id !== session.player1Id && interaction.user.id !== session.player2Id) {
+    await interaction.editReply("You’re not in this game.");
+    return;
+  }
+
+  const content = renderContent(session, state);
+  const msg = await interaction.editReply({
+    content,
+    components: buildControls({ gameId, board: state.board, disabled: false }),
+  });
+
+  saveSession({
+    ...session,
+    messageId: msg.id,
+    boardState: serializeState(state.board, state.turn),
+    expiresAt: Date.now() + EXTEND_ON_MOVE_MS,
+  });
+
+  runCollector(msg, gameId);
+}
+
+function runCollector(msg: Message, gameId: string): void {
   const collector = msg.createMessageComponentCollector({
     componentType: ComponentType.Button,
-    time: MOVE_TIMEOUT_MS,
+    time: COLLECTOR_MS,
   });
-
-  let warningTimer: ReturnType<typeof setTimeout> | null = null;
-  const scheduleWarning = () => {
-    if (warningTimer) clearTimeout(warningTimer);
-    warningTimer = setTimeout(() => {
-      void safeEditReply(
-        interaction,
-        {
-          content: render("⏱️ **1 minute left!** Pick a column."),
-          components: buildControls({ gameId, board, disabled: false }),
-        },
-        "connect4.warning",
-      );
-    }, MOVE_TIMEOUT_MS - WARNING_BEFORE_MS);
-  };
-  scheduleWarning();
 
   collector.on("collect", async (btn) => {
     try {
-      const isP1 = btn.user.id === p1.id;
-      const isP2 = btn.user.id === p2.id;
+      const parts = btn.customId.split(":");
+      if (parts[0] !== "c4") {
+        await btn.deferUpdate().catch(() => {});
+        return;
+      }
+      const session = getSession(gameId);
+      if (!session) {
+        await safeReplyToButton(btn, "This game has ended or expired.");
+        return;
+      }
+      const state = deserializeState(session.boardState);
+      if (!state) {
+        await safeReplyToButton(btn, "This game’s data is invalid.");
+        return;
+      }
 
+      const isP1 = btn.user.id === session.player1Id;
+      const isP2 = btn.user.id === session.player2Id;
       if (!isP1 && !isP2) {
         await safeReplyToButton(btn, "You're not in this game.");
         return;
       }
 
-      if (btn.customId === `c4:extend:${gameId}`) {
-        if (btn.user.id !== p1.id) {
+      if (parts[1] === "extend") {
+        if (btn.user.id !== session.player1Id) {
           await safeReplyToButton(
             btn,
             "Only the person who started the game can extend time.",
@@ -81,41 +228,40 @@ export async function runPvP(
           return;
         }
         collector.resetTimer();
-        scheduleWarning();
+        const newExpires = Date.now() + EXTEND_ON_MOVE_MS;
+        saveSession({
+          ...session,
+          boardState: serializeState(state.board, state.turn),
+          currentTurn: state.turn === 1 ? session.player1Id : session.player2Id!,
+          expiresAt: newExpires,
+        });
         if (await safeDeferUpdate(btn)) {
-          const ok = await safeEditReply(
-            interaction,
-            {
-              content: render("⏱️ **Time extended!** +30 min for this move."),
-              components: buildControls({ gameId, board, disabled: false }),
-            },
-            "connect4.extend",
-          );
+          const ok = await updateGameMessage(msg, session, state, {
+            contentOverride: renderContent(
+              session,
+              state,
+              "⏱️ **Time extended!** You have more time to play.",
+            ),
+          });
           if (!ok) await notifyGameMessageGone(btn, "connect4").catch(() => {});
         }
         return;
       }
 
-      const expectedUserId = turn === 1 ? p1.id : p2.id;
+      const col = Number(parts[1]);
+      if (!Number.isFinite(col) || col < 0 || col > 6) {
+        await btn.deferUpdate().catch(() => {});
+        return;
+      }
+
+      const expectedUserId = state.turn === 1 ? session.player1Id : session.player2Id!;
       if (btn.user.id !== expectedUserId) {
         await safeReplyToButton(btn, "Not your turn.");
         return;
       }
 
-      const m = btn.customId.match(/^c4:(\d+):(.+)$/);
-      if (!m) {
-        await btn.deferUpdate().catch(() => {});
-        return;
-      }
-
-      const col = Number(m[1]);
-      if (!Number.isFinite(col)) {
-        await btn.deferUpdate().catch(() => {});
-        return;
-      }
-
-      const who: Cell = turn === 1 ? 1 : 2;
-      const placed = drop(board, col, who);
+      const who: Cell = state.turn === 1 ? 1 : 2;
+      const placed = drop(state.board, col, who);
 
       if (!placed.ok) {
         await safeReplyToButton(btn, "That column is full. Pick another.");
@@ -124,80 +270,81 @@ export async function runPvP(
 
       if (!(await safeDeferUpdate(btn))) return;
 
-      if (has4(board, who)) {
-        const winnerId = turn === 1 ? p1.id : p2.id;
-        const loserId = turn === 1 ? p2.id : p1.id;
-
+      if (has4(state.board, who)) {
+        const winnerId = state.turn === 1 ? session.player1Id : session.player2Id!;
+        const loserId = state.turn === 1 ? session.player2Id! : session.player1Id;
         try {
-          recordResult(winnerId, loserId, p1.id, p2.id);
+          recordResult(winnerId, loserId, session.player1Id, session.player2Id!);
         } catch (err) {
           logger.error({ err }, "[connect4] record result threw");
         }
         const winnerXp = awardXp(winnerId, 22);
         const loserXp = awardXp(loserId, 8);
-
+        updateSessionStatus(gameId, "finished");
+        saveSession({
+          ...session,
+          boardState: serializeState(state.board, state.turn),
+          status: "finished",
+        });
         collector.stop("win");
-        const okWin = await safeEditReply(
-          interaction,
-          {
-            content: [
-              "🏁 **Game over**",
-              `${turn === 1 ? EMOJI.p1 : EMOJI.p2} ${btn.user.toString()} wins!`,
-              `✨ Winner: +${winnerXp.amount} XP${winnerXp.leveledUp ? ` (Level ${winnerXp.after.level}!)` : ""}`,
-              `✨ Other player: +${loserXp.amount} XP${loserXp.leveledUp ? ` (Level ${loserXp.after.level}!)` : ""}`,
-              "",
-              renderBoard(board),
-            ].join("\n"),
-            components: buildControls({ gameId, board, disabled: true }),
-          },
-          "connect4.win",
-        );
-        if (!okWin) await notifyGameMessageGone(btn, "connect4").catch(() => {});
+        const winContent = [
+          "🏁 **Game over**",
+          `${state.turn === 1 ? EMOJI.p1 : EMOJI.p2} ${btn.user.toString()} wins!`,
+          `✨ Winner: +${winnerXp.amount} XP${winnerXp.leveledUp ? ` (Level ${winnerXp.after.level}!)` : ""}`,
+          `✨ Other player: +${loserXp.amount} XP${loserXp.leveledUp ? ` (Level ${loserXp.after.level}!)` : ""}`,
+          "",
+          renderBoard(state.board),
+        ].join("\n");
+        await updateGameMessage(msg, session, state, {
+          disabled: true,
+          contentOverride: winContent,
+        }).catch(() => {});
         return;
       }
 
-      if (full(board)) {
+      if (full(state.board)) {
         try {
-          recordResult(null, null, p1.id, p2.id);
+          recordResult(null, null, session.player1Id, session.player2Id!);
         } catch (err) {
           logger.error({ err }, "[connect4] record tie threw");
         }
-        const p1Xp = awardXp(p1.id, 12);
-        const p2Xp = awardXp(p2.id, 12);
-
+        const p1Xp = awardXp(session.player1Id, 12);
+        const p2Xp = awardXp(session.player2Id!, 12);
+        updateSessionStatus(gameId, "finished");
+        saveSession({
+          ...session,
+          boardState: serializeState(state.board, state.turn),
+          status: "finished",
+        });
         collector.stop("draw");
-        const okDraw = await safeEditReply(
-          interaction,
-          {
-            content: [
-              "🏁 **Game over**",
-              "It's a draw.",
-              `✨ ${p1.username}: +${p1Xp.amount} XP${p1Xp.leveledUp ? ` (Level ${p1Xp.after.level}!)` : ""}`,
-              `✨ ${p2.username}: +${p2Xp.amount} XP${p2Xp.leveledUp ? ` (Level ${p2Xp.after.level}!)` : ""}`,
-              "",
-              renderBoard(board),
-            ].join("\n"),
-            components: buildControls({ gameId, board, disabled: true }),
-          },
-          "connect4.draw",
-        );
-        if (!okDraw) await notifyGameMessageGone(btn, "connect4").catch(() => {});
+        const drawContent = [
+          "🏁 **Game over**",
+          "It's a draw.",
+          `✨ <@${session.player1Id}>: +${p1Xp.amount} XP${p1Xp.leveledUp ? ` (Level ${p1Xp.after.level}!)` : ""}`,
+          `✨ <@${session.player2Id}>: +${p2Xp.amount} XP${p2Xp.leveledUp ? ` (Level ${p2Xp.after.level}!)` : ""}`,
+          "",
+          renderBoard(state.board),
+        ].join("\n");
+        await updateGameMessage(msg, session, state, {
+          disabled: true,
+          contentOverride: drawContent,
+        }).catch(() => {});
         return;
       }
 
-      turn = turn === 1 ? 2 : 1;
+      const nextTurn = state.turn === 1 ? 2 : 1;
+      const nextTurnUserId = nextTurn === 1 ? session.player1Id : session.player2Id!;
+      const newState: Connect4State = { board: state.board, turn: nextTurn };
+      const newExpires = Date.now() + EXTEND_ON_MOVE_MS;
+      saveSession({
+        ...session,
+        boardState: serializeState(newState.board, newState.turn),
+        currentTurn: nextTurnUserId,
+        expiresAt: newExpires,
+      });
       collector.resetTimer();
-      scheduleWarning();
 
-      const okTurn = await safeEditReply(
-        interaction,
-        {
-          content: render(),
-          components: buildControls({ gameId, board, disabled: false }),
-        },
-        "connect4.turn",
-      );
-      if (!okTurn) await notifyGameMessageGone(btn, "connect4").catch(() => {});
+      await updateGameMessage(msg, session, newState).catch(() => {});
     } catch (err) {
       recordInteractionRecovery("connect4");
       logger.warn(
@@ -208,35 +355,40 @@ export async function runPvP(
   });
 
   collector.on("end", async (_c, reason) => {
-    if (warningTimer) clearTimeout(warningTimer);
     if (reason === "win" || reason === "draw") return;
 
-    const timeoutLoser = turn === 1 ? p1 : p2;
-    const timeoutWinner = turn === 1 ? p2 : p1;
-
-    try {
-      recordResult(timeoutWinner.id, timeoutLoser.id, p1.id, p2.id);
-    } catch (err) {
-      logger.error({ err }, "[connect4] record timeout result threw");
-    }
-    const winnerXp = awardXp(timeoutWinner.id, 18);
-    const loserXp = awardXp(timeoutLoser.id, 6);
-
-    await safeEditReply(
-      interaction,
-      {
-        content: [
+    const session = getSessionInternal(gameId, { activeOnly: false });
+    if (session) {
+      const state = deserializeState(session.boardState);
+      updateSessionStatus(gameId, "abandoned");
+      if (state) {
+        const timeoutLoserId = state.turn === 1 ? session.player1Id : session.player2Id!;
+        const timeoutWinnerId = timeoutLoserId === session.player1Id ? session.player2Id! : session.player1Id;
+        try {
+          recordResult(timeoutWinnerId, timeoutLoserId, session.player1Id, session.player2Id!);
+        } catch (err) {
+          logger.error({ err }, "[connect4] record timeout result threw");
+        }
+        const winnerXp = awardXp(timeoutWinnerId, 18);
+        const loserXp = awardXp(timeoutLoserId, 6);
+        const timeoutContent = [
           "⏱️ **Connect 4 expired**",
-          `${timeoutLoser.toString()} ran out of time!`,
-          `${timeoutWinner.toString()} wins by timeout!`,
+          `<@${timeoutLoserId}> ran out of time!`,
+          `<@${timeoutWinnerId}> wins by timeout!`,
           `✨ Winner: +${winnerXp.amount} XP${winnerXp.leveledUp ? ` (Level ${winnerXp.after.level}!)` : ""}`,
           `✨ Other player: +${loserXp.amount} XP${loserXp.leveledUp ? ` (Level ${loserXp.after.level}!)` : ""}`,
           "",
-          renderBoard(board),
-        ].join("\n"),
-        components: buildControls({ gameId, board, disabled: true }),
-      },
-      "connect4.timeout",
-    ).catch(() => {});
+          renderBoard(state.board),
+        ].join("\n");
+        try {
+          await msg.edit({
+            content: timeoutContent,
+            components: buildControls({ gameId, board: state.board, disabled: true }),
+          });
+        } catch {
+          // message may be deleted
+        }
+      }
+    }
   });
 }

@@ -15,7 +15,10 @@ function createMockInteraction(overrides?: {
 }): {
   editReply: ReturnType<typeof vi.fn>;
   user: { id: string };
-  options: { getBoolean: (name: string) => boolean | null };
+  options: {
+    getBoolean: (name: string) => boolean | null;
+    getInteger: (name: string) => number | null;
+  };
   guild?: { preferredLocale?: string };
 } {
   const editReply = vi.fn().mockResolvedValue(undefined);
@@ -30,6 +33,7 @@ function createMockInteraction(overrides?: {
         if (name === "paytable") return overrides?.paytable ?? false;
         return null;
       },
+      getInteger: () => null,
     },
     guild: { preferredLocale: "en" },
   };
@@ -40,22 +44,36 @@ describe("slots integration", () => {
     vi.clearAllMocks();
   });
 
-  it("runs spin and returns slot result embed", async () => {
+  it("runs spin and returns slot result embed (final state, not Spinning…)", async () => {
     const mock = createMockInteraction();
     const interaction = mock as unknown as Parameters<typeof run>[0];
 
     await run(interaction);
 
     expect(mock.editReply).toHaveBeenCalled();
-
     const calls = mock.editReply.mock.calls;
-    const arg = calls[calls.length - 1]?.[0];
-
-    expect(arg).toBeDefined();
-    if (typeof arg === "object" && arg && "embeds" in arg) {
-      expect(arg.embeds).toHaveLength(1);
-      expect(arg.embeds[0].data.title).toMatch(/Slot Machine/);
+    function getTitle(arg: unknown): string | undefined {
+      if (typeof arg !== "object" || arg == null || !("embeds" in arg)) return undefined;
+      const embeds = (arg as { embeds: unknown[] }).embeds;
+      const first = embeds[0];
+      if (!first || typeof first !== "object") return undefined;
+      return (first as { data?: { title?: string }; title?: string }).data?.title ?? (first as { title?: string }).title;
     }
+    const resultCall = [...calls].reverse().find((c) => {
+      const title = getTitle(c[0]);
+      return title?.includes("Slot Machine") && !title.includes("Spinning");
+    });
+    expect(resultCall).toBeDefined();
+    const resultPayload = resultCall![0];
+    const embeds = (resultPayload as { embeds: Array<{ data?: { title?: string; description?: string }; title?: string; description?: string }> }).embeds;
+    expect(embeds.length).toBeGreaterThanOrEqual(1);
+    const embed = embeds[0];
+    const title = embed?.data?.title ?? embed?.title;
+    expect(title).toMatch(/Slot Machine/);
+    expect(title).not.toMatch(/Spinning/);
+    const description = embed?.data?.description ?? embed?.description;
+    expect(description).toBeDefined();
+    expect(String(description)).toMatch(/[│|]/);
   });
 
   it("shows paytable when requested", async () => {

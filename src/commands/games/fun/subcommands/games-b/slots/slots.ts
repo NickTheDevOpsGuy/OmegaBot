@@ -14,6 +14,7 @@ import {
 } from "../../../../../../services/discord/discord/rateLimit/index.js";
 import { getNewlyUnlockedAchievementLine } from "../../../../achievements/achievements.js";
 import { getDb } from "../../../../../../services/core/database/db.js";
+import { buildGameResultEmbed } from "../../../../../../services/games/gameResultRenderer.js";
 import {
   SYMBOLS,
   TOTAL_WEIGHT,
@@ -29,6 +30,7 @@ import {
   buildRankTeaser,
   findLeaderboardRank,
 } from "../../shared/gameFeedback.js";
+import type { AwardXpResult } from "../../../../../../services/stores/progression/progressionStore.js";
 import { awardXp } from "../../../../../../services/stores/progression/progressionStore.js";
 
 const SPIN_FRAMES = 6;
@@ -52,20 +54,17 @@ function randomGrid(rowCount: RowCount): Grid {
   ];
 }
 
+/** Clean grid: one line per payline, light separator (e.g. "🍊 │ 🍒 │ 🍋"). */
+function buildReelLines(grid: Grid, rowCount: number): string[] {
+  return Array.from({ length: rowCount }, (_, r) =>
+    [grid[0][r].emoji, grid[1][r].emoji, grid[2][r].emoji].join(" │ "),
+  );
+}
+
+/** Legacy heavy border style for animation frames only. */
 function buildReelBox(grid: Grid, rowCount: number): string[] {
-  const lines: string[] = ["┌─────────┬─────────┬─────────┐"];
-  for (let row = 0; row < rowCount; row++) {
-    lines.push(
-      `│   ${grid[0][row].emoji}   │   ${grid[1][row].emoji}   │   ${grid[2][row].emoji}   │`,
-    );
-    if (row < rowCount - 1) lines.push("├─────────┼─────────┼─────────┤");
-  }
-  lines.push("└─────────┴─────────┴─────────┘");
-  const summary = Array.from({ length: rowCount }, (_, r) =>
-    [grid[0][r].emoji, grid[1][r].emoji, grid[2][r].emoji].join(" "),
-  ).join("  ·  ");
-  lines.push("", summary);
-  return lines;
+  const lines = buildReelLines(grid, rowCount);
+  return [...lines, "", lines.join("  ·  ")];
 }
 
 function sleep(ms: number): Promise<void> {
@@ -178,21 +177,15 @@ async function runSlots(interaction: ChatInputCommandInteraction): Promise<void>
   logger.info({ userId, payout, isJackpot }, "[slots] spin");
 
   let achievementLine: string | undefined;
-  let xpLine: string | undefined;
+  let xpResult: AwardXpResult = awardXp(userId, 0);
   if (isJackpot) {
     achievementLine = getNewlyUnlockedAchievementLine(userId, getDb(), () => {
       recordSpin(userId, isWin, isJackpot, payout);
-      const xpResult = awardXp(userId, 40);
-      xpLine = xpResult.leveledUp
-        ? `✨ +${xpResult.amount} XP • Level ${xpResult.after.level}!`
-        : `✨ +${xpResult.amount} XP`;
+      xpResult = awardXp(userId, 40);
     });
   } else {
     recordSpin(userId, isWin, isJackpot, payout);
-    const xpResult = awardXp(userId, isWin ? 12 : 5);
-    xpLine = xpResult.leveledUp
-      ? `✨ +${xpResult.amount} XP • Level ${xpResult.after.level}!`
-      : `✨ +${xpResult.amount} XP`;
+    xpResult = awardXp(userId, isWin ? 12 : 5);
   }
   recordSlotsSpin(userId);
   const statsAfter = getStats(userId);
@@ -212,50 +205,44 @@ async function runSlots(interaction: ChatInputCommandInteraction): Promise<void>
       )
     : undefined;
 
-  // Spinning animation: show random reels then reveal result
-  const footerLines = [
-    `**${rows} payline${rows === 1 ? "" : "s"}** · **3-of-kind:** 5–100× · **Two match:** 2× · \`/fun slots stats\` · \`/fun utility leaderboard\``,
-  ];
-  if (milestoneLine) footerLines.push(milestoneLine);
-  if (rankLine) footerLines.push(rankLine);
-  if (xpLine) footerLines.push(xpLine);
-  if (achievementLine) footerLines.push(achievementLine);
+  const paylineLabel = `${rows} payline${rows === 1 ? "" : "s"}`;
+  const outcomeMessage = isJackpot
+    ? `**${payout}×** — ${type}\n*You hit the top tier!*`
+    : isWin
+      ? `${type} — **${payout}×**`
+      : "No match this spin. Try again!";
+
+  const rewardLines: string[] = [];
 
   for (let frame = 0; frame < SPIN_FRAMES; frame++) {
     const isLast = frame === SPIN_FRAMES - 1;
     const showGrid: Grid = isLast ? grid : randomGrid(rows);
 
     if (isLast) {
-      const embed = new EmbedBuilder()
-        .setTitle(`🎰 Slot Machine — ${rows} payline${rows === 1 ? "" : "s"}`)
-        .setDescription(buildReelBox(grid, rows).join("\n"))
-        .setColor(isJackpot ? 0xffd700 : isWin ? 0x22c55e : 0x64748b);
-
-      if (isJackpot) {
-        embed.addFields({
-          name: "💎 JACKPOT!",
-          value: `**${payout}×** — ${type}\n*You hit the top tier!*`,
-          inline: false,
-        });
-      } else if (isWin) {
-        embed.addFields({
-          name: "✨ Winner!",
-          value: `${type} — **${payout}×**`,
-          inline: false,
-        });
-      } else {
-        embed.addFields({
-          name: "—",
-          value: "No match this spin. Try again!",
-          inline: false,
-        });
-      }
-      embed.setFooter({ text: footerLines.join(" • ") });
+      const embed = buildGameResultEmbed({
+        gameTitle: "🎰 Slot Machine",
+        subtitle: paylineLabel,
+        outcome: isWin ? "win" : "loss",
+        boardLines: buildReelLines(grid, rows),
+        outcomeMessage,
+        rewardLines: rewardLines.length > 0 ? rewardLines : undefined,
+        xpGained: xpResult.amount,
+        levelUpMessage: xpResult.leveledUp ? `Level ${xpResult.after.level}!` : undefined,
+        leaderboardSummary: rankLine ?? undefined,
+        achievementUnlocked: achievementLine,
+        milestoneLine: milestoneLine ?? undefined,
+        footerHints: [
+          "Play again: /fun slots",
+          "Stats: /fun slots stats",
+          "Leaderboard: /fun utility leaderboard",
+        ],
+        color: isJackpot ? 0xffd700 : isWin ? 0x22c55e : 0x64748b,
+      });
       await interaction.editReply({ embeds: [embed] });
     } else {
       const spinEmbed = new EmbedBuilder()
         .setTitle("🎰 Spinning…")
-        .setDescription([...buildReelBox(showGrid, rows), "*spinning…*"].join("\n"))
+        .setDescription([...buildReelLines(showGrid, rows), "", "*spinning…*"].join("\n"))
         .setColor(0x5865f2);
       await interaction.editReply({ embeds: [spinEmbed] });
       await sleep(SPIN_DELAY_MS);

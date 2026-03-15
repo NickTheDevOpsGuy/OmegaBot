@@ -118,6 +118,8 @@ Every Markdown file in [`docs/`](docs/) is linked here.
 
 - [Development Notes](docs/dev-notes.md) – Conventions, file sizing, and architectural guidance
 - [Project Structure](docs/project-structure.md) – Folder layout and where major systems live
+- [Games development](docs/games-development.md) – Adding games, progression, result rendering, sessions
+- [Web platform](docs/web-platform.md) – Shared backend for Discord + web, API, events, posts, profiles
 - [File & folder tree](docs/file-structure.md) – Expandable directory tree
 - [Grafana Dashboard](docs/grafana.md) – Metrics visualization setup
 

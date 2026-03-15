@@ -103,9 +103,12 @@ export function addGamesSubcommands(
     .addSubcommand((s) =>
       s
         .setName("connect4")
-        .setDescription("Play Connect 4 vs another user")
+        .setDescription("Play Connect 4 vs another user (persistent, multi-day games)")
         .addUserOption((o) =>
           o.setName("user").setDescription("Opponent").setRequired(false),
+        )
+        .addBooleanOption((o) =>
+          o.setName("continue").setDescription("List and continue an active game"),
         )
         .addBooleanOption((o) =>
           o.setName("stats").setDescription("Show your Connect 4 stats"),
