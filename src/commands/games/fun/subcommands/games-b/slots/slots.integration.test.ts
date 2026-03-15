@@ -1,7 +1,7 @@
-// src/commands/fun/subcommands/slots.integration.test.ts
+// src/commands/games/fun/subcommands/games-b/slots/slots.integration.test.ts
 // Integration test: runs slots command with mocked interaction.
 
-import { describe, expect, it, beforeEach, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useInMemoryDb } from "../../../../../../services/core/database/dbTestUtils.js";
 import { run } from "./slots.js";
 
@@ -18,6 +18,7 @@ function createMockInteraction(overrides?: {
   guild?: { preferredLocale?: string };
 } {
   const editReply = vi.fn().mockResolvedValue(undefined);
+
   return {
     editReply,
     user: { id: "slots-test-user" },
@@ -45,9 +46,12 @@ describe("slots integration", () => {
     await run(interaction);
 
     expect(mock.editReply).toHaveBeenCalled();
-    const arg = mock.editReply.mock.calls[0]?.[0];
+
+    const calls = mock.editReply.mock.calls;
+    const arg = calls[calls.length - 1]?.[0];
+
     expect(arg).toBeDefined();
-    if (typeof arg === "object" && "embeds" in arg) {
+    if (typeof arg === "object" && arg && "embeds" in arg) {
       expect(arg.embeds).toHaveLength(1);
       expect(arg.embeds[0].data.title).toMatch(/Slot Machine/);
     }
@@ -60,18 +64,22 @@ describe("slots integration", () => {
     await run(interaction);
 
     expect(mock.editReply).toHaveBeenCalled();
-    const arg = mock.editReply.mock.calls[0]?.[0];
+
+    const calls = mock.editReply.mock.calls;
+    const arg = calls[calls.length - 1]?.[0];
+
     const content =
       typeof arg === "object" && arg?.embeds?.[0]?.data?.title
         ? arg.embeds[0].data.title
         : String(arg ?? "");
+
     expect(content).toMatch(/Slots Paytable/i);
   });
 
   it("shows rate limit when user spams", async () => {
     const userId = "slots-rate-limit-user";
     const mock = createMockInteraction();
-    (mock as { user: { id: string } }).user.id = userId;
+    mock.user.id = userId;
     const interaction = mock as unknown as Parameters<typeof run>[0];
 
     await run(interaction);
@@ -81,10 +89,15 @@ describe("slots integration", () => {
     await run(interaction);
 
     expect(mock.editReply).toHaveBeenCalledTimes(1);
+
+    const arg = mock.editReply.mock.calls[0]?.[0];
     const content =
-      typeof mock.editReply.mock.calls[0]?.[0] === "string"
-        ? mock.editReply.mock.calls[0]?.[0]
-        : "";
-    expect(content).toMatch(/Slow down/);
+      typeof arg === "string"
+        ? arg
+        : typeof arg === "object" && arg && "content" in arg
+          ? String(arg.content ?? "")
+          : "";
+
+    expect(content).toMatch(/Slow down/i);
   });
 });
