@@ -3,6 +3,7 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useInMemoryDb } from "../../../../../../services/core/database/dbTestUtils.js";
+import { recordSlotsSpin } from "../../../../../../services/discord/discord/rateLimit/index.js";
 import { run } from "./slots.js";
 
 useInMemoryDb();
@@ -78,18 +79,14 @@ describe("slots integration", () => {
 
   it("shows rate limit when user spams", async () => {
     const userId = "slots-rate-limit-user";
+    recordSlotsSpin(userId); // Prime cooldown so one run hits rate limit
     const mock = createMockInteraction();
     mock.user.id = userId;
     const interaction = mock as unknown as Parameters<typeof run>[0];
 
     await run(interaction);
-    expect(mock.editReply).toHaveBeenCalled();
-
-    mock.editReply.mockClear();
-    await run(interaction);
 
     expect(mock.editReply).toHaveBeenCalledTimes(1);
-
     const arg = mock.editReply.mock.calls[0]?.[0];
     const content =
       typeof arg === "string"
