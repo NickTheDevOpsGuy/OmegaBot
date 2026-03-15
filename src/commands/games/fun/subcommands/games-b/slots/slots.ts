@@ -87,18 +87,17 @@ async function runSlots(interaction: ChatInputCommandInteraction): Promise<void>
   if (showPaytable) {
     const paytableLines = SYMBOLS.map(
       (s) =>
-        `${s.emoji} ${s.name.padEnd(8)} — **${s.payout}×** (${((s.weight / TOTAL_WEIGHT) * 100).toFixed(1)}%)`,
+        `${s.emoji} **${s.name}** — **${s.payout}×** (${((s.weight / TOTAL_WEIGHT) * 100).toFixed(1)}%)`,
     );
     const embed = new EmbedBuilder()
       .setTitle("🎰 Slots Paytable")
       .setDescription(
         [
-          "**Three of a kind**",
-          "```",
-          ...paytableLines,
-          "```",
+          "**Three of a kind** (same symbol on all three reels):",
           "",
-          "Two matching: **2×**",
+          ...paytableLines,
+          "",
+          "**Two matching** (same symbol on two reels): **2×**",
         ].join("\n"),
       )
       .setColor(0x5865f2);
@@ -191,7 +190,7 @@ async function runSlots(interaction: ChatInputCommandInteraction): Promise<void>
 
   // Spinning animation: show random reels then reveal result
   const footerLines = [
-    "3-of-kind: 5–100× │ Two match: 2× │ /fun slots stats │ /fun utility leaderboard",
+    "**3-of-kind:** 5–100× · **Two match:** 2× · `/fun slots stats` · `/fun utility leaderboard`",
   ];
   if (milestoneLine) footerLines.push(milestoneLine);
   if (rankLine) footerLines.push(rankLine);
