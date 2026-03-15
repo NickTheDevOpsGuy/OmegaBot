@@ -62,11 +62,7 @@ export function buildGameResultEmbed(input: GameResultInput): EmbedBuilder {
   // Outcome section
   if (input.outcomeMessage) {
     const outcomeLabel =
-      input.outcome === "win"
-        ? "✨ Winner!"
-        : input.outcome === "loss"
-          ? "—"
-          : "🤝 Draw";
+      input.outcome === "win" ? "✨ Winner!" : input.outcome === "loss" ? "—" : "🤝 Draw";
     descriptionParts.push("", `**${outcomeLabel}**`, input.outcomeMessage);
   }
 
@@ -112,7 +108,9 @@ export function buildGameResultEmbed(input: GameResultInput): EmbedBuilder {
 }
 
 /** Return payload suitable for interaction.editReply({ embeds: [embed] }). */
-export function buildGameResultReplyPayload(input: GameResultInput): { embeds: [APIEmbed] } {
+export function buildGameResultReplyPayload(input: GameResultInput): {
+  embeds: [APIEmbed];
+} {
   const embed = buildGameResultEmbed(input);
   return { embeds: [embed.toJSON()] as [APIEmbed] };
 }

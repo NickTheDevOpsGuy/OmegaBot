@@ -11,7 +11,12 @@ import {
   type GameSession,
 } from "./sessionManager.js";
 import { deserializeState } from "../../commands/games/fun/subcommands/games-a/connect4/sessionPersistence.js";
-import { drop, has4, full, type Cell } from "../../commands/games/fun/subcommands/games-a/connect4/gameLogic.js";
+import {
+  drop,
+  has4,
+  full,
+  type Cell,
+} from "../../commands/games/fun/subcommands/games-a/connect4/gameLogic.js";
 
 export type GameState = {
   gameId: string;

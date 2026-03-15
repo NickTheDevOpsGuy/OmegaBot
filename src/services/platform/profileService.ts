@@ -6,7 +6,10 @@
 import { getDb } from "../core/database/db.js";
 import { getProgression } from "../stores/progression/progressionStore.js";
 import { getTotalWins, getTotalGamesPlayed } from "../stores/gameStats/gameStats.js";
-import { getAchievementCount, getDailyStreak } from "../../commands/core/profile/profileHelpers.js";
+import {
+  getAchievementCount,
+  getDailyStreak,
+} from "../../commands/core/profile/profileHelpers.js";
 import { getPlatformUser, resolveDiscordId } from "./userService.js";
 
 export type Profile = {

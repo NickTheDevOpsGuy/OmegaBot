@@ -38,7 +38,10 @@ export type RandomEventResult = {
   label: string;
 };
 
-const EVENT_DEFS: Record<Exclude<RandomEventKind, "none">, Omit<RandomEventResult, "kind">> = {
+const EVENT_DEFS: Record<
+  Exclude<RandomEventKind, "none">,
+  Omit<RandomEventResult, "kind">
+> = {
   lucky_spin: {
     xpMultiplier: 1,
     payoutMultiplier: 1.5,

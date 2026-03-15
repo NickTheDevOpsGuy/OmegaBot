@@ -46,7 +46,11 @@ function headerFromSession(session: GameSession, turn: 1 | 2): string {
   return buildHeader(p1, p2, turn);
 }
 
-function renderContent(session: GameSession, state: Connect4State, statusLine?: string): string {
+function renderContent(
+  session: GameSession,
+  state: Connect4State,
+  statusLine?: string,
+): string {
   return [
     headerFromSession(session, state.turn),
     "",
@@ -146,7 +150,9 @@ export async function runPvP(
 
 /** Interaction that can editReply (slash or button). */
 type EditableInteraction = {
-  editReply(options: Parameters<ChatInputCommandInteraction["editReply"]>[0]): Promise<Message>;
+  editReply(
+    options: Parameters<ChatInputCommandInteraction["editReply"]>[0],
+  ): Promise<Message>;
   user: User;
 };
 
@@ -158,16 +164,22 @@ export async function runResume(
   const session = getSession(gameId);
   if (!session) {
     await interaction.editReply({
-      content: "That game has ended or expired. Start a new one with `/fun connect4 user:@opponent`.",
+      content:
+        "That game has ended or expired. Start a new one with `/fun connect4 user:@opponent`.",
     });
     return;
   }
   const state = deserializeState(session.boardState);
   if (!state) {
-    await interaction.editReply("This game’s data is invalid. Start a new game with `/fun connect4 user:@opponent`.");
+    await interaction.editReply(
+      "This game’s data is invalid. Start a new game with `/fun connect4 user:@opponent`.",
+    );
     return;
   }
-  if (interaction.user.id !== session.player1Id && interaction.user.id !== session.player2Id) {
+  if (
+    interaction.user.id !== session.player1Id &&
+    interaction.user.id !== session.player2Id
+  ) {
     await interaction.editReply("You’re not in this game.");
     return;
   }
@@ -363,9 +375,15 @@ function runCollector(msg: Message, gameId: string): void {
       updateSessionStatus(gameId, "abandoned");
       if (state) {
         const timeoutLoserId = state.turn === 1 ? session.player1Id : session.player2Id!;
-        const timeoutWinnerId = timeoutLoserId === session.player1Id ? session.player2Id! : session.player1Id;
+        const timeoutWinnerId =
+          timeoutLoserId === session.player1Id ? session.player2Id! : session.player1Id;
         try {
-          recordResult(timeoutWinnerId, timeoutLoserId, session.player1Id, session.player2Id!);
+          recordResult(
+            timeoutWinnerId,
+            timeoutLoserId,
+            session.player1Id,
+            session.player2Id!,
+          );
         } catch (err) {
           logger.error({ err }, "[connect4] record timeout result threw");
         }

@@ -3,8 +3,14 @@
 // Reusable progression engine for games: XP, levels, streaks, achievements, milestones, leaderboard.
 // Wraps progressionStore and game feedback helpers for a consistent API.
 
-import type { AwardXpResult, Progression } from "../stores/progression/progressionStore.js";
-import { awardXp as storeAwardXp, getProgression } from "../stores/progression/progressionStore.js";
+import type {
+  AwardXpResult,
+  Progression,
+} from "../stores/progression/progressionStore.js";
+import {
+  awardXp as storeAwardXp,
+  getProgression,
+} from "../stores/progression/progressionStore.js";
 
 export type { AwardXpResult, Progression };
 

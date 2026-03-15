@@ -21,10 +21,7 @@ export {
   type RandomEventConfig,
   type RandomEventResult,
 } from "./randomEvents.js";
-export {
-  renderGameImage,
-  isImageRenderingAvailable,
-} from "./imageRenderer.js";
+export { renderGameImage, isImageRenderingAvailable } from "./imageRenderer.js";
 export {
   getSession,
   getSessionInternal,

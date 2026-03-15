@@ -89,9 +89,9 @@ export function getSessionInternal(
          created_at AS createdAt, updated_at AS updatedAt, expires_at AS expiresAt,
          COALESCE(status, 'active') AS status
        FROM game_sessions WHERE game_id = ?`;
-  const row = db
-    .prepare(sql)
-    .get(...(activeOnly ? [gameId, now] : [gameId])) as Record<string, unknown> | undefined;
+  const row = db.prepare(sql).get(...(activeOnly ? [gameId, now] : [gameId])) as
+    | Record<string, unknown>
+    | undefined;
   return row ? (row as unknown as GameSession) : null;
 }
 
@@ -127,8 +127,7 @@ export function saveSession(
   const db = getDb();
   const now = Date.now();
   const status = session.status ?? "active";
-  const expiresAt =
-    session.expiresAt ?? now + getExpiryForGameType(session.gameType);
+  const expiresAt = session.expiresAt ?? now + getExpiryForGameType(session.gameType);
 
   try {
     db.prepare(
@@ -157,9 +156,13 @@ export function saveSession(
       status,
     );
   } catch (e) {
-    const hasStatus = db.prepare("PRAGMA table_info(game_sessions)").all() as { name: string }[];
+    const hasStatus = db.prepare("PRAGMA table_info(game_sessions)").all() as {
+      name: string;
+    }[];
     if (!hasStatus.some((c) => c.name === "status")) {
-      db.exec(`ALTER TABLE game_sessions ADD COLUMN status TEXT NOT NULL DEFAULT 'active'`);
+      db.exec(
+        `ALTER TABLE game_sessions ADD COLUMN status TEXT NOT NULL DEFAULT 'active'`,
+      );
       return saveSession({ ...session, status });
     }
     throw e;
@@ -169,9 +172,11 @@ export function saveSession(
 export function updateSessionStatus(gameId: string, status: SessionStatus): void {
   ensureTable();
   const db = getDb();
-  db.prepare(
-    `UPDATE game_sessions SET status = ?, updated_at = ? WHERE game_id = ?`,
-  ).run(status, Date.now(), gameId);
+  db.prepare(`UPDATE game_sessions SET status = ?, updated_at = ? WHERE game_id = ?`).run(
+    status,
+    Date.now(),
+    gameId,
+  );
 }
 
 export function deleteSession(gameId: string): void {

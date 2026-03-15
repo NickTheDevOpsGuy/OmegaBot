@@ -119,16 +119,16 @@ Optional HTTP server: **`src/web/server.ts`**. Start with `npm run api` (or `nod
 
 ### Endpoints (scaffold)
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/profile/:userId` | Profile (xp, level, games, wins, achievements, daily streak). `userId` = platform user_id or Discord id. |
-| GET | `/api/leaderboard` | Usage leaderboard. Query: `scope=users|commands`, `limit`. |
-| GET | `/api/leaderboard?game=slots` | Per-game leaderboard (e.g. `game=slots`, `game=daily`). |
-| GET | `/api/events` | List events. Query: `status=active|ended`, `limit`. |
-| GET | `/api/events/:id` | Single event + participants. |
-| POST | `/api/events/:id/join` | Body: `{ "userId": "..." }`. Join event. |
-| GET | `/api/games/state/:gameId` | Game state (board, turn, status, expiresAt). |
-| POST | `/api/games/move` | Body: `{ "gameId", "userId", "col" }`. Apply move (e.g. Connect 4). |
+| Method | Path                          | Description                                                                                              |
+| ------ | ----------------------------- | -------------------------------------------------------------------------------------------------------- | ------------------- |
+| GET    | `/api/profile/:userId`        | Profile (xp, level, games, wins, achievements, daily streak). `userId` = platform user_id or Discord id. |
+| GET    | `/api/leaderboard`            | Usage leaderboard. Query: `scope=users                                                                   | commands`, `limit`. |
+| GET    | `/api/leaderboard?game=slots` | Per-game leaderboard (e.g. `game=slots`, `game=daily`).                                                  |
+| GET    | `/api/events`                 | List events. Query: `status=active                                                                       | ended`, `limit`.    |
+| GET    | `/api/events/:id`             | Single event + participants.                                                                             |
+| POST   | `/api/events/:id/join`        | Body: `{ "userId": "..." }`. Join event.                                                                 |
+| GET    | `/api/games/state/:gameId`    | Game state (board, turn, status, expiresAt).                                                             |
+| POST   | `/api/games/move`             | Body: `{ "gameId", "userId", "col" }`. Apply move (e.g. Connect 4).                                      |
 
 Responses are JSON. No auth is implemented yet; add API keys or Discord OAuth when building the frontend.
 

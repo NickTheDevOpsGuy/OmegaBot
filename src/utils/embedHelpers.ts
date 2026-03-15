@@ -9,9 +9,7 @@ import { EmbedColors } from "./colors.js";
  * Success (green): confirmations, wins, saved state.
  */
 export function createSuccessEmbed(title: string, description?: string): EmbedBuilder {
-  const embed = new EmbedBuilder()
-    .setColor(EmbedColors.Success)
-    .setTitle(title);
+  const embed = new EmbedBuilder().setColor(EmbedColors.Success).setTitle(title);
   if (description) embed.setDescription(description);
   return embed;
 }
@@ -20,9 +18,7 @@ export function createSuccessEmbed(title: string, description?: string): EmbedBu
  * Error (red): failures, validation errors, API errors.
  */
 export function createErrorEmbed(title: string, description?: string): EmbedBuilder {
-  const embed = new EmbedBuilder()
-    .setColor(EmbedColors.Error)
-    .setTitle(title);
+  const embed = new EmbedBuilder().setColor(EmbedColors.Error).setTitle(title);
   if (description) embed.setDescription(description);
   return embed;
 }
@@ -31,9 +27,7 @@ export function createErrorEmbed(title: string, description?: string): EmbedBuil
  * Info (blue): informational messages, tips, non-urgent notices.
  */
 export function createInfoEmbed(title: string, description?: string): EmbedBuilder {
-  const embed = new EmbedBuilder()
-    .setColor(EmbedColors.Info)
-    .setTitle(title);
+  const embed = new EmbedBuilder().setColor(EmbedColors.Info).setTitle(title);
   if (description) embed.setDescription(description);
   return embed;
 }
@@ -42,9 +36,7 @@ export function createInfoEmbed(title: string, description?: string): EmbedBuild
  * Warning (orange): caution, rate limits, soft failures.
  */
 export function createWarningEmbed(title: string, description?: string): EmbedBuilder {
-  const embed = new EmbedBuilder()
-    .setColor(EmbedColors.Warning)
-    .setTitle(title);
+  const embed = new EmbedBuilder().setColor(EmbedColors.Warning).setTitle(title);
   if (description) embed.setDescription(description);
   return embed;
 }

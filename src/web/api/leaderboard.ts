@@ -2,7 +2,10 @@
 // GET /api/leaderboard — usage or per-game leaderboard (uses leaderboardService).
 
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { getUsageLeaderboard, getGameLeaderboard } from "../../services/platform/leaderboardService.js";
+import {
+  getUsageLeaderboard,
+  getGameLeaderboard,
+} from "../../services/platform/leaderboardService.js";
 
 export async function handleGetLeaderboard(
   req: IncomingMessage,
@@ -26,7 +29,9 @@ export async function handleGetLeaderboard(
       limit,
     });
     res.writeHead(200);
-    res.end(JSON.stringify(scope === "commands" ? { commands: data } : { entries: data }));
+    res.end(
+      JSON.stringify(scope === "commands" ? { commands: data } : { entries: data }),
+    );
   } catch (err) {
     res.writeHead(500);
     res.end(JSON.stringify({ error: "Leaderboard unavailable" }));

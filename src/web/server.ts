@@ -9,11 +9,7 @@ import { fileURLToPath } from "node:url";
 import { initDatabase } from "../services/core/database/db.js";
 import { handleGetProfile } from "./api/profile.js";
 import { handleGetLeaderboard } from "./api/leaderboard.js";
-import {
-  handleGetEvents,
-  handleGetEvent,
-  handlePostEventsJoin,
-} from "./api/events.js";
+import { handleGetEvents, handleGetEvent, handlePostEventsJoin } from "./api/events.js";
 import { handleGetGameState, handlePostGameMove } from "./api/games.js";
 
 const PORT = parseInt(process.env.WEB_API_PORT ?? "4000", 10);

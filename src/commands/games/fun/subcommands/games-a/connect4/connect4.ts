@@ -43,7 +43,8 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       return;
     }
     const first = sessions[0]!;
-    const opponentId = first.player1Id === interaction.user.id ? first.player2Id : first.player1Id;
+    const opponentId =
+      first.player1Id === interaction.user.id ? first.player2Id : first.player1Id;
     const rows = [
       new ActionRowBuilder<ButtonBuilder>().addComponents(
         new ButtonBuilder()

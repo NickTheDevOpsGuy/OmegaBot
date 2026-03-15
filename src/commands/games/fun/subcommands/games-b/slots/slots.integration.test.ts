@@ -57,7 +57,10 @@ describe("slots integration", () => {
       const embeds = (arg as { embeds: unknown[] }).embeds;
       const first = embeds[0];
       if (!first || typeof first !== "object") return undefined;
-      return (first as { data?: { title?: string }; title?: string }).data?.title ?? (first as { title?: string }).title;
+      return (
+        (first as { data?: { title?: string }; title?: string }).data?.title ??
+        (first as { title?: string }).title
+      );
     }
     const resultCall = [...calls].reverse().find((c) => {
       const title = getTitle(c[0]);
@@ -65,7 +68,15 @@ describe("slots integration", () => {
     });
     expect(resultCall).toBeDefined();
     const resultPayload = resultCall![0];
-    const embeds = (resultPayload as { embeds: Array<{ data?: { title?: string; description?: string }; title?: string; description?: string }> }).embeds;
+    const embeds = (
+      resultPayload as {
+        embeds: Array<{
+          data?: { title?: string; description?: string };
+          title?: string;
+          description?: string;
+        }>;
+      }
+    ).embeds;
     expect(embeds.length).toBeGreaterThanOrEqual(1);
     const embed = embeds[0];
     const title = embed?.data?.title ?? embed?.title;

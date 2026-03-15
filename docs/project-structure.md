@@ -20,14 +20,14 @@ Commands are grouped into four top-level folders (≤10 items each). The loader 
 
 Services are grouped into four top-level folders (≤10 items each).
 
-| Group             | Contents                                                                                 |
-| ----------------- | ---------------------------------------------------------------------------------------- |
-| **core/**         | config, database, logging, metrics, cache, dashboard, circuitBreaker, analytics, time    |
-| **discord/**      | discord/ (commandLoader, commandMeta, handlers/, interaction/, rateLimit/, safeReply, …) |
-| **integrations/** | ai, github, statuspage, faq, welcome, starboard, summary, weather                        |
-| **stores/**       | quotes, reminders, timezone, transcript, gameStats, fun, joke, progression, roles        |
+| Group             | Contents                                                                                       |
+| ----------------- | ---------------------------------------------------------------------------------------------- |
+| **core/**         | config, database, logging, metrics, cache, dashboard, circuitBreaker, analytics, time          |
+| **discord/**      | discord/ (commandLoader, commandMeta, handlers/, interaction/, rateLimit/, safeReply, …)       |
+| **integrations/** | ai, github, statuspage, faq, welcome, starboard, summary, weather                              |
+| **stores/**       | quotes, reminders, timezone, transcript, gameStats, fun, joke, progression, roles              |
 | **games/**        | gameResultRenderer, progressionEngine, randomEvents, sessionManager, imageRenderer, gameEngine |
-| **platform/**     | userService, eventsService, postsService, profileService, leaderboardService (web + Discord)  |
+| **platform/**     | userService, eventsService, postsService, profileService, leaderboardService (web + Discord)   |
 
 - **Database:** `core/database/` — `db.ts`, `migrations.ts`, `dbTestUtils.ts` (in-memory DB helper for tests).
 - **Discord:** `discord/discord/` — interaction routing in `interaction/`, handlers in `handlers/`, rate limiting in `rateLimit/` (folder with index + implementation + test).

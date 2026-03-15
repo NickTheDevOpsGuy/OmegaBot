@@ -36,7 +36,11 @@ function ensureTables(): void {
   `);
 }
 
-export function createPost(authorId: string, content: string, attachments?: string | null): Post {
+export function createPost(
+  authorId: string,
+  content: string,
+  attachments?: string | null,
+): Post {
   ensureTables();
   const db = getDb();
   const postId = randomUUID();
