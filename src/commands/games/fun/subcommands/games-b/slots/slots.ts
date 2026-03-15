@@ -18,7 +18,9 @@ import {
   SYMBOLS,
   TOTAL_WEIGHT,
   type Symbol,
-  spinReel,
+  type Grid,
+  type RowCount,
+  spinGrid,
   calculatePayout,
 } from "./gameLogic.js";
 import { getStats, getLeaderboard, recordSpin } from "./slotsStore.js";
@@ -36,14 +38,34 @@ function randomSymbol(): Symbol {
   return SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)]!;
 }
 
-function buildReelBox(reels: [Symbol, Symbol, Symbol]): string[] {
+function parseRowsOption(n: number | null): RowCount {
+  if (n === 1 || n === 5) return n;
+  return 3;
+}
+
+function randomGrid(rowCount: RowCount): Grid {
+  const n = rowCount;
   return [
-    "┌─────────┬─────────┬─────────┐",
-    `│   ${reels[0].emoji}   │   ${reels[1].emoji}   │   ${reels[2].emoji}   │`,
-    "└─────────┴─────────┴─────────┘",
-    "",
-    reels.map((r) => r.emoji).join(" │ "),
+    Array.from({ length: n }, () => randomSymbol()),
+    Array.from({ length: n }, () => randomSymbol()),
+    Array.from({ length: n }, () => randomSymbol()),
   ];
+}
+
+function buildReelBox(grid: Grid, rowCount: number): string[] {
+  const lines: string[] = ["┌─────────┬─────────┬─────────┐"];
+  for (let row = 0; row < rowCount; row++) {
+    lines.push(
+      `│   ${grid[0][row].emoji}   │   ${grid[1][row].emoji}   │   ${grid[2][row].emoji}   │`,
+    );
+    if (row < rowCount - 1) lines.push("├─────────┼─────────┼─────────┤");
+  }
+  lines.push("└─────────┴─────────┴─────────┘");
+  const summary = Array.from({ length: rowCount }, (_, r) =>
+    [grid[0][r].emoji, grid[1][r].emoji, grid[2][r].emoji].join(" "),
+  ).join("  ·  ");
+  lines.push("", summary);
+  return lines;
 }
 
 function sleep(ms: number): Promise<void> {
@@ -93,11 +115,12 @@ async function runSlots(interaction: ChatInputCommandInteraction): Promise<void>
       .setTitle("🎰 Slots Paytable")
       .setDescription(
         [
-          "**Three of a kind** (same symbol on all three reels):",
+          "Choose **1, 3, or 5 rows** (paylines). Per line:",
+          "**Three of a kind** → symbol payout below. **Two matching** → **2×**",
           "",
           ...paytableLines,
           "",
-          "**Two matching** (same symbol on two reels): **2×**",
+          "**Two matching** on a line: **2×**",
         ].join("\n"),
       )
       .setColor(0x5865f2);
@@ -145,9 +168,10 @@ async function runSlots(interaction: ChatInputCommandInteraction): Promise<void>
   }
 
   const userId = interaction.user.id;
+  const rows = parseRowsOption(interaction.options.getInteger("rows"));
   const statsBefore = getStats(userId);
-  const reels: [Symbol, Symbol, Symbol] = [spinReel(), spinReel(), spinReel()];
-  const { payout, type } = calculatePayout(reels);
+  const grid = spinGrid(rows);
+  const { payout, type } = calculatePayout(grid, rows);
   const isWin = payout > 0;
   const isJackpot = payout >= 100;
 
@@ -190,7 +214,7 @@ async function runSlots(interaction: ChatInputCommandInteraction): Promise<void>
 
   // Spinning animation: show random reels then reveal result
   const footerLines = [
-    "**3-of-kind:** 5–100× · **Two match:** 2× · `/fun slots stats` · `/fun utility leaderboard`",
+    `**${rows} payline${rows === 1 ? "" : "s"}** · **3-of-kind:** 5–100× · **Two match:** 2× · \`/fun slots stats\` · \`/fun utility leaderboard\``,
   ];
   if (milestoneLine) footerLines.push(milestoneLine);
   if (rankLine) footerLines.push(rankLine);
@@ -199,14 +223,12 @@ async function runSlots(interaction: ChatInputCommandInteraction): Promise<void>
 
   for (let frame = 0; frame < SPIN_FRAMES; frame++) {
     const isLast = frame === SPIN_FRAMES - 1;
-    const showReels: [Symbol, Symbol, Symbol] = isLast
-      ? reels
-      : [randomSymbol(), randomSymbol(), randomSymbol()];
+    const showGrid: Grid = isLast ? grid : randomGrid(rows);
 
     if (isLast) {
       const embed = new EmbedBuilder()
-        .setTitle("🎰 Slot Machine")
-        .setDescription(buildReelBox(reels).join("\n"))
+        .setTitle(`🎰 Slot Machine — ${rows} payline${rows === 1 ? "" : "s"}`)
+        .setDescription(buildReelBox(grid, rows).join("\n"))
         .setColor(isJackpot ? 0xffd700 : isWin ? 0x22c55e : 0x64748b);
 
       if (isJackpot) {
@@ -233,7 +255,7 @@ async function runSlots(interaction: ChatInputCommandInteraction): Promise<void>
     } else {
       const spinEmbed = new EmbedBuilder()
         .setTitle("🎰 Spinning…")
-        .setDescription([...buildReelBox(showReels), "*spinning…*"].join("\n"))
+        .setDescription([...buildReelBox(showGrid, rows), "*spinning…*"].join("\n"))
         .setColor(0x5865f2);
       await interaction.editReply({ embeds: [spinEmbed] });
       await sleep(SPIN_DELAY_MS);

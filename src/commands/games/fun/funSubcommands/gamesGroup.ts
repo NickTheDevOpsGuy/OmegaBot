@@ -168,6 +168,16 @@ export function addGamesSubcommands(
       s
         .setName("slots")
         .setDescription("Spin the slot machine!")
+        .addIntegerOption((o) =>
+          o
+            .setName("rows")
+            .setDescription("Paylines: 1 (classic), 3, or 5")
+            .addChoices(
+              { name: "1 row (classic)", value: 1 },
+              { name: "3 rows", value: 3 },
+              { name: "5 rows", value: 5 },
+            ),
+        )
         .addBooleanOption((o) =>
           o.setName("stats").setDescription("Show your slots stats"),
         )
