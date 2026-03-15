@@ -26,5 +26,8 @@ export function buildOverviewHelp(args: { isAdmin: boolean }): string {
     "`/fun wordle`      Daily word puzzle",
     "`/fun hangman`     Guess the word",
     "`/fun rps @user`   Challenge to Rock Paper Scissors",
+    "",
+    "**Web / API**",
+    "An optional HTTP API can power a separate website (profiles, leaderboards, events, games). See the project docs: Web platform.",
   ].join("\n");
 }

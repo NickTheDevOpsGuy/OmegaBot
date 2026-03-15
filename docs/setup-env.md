@@ -46,6 +46,21 @@ REMINDER_TIMING_LOGS=0
 - `REMINDER_TIMING_LOGS`
   - Set to `1` to enable debug timing logs for the reminder scheduler tick
 
+---
+
+### Web API (optional)
+
+When running the optional Web API (`npm run api`), the same database is used. See [Web platform](web-platform.md) for full setup.
+
+```env
+# Optional. Defaults to 4000
+WEB_API_PORT=4000
+```
+
+- `WEB_API_PORT`
+  - Port for the HTTP API server (profiles, leaderboards, events, games)
+  - Only used when you start the API with `npm run api`
+
 ## Setup
 
 Copy the example file and fill in real values:

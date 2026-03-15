@@ -23,6 +23,7 @@ OmegaBot combines games, progression, moderation, utility commands, and AI-assis
 - Supports server utility features like FAQ, rules, welcome flows, starboard, suggestions, and status checks.
 - Includes admin-focused health, metrics, backup, and troubleshooting support for self-hosted operation.
 - Stores persistent data in SQLite so state survives restarts.
+- **Optional Web API** — same backend can power a website (profiles, leaderboards, events, games). See [Web platform](docs/web-platform.md) and **Setting up the website** below.
 
 ## Good Fit For
 
@@ -57,6 +58,14 @@ cp .env.example .env   # Add your DISCORD_TOKEN, DISCORD_APP_ID, DISCORD_GUILD_I
 docker compose up -d
 ```
 
+**Optional — run the Web API** (for a separate website using the same data):
+
+```bash
+npm run build
+npm run api
+# API listens on port 4000 (or set WEB_API_PORT). See docs/web-platform.md.
+```
+
 ---
 
 ## Feature Highlights
@@ -88,13 +97,14 @@ docker compose up -d
 - Background pollers never crash the process
 - Optional features auto-disable when misconfigured
 - **Backup**: Run `npm run db:backup` periodically, or copy `data/omegabot.db`; see [Runbook](docs/runbook.md)
-- **Runtime**: Node.js 18+ is supported; Node 20 is recommended, and `.nvmrc` is set to `20`
+- **Runtime**: Node.js 18+ is supported; Node 22 is recommended (LTS), and `.nvmrc` is set to `22`
+- **Web API**: Optional. Run `npm run api` to start the HTTP API (default port 4000). Same database as the bot. See [Web platform](docs/web-platform.md) for **setting up a website**.
 
 ---
 
 ## Documentation Map
 
-Every Markdown file in [`docs/`](docs/) is linked here.
+Every Markdown file in [`docs/`](docs/) is linked here (22 docs).
 
 ### Start here
 
@@ -106,22 +116,22 @@ Every Markdown file in [`docs/`](docs/) is linked here.
 
 ### User-facing systems
 
-- [Conversational Chat & LLM](docs/chat-and-llm.md) – Chat modes, memory, recap, supportive chat behavior
-- [Progression](docs/progression.md) – Shared XP, level curve, quest rewards, and where progression appears
 - [Analytics](docs/analytics.md) – Daily game metrics and usage tracking
-- [Localization (i18n)](docs/i18n.md) – Locale support and translation patterns
-- [Transcripts & Summaries](docs/transcripts.md) – Transcript pipeline and summary modes
+- [Conversational Chat & LLM](docs/chat-and-llm.md) – Chat modes, memory, recap, supportive chat behavior
 - [FAQ for Server Admins](docs/faq-admins.md) – Hosting/admin questions and common operational answers
 - [FAQ System Design](docs/faq.md) – FAQ storage model and entry format
+- [Localization (i18n)](docs/i18n.md) – Locale support and translation patterns
+- [Progression](docs/progression.md) – Shared XP, level curve, quest rewards, and where progression appears
+- [Transcripts & Summaries](docs/transcripts.md) – Transcript pipeline and summary modes
 
 ### Development and architecture
 
 - [Development Notes](docs/dev-notes.md) – Conventions, file sizing, and architectural guidance
-- [Project Structure](docs/project-structure.md) – Folder layout and where major systems live
-- [Games development](docs/games-development.md) – Adding games, progression, result rendering, sessions
-- [Web platform](docs/web-platform.md) – Shared backend for Discord + web, API, events, posts, profiles
 - [File & folder tree](docs/file-structure.md) – Expandable directory tree
+- [Games development](docs/games-development.md) – Adding games, progression, result rendering, sessions
 - [Grafana Dashboard](docs/grafana.md) – Metrics visualization setup
+- [Project Structure](docs/project-structure.md) – Folder layout and where major systems live
+- [Web platform](docs/web-platform.md) – Shared backend for Discord + web, API, **website setup steps**, events, posts, profiles
 
 ### Product and roadmap docs
 
@@ -130,11 +140,15 @@ Every Markdown file in [`docs/`](docs/) is linked here.
 - [Improvement Ideas](docs/improvements.md) – Maintainability, ops, and quality ideas
 - [Recommendations](docs/recommendations.md) – Command and feature recommendations
 
+### Index (all docs in `docs/`)
+
+[analytics](docs/analytics.md) · [chat-and-llm](docs/chat-and-llm.md) · [commands](docs/commands.md) · [dev-notes](docs/dev-notes.md) · [faq](docs/faq.md) · [faq-admins](docs/faq-admins.md) · [file-structure](docs/file-structure.md) · [games-and-ux-ideas](docs/games-and-ux-ideas.md) · [games-development](docs/games-development.md) · [gameplay-improvements](docs/gameplay-improvements.md) · [grafana](docs/grafana.md) · [i18n](docs/i18n.md) · [improvements](docs/improvements.md) · [progression](docs/progression.md) · [project-structure](docs/project-structure.md) · [recommendations](docs/recommendations.md) · [runbook](docs/runbook.md) · [setup-discord](docs/setup-discord.md) · [setup-env](docs/setup-env.md) · [transcripts](docs/transcripts.md) · [troubleshooting](docs/troubleshooting.md) · [web-platform](docs/web-platform.md)
+
 ---
 
 ## Tech Stack
 
-- **Runtime**: Node.js 18+ (20 recommended; use `nvm use` or `fnm use` if you use a version manager)
+- **Runtime**: Node.js 18+ (22 LTS recommended; use `nvm use` or `fnm use` if you use a version manager)
 - **Language**: TypeScript 5.x
 - **Discord**: discord.js v14
 - **Database**: SQLite (better-sqlite3)
@@ -175,6 +189,7 @@ npm run db:check      # Verify SQLite database integrity
 npm run db:backup     # Backup database to data/backups/
 npm run db:seed       # Seed dev DB with sample FAQs/timezone (DATABASE_PATH=data/dev.db)
 npm run dev:watch     # Run with hot reload (restarts on file change)
+npm run api           # Start the optional Web API (see docs/web-platform.md)
 ```
 
 35+ test files (200+ tests): unit tests (games, stores, services, config, rate limiting, metrics) and integration tests (dice, slots, ping, admin, help, status, config, FAQ, rules, suggestion).

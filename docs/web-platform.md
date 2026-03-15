@@ -2,6 +2,57 @@
 
 OmegaBot is structured so the same backend can power **Discord** and a **future web UI**. Game logic, progression, events, and profiles live in shared services; Discord commands and the web API both call these services.
 
+## Setting up the website
+
+Follow these steps to run the Web API and optionally connect a frontend.
+
+### 1. Prerequisites
+
+- Same as the Discord bot: Node.js 18+ (20 recommended), `npm install`, and a working SQLite database.
+- The Web API uses the **same database** as the bot (`DATABASE_PATH`). Run migrations if needed (they run on bot/API startup).
+
+### 2. Environment
+
+- **`DATABASE_PATH`** — Path to your SQLite DB (e.g. `data/omegabot.db`). Same as the bot so profiles, games, and events are shared.
+- **`WEB_API_PORT`** (optional) — Port for the HTTP server. Default: `4000`.
+
+No Discord token is required to run the API alone. To use the bot and website together, run the bot as usual and run the API in a separate process (or same machine, different port).
+
+### 3. Run the Web API
+
+```bash
+cd OmegaBot
+npm run build
+npm run api
+```
+
+Or run the built server directly:
+
+```bash
+node dist/web/server.js
+```
+
+The server listens on `http://localhost:4000` (or your `WEB_API_PORT`). You can hit endpoints with `curl`, e.g.:
+
+```bash
+curl http://localhost:4000/api/profile/YOUR_USER_ID
+curl "http://localhost:4000/api/leaderboard?scope=users&limit=10"
+```
+
+### 4. Build a frontend (optional)
+
+- Use any frontend (React, Vue, static HTML, etc.) that can call the API.
+- Base URL: `http://localhost:4000` in development, or your deployed API URL in production.
+- **Auth:** The API has no auth yet. When you add a real site, add API keys or Discord OAuth and use `userService.getOrCreateByDiscord` to link accounts. See [User accounts](#user-accounts) and [Future TODOs](#future-todos).
+
+### 5. Deploying
+
+- Run the API as a separate process (e.g. systemd, Docker, or PaaS). Point `DATABASE_PATH` to the same DB the bot uses (or a copy if you run bot and API on different machines and sync data).
+- Put a reverse proxy (e.g. nginx, Caddy) in front for HTTPS and optional rate limiting.
+- Frontend can be served from the same host (static files) or a separate domain; ensure CORS is configured if the frontend origin differs from the API.
+
+---
+
 ## Architecture
 
 ```
@@ -64,14 +115,7 @@ Future web frontend
 
 ## Web API
 
-Optional HTTP server: **`src/web/server.ts`**. Start with:
-
-```bash
-npm run build
-node dist/web/server.js
-```
-
-Set `WEB_API_PORT` (default `4000`) and `DATABASE_PATH` as needed. The server calls `initDatabase()` and the same services as the bot.
+Optional HTTP server: **`src/web/server.ts`**. Start with `npm run api` (or `node dist/web/server.js`). Set `WEB_API_PORT` (default `4000`) and `DATABASE_PATH` as needed. The server calls `initDatabase()` and the same services as the bot. For full setup steps, see [Setting up the website](#setting-up-the-website) above.
 
 ### Endpoints (scaffold)
 
