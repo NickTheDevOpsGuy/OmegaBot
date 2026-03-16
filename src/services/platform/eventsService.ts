@@ -147,3 +147,30 @@ export function updateEventStatus(eventId: string, status: EventStatus): boolean
     .run(status, Date.now(), eventId);
   return result.changes > 0;
 }
+
+export type UpdateEventInput = {
+  title?: string;
+  description?: string | null;
+  startTime?: number;
+  endTime?: number;
+  status?: EventStatus;
+};
+
+export function updateEvent(eventId: string, input: UpdateEventInput): boolean {
+  ensureTables();
+  const db = getDb();
+  const event = getEvent(eventId);
+  if (!event) return false;
+  const now = Date.now();
+  const title = input.title ?? event.title;
+  const description = input.description !== undefined ? input.description : event.description;
+  const startTime = input.startTime ?? event.startTime;
+  const endTime = input.endTime ?? event.endTime;
+  const status = input.status ?? event.status;
+  const result = db
+    .prepare(
+      `UPDATE events SET title = ?, description = ?, start_time = ?, end_time = ?, status = ?, updated_at = ? WHERE event_id = ?`,
+    )
+    .run(title, description, startTime, endTime, status, now, eventId);
+  return result.changes > 0;
+}

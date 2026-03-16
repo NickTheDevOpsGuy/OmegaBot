@@ -1,12 +1,13 @@
 // src/commands/fun/subcommands/leaderboard.ts
-// /fun leaderboard: top users, top commands, or one user's breakdown. Uses fun_usage snapshot.
+// /fun leaderboard: top users, top commands, or one user's breakdown. Uses fun_usage snapshot or usage_log (weekly/server).
 import { EmbedBuilder, type ChatInputCommandInteraction, type User } from "discord.js";
 import { getFunUsageSnapshot } from "../../../../../../services/stores/fun/funUsageStore.js";
+import { getUsageLeaderboard } from "../../../../../../services/platform/leaderboardService.js";
 import { logger } from "../../../../../../utils/logger.js";
 
 export type LeaderboardMode =
-  | { kind: "users"; limit: number }
-  | { kind: "commands"; limit: number }
+  | { kind: "users"; limit: number; scope?: "all" | "weekly" | "server"; guildId?: string }
+  | { kind: "commands"; limit: number; scope?: "all" | "weekly" | "server"; guildId?: string }
   | { kind: "user"; userId: string };
 
 type PerCommandCounts = Record<string, number>;
@@ -92,11 +93,46 @@ export async function run(
   interaction: ChatInputCommandInteraction,
   mode: LeaderboardMode,
 ): Promise<void> {
-  const snapshot = await getFunUsageSnapshot();
-  const totalsByUser = snapshot.totalsByUser;
-  const totalsByCommand = snapshot.totalsByCommand;
-  const byUserByCommand = snapshot.byUserByCommand;
+  const scope = mode.kind !== "user" ? mode.scope ?? "all" : "all";
+  const useLog = scope === "weekly" || scope === "server";
+  const guildId = mode.kind !== "user" ? mode.guildId : undefined;
+
+  let snapshot = await getFunUsageSnapshot();
+  let totalsByUser = snapshot.totalsByUser;
+  let totalsByCommand = snapshot.totalsByCommand;
+  let byUserByCommand = snapshot.byUserByCommand;
   const updatedAt = snapshot.updatedAt ?? "unknown";
+
+  if (useLog && (mode.kind === "users" || mode.kind === "commands")) {
+    try {
+      const data = await getUsageLeaderboard({
+        scope: mode.kind === "users" ? "users" : "commands",
+        limit: mode.limit,
+        window: scope === "weekly" ? "weekly" : undefined,
+        guildId: scope === "server" ? guildId ?? null : undefined,
+      });
+      if (mode.kind === "commands" && Array.isArray(data) && data.length > 0 && "command" in data[0]) {
+        const items = data as { command: string; count: number }[];
+        const embed = new EmbedBuilder()
+          .setTitle(scope === "weekly" ? "Fun Leaderboard: Top Commands (This Week)" : "Fun Leaderboard: Top Commands (This Server)")
+          .setDescription(items.map((x, idx) => `${rankLabel(idx)} /fun ${x.command} ${x.count}x`).join("\n"))
+          .setFooter({ text: scope === "weekly" ? "Weekly usage" : "Server usage" });
+        await interaction.editReply({ embeds: [embed] });
+        return;
+      }
+      if (mode.kind === "users" && Array.isArray(data) && data.length > 0 && "userId" in data[0]) {
+        const userItems = data as { rank: number; userId: string; value: number }[];
+        const embed = new EmbedBuilder()
+          .setTitle(scope === "weekly" ? "Fun Leaderboard: Top Users (This Week)" : "Fun Leaderboard: Top Users (This Server)")
+          .setDescription(userItems.map((u, idx) => `${rankLabel(idx)} <@${u.userId}> ${u.value}x`).join("\n"))
+          .setFooter({ text: scope === "weekly" ? "Weekly usage" : "Server usage" });
+        await interaction.editReply({ embeds: [embed] });
+        return;
+      }
+    } catch (err) {
+      logger.debug({ err, scope }, "[fun/leaderboard] getUsageLeaderboard (log) failed, falling back to snapshot");
+    }
+  }
 
   const anyUserUsage = Object.keys(totalsByUser).length > 0;
   const anyCommandUsage = Object.values(totalsByCommand).some((n) => toCount(n) > 0);

@@ -60,6 +60,18 @@ WEB_API_PORT=4000
 - `WEB_API_PORT`
   - Port for the HTTP API server (profiles, leaderboards, events, games)
   - Only used when you start the API with `npm run api`
+- `WEB_API_KEY`
+  - Optional. If set, clients can send `X-API-Key: <value>` to authenticate for write endpoints (e.g. POST /api/posts). For writes with API key, include `userId` in the request body where required.
+- `DISCORD_OAUTH_CLIENT_ID`
+  - Optional. Discord OAuth Application ID for web login. Required for `/auth/discord` and `/auth/discord/callback`.
+- `DISCORD_OAUTH_CLIENT_SECRET`
+  - Optional. Discord OAuth client secret. Required for the callback to exchange the code for a token.
+- `DISCORD_OAUTH_REDIRECT_URI`
+  - Optional. Override redirect URI (e.g. `https://yoursite.com/auth/discord/callback`). If unset, the server builds it from the request host.
+- `WEB_APP_URL`
+  - Optional. Where to redirect after Discord OAuth login (default `/`).
+- `CORS_ORIGIN`
+  - Optional. Value for `Access-Control-Allow-Origin` (default `*`). Set to your frontend origin (e.g. `https://yoursite.com`) in production.
 
 ## Setup
 

@@ -27,6 +27,10 @@ export function buildOverviewHelp(args: { isAdmin: boolean }): string {
     "`/fun hangman`     Guess the word",
     "`/fun rps @user`   Challenge to Rock Paper Scissors",
     "",
+    "**Events**",
+    "`/event create`    Create an event",
+    "`/event list`      List events  •  `/event join`  Join an event",
+    "",
     "**Web / API**",
     "An optional HTTP API can power a separate website (profiles, leaderboards, events, games). See the project docs: Web platform.",
   ].join("\n");

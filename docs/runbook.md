@@ -12,6 +12,8 @@ Short guide for running and maintaining OmegaBot.
 
 **Note:** `npm run register` requires `DISCORD_TOKEN` and `DISCORD_APP_ID` in `.env` (or your environment). If these are not set, registration will fail. See [Environment Setup](setup-env.md).
 
+**Optional Web API:** To run the HTTP API (profiles, leaderboards, events, posts, games, auth): `npm run api` (or `node dist/web/server.js`). Uses the same database; set `WEB_API_PORT` (default 4000) and see [Web platform](web-platform.md).
+
 ---
 
 ## Docker

@@ -45,6 +45,7 @@ import {
   recordFunUsage,
   type FunCommandKey,
 } from "../../../services/stores/fun/funUsageStore.js";
+import { recordUsageLog } from "../../../services/platform/leaderboardService.js";
 import {
   recordDailyPlay,
   type GameCommand,
@@ -116,6 +117,11 @@ async function maybeRecordUsage(
     const key = funKeyFromSub(sub);
     if (!key) return;
     await recordFunUsage({ userId: interaction.user.id, command: key });
+    recordUsageLog({
+      userId: interaction.user.id,
+      command: key,
+      guildId: interaction.guildId ?? undefined,
+    });
 
     const metric = USAGE_TO_METRIC[key];
     if (metric) {
@@ -183,15 +189,16 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
     if (sub === "leaderboard") {
       const view = interaction.options.getString("view") ?? "users";
+      const scope = interaction.options.getString("scope") ?? "all";
       const limit = interaction.options.getInteger("limit") ?? 10;
       let mode: LeaderboardMode;
-      if (view === "commands") mode = { kind: "commands", limit };
+      if (view === "commands") mode = { kind: "commands", limit, scope: scope as "all" | "weekly" | "server", guildId: interaction.guildId ?? undefined };
       else if (view === "user")
         mode = {
           kind: "user",
           userId: interaction.options.getUser("user")?.id ?? interaction.user.id,
         };
-      else mode = { kind: "users", limit };
+      else mode = { kind: "users", limit, scope: scope as "all" | "weekly" | "server", guildId: interaction.guildId ?? undefined };
       await runLeaderboard(interaction, mode);
       await maybeRecordUsage(interaction, sub);
       return;

@@ -2,7 +2,7 @@
 
 This file is the **single source of truth** for command behavior; update it when adding or changing commands.
 
-OmegaBot has **17 slash commands** organized into logical groups.
+OmegaBot has **18 slash commands** organized into logical groups.
 
 ---
 
@@ -16,16 +16,16 @@ The main hub for all games and fun features.
 | ------------------------- | --------------------------------------------------------------- |
 | `/fun 8ball`              | Ask the magic 8-ball                                            |
 | `/fun rps`                | Rock paper scissors (solo or PvP)                               |
-| `/fun tictactoe`          | Tic Tac Toe (solo or PvP)                                       |
+| `/fun tictactoe`          | Tic Tac Toe (solo or PvP; opponent is DMed when it's their turn) |
 | `/fun trivia`             | Trivia with points and streaks                                  |
 | `/fun blackjack`          | Interactive blackjack                                           |
-| `/fun connect4`           | PvP Connect 4                                                   |
+| `/fun connect4`           | PvP Connect 4 (persistent multi-day; use **continue** to resume; opponent is DMed when it's their turn) |
 | `/fun hangman play`       | Hangman (dropdown letters, difficulty)                          |
 | `/fun hangman stats`      | Hangman stats (wins, fastest time)                              |
 | `/fun hangman words add`  | (Admin) Add word to list                                        |
 | `/fun hangman words list` | (Admin) List words                                              |
 | `/fun wordle`             | Daily word puzzle                                               |
-| `/fun slots`              | Slot machine with jackpots                                      |
+| `/fun slots`              | Slot machine (1, 3, or 5 rows) with jackpots                     |
 | `/fun darts`              | Throw 3 darts (solo or PvP), stats, leaderboards (best/180/PvP) |
 | `/fun chess`              | Challenge someone to chess or get Lichess links (vs computer)   |
 | `/fun memory`             | Match pairs of cards (memory game)                              |
@@ -67,17 +67,17 @@ Stats and leaderboard views are not rate limited.
 | `/fun daily`               | Daily check-in for points             |
 | `/fun quest`               | Daily rotating quests with XP rewards |
 | `/fun stats`               | View all game stats                   |
-| `/fun utility leaderboard` | Top players                           |
+| `/fun utility leaderboard` | Top users or commands; **scope**: All time, This week, or This server |
 
-### Reminders
+### Reminders (under utility)
 
-| Command              | Description                                                          |
-| -------------------- | -------------------------------------------------------------------- |
-| `/fun remind set`    | Set a reminder (5m, 1h, 1d)                                          |
-| `/fun remind list`   | View pending reminders                                               |
-| `/fun remind snooze` | Reschedule a reminder (ID + time, e.g. 30m, 1h; ID has autocomplete) |
-| `/fun remind cancel` | Cancel a reminder (ID has autocomplete)                              |
-| `/fun remind clear`  | Cancel all reminders                                                 |
+| Command                       | Description                                                          |
+| ----------------------------- | -------------------------------------------------------------------- |
+| `/fun utility remind_set`     | Set a reminder (5m, 1h, 1d)                                          |
+| `/fun utility remind_list`    | View pending reminders                                               |
+| `/fun utility remind_snooze`  | Reschedule a reminder (ID + time, e.g. 30m, 1h; ID has autocomplete) |
+| `/fun utility remind_cancel`  | Cancel a reminder (ID has autocomplete)                              |
+| `/fun utility remind_clear`   | Cancel all reminders                                                 |
 
 ### Quotes & Jokes
 
@@ -140,6 +140,20 @@ View your unlocked achievements (19 total).
 | 🍀 Luck       | Jackpot!, Lucky Streak, Coin Master, High Roller                                                                      |
 | 💪 Dedication | Week Warrior, Month Master, Trivia Master, On Fire                                                                    |
 | 💬 Social     | Quotable, Generous                                                                                                    |
+
+---
+
+## `/event` - Platform Events
+
+Create, join, and manage events (tournaments, challenges, community events). Same events are visible via the Web API.
+
+| Command           | Description                                      |
+| ----------------- | ------------------------------------------------ |
+| `/event create`   | Create an event (title, optional description, times, status) |
+| `/event update`   | Update an event's status (draft, active, ended, cancelled)    |
+| `/event join`     | Join an active event (event_id)                   |
+| `/event list`     | List events (optional status filter, limit)       |
+| `/event results`  | View event details and participants (event_id)    |
 
 ---
 

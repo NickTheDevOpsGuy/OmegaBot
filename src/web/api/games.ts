@@ -3,6 +3,7 @@
 
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { getGameState, applyGameMove } from "../../services/games/gameEngine.js";
+import { publish } from "../sse.js";
 
 export async function handleGetGameState(
   _req: IncomingMessage,
@@ -40,6 +41,7 @@ export async function handlePostGameMove(
     res.end(JSON.stringify({ error: result.error }));
     return;
   }
+  publish("game", gameId, getGameState(gameId));
   res.writeHead(200);
   res.end(
     JSON.stringify({

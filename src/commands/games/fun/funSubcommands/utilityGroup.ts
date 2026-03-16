@@ -125,6 +125,16 @@ export function buildUtilityGroup(
               { name: "Single user", value: "user" },
             ),
         )
+        .addStringOption((o) =>
+          o
+            .setName("scope")
+            .setDescription("Time or server scope")
+            .addChoices(
+              { name: "All time", value: "all" },
+              { name: "This week", value: "weekly" },
+              { name: "This server", value: "server" },
+            ),
+        )
         .addUserOption((o) =>
           o.setName("user").setDescription("User for single-user view"),
         )

@@ -1,3 +1,22 @@
+## [3.9.13] - 2026-02-12
+
+### Added
+
+- **Web platform** – Optional HTTP API (`npm run api`): Discord OAuth login, session + API key auth, POST/GET posts and comments, POST/PATCH events, GET achievements, SSE for game/event updates, weekly/server leaderboards. See [Web platform](docs/web-platform.md).
+- **`/event` command** – Create, update, join, list, and results for platform events (same data as Web API).
+- **Leaderboard scope** – `/fun utility leaderboard` now supports **scope**: All time, This week (weekly), or This server (uses `usage_log` and `guild_id`).
+- **Help topic: Events** – `/help topic:event` and new "Events" choice in `/help`.
+- **CORS & request ID** – Web API sets `Access-Control-Allow-Origin` (configurable via `CORS_ORIGIN`), handles OPTIONS, and echoes `X-Request-Id` for tracing.
+- **Web rate limiting** – Auth endpoints (OAuth) and write endpoints (posts, events, games/move, comments) are rate-limited per IP (in-memory); 429 with `Retry-After` when exceeded.
+- **Turn reminders** – Connect 4 and Tic-Tac-Toe PvP: the opponent is DMed when it’s their turn (if DMs are open).
+
+### Changed
+
+- **Event list** – `/event list` shows up to 5 events by default with **Starts** and **Ends** as Discord relative timestamps (`<t:...:R>`).
+- **Docs** – README and [Command Reference](docs/commands.md) updated for `/event`, leaderboard scope, reminders under utility, Connect 4 continue, slots rows. Runbook mentions optional Web API. Project structure and help overview include event.
+
+---
+
 ## [3.9.12] - 2026-02-12
 
 ### Added

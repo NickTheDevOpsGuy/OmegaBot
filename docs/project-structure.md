@@ -8,7 +8,7 @@ Commands are grouped into four top-level folders (≤10 items each). The loader 
 
 | Group       | Contents                                                           |
 | ----------- | ------------------------------------------------------------------ |
-| **core/**   | admin, config, faq, help, info, profile, rules, status, suggestion |
+| **core/**   | admin, config, event, faq, help, info, profile, rules, status, suggestion |
 | **games/**  | achievements, fun, giveaway, view-achievements                     |
 | **social/** | history, quote-message, summary, summarize-message                 |
 | **other/**  | github, ping, playback, view-profile                               |

@@ -8,7 +8,7 @@ Follow these steps to run the Web API and optionally connect a frontend.
 
 ### 1. Prerequisites
 
-- Same as the Discord bot: Node.js 18+ (20 recommended), `npm install`, and a working SQLite database.
+- Same as the Discord bot: Node.js 18+ (22 LTS recommended), `npm install`, and a working SQLite database.
 - The Web API uses the **same database** as the bot (`DATABASE_PATH`). Run migrations if needed (they run on bot/API startup).
 
 ### 2. Environment
@@ -43,7 +43,7 @@ curl "http://localhost:4000/api/leaderboard?scope=users&limit=10"
 
 - Use any frontend (React, Vue, static HTML, etc.) that can call the API.
 - Base URL: `http://localhost:4000` in development, or your deployed API URL in production.
-- **Auth:** The API has no auth yet. When you add a real site, add API keys or Discord OAuth and use `userService.getOrCreateByDiscord` to link accounts. See [User accounts](#user-accounts) and [Future TODOs](#future-todos).
+- **Auth:** Use `WEB_API_KEY` (X-API-Key header) or Discord OAuth (`/auth/discord` → callback sets session cookie). See [User accounts](#user-accounts) and env vars in [Environment Setup](setup-env.md).
 
 ### 5. Deploying
 
@@ -72,7 +72,7 @@ Future web frontend
 
 - **Discord** remains the primary client; commands stay thin and call services.
 - **Web API** is an optional HTTP server that exposes the same data for a browser client.
-- **Real-time** (WebSockets / SSE) is not implemented yet; services are structured so a real-time layer can be added later.
+- **Real-time:** SSE at `GET /api/sse?gameId=...` or `?eventId=...` streams live game/event updates.
 
 ## User accounts
 
@@ -81,22 +81,22 @@ Future web frontend
   - `getOrCreateByDiscord(discordId, username?, avatarUrl?)` — ensure a platform user for a Discord account; update name/avatar.
   - `getPlatformUser(userIdOrDiscordId)` — fetch by internal id or Discord id.
   - `resolveDiscordId(userIdOrDiscordId)` — resolve to a Discord id for use with existing game/progression tables (keyed by Discord id).
-- **Future:** Discord OAuth on the website can call `getOrCreateByDiscord` after login so web and Discord share one profile.
+- **Discord OAuth:** `GET /auth/discord` redirects to Discord; `GET /auth/discord/callback` exchanges the code, calls `getOrCreateByDiscord`, creates a session, and sets a cookie. Set `DISCORD_OAUTH_CLIENT_ID`, `DISCORD_OAUTH_CLIENT_SECRET`, and optionally `DISCORD_OAUTH_REDIRECT_URI`, `WEB_APP_URL`.
 
 ## Events
 
 - **Tables:** `events`, `event_participants` (migration `011_events.sql`).
 - **Service:** `services/platform/eventsService.ts`
   - Create, get, list (by status), join, get participants, update status.
-- **Future commands:** e.g. `/event create`, `/event join`, `/event leaderboard`, `/event results`.
-- **Web:** browse events, join, view results via API.
+- **Discord:** `/event create`, `/event update`, `/event join`, `/event list`, `/event results`.
+- **Web:** GET/POST/PATCH events, join via API; SSE for live event updates.
 
 ## Posts / social feed
 
 - **Tables:** `posts`, `post_likes` (migration `012_posts.sql`).
 - **Service:** `services/platform/postsService.ts`
   - Create, get, list (global or by author), like, unlike.
-- **Future:** achievement posts, game highlights, optional Discord cross-post.
+- **API:** `POST /api/posts` (auth), `GET /api/posts`, `GET /api/posts/:id` (with comments), `GET/POST /api/posts/:id/comments`. Optional Discord cross-post later.
 
 ## Persistent games
 
@@ -122,27 +122,38 @@ Optional HTTP server: **`src/web/server.ts`**. Start with `npm run api` (or `nod
 | Method | Path                          | Description                                                                                              |
 | ------ | ----------------------------- | -------------------------------------------------------------------------------------------------------- | ------------------- |
 | GET    | `/api/profile/:userId`        | Profile (xp, level, games, wins, achievements, daily streak). `userId` = platform user_id or Discord id. |
-| GET    | `/api/leaderboard`            | Usage leaderboard. Query: `scope=users                                                                   | commands`, `limit`. |
+| GET    | `/api/leaderboard`            | Usage leaderboard. Query: `scope=users` or `commands`, `limit`.                                          |
 | GET    | `/api/leaderboard?game=slots` | Per-game leaderboard (e.g. `game=slots`, `game=daily`).                                                  |
-| GET    | `/api/events`                 | List events. Query: `status=active                                                                       | ended`, `limit`.    |
+| GET    | `/api/events`                 | List events. Query: `status=active` or `ended`, `limit`.                                                 |
 | GET    | `/api/events/:id`             | Single event + participants.                                                                             |
 | POST   | `/api/events/:id/join`        | Body: `{ "userId": "..." }`. Join event.                                                                 |
 | GET    | `/api/games/state/:gameId`    | Game state (board, turn, status, expiresAt).                                                             |
 | POST   | `/api/games/move`             | Body: `{ "gameId", "userId", "col" }`. Apply move (e.g. Connect 4).                                      |
+| GET    | `/api/sse`                   | Query: `gameId=...` or `eventId=...`. Server-Sent Events stream for live updates.                        |
+| GET    | `/auth/discord`              | Redirect to Discord OAuth.                                                                              |
+| GET    | `/auth/discord/callback`     | OAuth callback; sets session cookie and redirects to `WEB_APP_URL`.                                     |
+| GET    | `/api/posts`                 | List posts. Query: `authorId`, `limit`.                                                                  |
+| POST   | `/api/posts`                 | Create post (auth). Body: `content`, optional `attachments`, optional `userId` (when using API key).      |
+| GET    | `/api/posts/:id`             | Single post with comments.                                                                               |
+| GET    | `/api/posts/:id/comments`    | List comments. Query: `limit`.                                                                           |
+| POST   | `/api/posts/:id/comments`    | Add comment (auth). Body: `content`, optional `userId`.                                                 |
+| POST   | `/api/events`                | Create event (auth). Body: `title`, `description?`, `startTime`/`start_time`, `endTime`/`end_time`, `status?`. |
+| PATCH  | `/api/events/:id`            | Update event (auth). Body: `title?`, `description?`, `startTime?`, `endTime?`, `status?`.                |
+| GET    | `/api/achievements`          | List all achievement definitions (id, name, description, emoji, category).                              |
 
-Responses are JSON. No auth is implemented yet; add API keys or Discord OAuth when building the frontend.
+Responses are JSON (except SSE). Auth: `Authorization: Bearer <sessionId>`, cookie `session_id` (after Discord OAuth), or `X-API-Key` (set `WEB_API_KEY`). Write endpoints (POST posts, POST/PATCH events, POST comments) require auth.
 
 ## Leaderboards
 
 - **Usage:** `leaderboardService.getUsageLeaderboard({ scope: "users"|"commands", limit })` — from fun usage store.
 - **Per-game:** `leaderboardService.getGameLeaderboard(gameType, { limit })` — e.g. slots, daily; extend for more games.
-- **Scopes:** Global (current); server/weekly can be added by filtering in the store or API.
+- **Scopes:** Global (default), **weekly** (`?window=weekly`), **server** (`?guildId=...`). Usage is logged to `usage_log` (migration 014) with `guild_id` when recording from Discord.
 
 ## Achievements
 
 - **Definitions:** `commands/games/achievements/definitions.ts` (id, title, description, xpReward, icon, checkFn).
 - **Unlock state:** Stored implicitly via game stats and progression; profile and achievements embed use the same checks.
-- **Web:** Profile API includes `achievementsEarned` / `achievementsTotal`; a future endpoint can return full achievement list and unlock state.
+- **Web:** `GET /api/profile/:userId` includes `achievements` (array of `{ id, name, description, emoji, category, unlocked }`). `GET /api/achievements` returns all definitions.
 
 ## Profiles
 
@@ -151,18 +162,19 @@ Responses are JSON. No auth is implemented yet; add API keys or Discord OAuth wh
 - **Discord:** `/profile view` uses the same data (via profileHelpers + progression + gameStats).
 - **Web:** `GET /api/profile/:userId` returns the same shape.
 
-## Real-time (future)
+## Real-time (SSE)
 
 - Services are stateless and keyed by id; a WebSocket or SSE layer can subscribe to “game updates” or “event updates” and push from the same service layer.
-- No implementation yet; design is compatible with adding it later.
+- Sessions are in-memory; WebSocket could be added later for bidirectional use.
 
-## Future TODOs
+## Implemented features (roadmap done)
 
-- [ ] **Discord OAuth** for web login and account linking.
-- [ ] **Auth middleware** for web API (API key or session).
-- [ ] **POST /api/posts** and **GET /api/posts** (and optional comments).
-- [ ] **Event create/update** via API and/or `/event create` command.
-- [ ] **Weekly leaderboard** window (filter by date range).
-- [ ] **Server (guild) leaderboard** when guild_id is stored with usage or games.
-- [ ] **WebSocket or SSE** for live game/event updates.
-- [ ] **Achievement badges** API and web profile display.
+The following are implemented:
+
+- **Discord OAuth:** `GET /auth/discord` and `GET /auth/discord/callback`; session cookie; env: `DISCORD_OAUTH_CLIENT_ID`, `DISCORD_OAUTH_CLIENT_SECRET`, `DISCORD_OAUTH_REDIRECT_URI`, `WEB_APP_URL`.
+- **Auth middleware:** Session (cookie or `Authorization: Bearer <sessionId>`) and API key (`X-API-Key`, `WEB_API_KEY`). Write endpoints require auth; `userId` from session or body when using API key.
+- **POST /api/posts and GET /api/posts:** Create (auth), list with `authorId`, `limit`. **Comments:** `post_comments` table (migration 013), `GET /api/posts/:id/comments`, `POST /api/posts/:id/comments` (auth).
+- **Event create/update:** `POST /api/events`, `PATCH /api/events/:id` (auth). Discord: `/event create`, `/event update`, `/event join`, `/event list`, `/event results`.
+- **Weekly leaderboard:** `GET /api/leaderboard?window=weekly`. **Date range:** `from`, `to` (Unix ms). **Server leaderboard:** `?guildId=...`. Usage is logged to `usage_log` (migration 014) with `guild_id` when recording from Discord.
+- **SSE:** `GET /api/sse?gameId=...` or `?eventId=...` streams live updates when a move or event join occurs.
+- **Achievement badges:** `GET /api/achievements` returns all definitions. `GET /api/profile/:userId` includes `achievements: { id, name, description, emoji, category, unlocked }[]`.

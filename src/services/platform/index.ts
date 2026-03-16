@@ -14,9 +14,11 @@ export {
   joinEvent,
   getEventParticipants,
   updateEventStatus,
+  updateEvent,
   type Event,
   type EventStatus,
   type EventParticipant,
+  type UpdateEventInput,
 } from "./eventsService.js";
 export {
   createPost,
@@ -24,12 +26,16 @@ export {
   listPosts,
   likePost,
   unlikePost,
+  addComment,
+  getComments,
   type Post,
+  type PostComment,
 } from "./postsService.js";
-export { getProfile, type Profile } from "./profileService.js";
+export { getProfile, type Profile, type AchievementBadge } from "./profileService.js";
 export {
   getUsageLeaderboard,
   getGameLeaderboard,
+  recordUsageLog,
   type LeaderboardScope,
   type LeaderboardEntry,
 } from "./leaderboardService.js";

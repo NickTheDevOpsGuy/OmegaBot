@@ -16,6 +16,7 @@ import { buildStatusHelp } from "./topics/status.js";
 import { buildAdminHelp } from "./topics/admin.js";
 import { buildCommandsHelp } from "./topics/meta/commands.js";
 import { buildInfoHelp } from "./topics/info.js";
+import { buildEventHelp } from "./topics/event.js";
 
 export type HelpTopic =
   | "overview"
@@ -29,7 +30,8 @@ export type HelpTopic =
   | "commands"
   | "changelog"
   | "summary"
-  | "info";
+  | "info"
+  | "event";
 
 /**
  * Builds help text for the specified topic.
@@ -64,6 +66,8 @@ export function buildHelpText(args: {
       return buildSummaryHelp();
     case "info":
       return buildInfoHelp();
+    case "event":
+      return buildEventHelp();
     case "overview":
     default:
       return buildOverviewHelp({ isAdmin });

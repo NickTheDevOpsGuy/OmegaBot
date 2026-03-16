@@ -121,6 +121,7 @@ The tree below is a simplified overview. The repo uses **command groups** (`core
 │   │   │   │   │   ├── games.ts
 │   │   │   │   │   ├── github.ts
 │   │   │   │   │   ├── info.ts
+│   │   │   │   │   ├── event.ts
 │   │   │   │   │   ├── profile.ts
 │   │   │   │   │   ├── quotes.ts
 │   │   │   │   │   └── status.ts
@@ -134,6 +135,8 @@ The tree below is a simplified overview. The repo uses **command groups** (`core
 │   │   │   │   │   ├── serverInfo.ts
 │   │   │   │   │   └── userInfo.ts
 │   │   │   │   └── info.ts
+│   │   │   ├── event
+│   │   │   │   └── event.ts
 │   │   │   ├── profile
 │   │   │   ├── rules
 │   │   │   ├── status
@@ -250,6 +253,19 @@ The tree below is a simplified overview. The repo uses **command groups** (`core
 │   │   ├── errors.ts
 │   │   ├── interactions.ts
 │   │   └── logger.ts
+│   ├── web
+│   │   ├── api
+│   │   │   ├── achievements.ts
+│   │   │   ├── events.ts
+│   │   │   ├── games.ts
+│   │   │   ├── leaderboard.ts
+│   │   │   ├── posts.ts
+│   │   │   └── profile.ts
+│   │   ├── auth.ts
+│   │   ├── authRoutes.ts
+│   │   ├── rateLimit.ts
+│   │   ├── server.ts
+│   │   └── sse.ts
 │   ├── bot.ts
 │   └── registerCommands.ts
 ├── .dockerignore

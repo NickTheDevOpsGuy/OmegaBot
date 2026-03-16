@@ -114,3 +114,51 @@ export function unlikePost(postId: string, userId: string): boolean {
     .run(postId, userId);
   return result.changes > 0;
 }
+
+export type PostComment = {
+  commentId: string;
+  postId: string;
+  authorId: string;
+  content: string;
+  createdAt: number;
+};
+
+function ensureCommentsTable(): void {
+  const db = getDb();
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS post_comments (
+      comment_id TEXT PRIMARY KEY,
+      post_id TEXT NOT NULL,
+      author_id TEXT NOT NULL,
+      content TEXT NOT NULL,
+      created_at INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_post_comments_post ON post_comments(post_id);
+    CREATE INDEX IF NOT EXISTS idx_post_comments_author ON post_comments(author_id);
+  `);
+}
+
+export function addComment(postId: string, authorId: string, content: string): PostComment | null {
+  ensureTables();
+  ensureCommentsTable();
+  const db = getDb();
+  if (!getPost(postId)) return null;
+  const commentId = randomUUID();
+  const now = Date.now();
+  db.prepare(
+    `INSERT INTO post_comments (comment_id, post_id, author_id, content, created_at) VALUES (?, ?, ?, ?, ?)`,
+  ).run(commentId, postId, authorId, content.trim().slice(0, 2000), now);
+  return { commentId, postId, authorId, content: content.trim().slice(0, 2000), createdAt: now };
+}
+
+export function getComments(postId: string, limit?: number): PostComment[] {
+  ensureCommentsTable();
+  const db = getDb();
+  const limitNum = Math.min(limit ?? 100, 200);
+  return db
+    .prepare(
+      `SELECT comment_id AS commentId, post_id AS postId, author_id AS authorId, content, created_at AS createdAt
+       FROM post_comments WHERE post_id = ? ORDER BY created_at ASC LIMIT ?`,
+    )
+    .all(postId, limitNum) as PostComment[];
+}

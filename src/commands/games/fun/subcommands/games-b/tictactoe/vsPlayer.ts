@@ -258,6 +258,14 @@ export async function playVsPlayer(
       if (!okTurn) {
         collector.stop("message_gone");
         await notifyGameMessageGone(buttonInteraction, "tictactoe");
+      } else {
+        try {
+          await buttonInteraction.client.users.send(currentPlayer.id, {
+            content: "It's your turn in **Tic Tac Toe**! Check the game message in the channel to make your move.",
+          });
+        } catch {
+          // DMs may be disabled; ignore
+        }
       }
     } catch (err) {
       if (isKnownInteractionError(err)) {
