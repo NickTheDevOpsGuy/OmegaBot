@@ -98,7 +98,10 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       );
     }
   } catch (err) {
-    getContextLogger().error({ err, command: "summary" }, "[summary] summary command threw");
+    getContextLogger().error(
+      { err, command: "summary" },
+      "[summary] summary command threw",
+    );
 
     if (interaction.deferred || interaction.replied) {
       await interaction.editReply(

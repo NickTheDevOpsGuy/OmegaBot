@@ -167,7 +167,10 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         await safeEditReply(interaction, { components: [] }, "playback.end");
       } catch (err) {
         // ignore
-        getContextLogger().debug({ err }, "[playback] cleanup after collector end failed");
+        getContextLogger().debug(
+          { err },
+          "[playback] cleanup after collector end failed",
+        );
       }
     });
   } catch (err) {
@@ -188,7 +191,10 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         });
       }
     } catch (replyErr) {
-      getContextLogger().error({ err: replyErr }, "[playback] send fallback error reply threw");
+      getContextLogger().error(
+        { err: replyErr },
+        "[playback] send fallback error reply threw",
+      );
     }
   }
 }

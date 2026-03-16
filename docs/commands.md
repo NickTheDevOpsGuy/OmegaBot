@@ -12,29 +12,29 @@ The main hub for all games and fun features.
 
 ### Games
 
-| Command                   | Description                                                                                             |
-| ------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `/fun 8ball`              | Ask the magic 8-ball                                                                                    |
-| `/fun rps`                | Rock paper scissors (solo or PvP)                                                                       |
-| `/fun tictactoe`          | Tic Tac Toe (solo or PvP; opponent is DMed when it's their turn)                                        |
-| `/fun trivia`             | Trivia with points and streaks                                                                          |
-| `/fun blackjack`          | Interactive blackjack                                                                                   |
-| `/fun connect4`           | PvP Connect 4 (persistent multi-day; use **continue** to resume; opponent is DMed when it's their turn) |
-| `/fun hangman play`       | Hangman (dropdown letters, difficulty)                                                                  |
-| `/fun hangman stats`      | Hangman stats (wins, fastest time)                                                                      |
-| `/fun hangman words add`  | (Admin) Add word to list                                                                                |
-| `/fun hangman words list` | (Admin) List words                                                                                      |
-| `/fun wordle`             | Daily word puzzle                                                                                       |
+| Command                   | Description                                                                                                   |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `/fun 8ball`              | Ask the magic 8-ball                                                                                          |
+| `/fun rps`                | Rock paper scissors (solo or PvP)                                                                             |
+| `/fun tictactoe`          | Tic Tac Toe (solo or PvP; opponent is DMed when it's their turn)                                              |
+| `/fun trivia`             | Trivia with points and streaks                                                                                |
+| `/fun blackjack`          | Interactive blackjack                                                                                         |
+| `/fun connect4`           | PvP Connect 4 (persistent multi-day; use **continue** to resume; opponent is DMed when it's their turn)       |
+| `/fun hangman play`       | Hangman (dropdown letters, difficulty)                                                                        |
+| `/fun hangman stats`      | Hangman stats (wins, fastest time)                                                                            |
+| `/fun hangman words add`  | (Admin) Add word to list                                                                                      |
+| `/fun hangman words list` | (Admin) List words                                                                                            |
+| `/fun wordle`             | Daily word puzzle                                                                                             |
 | `/fun slots`              | Slot machine (1, 3, or 5 rows) with jackpots; rare random events (Lucky Spin, Double XP, etc.) show in result |
-| `/fun darts`              | Throw 3 darts (solo or PvP), stats, leaderboards (best/180/PvP)                                         |
-| `/fun chess`              | Challenge someone to chess or get Lichess links (vs computer)                                           |
-| `/fun memory`             | Match pairs of cards (memory game)                                                                      |
-| `/fun higherlower`        | Think of a number 1–100; bot guesses with Higher/Lower                                                  |
-| `/fun would-you-rather`   | WYR questions                                                                                           |
-| `/fun coinflip`           | Heads or tails                                                                                          |
-| `/fun choose`             | Pick one or more options at random (e.g. pizza, pasta, salad)                                           |
-| `/fun dice`               | Roll dice (notation: 2d6+3, or sides/count)                                                             |
-| `/fun utility poll`       | Create polls                                                                                            |
+| `/fun darts`              | Throw 3 darts (solo or PvP), stats, leaderboards (best/180/PvP)                                               |
+| `/fun chess`              | Challenge someone to chess or get Lichess links (vs computer)                                                 |
+| `/fun memory`             | Match pairs of cards (memory game)                                                                            |
+| `/fun higherlower`        | Think of a number 1–100; bot guesses with Higher/Lower                                                        |
+| `/fun would-you-rather`   | WYR questions                                                                                                 |
+| `/fun coinflip`           | Heads or tails                                                                                                |
+| `/fun choose`             | Pick one or more options at random (e.g. pizza, pasta, salad)                                                 |
+| `/fun dice`               | Roll dice (notation: 2d6+3, or sides/count)                                                                   |
+| `/fun utility poll`       | Create polls                                                                                                  |
 
 **Rate limits** (per user, to prevent spam):
 

@@ -75,7 +75,10 @@ export async function execute(
       embeds: [embed],
     });
   } catch (err) {
-    getContextLogger().error({ err, command: "quote-message" }, "[quote-message] save quote threw");
+    getContextLogger().error(
+      { err, command: "quote-message" },
+      "[quote-message] save quote threw",
+    );
     await interaction.editReply("The quote couldn't be saved. Try again in a moment.");
   }
 }

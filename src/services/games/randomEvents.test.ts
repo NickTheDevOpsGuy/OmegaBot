@@ -30,7 +30,13 @@ describe("randomEvents", () => {
     for (let i = 0; i < 50; i++) {
       const result = rollRandomEvent({
         triggerChance: 1,
-        weights: { lucky_spin: 1, double_xp: 1, bonus_coins: 1, jackpot_boost: 1, none: 0 },
+        weights: {
+          lucky_spin: 1,
+          double_xp: 1,
+          bonus_coins: 1,
+          jackpot_boost: 1,
+          none: 0,
+        },
       });
       kinds.push(result.kind);
       if (result.kind !== "none") {
