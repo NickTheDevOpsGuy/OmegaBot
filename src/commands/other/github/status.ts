@@ -6,6 +6,7 @@ import {
   type ChatInputCommandInteraction,
 } from "discord.js";
 import { env } from "../../../config/env.js";
+import { getContextLogger } from "../../../services/core/logging/requestContext.js";
 import { logger } from "../../../utils/logger.js";
 
 /**
@@ -42,7 +43,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
     await interaction.reply({ content: lines.join("\n"), flags: MessageFlags.Ephemeral });
   } catch (err) {
-    logger.error({ err }, "[/status] GitHub status build or fetch threw");
+    getContextLogger().error({ err }, "[/status] GitHub status build or fetch threw");
 
     // Best-effort reply (avoid throwing twice)
     const msg = "GitHub status couldn't be loaded. Try again in a moment.";

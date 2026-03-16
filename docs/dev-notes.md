@@ -67,6 +67,14 @@ For the full folder layout (command and service groups), see [Project structure]
 
 ---
 
+## User-facing errors and logging
+
+- **User messages:** Never expose stack traces, `.env` names, API keys, or raw internal errors. Use `getUserFacingReason(err)` from `src/utils/errors.ts` in catch blocks when replying to the user; it maps known patterns (rate limit, timeout, permission, etc.) to short, actionable text.
+- **Consistency:** Use `errorReply(interaction, message, suggestions?)` from `src/utils/interactions.ts` when you want a single error line plus optional "Suggestions:" bullets (e.g. "Use `/help topic:fun` to see available commands."). For embed-style errors, use `createErrorEmbed(title, description)` from `src/utils/embedHelpers.ts`.
+- **Logging in commands:** In slash command catch blocks, use `getContextLogger().error(...)` so the log line includes `requestId` and ties to the same interaction. Include `err` in the log object and a short message (e.g. `[fun] subcommand threw: ${errMessage(err)}`). See [Troubleshooting → User-facing errors](troubleshooting.md#user-facing-errors).
+
+---
+
 ## Discord.js v14 Migration
 
 ### Key Changes from v13 to v14

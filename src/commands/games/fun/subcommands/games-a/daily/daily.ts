@@ -1,5 +1,6 @@
 // src/commands/fun/subcommands/daily.ts
 import { EmbedBuilder, type ChatInputCommandInteraction } from "discord.js";
+import { getContextLogger } from "../../../../../../services/core/logging/requestContext.js";
 import { logger } from "../../../../../../utils/logger.js";
 import { getStats, doCheckIn, getDailyLeaderboard } from "./dailyStore.js";
 import { getNewlyUnlockedAchievementLine } from "../../../../achievements/achievements.js";
@@ -128,7 +129,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       return;
     }
 
-    logger.error(
+    getContextLogger().error(
       { err, userId: interaction.user.id },
       "[fun/daily] daily check-in handler threw",
     );

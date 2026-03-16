@@ -5,6 +5,7 @@
 
 import { EmbedBuilder, type ChatInputCommandInteraction } from "discord.js";
 import { SLOTS_COOLDOWN_MS } from "../../../../../../utils/constants.js";
+import { getContextLogger } from "../../../../../../services/core/logging/requestContext.js";
 import { errMessage, getUserFacingReason } from "../../../../../../utils/errors.js";
 import { logger } from "../../../../../../utils/logger.js";
 import {
@@ -15,6 +16,7 @@ import {
 import { getNewlyUnlockedAchievementLine } from "../../../../achievements/achievements.js";
 import { getDb } from "../../../../../../services/core/database/db.js";
 import { buildGameResultEmbed } from "../../../../../../services/games/gameResultRenderer.js";
+import { rollRandomEvent } from "../../../../../../services/games/randomEvents.js";
 import {
   SYMBOLS,
   TOTAL_WEIGHT,
@@ -75,7 +77,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
   try {
     return await runSlots(interaction);
   } catch (err) {
-    logger.error(
+    getContextLogger().error(
       { err, userId: interaction.user.id },
       `[slots] slots handler threw: ${errMessage(err)}`,
     );
@@ -169,23 +171,28 @@ async function runSlots(interaction: ChatInputCommandInteraction): Promise<void>
   const userId = interaction.user.id;
   const rows = parseRowsOption(interaction.options.getInteger("rows"));
   const statsBefore = getStats(userId);
+  const randomEvent = rollRandomEvent();
   const grid = spinGrid(rows);
-  const { payout, type } = calculatePayout(grid, rows);
+  const { payout: basePayout, type } = calculatePayout(grid, rows);
+  const payout = Math.max(0, Math.floor(basePayout * randomEvent.payoutMultiplier));
   const isWin = payout > 0;
   const isJackpot = payout >= 100;
 
-  logger.info({ userId, payout, isJackpot }, "[slots] spin");
+  logger.info({ userId, payout, isJackpot, event: randomEvent.kind }, "[slots] spin");
+
+  const baseXp = isJackpot ? 40 : isWin ? 12 : 5;
+  const xpAmount = Math.max(0, Math.floor(baseXp * randomEvent.xpMultiplier));
 
   let achievementLine: string | undefined;
   let xpResult: AwardXpResult = awardXp(userId, 0);
   if (isJackpot) {
     achievementLine = getNewlyUnlockedAchievementLine(userId, getDb(), () => {
       recordSpin(userId, isWin, isJackpot, payout);
-      xpResult = awardXp(userId, 40);
+      xpResult = awardXp(userId, xpAmount);
     });
   } else {
     recordSpin(userId, isWin, isJackpot, payout);
-    xpResult = awardXp(userId, isWin ? 12 : 5);
+    xpResult = awardXp(userId, xpAmount);
   }
   recordSlotsSpin(userId);
   const statsAfter = getStats(userId);
@@ -205,14 +212,15 @@ async function runSlots(interaction: ChatInputCommandInteraction): Promise<void>
       )
     : undefined;
 
+  const rewardLines: string[] = [];
+  if (randomEvent.label) rewardLines.push(randomEvent.label);
+
   const paylineLabel = `${rows} payline${rows === 1 ? "" : "s"}`;
   const outcomeMessage = isJackpot
     ? `**${payout}×** — ${type}\n*You hit the top tier!*`
     : isWin
       ? `${type} — **${payout}×**`
       : "No match this spin. Try again!";
-
-  const rewardLines: string[] = [];
 
   for (let frame = 0; frame < SPIN_FRAMES; frame++) {
     const isLast = frame === SPIN_FRAMES - 1;

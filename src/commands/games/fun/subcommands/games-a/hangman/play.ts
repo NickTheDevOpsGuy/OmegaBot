@@ -6,6 +6,7 @@ import {
 } from "discord.js";
 import { HANGMAN_COOLDOWN_MS } from "../../../../../../utils/constants.js";
 import { GAME_TIMEOUT_MS } from "../../../../../../utils/constants.js";
+import { getContextLogger } from "../../../../../../services/core/logging/requestContext.js";
 import { logger } from "../../../../../../utils/logger.js";
 import { recordInteractionRecovery } from "../../../../../../services/core/metrics/server.js";
 import {
@@ -158,7 +159,7 @@ export async function runPlay(
       }
     } catch (err) {
       recordInteractionRecovery("hangman");
-      logger.warn(
+      getContextLogger().warn(
         { err, gameId, interactionFailedRecovery: true },
         "[hangman] letter button collect threw",
       );
@@ -171,7 +172,7 @@ export async function runPlay(
   collector.on("end", async (_, reason) => {
     if (reason === "time") {
       recordResult(userId, false, totalGuesses);
-      logger.warn({ gameId, userId }, "[hangman] timed out");
+      getContextLogger().warn({ gameId, userId }, "[hangman] timed out");
       await safeMessageEdit(
         message,
         {

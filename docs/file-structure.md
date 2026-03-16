@@ -149,7 +149,6 @@ The tree below is a simplified overview. The repo uses **command groups** (`core
 │   │   │   │   │   ├── hangmanGroup.ts
 │   │   │   │   │   ├── index.ts
 │   │   │   │   │   ├── quoteGroup.ts
-│   │   │   │   │   ├── remindGroup.ts
 │   │   │   │   │   └── utilityGroup.ts
 │   │   │   │   ├── subcommands
 │   │   │   │   │   ├── games-a

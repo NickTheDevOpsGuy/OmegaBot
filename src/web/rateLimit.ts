@@ -33,10 +33,6 @@ function check(
   return { allowed, remaining, resetAt: entry.resetAt };
 }
 
-export function getClientKey(req: IncomingMessage): string {
-  return getKey(req);
-}
-
 export function checkAuthRateLimit(req: IncomingMessage): {
   allowed: boolean;
   remaining: number;

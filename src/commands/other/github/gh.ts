@@ -11,6 +11,7 @@ import {
   listIssues,
   listPullRequests,
 } from "../../../services/integrations/github/githubApi.js";
+import { getContextLogger } from "../../../services/core/logging/requestContext.js";
 import { getGitHubUserMessage } from "../../../services/integrations/github/shared/githubErrorMessage.js";
 import { logger } from "../../../utils/logger.js";
 
@@ -196,7 +197,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       return;
     }
 
-    logger.warn({ err, sub }, "[gh] GitHub API request threw for subcommand");
+    getContextLogger().warn({ err, sub }, "[gh] GitHub API request threw for subcommand");
     await interaction.editReply("GitHub didn't respond. Try again in a moment.");
   }
 }

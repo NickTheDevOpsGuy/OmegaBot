@@ -22,7 +22,7 @@ These are the main activities that currently award XP:
 - `/fun trivia`
 - `/fun wordle`
 - `/fun blackjack`
-- `/fun slots`
+- `/fun slots` (can occasionally trigger rare events for bonus payout/XP)
 - `/fun darts`
 - `/fun rps`
 - `/fun connect4`

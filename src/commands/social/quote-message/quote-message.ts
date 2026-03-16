@@ -8,6 +8,7 @@ import {
   EmbedBuilder,
   type MessageContextMenuCommandInteraction,
 } from "discord.js";
+import { getContextLogger } from "../../../services/core/logging/requestContext.js";
 import { addQuote } from "../../../services/stores/quotes/quoteStore.js";
 import { logger } from "../../../utils/logger.js";
 import { t, resolveLocale } from "../../../i18n/index.js";
@@ -74,7 +75,7 @@ export async function execute(
       embeds: [embed],
     });
   } catch (err) {
-    logger.error({ err, command: "quote-message" }, "[quote-message] save quote threw");
+    getContextLogger().error({ err, command: "quote-message" }, "[quote-message] save quote threw");
     await interaction.editReply("The quote couldn't be saved. Try again in a moment.");
   }
 }

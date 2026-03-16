@@ -14,7 +14,7 @@ Commands are grouped into four top-level folders (≤10 items each). The loader 
 | **other/**  | github, ping, playback, view-profile                                      |
 
 - **Help topics:** `core/help/topics/*.ts`; meta content (overview, changelog, summary, commands) in `topics/meta/`.
-- **Fun command:** `games/fun/` (execute, autocomplete, funSubcommands). Subcommands live under `fun/subcommands/` in four groups: **games-a/** (blackjack, chess, connect4, daily, darts, dice, hangman), **games-b/** (higherlower, memory, rps, slots, stats, tictactoe, trivia, wordle), **social/** (joke, leaderboard, poll, quote, wouldYouRather, fact), **utility/** (chat, compliment, quest, reminders, roast, weather, choose, coinflip, coinflipstats, eightball). Hangman has a `tests/` subfolder for its unit tests.
+- **Fun command:** `games/fun/` (execute, autocomplete, funSubcommands). Subcommands live under `fun/subcommands/` in four groups: **games-a/** (blackjack, chess, connect4, daily, darts, dice, hangman), **games-b/** (higherlower, memory, rps, slots, stats, tictactoe, trivia, wordle), **social/** (joke, leaderboard, poll, quote, wouldYouRather, fact), **utility/** (chat, compliment, quest, reminders, roast, weather, choose, coinflip, coinflipstats, eightball, leaderboard, remind_set/list/cancel/snooze/clear). Builders: `funSubcommands/gamesGroup.ts`, `quoteGroup.ts`, `hangmanGroup.ts`, `utilityGroup.ts`. Hangman has a `tests/` subfolder for its unit tests.
 
 ## Services (`src/services/`)
 

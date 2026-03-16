@@ -1,6 +1,7 @@
 // src/commands/fun/subcommands/weather.ts
 
 import type { ChatInputCommandInteraction } from "discord.js";
+import { getContextLogger } from "../../../../../../services/core/logging/requestContext.js";
 import { logger } from "../../../../../../utils/logger.js";
 import type { WeatherMode } from "../../../../../../services/integrations/weather/types.js";
 import { fetchWeatherBundle } from "../../../../../../services/integrations/weather/forecast.js";
@@ -139,7 +140,7 @@ export async function run(
       "[fun/weather] sent",
     );
   } catch (err) {
-    logger.error({ err, mode }, "[fun/weather] weather fetch threw");
+    getContextLogger().error({ err, mode }, "[fun/weather] weather fetch threw");
     await interaction.editReply(friendlyWeatherError(err));
   }
 }

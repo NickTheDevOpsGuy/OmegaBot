@@ -11,6 +11,8 @@ import {
   safeMessageEdit,
   notifyGameMessageGone,
 } from "../../../../../../services/discord/discord/safeReply.js";
+import { getContextLogger } from "../../../../../../services/core/logging/requestContext.js";
+import { getUserFacingReason } from "../../../../../../utils/errors.js";
 import { logger } from "../../../../../../utils/logger.js";
 import { recordSoloResult } from "./rpsStore.js";
 import { awardXp } from "../../../../../../services/stores/progression/progressionStore.js";
@@ -168,7 +170,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       // Timeout — leave the result as is
     }
   } catch (err) {
-    logger.error({ err, userId }, "[fun/rps] RPS handler threw");
-    await interaction.editReply("Rock-paper-scissors couldn't complete that. Try again!");
+    getContextLogger().error({ err, userId }, "[fun/rps] RPS handler threw");
+    await interaction.editReply(`❌ ${getUserFacingReason(err)}`);
   }
 }

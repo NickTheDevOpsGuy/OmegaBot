@@ -7,6 +7,7 @@ import {
   type ButtonInteraction,
   type User,
 } from "discord.js";
+import { getContextLogger } from "../../../../../../services/core/logging/requestContext.js";
 import { logger } from "../../../../../../utils/logger.js";
 import {
   isKnownInteractionError,
@@ -176,7 +177,7 @@ export async function playVsPlayer(
         try {
           recordResult(winnerUser.id, loserUser.id, challenger.id, opponent.id);
         } catch (err) {
-          logger.error({ err }, "[fun/tictactoe] record result threw");
+          getContextLogger().error({ err }, "[fun/tictactoe] record result threw");
         }
 
         collector.stop("win");
@@ -207,7 +208,7 @@ export async function playVsPlayer(
         try {
           recordResult(null, null, challenger.id, opponent.id);
         } catch (err) {
-          logger.error({ err }, "[fun/tictactoe] record tie threw");
+          getContextLogger().error({ err }, "[fun/tictactoe] record tie threw");
         }
 
         collector.stop("tie");
@@ -272,7 +273,7 @@ export async function playVsPlayer(
       if (isKnownInteractionError(err)) {
         logKnownInteractionError(err, "tictactoe.vsPlayer.collect", { gameId });
       } else {
-        logger.warn({ err, gameId }, "[tictactoe] vsPlayer button collect threw");
+        getContextLogger().warn({ err, gameId }, "[tictactoe] vsPlayer button collect threw");
       }
     }
   });
@@ -280,7 +281,7 @@ export async function playVsPlayer(
   collector.on("end", async (_, reason) => {
     if (warningTimer) clearTimeout(warningTimer);
     if (reason === "time") {
-      logger.warn(
+      getContextLogger().warn(
         { gameId, timeoutLoserId: currentPlayer.id },
         "[tictactoe] vsPlayer timed out",
       );
@@ -290,7 +291,7 @@ export async function playVsPlayer(
       try {
         recordResult(timeoutWinner.id, timeoutLoser.id, challenger.id, opponent.id);
       } catch (err) {
-        logger.error({ err }, "[fun/tictactoe] record timeout result threw");
+        getContextLogger().error({ err }, "[fun/tictactoe] record timeout result threw");
       }
 
       await safeMessageEdit(

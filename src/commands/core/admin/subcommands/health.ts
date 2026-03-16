@@ -4,6 +4,7 @@ import { getContextLogger } from "../../../../services/core/logging/requestConte
 import { getDb } from "../../../../services/core/database/db.js";
 import { getInteractionErrorCounts } from "../../../../services/discord/discord/interaction/interactionErrors.js";
 import { EmbedColors } from "../../../../utils/colors.js";
+import { getUserFacingReason } from "../../../../utils/errors.js";
 import { safeReply } from "../utils.js";
 import { env } from "../../../../config/env.js";
 
@@ -22,7 +23,7 @@ async function checkWeatherReachable(): Promise<string> {
     clearTimeout(t);
     return r.ok ? "✅ Reachable" : `⚠️ API error ${r.status}`;
   } catch (e) {
-    return `❌ Unreachable (${e instanceof Error ? e.message : String(e).slice(0, 50)})`;
+    return `❌ Unreachable (${getUserFacingReason(e)})`;
   }
 }
 
@@ -39,7 +40,7 @@ async function checkGitHubReachable(): Promise<string> {
     clearTimeout(t);
     return r.ok ? "✅ Reachable" : `⚠️ API error ${r.status}`;
   } catch (e) {
-    return `❌ Unreachable (${e instanceof Error ? e.message : String(e).slice(0, 50)})`;
+    return `❌ Unreachable (${getUserFacingReason(e)})`;
   }
 }
 

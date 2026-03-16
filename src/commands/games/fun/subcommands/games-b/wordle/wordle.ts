@@ -21,6 +21,7 @@ import {
   ComponentType,
   type ChatInputCommandInteraction,
 } from "discord.js";
+import { getContextLogger } from "../../../../../../services/core/logging/requestContext.js";
 import { logger } from "../../../../../../utils/logger.js";
 import { recordInteractionRecovery } from "../../../../../../services/core/metrics/server.js";
 import { SHORT_TIMEOUT_MS } from "../../../../../../utils/constants.js";
@@ -138,7 +139,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       try {
         await buttonInteraction.showModal(modal);
       } catch (err) {
-        logger.warn({ err, gameId }, "[wordle] show guess modal threw");
+        getContextLogger().warn({ err, gameId }, "[wordle] show guess modal threw");
         await buttonInteraction.deferUpdate().catch(() => {});
         const ok = await safeMessageEdit(
           message,
@@ -261,7 +262,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       }
     } catch (err) {
       recordInteractionRecovery("wordle");
-      logger.warn(
+      getContextLogger().warn(
         { err, gameId, interactionFailedRecovery: true },
         "[wordle] game button collect threw",
       );
@@ -273,7 +274,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
 
   collector.on("end", async (_, reason) => {
     if (reason === "time" && guesses.length < MAX_GUESSES) {
-      logger.warn({ gameId, userId }, "[wordle] session expired");
+      getContextLogger().warn({ gameId, userId }, "[wordle] session expired");
       await safeMessageEdit(
         message,
         {

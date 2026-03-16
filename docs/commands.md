@@ -25,7 +25,7 @@ The main hub for all games and fun features.
 | `/fun hangman words add`  | (Admin) Add word to list                                                                                |
 | `/fun hangman words list` | (Admin) List words                                                                                      |
 | `/fun wordle`             | Daily word puzzle                                                                                       |
-| `/fun slots`              | Slot machine (1, 3, or 5 rows) with jackpots                                                            |
+| `/fun slots`              | Slot machine (1, 3, or 5 rows) with jackpots; rare random events (Lucky Spin, Double XP, etc.) show in result |
 | `/fun darts`              | Throw 3 darts (solo or PvP), stats, leaderboards (best/180/PvP)                                         |
 | `/fun chess`              | Challenge someone to chess or get Lichess links (vs computer)                                           |
 | `/fun memory`             | Match pairs of cards (memory game)                                                                      |

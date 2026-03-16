@@ -9,6 +9,7 @@ import {
 } from "discord.js";
 import { DARTS_COOLDOWN_MS } from "../../../../../../utils/constants.js";
 import { CHALLENGE_TIMEOUT_MS } from "../../../../../../utils/constants.js";
+import { getContextLogger } from "../../../../../../services/core/logging/requestContext.js";
 import { logger } from "../../../../../../utils/logger.js";
 import { recordInteractionRecovery } from "../../../../../../services/core/metrics/server.js";
 import {
@@ -260,7 +261,7 @@ export async function handleChallenge(
       }
     } catch (err) {
       recordInteractionRecovery("darts");
-      logger.warn(
+      getContextLogger().warn(
         { err, challengeId, interactionFailedRecovery: true },
         "[darts] challenge button collect threw",
       );
@@ -285,6 +286,6 @@ export async function handleChallenge(
       "darts.challenge.timeout",
       interaction,
     ).catch(() => {});
-    logger.warn({ challengeId }, "[darts] challenge timed out");
+    getContextLogger().warn({ challengeId }, "[darts] challenge timed out");
   });
 }

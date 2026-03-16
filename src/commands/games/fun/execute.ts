@@ -40,7 +40,9 @@ import { run as runCompliment } from "./subcommands/utility/compliment/index.js"
 import { run as runMemory } from "./subcommands/games-b/memory/index.js";
 import { run as runHigherlower } from "./subcommands/games-b/higherlower/index.js";
 import { run as runQuest } from "./subcommands/utility/quest/index.js";
+import { getContextLogger } from "../../../services/core/logging/requestContext.js";
 import { errMessage, getUserFacingReason } from "../../../utils/errors.js";
+import { errorReply } from "../../../utils/interactions.js";
 import {
   recordFunUsage,
   type FunCommandKey,
@@ -128,7 +130,7 @@ async function maybeRecordUsage(
       recordDailyPlay(interaction.user.id, metric);
     }
   } catch (err) {
-    logger.warn({ err, sub }, "[fun] usage tracking threw");
+    getContextLogger().warn({ err, sub }, "[fun] usage tracking threw");
   }
 }
 
@@ -250,9 +252,11 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       logKnownInteractionError(err, "fun.execute", { sub });
       return;
     }
-    logger.error({ err, sub }, `[fun] subcommand threw: ${errMessage(err)}`);
+    getContextLogger().error({ err, sub }, `[fun] subcommand threw: ${errMessage(err)}`);
     try {
-      await interaction.editReply(`❌ ${getUserFacingReason(err)}`);
+      await errorReply(interaction, getUserFacingReason(err), [
+        "Use `/help topic:fun` to see available commands.",
+      ]);
     } catch (editErr) {
       if (isKnownInteractionError(editErr)) {
         logKnownInteractionError(editErr, "fun.execute fallback edit", { sub });

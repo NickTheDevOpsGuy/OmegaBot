@@ -9,6 +9,7 @@ import {
   type ButtonInteraction,
   type ChatInputCommandInteraction,
 } from "discord.js";
+import { getContextLogger } from "../../../../../../services/core/logging/requestContext.js";
 import { logger } from "../../../../../../utils/logger.js";
 import { safeEditReply } from "../../../../../../services/discord/discord/safeReply.js";
 import {
@@ -209,7 +210,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
         collector.stop("message_gone");
       }
     } catch (err) {
-      logger.warn({ err }, "[fun/poll] vote record threw");
+      getContextLogger().warn({ err }, "[fun/poll] vote record threw");
       try {
         if (!btn.replied && !btn.deferred) {
           await btn.reply({

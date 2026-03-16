@@ -7,6 +7,7 @@ import {
   type ChatInputCommandInteraction,
   type TextChannel,
 } from "discord.js";
+import { getContextLogger } from "../../../services/core/logging/requestContext.js";
 import { logger } from "../../../utils/logger.js";
 import {
   createGiveaway,
@@ -118,7 +119,7 @@ export async function handleEnd(interaction: ChatInputCommandInteraction): Promi
       });
     }
   } catch (err) {
-    logger.warn({ err, giveawayId }, "[giveaway] update message threw");
+    getContextLogger().warn({ err, giveawayId }, "[giveaway] update message threw");
   }
 
   await interaction.editReply({
@@ -207,7 +208,7 @@ export async function autoEndGiveaway(
       });
     }
   } catch (err) {
-    logger.warn({ err, giveawayId }, "[giveaway] update message on auto-end threw");
+    getContextLogger().warn({ err, giveawayId }, "[giveaway] update message on auto-end threw");
   }
 
   if (winners.length > 0) {

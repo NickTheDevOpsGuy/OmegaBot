@@ -10,6 +10,7 @@ import {
   type ChatInputCommandInteraction,
   type Message,
 } from "discord.js";
+import { getContextLogger } from "../../../../../../services/core/logging/requestContext.js";
 import { logger } from "../../../../../../utils/logger.js";
 import {
   getStats,
@@ -260,7 +261,7 @@ async function playRound(
   } catch (err) {
     recordIncorrect(userId);
     const xpResult = awardXp(userId, 2);
-    logger.warn({ triviaId, userId, err }, "[trivia] timed out");
+    getContextLogger().warn({ triviaId, userId, err }, "[trivia] timed out");
 
     const disabledButtons = buildTriviaResultComponents(
       triviaId,

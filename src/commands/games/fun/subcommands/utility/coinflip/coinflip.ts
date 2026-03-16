@@ -1,5 +1,6 @@
 // src/commands/fun/subcommands/coinflip.ts
 import type { ChatInputCommandInteraction } from "discord.js";
+import { getContextLogger } from "../../../../../../services/core/logging/requestContext.js";
 import { logger } from "../../../../../../utils/logger.js";
 import { recordCoinFlip, type CoinFlipResult } from "../../../coinflipStore.js";
 
@@ -30,7 +31,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
     );
   } catch (err) {
     // Do NOT hide this. If stats are wrong, this is usually why.
-    logger.error(
+    getContextLogger().error(
       { err, userId: interaction.user.id, result: stored },
       "[fun/coinflip] record coin flip threw",
     );

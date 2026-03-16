@@ -6,6 +6,7 @@ import {
   type ButtonInteraction,
   type User,
 } from "discord.js";
+import { getContextLogger } from "../../../../../../services/core/logging/requestContext.js";
 import { logger } from "../../../../../../utils/logger.js";
 import { recordInteractionRecovery } from "../../../../../../services/core/metrics/server.js";
 import {
@@ -162,7 +163,7 @@ export async function handleChallenge(
       }
     } catch (err) {
       recordInteractionRecovery("rps");
-      logger.warn(
+      getContextLogger().warn(
         { err, challengeId, interactionFailedRecovery: true },
         "[rps] challenge button collect threw",
       );
@@ -202,7 +203,7 @@ export async function handleChallenge(
         recordPvpResult(winnerId, loserId, challenger.id, opponent.id);
         logger.info({ challengeId, winnerId, loserId }, "[rps] PvP complete");
       } catch (err) {
-        logger.error({ err }, "[fun/rps] record PvP result threw");
+        getContextLogger().error({ err }, "[fun/rps] record PvP result threw");
       }
 
       const challengerXp = awardXp(
@@ -254,7 +255,7 @@ export async function handleChallenge(
         "rps.challenge.timeout",
         interaction,
       ).catch(() => {});
-      logger.warn({ challengeId }, "[rps] challenge timed out");
+      getContextLogger().warn({ challengeId }, "[rps] challenge timed out");
     }
   });
 }

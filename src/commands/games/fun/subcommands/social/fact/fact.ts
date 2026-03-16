@@ -1,5 +1,6 @@
 // src/commands/fun/subcommands/fact.ts
 import { EmbedBuilder, type ChatInputCommandInteraction } from "discord.js";
+import { getContextLogger } from "../../../../../../services/core/logging/requestContext.js";
 import { logger } from "../../../../../../utils/logger.js";
 
 const FACTS = [
@@ -135,7 +136,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
 
     await interaction.editReply({ embeds: [embed] });
   } catch (err) {
-    logger.error({ err, userId }, "[fact] fact fetch threw");
+    getContextLogger().error({ err, userId }, "[fact] fact fetch threw");
     await interaction.editReply(
       "We couldn't fetch a fact right now. Try again in a moment.",
     );

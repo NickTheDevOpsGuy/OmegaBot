@@ -116,6 +116,8 @@ This usually affects local testing more than bot logic, but it will block DB-bac
 
 Error messages shown in Discord are kept **non-technical**: no `.env` variable names, API key names, or stack traces. Users see short, actionable text (e.g. “Something went wrong. Please try again.” or “Ask a server admin to set up the weather API.”). Admins can use `/admin health`, logs, and [Environment Setup](setup-env.md) to diagnose configuration issues.
 
+**For developers:** Use `getUserFacingReason(err)` when replying on error; use `getContextLogger()` in command catch blocks so logs include `requestId`. See [Development Notes → User-facing errors and logging](dev-notes.md) for `errorReply`, `createErrorEmbed`, and full policy.
+
 ---
 
 ## Log Levels

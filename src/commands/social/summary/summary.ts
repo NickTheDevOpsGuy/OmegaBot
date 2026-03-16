@@ -6,6 +6,7 @@ import {
   MessageFlags,
   type ChatInputCommandInteraction,
 } from "discord.js";
+import { getContextLogger } from "../../../services/core/logging/requestContext.js";
 import { summarize } from "../../../services/integrations/summary/summarizer.js";
 import { logger } from "../../../utils/logger.js";
 
@@ -88,7 +89,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
       await interaction.editReply("✅ Summary sent to your DMs.");
     } catch (dmErr) {
-      logger.warn(
+      getContextLogger().warn(
         { dmErr, userId: interaction.user.id },
         "[summary] send summary to user DM threw",
       );
@@ -97,7 +98,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       );
     }
   } catch (err) {
-    logger.error({ err, command: "summary" }, "[summary] summary command threw");
+    getContextLogger().error({ err, command: "summary" }, "[summary] summary command threw");
 
     if (interaction.deferred || interaction.replied) {
       await interaction.editReply(

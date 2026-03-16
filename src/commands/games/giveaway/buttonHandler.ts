@@ -2,6 +2,7 @@
 // Handles giveaway enter/leave button clicks.
 
 import type { ButtonInteraction } from "discord.js";
+import { getContextLogger } from "../../../services/core/logging/requestContext.js";
 import { logger } from "../../../utils/logger.js";
 import { recordInteractionRecovery } from "../../../services/core/metrics/server.js";
 import { getGiveaway, addEntry, removeEntry, getEntryCount } from "./giveawayStore.js";
@@ -59,11 +60,11 @@ export async function handleGiveawayButton(
       const embed = buildGiveawayEmbed(giveaway, getEntryCount(giveawayId));
       await interaction.message.edit({ embeds: [embed] });
     } catch (err) {
-      logger.warn({ err, giveawayId }, "[giveaway] update entry count threw");
+      getContextLogger().warn({ err, giveawayId }, "[giveaway] update entry count threw");
     }
   } catch (err) {
     recordInteractionRecovery("giveaway");
-    logger.warn(
+    getContextLogger().warn(
       { err, interactionFailedRecovery: true },
       "[giveaway] button handler threw",
     );

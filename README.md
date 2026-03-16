@@ -72,7 +72,7 @@ npm run api
 
 ### Community and games
 
-- Games: 8-ball, RPS, Tic Tac Toe, Trivia, Blackjack, Connect 4 (persistent multi-day, continue option), Hangman, Wordle, Slots (1/3/5 rows), Darts, Chess, Memory, Higher/Lower, Dice, Coinflip, Choose, Would You Rather
+- Games: 8-ball, RPS, Tic Tac Toe, Trivia, Blackjack, Connect 4 (persistent multi-day, continue option), Hangman, Wordle, Slots (1/3/5 rows, rare random events), Darts, Chess, Memory, Higher/Lower, Dice, Coinflip, Choose, Would You Rather
 - Daily check-ins, shared XP/levels, and rotating daily quests
 - Achievements and per-game stats
 - Quotes, jokes, polls, reminders, and leaderboards

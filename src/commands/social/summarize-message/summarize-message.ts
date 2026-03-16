@@ -8,6 +8,7 @@ import {
   AttachmentBuilder,
   type MessageContextMenuCommandInteraction,
 } from "discord.js";
+import { getContextLogger } from "../../../services/core/logging/requestContext.js";
 import { summarize } from "../../../services/integrations/summary/summarizer.js";
 import { logger } from "../../../utils/logger.js";
 
@@ -86,7 +87,7 @@ export async function execute(
       }
       await interaction.editReply("✅ Summary sent to your DMs.");
     } catch (dmErr) {
-      logger.warn(
+      getContextLogger().warn(
         { dmErr, userId: interaction.user.id },
         "[summarize-message] DM failed",
       );
@@ -95,7 +96,7 @@ export async function execute(
       );
     }
   } catch (err) {
-    logger.error(
+    getContextLogger().error(
       { err, command: "summarize-message" },
       "[summarize-message] summarize handler threw",
     );

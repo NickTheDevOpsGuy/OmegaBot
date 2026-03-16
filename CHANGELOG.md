@@ -13,7 +13,15 @@
 ### Changed
 
 - **Event list** – `/event list` shows up to 5 events by default with **Starts** and **Ends** as Discord relative timestamps (`<t:...:R>`).
-- **Docs** – README and [Command Reference](docs/commands.md) updated for `/event`, leaderboard scope, reminders under utility, Connect 4 continue, slots rows. Runbook mentions optional Web API. Project structure and help overview include event.
+- **Docs** – README and [Command Reference](docs/commands.md) updated for `/event`, leaderboard scope, reminders under utility, Connect 4 continue, slots rows. Runbook mentions optional Web API. Project structure, file-structure tree, and help overview include event; remindGroup removed from file tree.
+- **Error handling & logging** – Fun command top-level errors use `errorReply()` with a suggestion (e.g. "Use `/help topic:fun`"); errors logged with `getContextLogger()` so logs include `requestId`. Admin health "Unreachable" lines use `getUserFacingReason()` instead of raw error messages. [Development Notes](docs/dev-notes.md) and [Troubleshooting](docs/troubleshooting.md) document user-facing errors and logging (getUserFacingReason, errorReply, createErrorEmbed, getContextLogger in command catch blocks).
+- **Slots random events** – When a rare event triggers (Lucky Spin, Double XP, Bonus Coins, Jackpot Boost), the event label is shown in the result embed (e.g. "🍀 Lucky Spin!"). Payout and XP multipliers were already applied; the UI now surfaces the event.
+- **Dice error message** – Dice catch block now uses `getUserFacingReason(err)` for the user reply so rate limits and timeouts show consistent, safe messages.
+- **getContextLogger in commands** – All slash-command and button-handler catch blocks that log errors or warnings now use `getContextLogger()` so logs include `requestId` for tracing (blackjack, slots, trivia, hangman, quote, weather, reminders, fact, coinflip, coinflipstats, eightball, rps, daily, quote-message, summary, summarize-message, history, playback, status, gh, pr, github status, giveaway, tictactoe, connect4, wordle, poll, wouldYouRather, darts, hangman play, trivia gameFlow, fun execute).
+
+### Removed
+
+- **Dead code** – Removed unused `funSubcommands/remindGroup.ts` (remind subcommands moved under utility group). Removed unused `getClientKey` export from `web/rateLimit.ts`.
 
 ---
 

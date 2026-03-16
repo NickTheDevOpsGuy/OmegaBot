@@ -1,5 +1,6 @@
 // src/commands/fun/subcommands/trivia.ts
 import type { ChatInputCommandInteraction } from "discord.js";
+import { getContextLogger } from "../../../../../../services/core/logging/requestContext.js";
 import { errMessage, getUserFacingReason } from "../../../../../../utils/errors.js";
 import { logger } from "../../../../../../utils/logger.js";
 import { getStats, getTriviaLeaderboard } from "./triviaStore.js";
@@ -10,7 +11,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
   try {
     return await runTrivia(interaction);
   } catch (err) {
-    logger.error(
+    getContextLogger().error(
       { err, userId: interaction.user.id },
       `[trivia] trivia handler threw: ${errMessage(err)}`,
     );

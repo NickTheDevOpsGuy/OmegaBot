@@ -14,6 +14,7 @@ import {
   HISTORY_DEFAULTS,
   DISCORD_SAFE_TEXT_LIMIT,
 } from "../../../services/stores/transcript/defaults.js";
+import { getContextLogger } from "../../../services/core/logging/requestContext.js";
 import { logger } from "../../../utils/logger.js";
 import { recordInteractionRecovery } from "../../../services/core/metrics/server.js";
 import { safeEditReply } from "../../../services/discord/discord/safeReply.js";
@@ -150,7 +151,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         });
       } catch (err) {
         recordInteractionRecovery("playback");
-        logger.warn(
+        getContextLogger().warn(
           { err, userId: interaction.user.id, interactionFailedRecovery: true },
           "[playback] button update failed",
         );
@@ -166,11 +167,11 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         await safeEditReply(interaction, { components: [] }, "playback.end");
       } catch (err) {
         // ignore
-        logger.debug({ err }, "[playback] cleanup after collector end failed");
+        getContextLogger().debug({ err }, "[playback] cleanup after collector end failed");
       }
     });
   } catch (err) {
-    logger.error(
+    getContextLogger().error(
       { err, command: "playback", userId: interaction.user.id },
       "[playback] playback command threw",
     );
@@ -187,7 +188,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         });
       }
     } catch (replyErr) {
-      logger.error({ err: replyErr }, "[playback] send fallback error reply threw");
+      getContextLogger().error({ err: replyErr }, "[playback] send fallback error reply threw");
     }
   }
 }

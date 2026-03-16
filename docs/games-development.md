@@ -58,7 +58,7 @@ Use this for slots, blackjack, and other embed-based games so output is consiste
 
 ## Rare random events (optional)
 
-`services/games/randomEvents.ts` provides `rollRandomEvent(config?)` which returns a rare bonus (Lucky Spin, Double XP, Bonus Coins, Jackpot Boost) or `kind: "none"`. Configurable `triggerChance` and weights. Apply `xpMultiplier` and `payoutMultiplier` to XP and payout when an event triggers.
+`services/games/randomEvents.ts` provides `rollRandomEvent(config?)` which returns a rare bonus (Lucky Spin, Double XP, Bonus Coins, Jackpot Boost) or `kind: "none"`. Configurable `triggerChance` and weights. Apply `xpMultiplier` and `payoutMultiplier` to XP and payout when an event triggers. **Slots** uses this: when an event triggers, the result embed shows the event label (e.g. "🍀 Lucky Spin!") and the multipliers are applied to payout and XP.
 
 ## Persistent game sessions (async games)
 

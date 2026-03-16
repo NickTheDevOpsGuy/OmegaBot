@@ -8,6 +8,7 @@ import {
   listPendingRemindersByUser,
   updateDueAt,
 } from "../../../../../../services/stores/reminders/store.js";
+import { getContextLogger } from "../../../../../../services/core/logging/requestContext.js";
 import { logger } from "../../../../../../utils/logger.js";
 
 /* -------------------------------------------------------------------------- */
@@ -187,7 +188,7 @@ export async function run(
 
     logger.info({ userId, reminderId: id, dueAt }, "[remind] reminder created");
   } catch (err) {
-    logger.error({ err }, "[remind] create reminder threw");
+    getContextLogger().error({ err }, "[remind] create reminder threw");
     await interaction.editReply(
       "We couldn't create that reminder. Check the time format (e.g. 5m, 1h) and try again.",
     );

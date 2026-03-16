@@ -6,6 +6,7 @@ import {
   type ChatInputCommandInteraction,
   type ButtonInteraction,
 } from "discord.js";
+import { getContextLogger } from "../../../../../../services/core/logging/requestContext.js";
 import { logger } from "../../../../../../utils/logger.js";
 import {
   isKnownInteractionError,
@@ -157,14 +158,14 @@ export async function playVsBot(interaction: ChatInputCommandInteraction): Promi
       if (isKnownInteractionError(err)) {
         logKnownInteractionError(err, "tictactoe.vsBot.collect", { gameId });
       } else {
-        logger.warn({ err, gameId }, "[tictactoe] vsBot button collect threw");
+        getContextLogger().warn({ err, gameId }, "[tictactoe] vsBot button collect threw");
       }
     }
   });
 
   collector.on("end", async (_, reason) => {
     if (reason === "time") {
-      logger.warn({ gameId, userId: interaction.user.id }, "[tictactoe] vsBot timed out");
+      getContextLogger().warn({ gameId, userId: interaction.user.id }, "[tictactoe] vsBot timed out");
       await safeMessageEdit(
         message,
         {

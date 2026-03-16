@@ -8,6 +8,7 @@ import {
   EmbedBuilder,
   type ChatInputCommandInteraction,
 } from "discord.js";
+import { getContextLogger } from "../../../../../../services/core/logging/requestContext.js";
 import { logger } from "../../../../../../utils/logger.js";
 import { recordInteractionRecovery } from "../../../../../../services/core/metrics/server.js";
 import { safeEditReply } from "../../../../../../services/discord/discord/safeReply.js";
@@ -219,7 +220,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       });
     } catch (err) {
       recordInteractionRecovery("wouldYouRather");
-      logger.warn(
+      getContextLogger().warn(
         { err, interactionFailedRecovery: true },
         "[fun/wouldYouRather] vote record threw",
       );

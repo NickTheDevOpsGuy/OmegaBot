@@ -6,6 +6,7 @@ import {
   type ChatInputCommandInteraction,
 } from "discord.js";
 import { getPullRequest } from "../../../services/integrations/github/githubApi.js";
+import { getContextLogger } from "../../../services/core/logging/requestContext.js";
 import { getGitHubUserMessage } from "../../../services/integrations/github/shared/githubErrorMessage.js";
 import { logger } from "../../../utils/logger.js";
 
@@ -49,7 +50,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       return;
     }
 
-    logger.warn({ err, owner, repo, number }, "[pr] GitHub PR fetch threw");
+    getContextLogger().warn({ err, owner, repo, number }, "[pr] GitHub PR fetch threw");
     await interaction.editReply("GitHub didn't respond. Try again in a moment.");
     return;
   }

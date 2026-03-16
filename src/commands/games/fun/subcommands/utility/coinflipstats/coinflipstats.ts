@@ -1,6 +1,7 @@
 // src/commands/fun/subcommands/coinflipstats.ts
 
 import type { ChatInputCommandInteraction } from "discord.js";
+import { getContextLogger } from "../../../../../../services/core/logging/requestContext.js";
 import { logger } from "../../../../../../utils/logger.js";
 import { getCoinFlipStats } from "../../../coinflipStore.js";
 
@@ -38,7 +39,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
 
     await interaction.editReply(lines.join("\n"));
   } catch (err) {
-    logger.error(
+    getContextLogger().error(
       { err, userId: interaction.user.id, targetId: target.id },
       "[fun/coinflipstats] failed",
     );

@@ -6,6 +6,7 @@ import {
   recordDiceRoll,
   formatCooldownMessage,
 } from "../../../../../../services/discord/discord/rateLimit/index.js";
+import { getUserFacingReason } from "../../../../../../utils/errors.js";
 
 /**
  * Dice faces for a standard d6.
@@ -152,6 +153,6 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
     );
   } catch (err) {
     getContextLogger().error({ err }, "[fun/dice] dice handler threw");
-    await interaction.editReply("🎲 The dice fell off the table. Try again.");
+    await interaction.editReply(`🎲 ${getUserFacingReason(err)}`);
   }
 }

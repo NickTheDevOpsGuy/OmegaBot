@@ -6,6 +6,7 @@ import {
   AttachmentBuilder,
   MessageFlags,
 } from "discord.js";
+import { getContextLogger } from "../../../services/core/logging/requestContext.js";
 import { logger } from "../../../utils/logger.js";
 
 export const data = new SlashCommandBuilder()
@@ -101,7 +102,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         `✅ Sent ${messages.size} messages to your DMs as a file.`,
       );
     } catch (dmError) {
-      logger.warn(
+      getContextLogger().warn(
         { userId: interaction.user.id, err: dmError },
         "[history] could not send DM",
       );
@@ -111,7 +112,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       );
     }
   } catch (error) {
-    logger.error({ error, count }, "[history] fetch message history threw");
+    getContextLogger().error({ error, count }, "[history] fetch message history threw");
     await interaction.editReply(
       "❌ We couldn't load message history for this channel. Try again in a moment.",
     );

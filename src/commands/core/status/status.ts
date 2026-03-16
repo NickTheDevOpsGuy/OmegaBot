@@ -13,6 +13,7 @@ import {
   type ServiceName,
   type StatuspageSummary,
 } from "../../../services/integrations/statuspage/statuspageApi.js";
+import { getContextLogger } from "../../../services/core/logging/requestContext.js";
 import { logger } from "../../../utils/logger.js";
 
 function formatStatus(summary: StatuspageSummary): string {
@@ -127,7 +128,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
     await interaction.editReply(formatted);
   } catch (err) {
-    logger.warn({ err, service: sub }, "[status] status fetch threw");
+    getContextLogger().warn({ err, service: sub }, "[status] status fetch threw");
 
     await interaction.editReply(
       `We couldn't fetch ${sub} status. The service may be unreachable. Try again in a moment.`,

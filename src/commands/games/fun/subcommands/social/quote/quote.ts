@@ -1,6 +1,7 @@
 // src/commands/fun/subcommands/quote.ts
 // Guild quotes: add, random, list, search, remove. Uses quoteStore for persistence.
 import { type ChatInputCommandInteraction, type User, EmbedBuilder } from "discord.js";
+import { getContextLogger } from "../../../../../../services/core/logging/requestContext.js";
 import { logger } from "../../../../../../utils/logger.js";
 import { t, resolveLocale } from "../../../../../../i18n/index.js";
 import { getDb } from "../../../../../../services/core/database/db.js";
@@ -281,7 +282,7 @@ export async function run(
       }
     }
   } catch (err) {
-    logger.error({ err, action, guildId }, "[fun/quote] quote action threw");
+    getContextLogger().error({ err, action, guildId }, "[fun/quote] quote action threw");
     await interaction.editReply(
       "We couldn't get or save that quote. Try again in a moment.",
     );

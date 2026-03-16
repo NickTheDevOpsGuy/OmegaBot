@@ -6,6 +6,7 @@ import {
   type ButtonInteraction,
   type Message,
 } from "discord.js";
+import { getContextLogger } from "../../../../../../services/core/logging/requestContext.js";
 import { errMessage, getUserFacingReason } from "../../../../../../utils/errors.js";
 import { logger } from "../../../../../../utils/logger.js";
 import { recordInteractionRecovery } from "../../../../../../services/core/metrics/server.js";
@@ -113,7 +114,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
   try {
     return await runBlackjack(interaction);
   } catch (err) {
-    logger.error(
+    getContextLogger().error(
       { err, userId: interaction.user.id },
       `[blackjack] game handler threw: ${errMessage(err)}`,
     );
@@ -325,7 +326,7 @@ async function runBlackjack(interaction: ChatInputCommandInteraction): Promise<v
       }
     } catch (err) {
       recordInteractionRecovery("blackjack");
-      logger.warn(
+      getContextLogger().warn(
         { err, gameId, interactionFailedRecovery: true },
         "[blackjack] game button collect threw",
       );
@@ -338,7 +339,7 @@ async function runBlackjack(interaction: ChatInputCommandInteraction): Promise<v
   collector.on("end", async (_, reason) => {
     if (reason === "time") {
       recordResult(userId, "loss");
-      logger.warn({ gameId, userId }, "[blackjack] timed out");
+      getContextLogger().warn({ gameId, userId }, "[blackjack] timed out");
       await safeMessageEdit(
         message,
         {

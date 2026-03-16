@@ -1,5 +1,6 @@
 // src/commands/fun/subcommands/eightball.ts
 import type { ChatInputCommandInteraction } from "discord.js";
+import { getContextLogger } from "../../../../../../services/core/logging/requestContext.js";
 import { logger } from "../../../../../../utils/logger.js";
 
 const RESPONSES = [
@@ -45,7 +46,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
 
     await interaction.editReply(lines.join("\n"));
   } catch (err) {
-    logger.error(
+    getContextLogger().error(
       { err, userId: interaction.user.id },
       "[fun/8ball] 8-ball handler threw",
     );

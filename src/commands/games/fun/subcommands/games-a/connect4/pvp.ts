@@ -8,6 +8,7 @@ import {
   type User,
 } from "discord.js";
 import { randomUUID } from "node:crypto";
+import { getContextLogger } from "../../../../../../services/core/logging/requestContext.js";
 import { logger } from "../../../../../../utils/logger.js";
 import { recordInteractionRecovery } from "../../../../../../services/core/metrics/server.js";
 import {
@@ -288,7 +289,7 @@ function runCollector(msg: Message, gameId: string): void {
         try {
           recordResult(winnerId, loserId, session.player1Id, session.player2Id!);
         } catch (err) {
-          logger.error({ err }, "[connect4] record result threw");
+          getContextLogger().error({ err }, "[connect4] record result threw");
         }
         const winnerXp = awardXp(winnerId, 22);
         const loserXp = awardXp(loserId, 8);
@@ -318,7 +319,7 @@ function runCollector(msg: Message, gameId: string): void {
         try {
           recordResult(null, null, session.player1Id, session.player2Id!);
         } catch (err) {
-          logger.error({ err }, "[connect4] record tie threw");
+          getContextLogger().error({ err }, "[connect4] record tie threw");
         }
         const p1Xp = awardXp(session.player1Id, 12);
         const p2Xp = awardXp(session.player2Id!, 12);
@@ -367,7 +368,7 @@ function runCollector(msg: Message, gameId: string): void {
       }
     } catch (err) {
       recordInteractionRecovery("connect4");
-      logger.warn(
+      getContextLogger().warn(
         { err, interactionFailedRecovery: true },
         "[fun/connect4] connect4 handler threw",
       );
@@ -393,7 +394,7 @@ function runCollector(msg: Message, gameId: string): void {
             session.player2Id!,
           );
         } catch (err) {
-          logger.error({ err }, "[connect4] record timeout result threw");
+          getContextLogger().error({ err }, "[connect4] record timeout result threw");
         }
         const winnerXp = awardXp(timeoutWinnerId, 18);
         const loserXp = awardXp(timeoutLoserId, 6);
