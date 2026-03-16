@@ -81,7 +81,11 @@ export async function handlePostPost(
   if (!userId) {
     res.setHeader("Content-Type", "application/json");
     res.writeHead(400);
-    res.end(JSON.stringify({ error: "userId required (from session or body when using API key)" }));
+    res.end(
+      JSON.stringify({
+        error: "userId required (from session or body when using API key)",
+      }),
+    );
     return;
   }
   const attachments = typeof body.attachments === "string" ? body.attachments : undefined;
@@ -97,7 +101,10 @@ export async function handleGetPostComments(
   postId: string,
 ): Promise<void> {
   const url = new URL(_req.url ?? "", `http://${_req.headers.host}`);
-  const limit = Math.min(200, parseInt(url.searchParams.get("limit") ?? "100", 10) || 100);
+  const limit = Math.min(
+    200,
+    parseInt(url.searchParams.get("limit") ?? "100", 10) || 100,
+  );
   const comments = getComments(postId, limit);
   res.setHeader("Content-Type", "application/json");
   res.writeHead(200);

@@ -138,7 +138,11 @@ function ensureCommentsTable(): void {
   `);
 }
 
-export function addComment(postId: string, authorId: string, content: string): PostComment | null {
+export function addComment(
+  postId: string,
+  authorId: string,
+  content: string,
+): PostComment | null {
   ensureTables();
   ensureCommentsTable();
   const db = getDb();
@@ -148,7 +152,13 @@ export function addComment(postId: string, authorId: string, content: string): P
   db.prepare(
     `INSERT INTO post_comments (comment_id, post_id, author_id, content, created_at) VALUES (?, ?, ?, ?, ?)`,
   ).run(commentId, postId, authorId, content.trim().slice(0, 2000), now);
-  return { commentId, postId, authorId, content: content.trim().slice(0, 2000), createdAt: now };
+  return {
+    commentId,
+    postId,
+    authorId,
+    content: content.trim().slice(0, 2000),
+    createdAt: now,
+  };
 }
 
 export function getComments(postId: string, limit?: number): PostComment[] {

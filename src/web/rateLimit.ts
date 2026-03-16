@@ -37,10 +37,18 @@ export function getClientKey(req: IncomingMessage): string {
   return getKey(req);
 }
 
-export function checkAuthRateLimit(req: IncomingMessage): { allowed: boolean; remaining: number; resetAt: number } {
+export function checkAuthRateLimit(req: IncomingMessage): {
+  allowed: boolean;
+  remaining: number;
+  resetAt: number;
+} {
   return check(authCounts, getKey(req), MAX_AUTH_PER_WINDOW);
 }
 
-export function checkWriteRateLimit(req: IncomingMessage): { allowed: boolean; remaining: number; resetAt: number } {
+export function checkWriteRateLimit(req: IncomingMessage): {
+  allowed: boolean;
+  remaining: number;
+  resetAt: number;
+} {
   return check(writeCounts, getKey(req), MAX_WRITE_PER_WINDOW);
 }

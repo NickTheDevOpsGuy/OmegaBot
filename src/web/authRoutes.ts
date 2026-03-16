@@ -18,7 +18,10 @@ function getRedirectUri(req: IncomingMessage): string {
   return `${proto}://${host}/auth/discord/callback`;
 }
 
-export function handleAuthDiscordRedirect(req: IncomingMessage, res: ServerResponse): void {
+export function handleAuthDiscordRedirect(
+  req: IncomingMessage,
+  res: ServerResponse,
+): void {
   const clientId = process.env.DISCORD_OAUTH_CLIENT_ID;
   if (!clientId) {
     logger.warn("[web/auth] Discord OAuth redirect without DISCORD_OAUTH_CLIENT_ID");

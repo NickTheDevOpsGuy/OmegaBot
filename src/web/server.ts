@@ -43,7 +43,10 @@ function setCommonHeaders(res: http.ServerResponse, requestId: string): void {
   res.setHeader("X-Request-Id", requestId);
   if (CORS_ORIGIN) res.setHeader("Access-Control-Allow-Origin", CORS_ORIGIN);
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-API-Key, X-Request-Id");
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization, X-API-Key, X-Request-Id",
+  );
 }
 
 function notFound(res: http.ServerResponse): void {
@@ -65,9 +68,17 @@ async function route(
     const authLimit = checkAuthRateLimit(req);
     if (!authLimit.allowed) {
       res.setHeader("Content-Type", "application/json");
-      res.setHeader("Retry-After", String(Math.ceil((authLimit.resetAt - Date.now()) / 1000)));
+      res.setHeader(
+        "Retry-After",
+        String(Math.ceil((authLimit.resetAt - Date.now()) / 1000)),
+      );
       res.writeHead(429);
-      res.end(JSON.stringify({ error: "Too many auth attempts", retryAfter: Math.ceil((authLimit.resetAt - Date.now()) / 1000) }));
+      res.end(
+        JSON.stringify({
+          error: "Too many auth attempts",
+          retryAfter: Math.ceil((authLimit.resetAt - Date.now()) / 1000),
+        }),
+      );
       return;
     }
     if (segments[2] === "callback") {
@@ -109,9 +120,17 @@ async function route(
           const w = checkWriteRateLimit(req);
           if (!w.allowed) {
             res.setHeader("Content-Type", "application/json");
-            res.setHeader("Retry-After", String(Math.ceil((w.resetAt - Date.now()) / 1000)));
+            res.setHeader(
+              "Retry-After",
+              String(Math.ceil((w.resetAt - Date.now()) / 1000)),
+            );
             res.writeHead(429);
-            res.end(JSON.stringify({ error: "Too many requests", retryAfter: Math.ceil((w.resetAt - Date.now()) / 1000) }));
+            res.end(
+              JSON.stringify({
+                error: "Too many requests",
+                retryAfter: Math.ceil((w.resetAt - Date.now()) / 1000),
+              }),
+            );
             return;
           }
           await handlePostPostComment(req, res, postId);
@@ -129,7 +148,12 @@ async function route(
         res.setHeader("Content-Type", "application/json");
         res.setHeader("Retry-After", String(Math.ceil((w.resetAt - Date.now()) / 1000)));
         res.writeHead(429);
-        res.end(JSON.stringify({ error: "Too many requests", retryAfter: Math.ceil((w.resetAt - Date.now()) / 1000) }));
+        res.end(
+          JSON.stringify({
+            error: "Too many requests",
+            retryAfter: Math.ceil((w.resetAt - Date.now()) / 1000),
+          }),
+        );
         return;
       }
       await handlePostPost(req, res);
@@ -145,7 +169,12 @@ async function route(
         res.setHeader("Content-Type", "application/json");
         res.setHeader("Retry-After", String(Math.ceil((w.resetAt - Date.now()) / 1000)));
         res.writeHead(429);
-        res.end(JSON.stringify({ error: "Too many requests", retryAfter: Math.ceil((w.resetAt - Date.now()) / 1000) }));
+        res.end(
+          JSON.stringify({
+            error: "Too many requests",
+            retryAfter: Math.ceil((w.resetAt - Date.now()) / 1000),
+          }),
+        );
         return;
       }
       await handlePostEvents(req, res);
@@ -157,7 +186,12 @@ async function route(
         res.setHeader("Content-Type", "application/json");
         res.setHeader("Retry-After", String(Math.ceil((w.resetAt - Date.now()) / 1000)));
         res.writeHead(429);
-        res.end(JSON.stringify({ error: "Too many requests", retryAfter: Math.ceil((w.resetAt - Date.now()) / 1000) }));
+        res.end(
+          JSON.stringify({
+            error: "Too many requests",
+            retryAfter: Math.ceil((w.resetAt - Date.now()) / 1000),
+          }),
+        );
         return;
       }
       await handlePostEventsJoin(req, res, segments[2]);
@@ -169,7 +203,12 @@ async function route(
         res.setHeader("Content-Type", "application/json");
         res.setHeader("Retry-After", String(Math.ceil((w.resetAt - Date.now()) / 1000)));
         res.writeHead(429);
-        res.end(JSON.stringify({ error: "Too many requests", retryAfter: Math.ceil((w.resetAt - Date.now()) / 1000) }));
+        res.end(
+          JSON.stringify({
+            error: "Too many requests",
+            retryAfter: Math.ceil((w.resetAt - Date.now()) / 1000),
+          }),
+        );
         return;
       }
       await handlePatchEvent(req, res, segments[2]);
@@ -193,7 +232,12 @@ async function route(
         res.setHeader("Content-Type", "application/json");
         res.setHeader("Retry-After", String(Math.ceil((w.resetAt - Date.now()) / 1000)));
         res.writeHead(429);
-        res.end(JSON.stringify({ error: "Too many requests", retryAfter: Math.ceil((w.resetAt - Date.now()) / 1000) }));
+        res.end(
+          JSON.stringify({
+            error: "Too many requests",
+            retryAfter: Math.ceil((w.resetAt - Date.now()) / 1000),
+          }),
+        );
         return;
       }
       const body = await parseBody(req);
@@ -251,7 +295,8 @@ const server = http.createServer(async (req, res) => {
     logged = true;
     const status = res.statusCode;
     const ms = Date.now() - start;
-    if (status >= 500) logger.error({ requestId, method, path, status, ms }, "[web] request");
+    if (status >= 500)
+      logger.error({ requestId, method, path, status, ms }, "[web] request");
     else logger.debug({ requestId, method, path, status, ms }, "[web] request");
   };
   res.once("finish", onFinish);

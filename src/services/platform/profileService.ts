@@ -11,7 +11,10 @@ import {
   getDailyStreak,
 } from "../../commands/core/profile/profileHelpers.js";
 import { getPlatformUser, resolveDiscordId } from "./userService.js";
-import { ACHIEVEMENTS, getUnlockedAchievementIds } from "../../commands/games/achievements/achievements.js";
+import {
+  ACHIEVEMENTS,
+  getUnlockedAchievementIds,
+} from "../../commands/games/achievements/achievements.js";
 
 export type AchievementBadge = {
   id: string;

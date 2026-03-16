@@ -6,12 +6,12 @@ This doc describes the current folder layout. See [Development Notes](dev-notes.
 
 Commands are grouped into four top-level folders (≤10 items each). The loader discovers `*/<name>/<name>.ts` under each group.
 
-| Group       | Contents                                                           |
-| ----------- | ------------------------------------------------------------------ |
+| Group       | Contents                                                                  |
+| ----------- | ------------------------------------------------------------------------- |
 | **core/**   | admin, config, event, faq, help, info, profile, rules, status, suggestion |
-| **games/**  | achievements, fun, giveaway, view-achievements                     |
-| **social/** | history, quote-message, summary, summarize-message                 |
-| **other/**  | github, ping, playback, view-profile                               |
+| **games/**  | achievements, fun, giveaway, view-achievements                            |
+| **social/** | history, quote-message, summary, summarize-message                        |
+| **other/**  | github, ping, playback, view-profile                                      |
 
 - **Help topics:** `core/help/topics/*.ts`; meta content (overview, changelog, summary, commands) in `topics/meta/`.
 - **Fun command:** `games/fun/` (execute, autocomplete, funSubcommands). Subcommands live under `fun/subcommands/` in four groups: **games-a/** (blackjack, chess, connect4, daily, darts, dice, hangman), **games-b/** (higherlower, memory, rps, slots, stats, tictactoe, trivia, wordle), **social/** (joke, leaderboard, poll, quote, wouldYouRather, fact), **utility/** (chat, compliment, quest, reminders, roast, weather, choose, coinflip, coinflipstats, eightball). Hangman has a `tests/` subfolder for its unit tests.

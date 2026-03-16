@@ -119,27 +119,27 @@ Optional HTTP server: **`src/web/server.ts`**. Start with `npm run api` (or `nod
 
 ### Endpoints (scaffold)
 
-| Method | Path                          | Description                                                                                              |
-| ------ | ----------------------------- | -------------------------------------------------------------------------------------------------------- | ------------------- |
-| GET    | `/api/profile/:userId`        | Profile (xp, level, games, wins, achievements, daily streak). `userId` = platform user_id or Discord id. |
-| GET    | `/api/leaderboard`            | Usage leaderboard. Query: `scope=users` or `commands`, `limit`.                                          |
-| GET    | `/api/leaderboard?game=slots` | Per-game leaderboard (e.g. `game=slots`, `game=daily`).                                                  |
-| GET    | `/api/events`                 | List events. Query: `status=active` or `ended`, `limit`.                                                 |
-| GET    | `/api/events/:id`             | Single event + participants.                                                                             |
-| POST   | `/api/events/:id/join`        | Body: `{ "userId": "..." }`. Join event.                                                                 |
-| GET    | `/api/games/state/:gameId`    | Game state (board, turn, status, expiresAt).                                                             |
-| POST   | `/api/games/move`             | Body: `{ "gameId", "userId", "col" }`. Apply move (e.g. Connect 4).                                      |
-| GET    | `/api/sse`                   | Query: `gameId=...` or `eventId=...`. Server-Sent Events stream for live updates.                        |
-| GET    | `/auth/discord`              | Redirect to Discord OAuth.                                                                              |
-| GET    | `/auth/discord/callback`     | OAuth callback; sets session cookie and redirects to `WEB_APP_URL`.                                     |
-| GET    | `/api/posts`                 | List posts. Query: `authorId`, `limit`.                                                                  |
-| POST   | `/api/posts`                 | Create post (auth). Body: `content`, optional `attachments`, optional `userId` (when using API key).      |
-| GET    | `/api/posts/:id`             | Single post with comments.                                                                               |
-| GET    | `/api/posts/:id/comments`    | List comments. Query: `limit`.                                                                           |
-| POST   | `/api/posts/:id/comments`    | Add comment (auth). Body: `content`, optional `userId`.                                                 |
-| POST   | `/api/events`                | Create event (auth). Body: `title`, `description?`, `startTime`/`start_time`, `endTime`/`end_time`, `status?`. |
-| PATCH  | `/api/events/:id`            | Update event (auth). Body: `title?`, `description?`, `startTime?`, `endTime?`, `status?`.                |
-| GET    | `/api/achievements`          | List all achievement definitions (id, name, description, emoji, category).                              |
+| Method | Path                          | Description                                                                                                    |
+| ------ | ----------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| GET    | `/api/profile/:userId`        | Profile (xp, level, games, wins, achievements, daily streak). `userId` = platform user_id or Discord id.       |
+| GET    | `/api/leaderboard`            | Usage leaderboard. Query: `scope=users` or `commands`, `limit`.                                                |
+| GET    | `/api/leaderboard?game=slots` | Per-game leaderboard (e.g. `game=slots`, `game=daily`).                                                        |
+| GET    | `/api/events`                 | List events. Query: `status=active` or `ended`, `limit`.                                                       |
+| GET    | `/api/events/:id`             | Single event + participants.                                                                                   |
+| POST   | `/api/events/:id/join`        | Body: `{ "userId": "..." }`. Join event.                                                                       |
+| GET    | `/api/games/state/:gameId`    | Game state (board, turn, status, expiresAt).                                                                   |
+| POST   | `/api/games/move`             | Body: `{ "gameId", "userId", "col" }`. Apply move (e.g. Connect 4).                                            |
+| GET    | `/api/sse`                    | Query: `gameId=...` or `eventId=...`. Server-Sent Events stream for live updates.                              |
+| GET    | `/auth/discord`               | Redirect to Discord OAuth.                                                                                     |
+| GET    | `/auth/discord/callback`      | OAuth callback; sets session cookie and redirects to `WEB_APP_URL`.                                            |
+| GET    | `/api/posts`                  | List posts. Query: `authorId`, `limit`.                                                                        |
+| POST   | `/api/posts`                  | Create post (auth). Body: `content`, optional `attachments`, optional `userId` (when using API key).           |
+| GET    | `/api/posts/:id`              | Single post with comments.                                                                                     |
+| GET    | `/api/posts/:id/comments`     | List comments. Query: `limit`.                                                                                 |
+| POST   | `/api/posts/:id/comments`     | Add comment (auth). Body: `content`, optional `userId`.                                                        |
+| POST   | `/api/events`                 | Create event (auth). Body: `title`, `description?`, `startTime`/`start_time`, `endTime`/`end_time`, `status?`. |
+| PATCH  | `/api/events/:id`             | Update event (auth). Body: `title?`, `description?`, `startTime?`, `endTime?`, `status?`.                      |
+| GET    | `/api/achievements`           | List all achievement definitions (id, name, description, emoji, category).                                     |
 
 Responses are JSON (except SSE). Auth: `Authorization: Bearer <sessionId>`, cookie `session_id` (after Discord OAuth), or `X-API-Key` (set `WEB_API_KEY`). Write endpoints (POST posts, POST/PATCH events, POST comments) require auth.
 

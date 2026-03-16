@@ -44,7 +44,11 @@ export function handleSse(
   const url = new URL(req.url ?? "", `http://${req.headers.host}`);
   const gameId = url.searchParams.get("gameId");
   const eventId = url.searchParams.get("eventId");
-  const topic = gameId ? getTopic("game", gameId) : eventId ? getTopic("event", eventId) : null;
+  const topic = gameId
+    ? getTopic("game", gameId)
+    : eventId
+      ? getTopic("event", eventId)
+      : null;
   if (!topic) {
     res.setHeader("Content-Type", "application/json");
     res.writeHead(400);

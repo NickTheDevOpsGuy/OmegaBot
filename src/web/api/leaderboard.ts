@@ -14,7 +14,8 @@ export async function handleGetLeaderboard(
   const url = new URL(req.url ?? "", `http://${req.headers.host}`);
   const scope = url.searchParams.get("scope") ?? "users";
   const gameType = url.searchParams.get("game") ?? "";
-  const guildId = url.searchParams.get("guildId") ?? url.searchParams.get("guild_id") ?? undefined;
+  const guildId =
+    url.searchParams.get("guildId") ?? url.searchParams.get("guild_id") ?? undefined;
   const window = url.searchParams.get("window") ?? undefined;
   const fromParam = url.searchParams.get("from");
   const toParam = url.searchParams.get("to");

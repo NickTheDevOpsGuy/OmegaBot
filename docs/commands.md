@@ -12,29 +12,29 @@ The main hub for all games and fun features.
 
 ### Games
 
-| Command                   | Description                                                     |
-| ------------------------- | --------------------------------------------------------------- |
-| `/fun 8ball`              | Ask the magic 8-ball                                            |
-| `/fun rps`                | Rock paper scissors (solo or PvP)                               |
-| `/fun tictactoe`          | Tic Tac Toe (solo or PvP; opponent is DMed when it's their turn) |
-| `/fun trivia`             | Trivia with points and streaks                                  |
-| `/fun blackjack`          | Interactive blackjack                                           |
+| Command                   | Description                                                                                             |
+| ------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `/fun 8ball`              | Ask the magic 8-ball                                                                                    |
+| `/fun rps`                | Rock paper scissors (solo or PvP)                                                                       |
+| `/fun tictactoe`          | Tic Tac Toe (solo or PvP; opponent is DMed when it's their turn)                                        |
+| `/fun trivia`             | Trivia with points and streaks                                                                          |
+| `/fun blackjack`          | Interactive blackjack                                                                                   |
 | `/fun connect4`           | PvP Connect 4 (persistent multi-day; use **continue** to resume; opponent is DMed when it's their turn) |
-| `/fun hangman play`       | Hangman (dropdown letters, difficulty)                          |
-| `/fun hangman stats`      | Hangman stats (wins, fastest time)                              |
-| `/fun hangman words add`  | (Admin) Add word to list                                        |
-| `/fun hangman words list` | (Admin) List words                                              |
-| `/fun wordle`             | Daily word puzzle                                               |
-| `/fun slots`              | Slot machine (1, 3, or 5 rows) with jackpots                     |
-| `/fun darts`              | Throw 3 darts (solo or PvP), stats, leaderboards (best/180/PvP) |
-| `/fun chess`              | Challenge someone to chess or get Lichess links (vs computer)   |
-| `/fun memory`             | Match pairs of cards (memory game)                              |
-| `/fun higherlower`        | Think of a number 1–100; bot guesses with Higher/Lower          |
-| `/fun would-you-rather`   | WYR questions                                                   |
-| `/fun coinflip`           | Heads or tails                                                  |
-| `/fun choose`             | Pick one or more options at random (e.g. pizza, pasta, salad)   |
-| `/fun dice`               | Roll dice (notation: 2d6+3, or sides/count)                     |
-| `/fun utility poll`       | Create polls                                                    |
+| `/fun hangman play`       | Hangman (dropdown letters, difficulty)                                                                  |
+| `/fun hangman stats`      | Hangman stats (wins, fastest time)                                                                      |
+| `/fun hangman words add`  | (Admin) Add word to list                                                                                |
+| `/fun hangman words list` | (Admin) List words                                                                                      |
+| `/fun wordle`             | Daily word puzzle                                                                                       |
+| `/fun slots`              | Slot machine (1, 3, or 5 rows) with jackpots                                                            |
+| `/fun darts`              | Throw 3 darts (solo or PvP), stats, leaderboards (best/180/PvP)                                         |
+| `/fun chess`              | Challenge someone to chess or get Lichess links (vs computer)                                           |
+| `/fun memory`             | Match pairs of cards (memory game)                                                                      |
+| `/fun higherlower`        | Think of a number 1–100; bot guesses with Higher/Lower                                                  |
+| `/fun would-you-rather`   | WYR questions                                                                                           |
+| `/fun coinflip`           | Heads or tails                                                                                          |
+| `/fun choose`             | Pick one or more options at random (e.g. pizza, pasta, salad)                                           |
+| `/fun dice`               | Roll dice (notation: 2d6+3, or sides/count)                                                             |
+| `/fun utility poll`       | Create polls                                                                                            |
 
 **Rate limits** (per user, to prevent spam):
 
@@ -62,22 +62,22 @@ Stats and leaderboard views are not rate limited.
 
 ### Stats & Daily
 
-| Command                    | Description                           |
-| -------------------------- | ------------------------------------- |
-| `/fun daily`               | Daily check-in for points             |
-| `/fun quest`               | Daily rotating quests with XP rewards |
-| `/fun stats`               | View all game stats                   |
+| Command                    | Description                                                           |
+| -------------------------- | --------------------------------------------------------------------- |
+| `/fun daily`               | Daily check-in for points                                             |
+| `/fun quest`               | Daily rotating quests with XP rewards                                 |
+| `/fun stats`               | View all game stats                                                   |
 | `/fun utility leaderboard` | Top users or commands; **scope**: All time, This week, or This server |
 
 ### Reminders (under utility)
 
-| Command                       | Description                                                          |
-| ----------------------------- | -------------------------------------------------------------------- |
-| `/fun utility remind_set`     | Set a reminder (5m, 1h, 1d)                                          |
-| `/fun utility remind_list`    | View pending reminders                                               |
-| `/fun utility remind_snooze`  | Reschedule a reminder (ID + time, e.g. 30m, 1h; ID has autocomplete) |
-| `/fun utility remind_cancel`  | Cancel a reminder (ID has autocomplete)                              |
-| `/fun utility remind_clear`   | Cancel all reminders                                                 |
+| Command                      | Description                                                          |
+| ---------------------------- | -------------------------------------------------------------------- |
+| `/fun utility remind_set`    | Set a reminder (5m, 1h, 1d)                                          |
+| `/fun utility remind_list`   | View pending reminders                                               |
+| `/fun utility remind_snooze` | Reschedule a reminder (ID + time, e.g. 30m, 1h; ID has autocomplete) |
+| `/fun utility remind_cancel` | Cancel a reminder (ID has autocomplete)                              |
+| `/fun utility remind_clear`  | Cancel all reminders                                                 |
 
 ### Quotes & Jokes
 
@@ -147,13 +147,13 @@ View your unlocked achievements (19 total).
 
 Create, join, and manage events (tournaments, challenges, community events). Same events are visible via the Web API.
 
-| Command           | Description                                      |
-| ----------------- | ------------------------------------------------ |
-| `/event create`   | Create an event (title, optional description, times, status) |
-| `/event update`   | Update an event's status (draft, active, ended, cancelled)    |
-| `/event join`     | Join an active event (event_id)                   |
-| `/event list`     | List events (optional status filter, limit)       |
-| `/event results`  | View event details and participants (event_id)    |
+| Command          | Description                                                  |
+| ---------------- | ------------------------------------------------------------ |
+| `/event create`  | Create an event (title, optional description, times, status) |
+| `/event update`  | Update an event's status (draft, active, ended, cancelled)   |
+| `/event join`    | Join an active event (event_id)                              |
+| `/event list`    | List events (optional status filter, limit)                  |
+| `/event results` | View event details and participants (event_id)               |
 
 ---
 

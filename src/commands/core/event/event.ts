@@ -24,8 +24,12 @@ export const data = new SlashCommandBuilder()
     s
       .setName("create")
       .setDescription("Create a new event")
-      .addStringOption((o) => o.setName("title").setDescription("Event title").setRequired(true))
-      .addStringOption((o) => o.setName("description").setDescription("Event description"))
+      .addStringOption((o) =>
+        o.setName("title").setDescription("Event title").setRequired(true),
+      )
+      .addStringOption((o) =>
+        o.setName("description").setDescription("Event description"),
+      )
       .addIntegerOption((o) =>
         o.setName("start_time").setDescription("Start time (Unix timestamp, seconds)"),
       )
@@ -46,7 +50,9 @@ export const data = new SlashCommandBuilder()
     s
       .setName("update")
       .setDescription("Update an event's status")
-      .addStringOption((o) => o.setName("event_id").setDescription("Event ID").setRequired(true))
+      .addStringOption((o) =>
+        o.setName("event_id").setDescription("Event ID").setRequired(true),
+      )
       .addStringOption((o) =>
         o
           .setName("status")
@@ -63,7 +69,9 @@ export const data = new SlashCommandBuilder()
     s
       .setName("join")
       .setDescription("Join an event")
-      .addStringOption((o) => o.setName("event_id").setDescription("Event ID").setRequired(true)),
+      .addStringOption((o) =>
+        o.setName("event_id").setDescription("Event ID").setRequired(true),
+      ),
   )
   .addSubcommand((s) =>
     s
@@ -79,13 +87,17 @@ export const data = new SlashCommandBuilder()
             { name: "Draft", value: "draft" },
           ),
       )
-      .addIntegerOption((o) => o.setName("limit").setDescription("Max events to show (default 10)")),
+      .addIntegerOption((o) =>
+        o.setName("limit").setDescription("Max events to show (default 10)"),
+      ),
   )
   .addSubcommand((s) =>
     s
       .setName("results")
       .setDescription("View event participants and details")
-      .addStringOption((o) => o.setName("event_id").setDescription("Event ID").setRequired(true)),
+      .addStringOption((o) =>
+        o.setName("event_id").setDescription("Event ID").setRequired(true),
+      ),
   );
 
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -99,7 +111,13 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     const status = (interaction.options.getString("status") as EventStatus) ?? "draft";
     const startTime = startRaw ? startRaw * 1000 : Date.now();
     const endTime = endRaw ? endRaw * 1000 : startTime + 24 * 60 * 60 * 1000;
-    const event = createEvent({ title, description: description ?? null, startTime, endTime, status });
+    const event = createEvent({
+      title,
+      description: description ?? null,
+      startTime,
+      endTime,
+      status,
+    });
     await interaction.reply({
       content: `Event **${event.title}** created. ID: \`${event.eventId}\`. Use \`/event join event_id:${event.eventId}\` to join.`,
       ephemeral: true,
@@ -116,7 +134,10 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       return;
     }
     if (!status) {
-      await interaction.reply({ content: "Provide a `status` to update.", ephemeral: true });
+      await interaction.reply({
+        content: "Provide a `status` to update.",
+        ephemeral: true,
+      });
       return;
     }
     const ok = updateEventStatus(eventId, status);
@@ -124,7 +145,10 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       await interaction.reply({ content: "Update failed.", ephemeral: true });
       return;
     }
-    await interaction.reply({ content: `Event status set to **${status}**.`, ephemeral: true });
+    await interaction.reply({
+      content: `Event status set to **${status}**.`,
+      ephemeral: true,
+    });
     return;
   }
 
@@ -187,7 +211,9 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         { name: "Participants", value: String(participants.length), inline: true },
         {
           name: "Participant IDs",
-          value: participants.length ? participants.map((p) => p.userId).join(", ") : "None",
+          value: participants.length
+            ? participants.map((p) => p.userId).join(", ")
+            : "None",
         },
       )
       .setFooter({ text: `Event ID: ${ev.eventId}` });

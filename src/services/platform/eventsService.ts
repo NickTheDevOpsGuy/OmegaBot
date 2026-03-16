@@ -163,7 +163,8 @@ export function updateEvent(eventId: string, input: UpdateEventInput): boolean {
   if (!event) return false;
   const now = Date.now();
   const title = input.title ?? event.title;
-  const description = input.description !== undefined ? input.description : event.description;
+  const description =
+    input.description !== undefined ? input.description : event.description;
   const startTime = input.startTime ?? event.startTime;
   const endTime = input.endTime ?? event.endTime;
   const status = input.status ?? event.status;

@@ -261,7 +261,8 @@ export async function playVsPlayer(
       } else {
         try {
           await buttonInteraction.client.users.send(currentPlayer.id, {
-            content: "It's your turn in **Tic Tac Toe**! Check the game message in the channel to make your move.",
+            content:
+              "It's your turn in **Tic Tac Toe**! Check the game message in the channel to make your move.",
           });
         } catch {
           // DMs may be disabled; ignore

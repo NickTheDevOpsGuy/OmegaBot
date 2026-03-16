@@ -106,8 +106,18 @@ export async function handlePostEvents(
     res.end(JSON.stringify({ error: "title required" }));
     return;
   }
-  const startTime = typeof body.startTime === "number" ? body.startTime : typeof body.start_time === "number" ? body.start_time : Date.now();
-  const endTime = typeof body.endTime === "number" ? body.endTime : typeof body.end_time === "number" ? body.end_time : startTime + 24 * 60 * 60 * 1000;
+  const startTime =
+    typeof body.startTime === "number"
+      ? body.startTime
+      : typeof body.start_time === "number"
+        ? body.start_time
+        : Date.now();
+  const endTime =
+    typeof body.endTime === "number"
+      ? body.endTime
+      : typeof body.end_time === "number"
+        ? body.end_time
+        : startTime + 24 * 60 * 60 * 1000;
   const description = typeof body.description === "string" ? body.description : undefined;
   const status = body.status as "draft" | "active" | "ended" | "cancelled" | undefined;
   const event = createEvent({
@@ -144,7 +154,12 @@ export async function handlePatchEvent(
   const body = await parseBody(req);
   const ok = updateEvent(eventId, {
     title: typeof body.title === "string" ? body.title : undefined,
-    description: typeof body.description === "string" ? body.description : body.description === null ? null : undefined,
+    description:
+      typeof body.description === "string"
+        ? body.description
+        : body.description === null
+          ? null
+          : undefined,
     startTime: typeof body.startTime === "number" ? body.startTime : undefined,
     endTime: typeof body.endTime === "number" ? body.endTime : undefined,
     status: body.status as "draft" | "active" | "ended" | "cancelled" | undefined,

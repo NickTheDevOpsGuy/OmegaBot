@@ -192,13 +192,25 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       const scope = interaction.options.getString("scope") ?? "all";
       const limit = interaction.options.getInteger("limit") ?? 10;
       let mode: LeaderboardMode;
-      if (view === "commands") mode = { kind: "commands", limit, scope: scope as "all" | "weekly" | "server", guildId: interaction.guildId ?? undefined };
+      if (view === "commands")
+        mode = {
+          kind: "commands",
+          limit,
+          scope: scope as "all" | "weekly" | "server",
+          guildId: interaction.guildId ?? undefined,
+        };
       else if (view === "user")
         mode = {
           kind: "user",
           userId: interaction.options.getUser("user")?.id ?? interaction.user.id,
         };
-      else mode = { kind: "users", limit, scope: scope as "all" | "weekly" | "server", guildId: interaction.guildId ?? undefined };
+      else
+        mode = {
+          kind: "users",
+          limit,
+          scope: scope as "all" | "weekly" | "server",
+          guildId: interaction.guildId ?? undefined,
+        };
       await runLeaderboard(interaction, mode);
       await maybeRecordUsage(interaction, sub);
       return;

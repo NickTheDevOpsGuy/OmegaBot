@@ -28,7 +28,10 @@ export function recordUsageLog(args: {
       `INSERT INTO usage_log (user_id, guild_id, command, created_at) VALUES (?, ?, ?, ?)`,
     ).run(args.userId, args.guildId ?? null, args.command, Date.now());
   } catch (err) {
-    logger.debug({ err }, "[leaderboard] recordUsageLog failed (usage_log table may be missing)");
+    logger.debug(
+      { err },
+      "[leaderboard] recordUsageLog failed (usage_log table may be missing)",
+    );
   }
 }
 
@@ -41,7 +44,8 @@ function getUsageFromLog(options: {
 }): LeaderboardEntry[] | { command: string; count: number }[] {
   const db = getDb();
   const limit = options.limit ?? 25;
-  let sql = "SELECT user_id AS userId, command, created_at AS created_at FROM usage_log WHERE 1=1";
+  let sql =
+    "SELECT user_id AS userId, command, created_at AS created_at FROM usage_log WHERE 1=1";
   const params: unknown[] = [];
   if (options.from != null) {
     sql += " AND created_at >= ?";
@@ -55,7 +59,11 @@ function getUsageFromLog(options: {
     sql += " AND guild_id = ?";
     params.push(options.guildId);
   }
-  const rows = db.prepare(sql).all(...params) as { userId: string; command: string; created_at: number }[];
+  const rows = db.prepare(sql).all(...params) as {
+    userId: string;
+    command: string;
+    created_at: number;
+  }[];
   if (options.scope === "users") {
     const counts: Record<string, number> = {};
     for (const r of rows) {
@@ -91,7 +99,11 @@ export async function getUsageLeaderboard(options: {
   window?: "weekly";
 }): Promise<LeaderboardEntry[] | { command: string; count: number }[]> {
   const limit = options.limit ?? 25;
-  const useLog = options.from != null || options.to != null || (options.guildId != null && options.guildId !== "") || options.window === "weekly";
+  const useLog =
+    options.from != null ||
+    options.to != null ||
+    (options.guildId != null && options.guildId !== "") ||
+    options.window === "weekly";
   if (useLog) {
     let from = options.from;
     let to = options.to;

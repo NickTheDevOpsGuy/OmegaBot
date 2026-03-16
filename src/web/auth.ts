@@ -82,7 +82,9 @@ export function getAuth(req: IncomingMessage): AuthResult {
 }
 
 /** Require auth; returns userId for session, or undefined for api_key (caller must use body.userId for writes). */
-export function requireAuth(req: IncomingMessage): { userId?: string; type: "session" | "api_key" } | null {
+export function requireAuth(
+  req: IncomingMessage,
+): { userId?: string; type: "session" | "api_key" } | null {
   const auth = getAuth(req);
   if (auth.type === "session") return { userId: auth.userId, type: "session" };
   if (auth.type === "api_key") return { type: "api_key" };

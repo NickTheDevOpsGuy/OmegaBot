@@ -359,7 +359,8 @@ function runCollector(msg: Message, gameId: string): void {
       await updateGameMessage(msg, session, newState).catch(() => {});
       try {
         await btn.client.users.send(nextTurnUserId, {
-          content: "It's your turn in **Connect 4**! Check the game message in the channel to make your move.",
+          content:
+            "It's your turn in **Connect 4**! Check the game message in the channel to make your move.",
         });
       } catch {
         // DMs may be disabled; ignore
