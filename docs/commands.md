@@ -2,7 +2,7 @@
 
 This file is the **single source of truth** for command behavior; update it when adding or changing commands.
 
-OmegaBot has **18 slash commands** organized into logical groups.
+OmegaBot has **20 slash commands** organized into logical groups.
 
 ---
 
@@ -210,6 +210,34 @@ Requires **Manage Server** permission.
 | `/faq get`    | Retrieve FAQ (key has autocomplete) |
 | `/faq list`   | List all FAQs                       |
 | `/faq remove` | Remove FAQ (key has autocomplete)   |
+
+FAQ entries also act as the curated server-doc layer for `/wiki`.
+
+---
+
+## `/wiki` - Knowledge Lookup
+
+Search curated FAQ docs and, when configured, the Notion wiki too.
+
+| Command | Description |
+| ------- | ----------- |
+| `/wiki` | Search FAQ entries and optional Notion pages by keyword or page title |
+
+Notes:
+
+- `source:auto` searches both FAQ and Notion
+- `source:faq` searches only curated server docs
+- `source:notion` searches only the Notion wiki
+
+---
+
+## `/notion` - Notion Wiki Integration
+
+| Command                | Description                                                  |
+| ---------------------- | ------------------------------------------------------------ |
+| `/notion search`       | Search the configured Notion wiki database                   |
+| `/notion status`       | (Admin) Validate config and show detected Notion DB schema   |
+| `/notion create-page`  | (Admin) Create a page in the configured Notion wiki database |
 
 ---
 

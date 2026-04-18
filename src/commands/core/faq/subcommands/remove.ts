@@ -16,6 +16,7 @@ import type { ChatInputCommandInteraction, Message, ButtonInteraction } from "di
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } from "discord.js";
 
 import { getContextLogger } from "../../../../services/core/logging/requestContext.js";
+import { sendAdminAuditLog } from "../../../../services/discord/discord/adminAudit.js";
 import { t, resolveLocale } from "../../../../i18n/index.js";
 import { getByKey, remove } from "../../../../services/integrations/faq/services.js";
 import {
@@ -100,12 +101,24 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
       components: [],
     });
 
+    if (ok) {
+      await sendAdminAuditLog(
+        interaction,
+        [
+          "🗑️ **FAQ removed**",
+          `Actor: ${interaction.user?.id ? `<@${interaction.user.id}>` : "unknown"}`,
+          `Guild: ${interaction.guildId ?? "dm"}`,
+          `Key: **${existing.key}**`,
+          `Title: **${existing.title}**`,
+        ].join("\n"),
+      );
+    }
+
     getContextLogger().info(
       { userId: interaction.user.id, key: existing.key },
       "[faq/remove] removed",
     );
   } catch (err: unknown) {
-    // No `any` here. Keep the handler strict and log the raw error.
     await handleFaqSubcommandError(interaction, err, "[faq/remove] failed");
   }
 }

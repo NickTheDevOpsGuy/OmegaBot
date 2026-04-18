@@ -21,6 +21,7 @@ OmegaBot combines games, progression, moderation, utility commands, and AI-assis
 - Runs a broad `/fun` command hub with games, reminders, polls, quotes, weather, chat, and leaderboards.
 - Tracks progression with achievements, shared XP/levels, and daily quests.
 - Supports server utility features like FAQ, rules, welcome flows, starboard, suggestions, and status checks.
+- Can search curated FAQ docs plus an optional Notion wiki via `/wiki` and `/notion search`.
 - Includes admin-focused health, metrics, backup, and troubleshooting support for self-hosted operation.
 - Stores persistent data in SQLite so state survives restarts.
 - **Optional Web API** — same backend can power a website (profiles, leaderboards, events, games). See [Web platform](docs/web-platform.md) and **Setting up the website** below.
@@ -82,6 +83,7 @@ npm run api
 - DM or mention-based chat plus `/fun utility chat`
 - Supportive chat modes, recaps, saved context, and gentle check-ins
 - GitHub and service status lookups
+- Curated docs lookup with `/wiki` and optional Notion-backed knowledge search
 - Weather, timezone-aware profile info, server info, and invite helpers
 
 ### Server operations
@@ -105,13 +107,14 @@ npm run api
 
 ## Documentation Map
 
-Every Markdown file in [`docs/`](docs/) is linked here (22 docs).
+Every Markdown file in [`docs/`](docs/) is linked here (23 docs).
 
 ### Start here
 
 - [Command Reference](docs/commands.md) – Command behavior and user-facing command details
 - [Discord Bot Setup](docs/setup-discord.md) – Create the bot app, intents, scopes, and permissions
 - [Environment Setup](docs/setup-env.md) – `.env` configuration and optional features
+- [Notion Wiki Setup](docs/setup-notion.md) – Connect a Notion database for `/wiki` and `/notion`
 - [Runbook](docs/runbook.md) – Deploy, restart, backup, health checks, Docker
 - [Troubleshooting](docs/troubleshooting.md) – Common failures, interaction issues, native module mismatch notes
 
@@ -143,7 +146,7 @@ Every Markdown file in [`docs/`](docs/) is linked here (22 docs).
 
 ### Index (all docs in `docs/`)
 
-[analytics](docs/analytics.md) · [chat-and-llm](docs/chat-and-llm.md) · [commands](docs/commands.md) · [dev-notes](docs/dev-notes.md) · [faq](docs/faq.md) · [faq-admins](docs/faq-admins.md) · [file-structure](docs/file-structure.md) · [games-and-ux-ideas](docs/games-and-ux-ideas.md) · [games-development](docs/games-development.md) · [gameplay-improvements](docs/gameplay-improvements.md) · [grafana](docs/grafana.md) · [i18n](docs/i18n.md) · [improvements](docs/improvements.md) · [progression](docs/progression.md) · [project-structure](docs/project-structure.md) · [recommendations](docs/recommendations.md) · [runbook](docs/runbook.md) · [setup-discord](docs/setup-discord.md) · [setup-env](docs/setup-env.md) · [transcripts](docs/transcripts.md) · [troubleshooting](docs/troubleshooting.md) · [web-platform](docs/web-platform.md)
+[analytics](docs/analytics.md) · [chat-and-llm](docs/chat-and-llm.md) · [commands](docs/commands.md) · [dev-notes](docs/dev-notes.md) · [faq](docs/faq.md) · [faq-admins](docs/faq-admins.md) · [file-structure](docs/file-structure.md) · [games-and-ux-ideas](docs/games-and-ux-ideas.md) · [games-development](docs/games-development.md) · [gameplay-improvements](docs/gameplay-improvements.md) · [grafana](docs/grafana.md) · [i18n](docs/i18n.md) · [improvements](docs/improvements.md) · [progression](docs/progression.md) · [project-structure](docs/project-structure.md) · [recommendations](docs/recommendations.md) · [runbook](docs/runbook.md) · [setup-discord](docs/setup-discord.md) · [setup-env](docs/setup-env.md) · [setup-notion](docs/setup-notion.md) · [transcripts](docs/transcripts.md) · [troubleshooting](docs/troubleshooting.md) · [web-platform](docs/web-platform.md)
 
 ---
 

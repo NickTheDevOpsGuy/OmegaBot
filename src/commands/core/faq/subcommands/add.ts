@@ -14,6 +14,7 @@
 
 import type { ChatInputCommandInteraction } from "discord.js";
 import { getContextLogger } from "../../../../services/core/logging/requestContext.js";
+import { sendAdminAuditLog } from "../../../../services/discord/discord/adminAudit.js";
 import { t, resolveLocale } from "../../../../i18n/index.js";
 import { create } from "../../../../services/integrations/faq/services.js";
 
@@ -58,6 +59,16 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
     });
 
     await interaction.editReply(`✅ Added FAQ **${entry.key}**`);
+    await sendAdminAuditLog(
+      interaction,
+      [
+        "📝 **FAQ added**",
+        `Actor: ${interaction.user?.id ? `<@${interaction.user.id}>` : "unknown"}`,
+        `Guild: ${interaction.guildId ?? "dm"}`,
+        `Key: **${entry.key}**`,
+        `Title: **${entry.title}**`,
+      ].join("\n"),
+    );
 
     getContextLogger().info(
       { userId: interaction.user.id, key: entry.key },

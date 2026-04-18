@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
+    "@notionhq/client": "^5.19.0",
     "better-sqlite3": "^12.6.2",
     "discord.js": "^14.25.1",
     "dotenv": "^17.3.1",

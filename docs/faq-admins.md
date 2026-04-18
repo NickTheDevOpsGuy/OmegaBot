@@ -36,6 +36,26 @@ See [Environment Setup](setup-env.md#hangman-word-management-optional).
 
 ---
 
+## Who can manage FAQ / Notion wiki content?
+
+These actions use the broader bot-admin rules:
+
+- `/faq add`
+- `/faq remove`
+- `/notion status`
+- `/notion create-page`
+
+Access is granted by any of:
+
+- `ADMIN_USER_IDS`
+- Discord **Administrator**
+- Discord **Manage Server**
+- `BOT_ADMIN_ROLE_IDS`
+
+See [Environment Setup – Bot Admin / Knowledge Base Admin](setup-env.md#bot-admin--knowledge-base-admin-optional) and [Notion Wiki Setup](setup-notion.md).
+
+---
+
 ## Why do users see "This interaction failed"?
 
 The bot didn’t respond within Discord’s ~3 second window, or the interaction expired. See [Troubleshooting](troubleshooting.md) for causes and how to check logs and `/admin health`.

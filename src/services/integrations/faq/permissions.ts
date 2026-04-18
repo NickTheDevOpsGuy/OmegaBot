@@ -12,7 +12,7 @@
 // - per-action overrides
 
 import type { ChatInputCommandInteraction } from "discord.js";
-import { PermissionsBitField } from "discord.js";
+import { canUseBotAdmin } from "../../core/permissions/botAdmin.js";
 
 export type FaqAction = "add" | "get" | "list" | "remove";
 
@@ -30,16 +30,7 @@ export function canFaqAction(
     return { ok: false, reason: "faq.action_guild_only" };
   }
 
-  const perms = interaction.memberPermissions;
-  if (!perms) {
-    return { ok: false, reason: "faq.cannot_resolve_permissions" };
-  }
-
-  const ok =
-    perms.has(PermissionsBitField.Flags.ManageGuild) ||
-    perms.has(PermissionsBitField.Flags.Administrator);
-
-  if (!ok) {
+  if (!canUseBotAdmin(interaction)) {
     return { ok: false, reason: "faq.need_manage_server" };
   }
 

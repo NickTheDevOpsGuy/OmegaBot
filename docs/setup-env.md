@@ -221,3 +221,48 @@ MODERATION_ALLOWED_ROLE_IDS=111111111111111111
 - **Get role ID:** Server Settings → Roles → Right-click role → Copy ID.
 
 See [FAQ – Who can use /admin?](faq-admins.md#who-can-use-admin) for details.
+
+### Bot Admin / Knowledge Base Admin (Optional)
+
+Use these when you want a broader admin group for documentation curation and Notion management without giving full moderator powers to everyone.
+
+```env
+BOT_ADMIN_ROLE_IDS=111111111111111111,222222222222222222
+BOT_ADMIN_AUDIT_CHANNEL_ID=333333333333333333
+```
+
+- `BOT_ADMIN_ROLE_IDS`
+  - Comma-separated Discord role IDs
+  - Grants access to:
+    - `/faq add`
+    - `/faq remove`
+    - `/notion status`
+    - `/notion create-page`
+  - `ADMIN_USER_IDS` still works too, and Discord Administrator / Manage Server also count
+- `BOT_ADMIN_AUDIT_CHANNEL_ID`
+  - Optional channel ID for lightweight audit messages when docs are curated or Notion pages are created
+
+### Notion Wiki Integration (Optional)
+
+OmegaBot can search a Notion wiki database and create new pages from Discord.
+
+```env
+NOTION_TOKEN=secret_xxx
+NOTION_DATABASE_ID=0123456789abcdef0123456789abcdef
+```
+
+- `NOTION_TOKEN`
+  - Internal integration token from Notion
+  - Create it under [Notion integrations](https://www.notion.so/my-integrations)
+- `NOTION_DATABASE_ID`
+  - The database the bot should search and create pages in
+  - Share that database with the integration inside Notion or requests will fail
+
+Commands enabled by this setup:
+
+- `/wiki` – search curated FAQ docs and optional Notion pages together
+- `/notion search` – search the Notion wiki directly
+- `/notion status` – validate config and show detected database schema
+- `/notion create-page` – create a new page in the configured database
+
+See [Notion Wiki Setup](setup-notion.md) for the full step-by-step flow.
