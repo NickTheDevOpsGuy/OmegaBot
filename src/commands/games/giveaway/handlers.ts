@@ -208,7 +208,10 @@ export async function autoEndGiveaway(
       });
     }
   } catch (err) {
-    getContextLogger().warn({ err, giveawayId }, "[giveaway] update message on auto-end threw");
+    getContextLogger().warn(
+      { err, giveawayId },
+      "[giveaway] update message on auto-end threw",
+    );
   }
 
   if (winners.length > 0) {

@@ -16,11 +16,11 @@ Suggestions for new slash commands and other improvements. Prioritized by impact
 
 ### Medium value
 
-| Command                             | Description                                                    | Why                                                                                                 |
-| ----------------------------------- | -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| **`/fun choose`**                   | Pick one (or N) from a list: “A, B, C” or “option1 / option2”. | Quick “bot pick for us” without a full poll; good for games or decisions.                           |
+| Command                                         | Description                                                    | Why                                                                                                 |
+| ----------------------------------------------- | -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| **`/fun choose`**                               | Pick one (or N) from a list: “A, B, C” or “option1 / option2”. | Quick “bot pick for us” without a full poll; good for games or decisions.                           |
 | **`/fun utility remind_list`** (already exists) | —                                                              | Consider surfacing in `/help` or a “Your reminders” line in `/profile view` so it’s discoverable.   |
-| **`/config moderator-role`**        | Add/remove a role that can use `/admin` moderation.            | You have DB-backed moderator roles; if not exposed yet, a subcommand here would complete the story. |
+| **`/config moderator-role`**                    | Add/remove a role that can use `/admin` moderation.            | You have DB-backed moderator roles; if not exposed yet, a subcommand here would complete the story. |
 
 ### Lower priority / niche
 

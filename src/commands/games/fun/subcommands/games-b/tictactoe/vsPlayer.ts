@@ -273,7 +273,10 @@ export async function playVsPlayer(
       if (isKnownInteractionError(err)) {
         logKnownInteractionError(err, "tictactoe.vsPlayer.collect", { gameId });
       } else {
-        getContextLogger().warn({ err, gameId }, "[tictactoe] vsPlayer button collect threw");
+        getContextLogger().warn(
+          { err, gameId },
+          "[tictactoe] vsPlayer button collect threw",
+        );
       }
     }
   });

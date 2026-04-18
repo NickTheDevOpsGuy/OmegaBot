@@ -158,14 +158,20 @@ export async function playVsBot(interaction: ChatInputCommandInteraction): Promi
       if (isKnownInteractionError(err)) {
         logKnownInteractionError(err, "tictactoe.vsBot.collect", { gameId });
       } else {
-        getContextLogger().warn({ err, gameId }, "[tictactoe] vsBot button collect threw");
+        getContextLogger().warn(
+          { err, gameId },
+          "[tictactoe] vsBot button collect threw",
+        );
       }
     }
   });
 
   collector.on("end", async (_, reason) => {
     if (reason === "time") {
-      getContextLogger().warn({ gameId, userId: interaction.user.id }, "[tictactoe] vsBot timed out");
+      getContextLogger().warn(
+        { gameId, userId: interaction.user.id },
+        "[tictactoe] vsBot timed out",
+      );
       await safeMessageEdit(
         message,
         {
