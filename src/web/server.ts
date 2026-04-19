@@ -7,6 +7,11 @@
 import http from "node:http";
 import { fileURLToPath } from "node:url";
 import { initDatabase } from "../services/core/database/db.js";
+import {
+  createRequestContext,
+  getContextLogger,
+  runWithContextAsync,
+} from "../services/core/logging/requestContext.js";
 import { logger } from "../utils/logger.js";
 import { handleGetProfile } from "./api/profile.js";
 import { handleGetLeaderboard } from "./api/leaderboard.js";
@@ -26,6 +31,7 @@ import {
   handlePostPostComment,
 } from "./api/posts.js";
 import { handleGetAchievements } from "./api/achievements.js";
+import { getAuth } from "./auth.js";
 import { handleSse } from "./sse.js";
 import { handleAuthDiscordRedirect, handleAuthDiscordCallback } from "./authRoutes.js";
 import { checkAuthRateLimit, checkWriteRateLimit } from "./rateLimit.js";
@@ -61,12 +67,17 @@ async function route(
   path: string,
   method: string,
 ): Promise<void> {
+  const log = getContextLogger();
   const segments = path.replace(/^\/+|\/+$/g, "").split("/");
 
   // Auth (non-/api) — rate limited
   if (segments[0] === "auth" && segments[1] === "discord") {
     const authLimit = checkAuthRateLimit(req);
     if (!authLimit.allowed) {
+      log.warn(
+        { method, path, retryAfterMs: authLimit.resetAt - Date.now() },
+        "[web] auth rate limit hit",
+      );
       res.setHeader("Content-Type", "application/json");
       res.setHeader(
         "Retry-After",
@@ -101,7 +112,7 @@ async function route(
   }
 
   if (segments[1] === "profile" && segments[2]) {
-    await handleGetProfile(req, res, segments[2]);
+    handleGetProfile(req, res, segments[2]);
     return;
   }
   if (segments[1] === "leaderboard") {
@@ -109,7 +120,7 @@ async function route(
     return;
   }
   if (segments[1] === "achievements") {
-    await handleGetAchievements(req, res);
+    handleGetAchievements(req, res);
     return;
   }
   if (segments[1] === "posts") {
@@ -119,6 +130,10 @@ async function route(
         if (method === "POST") {
           const w = checkWriteRateLimit(req);
           if (!w.allowed) {
+            log.warn(
+              { method, path, retryAfterMs: w.resetAt - Date.now() },
+              "[web] write rate limit hit",
+            );
             res.setHeader("Content-Type", "application/json");
             res.setHeader(
               "Retry-After",
@@ -134,17 +149,21 @@ async function route(
             return;
           }
           await handlePostPostComment(req, res, postId);
-        } else await handleGetPostComments(req, res, postId);
+        } else handleGetPostComments(req, res, postId);
         return;
       }
       if (method === "GET") {
-        await handleGetPost(req, res, postId);
+        handleGetPost(req, res, postId);
         return;
       }
     }
     if (method === "POST") {
       const w = checkWriteRateLimit(req);
       if (!w.allowed) {
+        log.warn(
+          { method, path, retryAfterMs: w.resetAt - Date.now() },
+          "[web] write rate limit hit",
+        );
         res.setHeader("Content-Type", "application/json");
         res.setHeader("Retry-After", String(Math.ceil((w.resetAt - Date.now()) / 1000)));
         res.writeHead(429);
@@ -159,13 +178,17 @@ async function route(
       await handlePostPost(req, res);
       return;
     }
-    await handleGetPosts(req, res);
+    handleGetPosts(req, res);
     return;
   }
   if (segments[1] === "events") {
     if (method === "POST" && !segments[2]) {
       const w = checkWriteRateLimit(req);
       if (!w.allowed) {
+        log.warn(
+          { method, path, retryAfterMs: w.resetAt - Date.now() },
+          "[web] write rate limit hit",
+        );
         res.setHeader("Content-Type", "application/json");
         res.setHeader("Retry-After", String(Math.ceil((w.resetAt - Date.now()) / 1000)));
         res.writeHead(429);
@@ -183,6 +206,10 @@ async function route(
     if (segments[3] === "join" && method === "POST" && segments[2]) {
       const w = checkWriteRateLimit(req);
       if (!w.allowed) {
+        log.warn(
+          { method, path, retryAfterMs: w.resetAt - Date.now() },
+          "[web] write rate limit hit",
+        );
         res.setHeader("Content-Type", "application/json");
         res.setHeader("Retry-After", String(Math.ceil((w.resetAt - Date.now()) / 1000)));
         res.writeHead(429);
@@ -200,6 +227,10 @@ async function route(
     if (method === "PATCH" && segments[2]) {
       const w = checkWriteRateLimit(req);
       if (!w.allowed) {
+        log.warn(
+          { method, path, retryAfterMs: w.resetAt - Date.now() },
+          "[web] write rate limit hit",
+        );
         res.setHeader("Content-Type", "application/json");
         res.setHeader("Retry-After", String(Math.ceil((w.resetAt - Date.now()) / 1000)));
         res.writeHead(429);
@@ -215,20 +246,24 @@ async function route(
       return;
     }
     if (segments[2] && segments[2] !== "join") {
-      await handleGetEvent(req, res, segments[2]);
+      handleGetEvent(req, res, segments[2]);
       return;
     }
-    await handleGetEvents(req, res);
+    handleGetEvents(req, res);
     return;
   }
   if (segments[1] === "games") {
     if (segments[2] === "state" && segments[3]) {
-      await handleGetGameState(req, res, segments[3]);
+      handleGetGameState(req, res, segments[3]);
       return;
     }
     if (segments[2] === "move" && method === "POST") {
       const w = checkWriteRateLimit(req);
       if (!w.allowed) {
+        log.warn(
+          { method, path, retryAfterMs: w.resetAt - Date.now() },
+          "[web] write rate limit hit",
+        );
         res.setHeader("Content-Type", "application/json");
         res.setHeader("Retry-After", String(Math.ceil((w.resetAt - Date.now()) / 1000)));
         res.writeHead(429);
@@ -243,12 +278,13 @@ async function route(
       const body = await parseBody(req);
       const gameId = body.gameId as string | undefined;
       if (!gameId) {
+        log.warn({ method, path }, "[web] game move missing gameId");
         res.setHeader("Content-Type", "application/json");
         res.writeHead(400);
         res.end(JSON.stringify({ error: "gameId required in body" }));
         return;
       }
-      await handlePostGameMove(res, gameId, body);
+      handlePostGameMove(res, gameId, body);
       return;
     }
   }
@@ -266,12 +302,15 @@ function parseBody(req: http.IncomingMessage): Promise<Record<string, unknown>> 
       try {
         resolve(body ? (JSON.parse(body) as Record<string, unknown>) : {});
       } catch (err) {
-        logger.warn({ err }, "[web] parseBody JSON parse failed, using {}");
+        getContextLogger().warn(
+          { err, bodyLength: body.length },
+          "[web] parseBody JSON parse failed, using {}",
+        );
         resolve({});
       }
     });
     req.on("error", (err) => {
-      logger.debug({ err }, "[web] parseBody request error");
+      getContextLogger().debug({ err }, "[web] parseBody request error");
       reject(err);
     });
   });
@@ -280,15 +319,17 @@ function parseBody(req: http.IncomingMessage): Promise<Record<string, unknown>> 
 const server = http.createServer(async (req, res) => {
   const requestId = getRequestId(req);
   setCommonHeaders(res, requestId);
-  if (req.method === "OPTIONS") {
-    res.writeHead(204);
-    res.end();
-    return;
-  }
   const url = new URL(req.url ?? "/", `http://${req.headers.host}`);
   const method = req.method ?? "GET";
   const path = url.pathname;
   const start = Date.now();
+  const auth = getAuth(req);
+  const userId =
+    auth.type === "session"
+      ? auth.userId
+      : auth.type === "api_key"
+        ? "api_key"
+        : "anonymous";
   let logged = false;
   const onFinish = (): void => {
     if (logged) return;
@@ -301,16 +342,37 @@ const server = http.createServer(async (req, res) => {
   };
   res.once("finish", onFinish);
   res.once("close", onFinish);
-  try {
-    await route(req, res, path, method);
-  } catch (err) {
-    logger.error({ err, requestId, method, path }, "[web] route handler threw");
-    if (!res.headersSent) {
-      res.setHeader("Content-Type", "application/json");
-      res.writeHead(500);
-      res.end(JSON.stringify({ error: "Internal server error" }));
+
+  const context = createRequestContext({
+    requestId,
+    userId,
+    command: "web",
+    subcommand: `${method} ${path}`,
+    meta: {
+      authType: auth.type,
+      userAgent: req.headers["user-agent"] ?? null,
+      ip: req.socket.remoteAddress ?? null,
+    },
+  });
+
+  await runWithContextAsync(context, async () => {
+    if (req.method === "OPTIONS") {
+      res.writeHead(204);
+      res.end();
+      return;
     }
-  }
+
+    try {
+      await route(req, res, path, method);
+    } catch (err) {
+      getContextLogger().error({ err, method, path }, "[web] route handler threw");
+      if (!res.headersSent) {
+        res.setHeader("Content-Type", "application/json");
+        res.writeHead(500);
+        res.end(JSON.stringify({ error: "Internal server error" }));
+      }
+    }
+  });
 });
 
 export function startWebApi(): void {

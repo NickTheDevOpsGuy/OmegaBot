@@ -5,6 +5,7 @@
 
 import { randomUUID } from "node:crypto";
 import { getDb } from "../core/database/db.js";
+import { getContextLogger } from "../core/logging/requestContext.js";
 
 export type EventStatus = "draft" | "active" | "ended" | "cancelled";
 
@@ -59,6 +60,7 @@ export function createEvent(input: {
 }): Event {
   ensureTables();
   const db = getDb();
+  const log = getContextLogger();
   const eventId = randomUUID();
   const now = Date.now();
   const status = input.status ?? "draft";
@@ -75,7 +77,7 @@ export function createEvent(input: {
     now,
     now,
   );
-  return {
+  const event = {
     eventId,
     title: input.title,
     description: input.description ?? null,
@@ -85,6 +87,17 @@ export function createEvent(input: {
     createdAt: now,
     updatedAt: now,
   };
+  log.info(
+    {
+      eventId,
+      status,
+      startTime: input.startTime,
+      endTime: input.endTime,
+      hasDescription: Boolean(input.description),
+    },
+    "[events] created event",
+  );
+  return event;
 }
 
 export function getEvent(eventId: string): Event | null {
@@ -116,15 +129,25 @@ export function listEvents(options?: { status?: EventStatus; limit?: number }): 
 export function joinEvent(eventId: string, userId: string): boolean {
   ensureTables();
   const db = getDb();
+  const log = getContextLogger();
   const event = getEvent(eventId);
-  if (!event || event.status !== "active") return false;
+  if (!event) {
+    log.warn({ eventId, userId }, "[events] join failed, event not found");
+    return false;
+  }
+  if (event.status !== "active") {
+    log.warn({ eventId, userId, status: event.status }, "[events] join rejected, event not active");
+    return false;
+  }
   const now = Date.now();
   try {
     db.prepare(
       `INSERT INTO event_participants (event_id, user_id, joined_at) VALUES (?, ?, ?)`,
     ).run(eventId, userId, now);
+    log.info({ eventId, userId }, "[events] participant joined");
     return true;
-  } catch {
+  } catch (err) {
+    log.warn({ err, eventId, userId }, "[events] join failed");
     return false;
   }
 }
@@ -142,9 +165,15 @@ export function getEventParticipants(eventId: string): EventParticipant[] {
 export function updateEventStatus(eventId: string, status: EventStatus): boolean {
   ensureTables();
   const db = getDb();
+  const log = getContextLogger();
   const result = db
     .prepare(`UPDATE events SET status = ?, updated_at = ? WHERE event_id = ?`)
     .run(status, Date.now(), eventId);
+  if (result.changes > 0) {
+    log.info({ eventId, status }, "[events] updated event status");
+  } else {
+    log.warn({ eventId, status }, "[events] update event status missed");
+  }
   return result.changes > 0;
 }
 
@@ -159,8 +188,12 @@ export type UpdateEventInput = {
 export function updateEvent(eventId: string, input: UpdateEventInput): boolean {
   ensureTables();
   const db = getDb();
+  const log = getContextLogger();
   const event = getEvent(eventId);
-  if (!event) return false;
+  if (!event) {
+    log.warn({ eventId }, "[events] update failed, event not found");
+    return false;
+  }
   const now = Date.now();
   const title = input.title ?? event.title;
   const description =
@@ -173,5 +206,20 @@ export function updateEvent(eventId: string, input: UpdateEventInput): boolean {
       `UPDATE events SET title = ?, description = ?, start_time = ?, end_time = ?, status = ?, updated_at = ? WHERE event_id = ?`,
     )
     .run(title, description, startTime, endTime, status, now, eventId);
+  if (result.changes > 0) {
+    log.info(
+      {
+        eventId,
+        status,
+        titleChanged: title !== event.title,
+        descriptionChanged: description !== event.description,
+        startTimeChanged: startTime !== event.startTime,
+        endTimeChanged: endTime !== event.endTime,
+      },
+      "[events] updated event",
+    );
+  } else {
+    log.warn({ eventId }, "[events] update produced no changes");
+  }
   return result.changes > 0;
 }

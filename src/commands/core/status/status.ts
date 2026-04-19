@@ -14,7 +14,6 @@ import {
   type StatuspageSummary,
 } from "../../../services/integrations/statuspage/statuspageApi.js";
 import { getContextLogger } from "../../../services/core/logging/requestContext.js";
-import { logger } from "../../../utils/logger.js";
 
 function formatStatus(summary: StatuspageSummary): string {
   const lines: string[] = [];

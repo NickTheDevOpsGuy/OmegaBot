@@ -41,7 +41,7 @@ export class GitHubApiError extends Error {
  * This function SHOULD NOT be called at startup unless GitHub features are enabled.
  * The bot must be able to run without GitHub tokens/config.
  */
-export async function githubRequest<T>(path: string): Promise<T> {
+export function githubRequest<T>(path: string): Promise<T> {
   return githubCircuit.execute(async () => {
     const url = `${GITHUB_API_BASE}${path}`;
 

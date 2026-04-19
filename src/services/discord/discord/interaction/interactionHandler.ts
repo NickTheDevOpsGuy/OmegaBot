@@ -14,7 +14,6 @@ import {
 } from "../../../core/logging/requestContext.js";
 import { MessageFlags } from "discord.js";
 import { errMessage, getUserFacingReason } from "../../../../utils/errors.js";
-import { logger } from "../../../../utils/logger.js";
 import type { CommandClient } from "../commandLoader.js";
 import type { CommandModule } from "../commandTypes.js";
 import {
@@ -73,6 +72,46 @@ function closestCommandNames(input: string, candidates: string[], max = 5): stri
   return [...candidates].sort((a, b) => score(a) - score(b)).slice(0, max);
 }
 
+function getInteractionKind(interaction: Interaction): string {
+  if (interaction.isChatInputCommand()) return "chat_input";
+  if (interaction.isAutocomplete()) return "autocomplete";
+  if (interaction.isModalSubmit()) return "modal_submit";
+  if (interaction.isButton()) return "button";
+  if (interaction.isUserContextMenuCommand()) return "user_context_menu";
+  if (interaction.isMessageContextMenuCommand()) return "message_context_menu";
+  return "other";
+}
+
+function getInteractionCommand(interaction: Interaction): string | undefined {
+  if (
+    interaction.isChatInputCommand() ||
+    interaction.isAutocomplete() ||
+    interaction.isUserContextMenuCommand() ||
+    interaction.isMessageContextMenuCommand()
+  ) {
+    return interaction.commandName;
+  }
+  if (interaction.isButton()) return "button";
+  if (interaction.isModalSubmit()) return "modal";
+  return undefined;
+}
+
+function getInteractionSubcommand(interaction: Interaction): string | undefined {
+  if (interaction.isChatInputCommand() || interaction.isAutocomplete()) {
+    return interaction.options.getSubcommand(false) ?? undefined;
+  }
+  if (interaction.isButton() || interaction.isModalSubmit()) {
+    return interaction.customId.split(":")[0]?.slice(0, 64) || undefined;
+  }
+  return undefined;
+}
+
+function getInteractionChannelId(interaction: Interaction): string | undefined {
+  return "channelId" in interaction && typeof interaction.channelId === "string"
+    ? interaction.channelId
+    : undefined;
+}
+
 async function safeRepliableReply(
   interaction: RepliableInteraction,
   content: string,
@@ -94,7 +133,7 @@ async function safeRepliableReply(
       });
       return;
     }
-    logger.warn(
+    getContextLogger().warn(
       { err, interactionId: interaction.id },
       `[interaction] slash command reply threw: ${errMessage(err)}`,
     );
@@ -112,51 +151,63 @@ export async function handleInteraction(
   interaction: Interaction,
   client: CommandClient,
 ): Promise<void> {
-  if (interaction.isAutocomplete()) {
-    await handleAutocomplete(interaction, client);
-    return;
-  }
+  const supportedInteraction =
+    interaction.isAutocomplete() ||
+    interaction.isModalSubmit() ||
+    interaction.isButton() ||
+    interaction.isUserContextMenuCommand() ||
+    interaction.isMessageContextMenuCommand() ||
+    interaction.isChatInputCommand();
 
-  if (interaction.isModalSubmit()) {
-    await handleModalSubmit(interaction);
-    return;
-  }
+  if (!supportedInteraction) return;
 
-  if (interaction.isButton()) {
-    await handleButton(interaction);
-    return;
-  }
-
-  if (interaction.isUserContextMenuCommand()) {
-    await handleUserContextMenu(interaction, client);
-    return;
-  }
-
-  if (interaction.isMessageContextMenuCommand()) {
-    await handleMessageContextMenu(interaction, client);
-    return;
-  }
-
-  if (!interaction.isChatInputCommand()) return;
-
-  const start = performance.now();
-  const subcommand = interaction.options.getSubcommand(false);
+  const start = interaction.isChatInputCommand() ? performance.now() : null;
+  const subcommand = getInteractionSubcommand(interaction);
   const ctx = createRequestContext({
     userId: interaction.user.id,
     guildId: interaction.guildId ?? undefined,
-    channelId: interaction.channelId,
-    command: interaction.commandName,
+    channelId: getInteractionChannelId(interaction),
+    command: getInteractionCommand(interaction),
     subcommand: subcommand ?? undefined,
     meta: {
       interactionId: interaction.id,
+      interactionType: getInteractionKind(interaction),
       username: interaction.user.username,
+      customId:
+        interaction.isButton() || interaction.isModalSubmit() ? interaction.customId : null,
       clientReady: typeof client.isReady === "function" ? client.isReady() : null,
       registrySize: client.commands?.size ?? null,
     },
   });
 
   await runWithContextAsync(ctx, async () => {
-    await handleChatCommand(interaction as ChatInputCommandInteraction, client, start);
+    if (interaction.isAutocomplete()) {
+      await handleAutocomplete(interaction, client);
+      return;
+    }
+
+    if (interaction.isModalSubmit()) {
+      await handleModalSubmit(interaction);
+      return;
+    }
+
+    if (interaction.isButton()) {
+      await handleButton(interaction);
+      return;
+    }
+
+    if (interaction.isUserContextMenuCommand()) {
+      await handleUserContextMenu(interaction, client);
+      return;
+    }
+
+    if (interaction.isMessageContextMenuCommand()) {
+      await handleMessageContextMenu(interaction, client);
+      return;
+    }
+
+    if (!interaction.isChatInputCommand() || start == null) return;
+    await handleChatCommand(interaction, client, start);
   });
 }
 
@@ -187,6 +238,11 @@ async function handleChatCommand(
     log.warn(
       { ...meta, knownCommandsSample: keys.slice(0, 40), closest },
       "[interaction] unknown command (not in registry)",
+    );
+    await safeRepliableReply(
+      interaction,
+      "That command isn't available right now. It may have been updated or disabled. Try `/help` or ask an admin to re-sync commands.",
+      true,
     );
     return;
   }

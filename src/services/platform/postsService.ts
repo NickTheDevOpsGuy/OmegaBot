@@ -5,6 +5,7 @@
 
 import { randomUUID } from "node:crypto";
 import { getDb } from "../core/database/db.js";
+import { getContextLogger } from "../core/logging/requestContext.js";
 
 export type Post = {
   postId: string;
@@ -43,18 +44,29 @@ export function createPost(
 ): Post {
   ensureTables();
   const db = getDb();
+  const log = getContextLogger();
   const postId = randomUUID();
   const now = Date.now();
   db.prepare(
     `INSERT INTO posts (post_id, author_id, content, attachments, created_at) VALUES (?, ?, ?, ?, ?)`,
   ).run(postId, authorId, content, attachments ?? null, now);
-  return {
+  const post = {
     postId,
     authorId,
     content,
     attachments: attachments ?? null,
     createdAt: now,
   };
+  log.info(
+    {
+      postId,
+      authorId,
+      contentLength: content.length,
+      hasAttachments: Boolean(attachments),
+    },
+    "[posts] created post",
+  );
+  return post;
 }
 
 export function getPost(postId: string): (Post & { likes: number }) | null {
@@ -146,19 +158,29 @@ export function addComment(
   ensureTables();
   ensureCommentsTable();
   const db = getDb();
-  if (!getPost(postId)) return null;
+  const log = getContextLogger();
+  if (!getPost(postId)) {
+    log.warn({ postId, authorId }, "[posts] comment rejected, post not found");
+    return null;
+  }
   const commentId = randomUUID();
   const now = Date.now();
+  const trimmedContent = content.trim().slice(0, 2000);
   db.prepare(
     `INSERT INTO post_comments (comment_id, post_id, author_id, content, created_at) VALUES (?, ?, ?, ?, ?)`,
-  ).run(commentId, postId, authorId, content.trim().slice(0, 2000), now);
-  return {
+  ).run(commentId, postId, authorId, trimmedContent, now);
+  const comment = {
     commentId,
     postId,
     authorId,
-    content: content.trim().slice(0, 2000),
+    content: trimmedContent,
     createdAt: now,
   };
+  log.info(
+    { commentId, postId, authorId, contentLength: trimmedContent.length },
+    "[posts] added comment",
+  );
+  return comment;
 }
 
 export function getComments(postId: string, limit?: number): PostComment[] {

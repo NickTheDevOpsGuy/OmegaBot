@@ -363,8 +363,11 @@ function runCollector(msg: Message, gameId: string): void {
           content:
             "It's your turn in **Connect 4**! Check the game message in the channel to make your move.",
         });
-      } catch {
-        // DMs may be disabled; ignore
+      } catch (err) {
+        getContextLogger().debug(
+          { err, gameId, nextTurnUserId },
+          "[fun/connect4] turn reminder DM skipped",
+        );
       }
     } catch (err) {
       recordInteractionRecovery("connect4");

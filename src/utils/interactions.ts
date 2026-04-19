@@ -1,34 +1,7 @@
 // src/utils/interactions.ts
 // Helper utilities for interaction handling
 
-import type { ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
-import { getUserFacingReason } from "./errors.js";
-
-/**
- * Helper for commands that might take a while.
- * Shows "thinking..." state, then edits with result.
- */
-export async function deferredReply(
-  interaction: ChatInputCommandInteraction,
-  handler: () => Promise<string | { embeds: EmbedBuilder[] } | { content: string }>,
-): Promise<void> {
-  await interaction.deferReply();
-
-  try {
-    const result = await handler();
-
-    if (typeof result === "string") {
-      await interaction.editReply({ content: result });
-    } else {
-      await interaction.editReply(result);
-    }
-  } catch (error) {
-    await interaction.editReply({
-      content: `❌ ${getUserFacingReason(error)}`,
-    });
-    throw error;
-  }
-}
+import type { ChatInputCommandInteraction } from "discord.js";
 
 /**
  * Standard error reply format

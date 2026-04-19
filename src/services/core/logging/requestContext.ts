@@ -36,6 +36,7 @@ const asyncLocalStorage = new AsyncLocalStorage<RequestContext>();
  * Create a new request context
  */
 export function createRequestContext(params: {
+  requestId?: string;
   userId: string;
   guildId?: string;
   channelId?: string;
@@ -44,7 +45,7 @@ export function createRequestContext(params: {
   meta?: Record<string, unknown>;
 }): RequestContext {
   return {
-    requestId: randomUUID(),
+    requestId: params.requestId ?? randomUUID(),
     userId: params.userId,
     guildId: params.guildId,
     channelId: params.channelId,
@@ -66,7 +67,7 @@ export function runWithContext<T>(context: RequestContext, fn: () => T): T {
 /**
  * Run an async function with a request context
  */
-export async function runWithContextAsync<T>(
+export function runWithContextAsync<T>(
   context: RequestContext,
   fn: () => Promise<T>,
 ): Promise<T> {

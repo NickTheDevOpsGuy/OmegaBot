@@ -1,4 +1,5 @@
 import { createRequire } from "node:module";
+import { getContextLogger } from "../../core/logging/requestContext.js";
 import { extractPlainTextFromNotionBlocks, truncateNotionExcerpt } from "./notionText.js";
 
 const require = createRequire(import.meta.url);
@@ -153,6 +154,7 @@ async function getDatabaseStatus(
   client: NotionClient,
   databaseId: string,
 ): Promise<NotionDatabaseStatus> {
+  const log = getContextLogger();
   const databaseResponse = (await client.databases.retrieve({
     database_id: databaseId,
   })) as unknown;
@@ -184,12 +186,22 @@ async function getDatabaseStatus(
     ? readTitleParts(databaseRecord?.["title"])
     : "";
 
-  return {
+  const status = {
     databaseTitle: title || null,
     dataSourceId,
     titleProperty,
     tagProperty: findDatabaseTagProperty(properties),
   };
+  log.debug(
+    {
+      databaseId,
+      dataSourceId,
+      titleProperty,
+      tagProperty: status.tagProperty?.name ?? null,
+    },
+    "[notion] resolved database status",
+  );
+  return status;
 }
 
 function getPageTitle(result: UnknownRecord, titleProperty: string): string {
@@ -229,6 +241,7 @@ export async function searchNotionPages(args: {
   query: string;
   limit?: number;
 }): Promise<NotionSearchResult[]> {
+  const log = getContextLogger();
   const limit = Math.min(Math.max(args.limit ?? 5, 1), 10);
   const query = args.query.trim();
   if (!query) return [];
@@ -248,11 +261,11 @@ export async function searchNotionPages(args: {
   };
 
   const response = (await args.client.dataSources.query(queryInput)) as unknown;
-  const results = Array.isArray(readRecord(response)?.["results"])
+  const rawResults = Array.isArray(readRecord(response)?.["results"])
     ? ((readRecord(response)?.["results"] as unknown[]) ?? [])
     : [];
 
-  const pages = results
+  const pages = rawResults
     .map((item) => readRecord(item))
     .filter((item): item is UnknownRecord => Boolean(item))
     .filter((item) => readString(item["object"]) === "page");
@@ -273,16 +286,22 @@ export async function searchNotionPages(args: {
     scored.map((entry) => getPageExcerpt(args.client, readString(entry.page["id"]) ?? "")),
   );
 
-  return scored.map((entry, index) => ({
+  const results = scored.map((entry, index) => ({
     id: readString(entry.page["id"]) ?? "",
     title: entry.title,
     url: readString(entry.page["url"]) ?? "",
     excerpt: excerpts[index] ?? null,
     lastEditedTime: readString(entry.page["last_edited_time"]),
   }));
+
+  log.info(
+    { databaseId: args.databaseId, query, limit, resultCount: results.length },
+    "[notion] searched pages",
+  );
+  return results;
 }
 
-export async function getNotionDatabaseStatus(args: {
+export function getNotionDatabaseStatus(args: {
   client: NotionClient;
   databaseId: string;
 }): Promise<NotionDatabaseStatus> {
@@ -296,6 +315,7 @@ export async function createNotionPage(args: {
   content?: string | null;
   tags?: string[];
 }): Promise<{ id: string; title: string; url: string }> {
+  const log = getContextLogger();
   const title = args.title.trim();
   if (!title) throw new Error("Page title cannot be empty.");
 
@@ -364,9 +384,20 @@ export async function createNotionPage(args: {
   const response = (await args.client.pages.create(input)) as unknown;
   const record = readRecord(response);
 
-  return {
+  const page = {
     id: readString(record?.["id"]) ?? "",
     title,
     url: readString(record?.["url"]) ?? "",
   };
+  log.info(
+    {
+      databaseId: args.databaseId,
+      pageId: page.id,
+      title,
+      hasContent: content.length > 0,
+      tagCount: cleanedTags.length,
+    },
+    "[notion] created page",
+  );
+  return page;
 }

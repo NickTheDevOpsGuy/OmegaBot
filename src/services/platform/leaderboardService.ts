@@ -4,8 +4,8 @@
 // Aggregates from existing stores for use by Discord commands and web API.
 
 import { getDb } from "../core/database/db.js";
+import { getContextLogger } from "../core/logging/requestContext.js";
 import { getFunUsageSnapshot } from "../stores/fun/funUsageStore.js";
-import { logger } from "../../utils/logger.js";
 
 export type LeaderboardScope = "global" | "server" | "weekly" | "per_game";
 
@@ -23,12 +23,13 @@ export function recordUsageLog(args: {
   guildId?: string | null;
 }): void {
   const db = getDb();
+  const log = getContextLogger();
   try {
     db.prepare(
       `INSERT INTO usage_log (user_id, guild_id, command, created_at) VALUES (?, ?, ?, ?)`,
     ).run(args.userId, args.guildId ?? null, args.command, Date.now());
   } catch (err) {
-    logger.debug(
+    log.debug(
       { err },
       "[leaderboard] recordUsageLog failed (usage_log table may be missing)",
     );
@@ -99,6 +100,7 @@ export async function getUsageLeaderboard(options: {
   window?: "weekly";
 }): Promise<LeaderboardEntry[] | { command: string; count: number }[]> {
   const limit = options.limit ?? 25;
+  const log = getContextLogger();
   const useLog =
     options.from != null ||
     options.to != null ||
@@ -121,8 +123,8 @@ export async function getUsageLeaderboard(options: {
         to,
         guildId: options.guildId,
       });
-    } catch {
-      // Fall back to snapshot if usage_log missing
+    } catch (err) {
+      log.warn({ err, options }, "[leaderboard] usage_log query failed, falling back to snapshot");
     }
   }
   const snapshot = await getFunUsageSnapshot();
@@ -136,7 +138,7 @@ export async function getUsageLeaderboard(options: {
   }
   const totalsByCommand = snapshot?.totalsByCommand ?? {};
   return Object.entries(totalsByCommand)
-    .map(([command, count]) => ({ command, count: Number(count) ?? 0 }))
+    .map(([command, count]) => ({ command, count: Number(count) }))
     .filter((x) => x.count > 0)
     .sort((a, b) => b.count - a.count)
     .slice(0, limit);

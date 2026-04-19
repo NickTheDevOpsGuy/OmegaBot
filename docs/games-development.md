@@ -16,7 +16,7 @@ This doc explains how to add games, use progression, achievements, and the share
    - Build a `GameResultInput` (title, outcome, boardLines, outcomeMessage, rewardLines, xpGained, footerHints, etc.) and call `buildGameResultEmbed(input)` to get an `EmbedBuilder` for `editReply({ embeds: [embed] })`.
 
 4. **Progression**  
-   Use `awardXp(userId, amount)` from `src/services/stores/progression/progressionStore.js` (or `src/services/games/progressionEngine.js`) after a game ends. Use `buildMilestoneLine` and `buildRankTeaser` from `subcommands/shared/gameFeedback.js` for milestones and leaderboard teasers.
+   Use `awardXp(userId, amount)` from `src/services/stores/progression/progressionStore.js` after a game ends. Use `buildMilestoneLine` and `buildRankTeaser` from `subcommands/shared/gameFeedback.js` for milestones and leaderboard teasers.
 
 5. **Rate limiting**  
    Add a cooldown in `src/services/discord/discord/rateLimit/rateLimit.ts` (e.g. `checkSlotsCooldown`, `recordSlotsSpin`) and call `formatCooldownMessage` when the user is rate limited.
@@ -81,8 +81,4 @@ Store board state as JSON string. Commands and a future web API can load/save se
 - **Tier 2 (embed)**  
   Slots, blackjack, poker — rich embeds with board, rewards, footer hints.
 - **Tier 3 (future visual)**  
-  Slots, blackjack, roulette, wheel — optional image rendering via `services/games/imageRenderer.ts` (placeholder; not implemented).
-
-## Image rendering (placeholder)
-
-`services/games/imageRenderer.ts` exposes `renderGameImage(gameType, state)` and `isImageRenderingAvailable()`. Currently returns `null` / `false`. Future: node-canvas or satori to generate PNGs for embeds.
+  Slots, blackjack, roulette, wheel — if visual rendering is added later, keep it as an opt-in layer on top of the existing text/embed flows.

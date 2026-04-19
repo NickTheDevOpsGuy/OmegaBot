@@ -8,7 +8,6 @@ import {
 } from "discord.js";
 import { getContextLogger } from "../../../services/core/logging/requestContext.js";
 import { summarize } from "../../../services/integrations/summary/summarizer.js";
-import { logger } from "../../../utils/logger.js";
 
 export const data = new SlashCommandBuilder()
   .setName("summary")

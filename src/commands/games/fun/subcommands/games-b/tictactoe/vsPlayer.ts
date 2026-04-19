@@ -102,7 +102,9 @@ export async function playVsPlayer(
         },
         "tictactoe.warning",
         interaction,
-      );
+      ).catch((err) => {
+        getContextLogger().warn({ err, gameId }, "[tictactoe] warning update threw");
+      });
     }, MOVE_TIMEOUT_MS - WARNING_BEFORE_MS);
   };
   scheduleWarning();
@@ -265,8 +267,11 @@ export async function playVsPlayer(
             content:
               "It's your turn in **Tic Tac Toe**! Check the game message in the channel to make your move.",
           });
-        } catch {
-          // DMs may be disabled; ignore
+        } catch (err) {
+          getContextLogger().debug(
+            { err, gameId, nextTurnUserId: currentPlayer.id },
+            "[tictactoe] turn reminder DM skipped",
+          );
         }
       }
     } catch (err) {

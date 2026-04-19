@@ -68,7 +68,9 @@ export async function handleStart(
   logger.info({ giveawayId, prize, duration: durationStr }, "[giveaway] created");
 
   setTimeout(() => {
-    void autoEndGiveaway(giveawayId, interaction.channel as TextChannel);
+    void autoEndGiveaway(giveawayId, interaction.channel as TextChannel).catch((err) => {
+      logger.error({ err, giveawayId }, "[giveaway] scheduled auto-end threw");
+    });
   }, durationMs);
 }
 

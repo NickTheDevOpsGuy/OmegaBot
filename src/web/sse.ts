@@ -2,6 +2,7 @@
 // Server-Sent Events for live game/event updates. Clients subscribe by topic (game:gameId or event:eventId).
 
 import type { ServerResponse } from "node:http";
+import { logger } from "../utils/logger.js";
 
 const subscribers = new Map<string, Set<ServerResponse>>();
 
@@ -16,8 +17,13 @@ export function subscribe(topic: string, res: ServerResponse): void {
     subscribers.set(topic, set);
   }
   set.add(res);
+  logger.debug({ topic, subscriberCount: set.size }, "[web/sse] subscriber connected");
   res.on("close", () => {
     set?.delete(res);
+    logger.debug(
+      { topic, subscriberCount: set?.size ?? 0 },
+      "[web/sse] subscriber disconnected",
+    );
     if (set?.size === 0) subscribers.delete(topic);
   });
 }
@@ -31,7 +37,8 @@ export function publish(key: "game" | "event", id: string, data: unknown): void 
   for (const res of set) {
     try {
       res.write(msg);
-    } catch {
+    } catch (err) {
+      logger.debug({ err, topic }, "[web/sse] publish write failed; dropping subscriber");
       set.delete(res);
     }
   }
@@ -50,6 +57,7 @@ export function handleSse(
       ? getTopic("event", eventId)
       : null;
   if (!topic) {
+    logger.warn("[web/sse] subscribe rejected, missing topic query");
     res.setHeader("Content-Type", "application/json");
     res.writeHead(400);
     res.end(JSON.stringify({ error: "gameId or eventId query param required" }));

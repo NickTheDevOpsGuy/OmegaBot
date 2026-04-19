@@ -2,7 +2,6 @@
 // Fun command execution: handler registry, usage tracking, subcommand routing.
 
 import { MessageFlags, type ChatInputCommandInteraction } from "discord.js";
-import { logger } from "../../../utils/logger.js";
 import {
   isKnownInteractionError,
   logKnownInteractionError,

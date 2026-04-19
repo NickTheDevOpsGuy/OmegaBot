@@ -1,5 +1,3 @@
-// src/commands/config/config.ts
-//
 // Server configuration command for admins.
 //
 // Subcommand groups:

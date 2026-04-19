@@ -2,7 +2,6 @@
 import type { ChatInputCommandInteraction } from "discord.js";
 import { getContextLogger } from "../../../../../../services/core/logging/requestContext.js";
 import { errMessage, getUserFacingReason } from "../../../../../../utils/errors.js";
-import { logger } from "../../../../../../utils/logger.js";
 import { getStats, getTriviaLeaderboard } from "./triviaStore.js";
 import type { TriviaCategory } from "./questions.js";
 import { runTriviaGame } from "./gameFlow.js";

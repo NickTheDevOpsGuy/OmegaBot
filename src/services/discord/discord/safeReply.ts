@@ -1,4 +1,4 @@
-// src/services/discord/safeReply.ts
+// Discord reply/edit helpers with retries and better interaction-expiry handling.
 import { MessageFlags } from "discord.js";
 import type {
   ButtonInteraction,
@@ -47,12 +47,24 @@ export async function notifyGameMessageGone(
   interaction: MessageComponentInteraction,
   gameCommand: string,
 ): Promise<void> {
-  await interaction
-    .followUp({
+  try {
+    await interaction.followUp({
       content: `${GAME_MESSAGE_GONE_PREFIX}/fun ${gameCommand}.`,
       flags: MessageFlags.Ephemeral,
-    })
-    .catch(() => {});
+    });
+  } catch (err) {
+    if (isKnownInteractionError(err)) {
+      logKnownInteractionError(err, "notifyGameMessageGone", {
+        customId: interaction.customId,
+        gameCommand,
+      });
+      return;
+    }
+    getContextLogger().warn(
+      { err, customId: interaction.customId, gameCommand },
+      "[interaction] notifyGameMessageGone followUp threw",
+    );
+  }
 }
 
 export interface SafeReplyOptions {

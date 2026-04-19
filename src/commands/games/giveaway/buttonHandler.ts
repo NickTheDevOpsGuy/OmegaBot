@@ -3,7 +3,6 @@
 
 import type { ButtonInteraction } from "discord.js";
 import { getContextLogger } from "../../../services/core/logging/requestContext.js";
-import { logger } from "../../../utils/logger.js";
 import { recordInteractionRecovery } from "../../../services/core/metrics/server.js";
 import { getGiveaway, addEntry, removeEntry, getEntryCount } from "./giveawayStore.js";
 import { buildGiveawayEmbed } from "./ui.js";

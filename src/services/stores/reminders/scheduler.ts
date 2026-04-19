@@ -49,7 +49,7 @@ function classifySendError(err: unknown): {
   return { level: "warn", reason: "send_failed", code, msg };
 }
 
-function canSendToGuildChannel(client: Client, channel: unknown): boolean {
+function canSendToGuildChannel(channel: unknown): boolean {
   // If it's not a guild channel (DM, Group DM, etc.), perms do not apply.
   if (!isRecord(channel) || !("guild" in channel)) return true;
 
@@ -119,7 +119,7 @@ export function createReminderScheduler(client: Client) {
         return false;
       }
 
-      if (!canSendToGuildChannel(client, channel)) {
+      if (!canSendToGuildChannel(channel)) {
         logger.debug(
           { reminderId, channelId: r.channel_id },
           "[reminders] cannot send (perms)",

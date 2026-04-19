@@ -1,7 +1,6 @@
 // src/commands/fun/subcommands/eightball.ts
 import type { ChatInputCommandInteraction } from "discord.js";
 import { getContextLogger } from "../../../../../../services/core/logging/requestContext.js";
-import { logger } from "../../../../../../utils/logger.js";
 
 const RESPONSES = [
   // Positive

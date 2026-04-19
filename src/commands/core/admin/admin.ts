@@ -99,9 +99,7 @@ export const data = new SlashCommandBuilder()
 /* Permission check (exported for help / other callers)                        */
 /* -------------------------------------------------------------------------- */
 
-export async function isModerator(
-  interaction: ChatInputCommandInteraction,
-): Promise<boolean> {
+export function isModerator(interaction: ChatInputCommandInteraction): boolean {
   if (env.adminUserIds.size > 0 && env.adminUserIds.has(interaction.user.id)) return true;
   if (!interaction.inGuild() || !interaction.member) return false;
 
@@ -135,9 +133,7 @@ export async function isModerator(
  * When MODERATION_ALLOWED_ROLE_IDS is set, only those roles (or ADMIN_USER_IDS) may moderate.
  * Otherwise falls back to isModerator (Discord perms + moderator_roles).
  */
-export async function canUseModeration(
-  interaction: ChatInputCommandInteraction,
-): Promise<boolean> {
+export function canUseModeration(interaction: ChatInputCommandInteraction): boolean {
   if (env.adminUserIds.has(interaction.user.id)) return true;
   if (!interaction.inGuild() || !interaction.member) return false;
 

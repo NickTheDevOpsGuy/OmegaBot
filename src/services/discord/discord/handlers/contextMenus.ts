@@ -2,8 +2,8 @@ import type {
   UserContextMenuCommandInteraction,
   MessageContextMenuCommandInteraction,
 } from "discord.js";
+import { getContextLogger } from "../../../core/logging/requestContext.js";
 import { errMessage, getUserFacingReason } from "../../../../utils/errors.js";
-import { logger } from "../../../../utils/logger.js";
 import {
   isKnownInteractionError,
   logKnownInteractionError,
@@ -28,7 +28,7 @@ async function safeRepliableReply(
       });
       return;
     }
-    logger.warn(
+    getContextLogger().warn(
       { err, interactionId: interaction.id },
       `[interaction] context menu reply threw: ${errMessage(err)}`,
     );
@@ -57,7 +57,7 @@ export async function handleUserContextMenu(
         });
         return;
       }
-      logger.error(
+      getContextLogger().error(
         { err, command: interaction.commandName },
         `[interaction] context menu threw: ${errMessage(err)}`,
       );
@@ -88,7 +88,7 @@ export async function handleMessageContextMenu(
         });
         return;
       }
-      logger.error(
+      getContextLogger().error(
         { err, command: interaction.commandName },
         `[interaction] context menu threw: ${errMessage(err)}`,
       );

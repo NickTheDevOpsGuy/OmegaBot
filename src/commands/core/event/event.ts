@@ -15,6 +15,7 @@ import {
   updateEventStatus,
   type EventStatus,
 } from "../../../services/platform/eventsService.js";
+import { getContextLogger } from "../../../services/core/logging/requestContext.js";
 import { getOrCreateByDiscord } from "../../../services/platform/userService.js";
 
 export const data = new SlashCommandBuilder()
@@ -102,124 +103,163 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const sub = interaction.options.getSubcommand();
+  const log = getContextLogger();
 
-  if (sub === "create") {
-    const title = interaction.options.getString("title", true);
-    const description = interaction.options.getString("description");
-    const startRaw = interaction.options.getInteger("start_time");
-    const endRaw = interaction.options.getInteger("end_time");
-    const status = (interaction.options.getString("status") as EventStatus) ?? "draft";
-    const startTime = startRaw ? startRaw * 1000 : Date.now();
-    const endTime = endRaw ? endRaw * 1000 : startTime + 24 * 60 * 60 * 1000;
-    const event = createEvent({
-      title,
-      description: description ?? null,
-      startTime,
-      endTime,
-      status,
-    });
-    await interaction.reply({
-      content: `Event **${event.title}** created. ID: \`${event.eventId}\`. Use \`/event join event_id:${event.eventId}\` to join.`,
-      ephemeral: true,
-    });
-    return;
-  }
-
-  if (sub === "update") {
-    const eventId = interaction.options.getString("event_id", true);
-    const status = interaction.options.getString("status") as EventStatus | null;
-    const ev = getEvent(eventId);
-    if (!ev) {
-      await interaction.reply({ content: "Event not found.", ephemeral: true });
-      return;
-    }
-    if (!status) {
+  try {
+    if (sub === "create") {
+      const title = interaction.options.getString("title", true);
+      const description = interaction.options.getString("description");
+      const startRaw = interaction.options.getInteger("start_time");
+      const endRaw = interaction.options.getInteger("end_time");
+      const status = (interaction.options.getString("status") as EventStatus) ?? "draft";
+      const startTime = startRaw ? startRaw * 1000 : Date.now();
+      const endTime = endRaw ? endRaw * 1000 : startTime + 24 * 60 * 60 * 1000;
+      const event = createEvent({
+        title,
+        description: description ?? null,
+        startTime,
+        endTime,
+        status,
+      });
+      log.info(
+        { subcommand: sub, eventId: event.eventId, status, startTime, endTime },
+        "[event] created event",
+      );
       await interaction.reply({
-        content: "Provide a `status` to update.",
+        content: `Event **${event.title}** created. ID: \`${event.eventId}\`. Use \`/event join event_id:${event.eventId}\` to join.`,
         ephemeral: true,
       });
       return;
     }
-    const ok = updateEventStatus(eventId, status);
-    if (!ok) {
-      await interaction.reply({ content: "Update failed.", ephemeral: true });
-      return;
-    }
-    await interaction.reply({
-      content: `Event status set to **${status}**.`,
-      ephemeral: true,
-    });
-    return;
-  }
 
-  if (sub === "join") {
-    const eventId = interaction.options.getString("event_id", true);
-    const platformUser = getOrCreateByDiscord(
-      interaction.user.id,
-      interaction.user.username,
-      interaction.user.displayAvatarURL(),
-    );
-    const ok = joinEvent(eventId, platformUser.userId);
-    if (!ok) {
+    if (sub === "update") {
+      const eventId = interaction.options.getString("event_id", true);
+      const status = interaction.options.getString("status") as EventStatus | null;
+      const ev = getEvent(eventId);
+      if (!ev) {
+        log.warn({ subcommand: sub, eventId }, "[event] update target not found");
+        await interaction.reply({ content: "Event not found.", ephemeral: true });
+        return;
+      }
+      if (!status) {
+        log.warn({ subcommand: sub, eventId }, "[event] update missing status");
+        await interaction.reply({
+          content: "Provide a `status` to update.",
+          ephemeral: true,
+        });
+        return;
+      }
+      const ok = updateEventStatus(eventId, status);
+      if (!ok) {
+        log.warn({ subcommand: sub, eventId, status }, "[event] status update failed");
+        await interaction.reply({ content: "Update failed.", ephemeral: true });
+        return;
+      }
+      log.info({ subcommand: sub, eventId, status }, "[event] updated status");
       await interaction.reply({
-        content: "Could not join. Event may not exist or may not be active.",
+        content: `Event status set to **${status}**.`,
         ephemeral: true,
       });
       return;
     }
-    await interaction.reply({ content: "You joined the event.", ephemeral: true });
-    return;
-  }
 
-  if (sub === "list") {
-    const status = interaction.options.getString("status") as EventStatus | undefined;
-    const limit = Math.min(25, interaction.options.getInteger("limit") ?? 5);
-    const events = listEvents({ status, limit });
-    const embed = new EmbedBuilder()
-      .setTitle("Events")
-      .setDescription(events.length === 0 ? "No events found." : null);
-    for (const ev of events.slice(0, limit)) {
-      const startR = `<t:${Math.floor(ev.startTime / 1000)}:R>`;
-      const endR = `<t:${Math.floor(ev.endTime / 1000)}:R>`;
-      embed.addFields({
-        name: ev.title,
-        value: `ID: \`${ev.eventId}\` | Status: **${ev.status}** | Starts ${startR} | Ends ${endR}`,
-      });
-    }
-    if (events.length > limit) {
-      embed.setFooter({ text: `Showing ${limit} of ${events.length} events` });
-    } else if (events.length > 0) {
-      embed.setFooter({ text: `${events.length} event(s)` });
-    }
-    await interaction.reply({ embeds: [embed], ephemeral: true });
-    return;
-  }
-
-  if (sub === "results") {
-    const eventId = interaction.options.getString("event_id", true);
-    const ev = getEvent(eventId);
-    if (!ev) {
-      await interaction.reply({ content: "Event not found.", ephemeral: true });
+    if (sub === "join") {
+      const eventId = interaction.options.getString("event_id", true);
+      const platformUser = getOrCreateByDiscord(
+        interaction.user.id,
+        interaction.user.username,
+        interaction.user.displayAvatarURL(),
+      );
+      const ok = joinEvent(eventId, platformUser.userId);
+      if (!ok) {
+        log.warn(
+          { subcommand: sub, eventId, platformUserId: platformUser.userId },
+          "[event] join failed",
+        );
+        await interaction.reply({
+          content: "Could not join. Event may not exist or may not be active.",
+          ephemeral: true,
+        });
+        return;
+      }
+      log.info(
+        { subcommand: sub, eventId, platformUserId: platformUser.userId },
+        "[event] joined event",
+      );
+      await interaction.reply({ content: "You joined the event.", ephemeral: true });
       return;
     }
-    const participants = getEventParticipants(eventId);
-    const embed = new EmbedBuilder()
-      .setTitle(ev.title)
-      .setDescription(ev.description ?? null)
-      .addFields(
-        { name: "Status", value: ev.status, inline: true },
-        { name: "Participants", value: String(participants.length), inline: true },
-        {
-          name: "Participant IDs",
-          value: participants.length
-            ? participants.map((p) => p.userId).join(", ")
-            : "None",
-        },
-      )
-      .setFooter({ text: `Event ID: ${ev.eventId}` });
-    await interaction.reply({ embeds: [embed], ephemeral: true });
-    return;
-  }
 
-  await interaction.reply({ content: "Unknown subcommand.", ephemeral: true });
+    if (sub === "list") {
+      const status = interaction.options.getString("status") as EventStatus | undefined;
+      const limit = Math.min(25, interaction.options.getInteger("limit") ?? 5);
+      const events = listEvents({ status, limit });
+      log.debug(
+        { subcommand: sub, status, limit, resultCount: events.length },
+        "[event] listed events",
+      );
+      const embed = new EmbedBuilder()
+        .setTitle("Events")
+        .setDescription(events.length === 0 ? "No events found." : null);
+      for (const ev of events.slice(0, limit)) {
+        const startR = `<t:${Math.floor(ev.startTime / 1000)}:R>`;
+        const endR = `<t:${Math.floor(ev.endTime / 1000)}:R>`;
+        embed.addFields({
+          name: ev.title,
+          value: `ID: \`${ev.eventId}\` | Status: **${ev.status}** | Starts ${startR} | Ends ${endR}`,
+        });
+      }
+      if (events.length > limit) {
+        embed.setFooter({ text: `Showing ${limit} of ${events.length} events` });
+      } else if (events.length > 0) {
+        embed.setFooter({ text: `${events.length} event(s)` });
+      }
+      await interaction.reply({ embeds: [embed], ephemeral: true });
+      return;
+    }
+
+    if (sub === "results") {
+      const eventId = interaction.options.getString("event_id", true);
+      const ev = getEvent(eventId);
+      if (!ev) {
+        log.warn({ subcommand: sub, eventId }, "[event] results target not found");
+        await interaction.reply({ content: "Event not found.", ephemeral: true });
+        return;
+      }
+      const participants = getEventParticipants(eventId);
+      log.debug(
+        { subcommand: sub, eventId, participantCount: participants.length },
+        "[event] viewed event results",
+      );
+      const embed = new EmbedBuilder()
+        .setTitle(ev.title)
+        .setDescription(ev.description ?? null)
+        .addFields(
+          { name: "Status", value: ev.status, inline: true },
+          { name: "Participants", value: String(participants.length), inline: true },
+          {
+            name: "Participant IDs",
+            value: participants.length
+              ? participants.map((p) => p.userId).join(", ")
+              : "None",
+          },
+        )
+        .setFooter({ text: `Event ID: ${ev.eventId}` });
+      await interaction.reply({ embeds: [embed], ephemeral: true });
+      return;
+    }
+
+    log.warn({ subcommand: sub }, "[event] unknown subcommand");
+    await interaction.reply({ content: "Unknown subcommand.", ephemeral: true });
+  } catch (err) {
+    log.error({ err, subcommand: sub }, "[event] command threw");
+    if (interaction.deferred || interaction.replied) {
+      await interaction.editReply("The event command hit a snag. Try again in a moment.");
+    } else {
+      await interaction.reply({
+        content: "The event command hit a snag. Try again in a moment.",
+        ephemeral: true,
+      });
+    }
+  }
 }

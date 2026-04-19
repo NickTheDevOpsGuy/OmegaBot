@@ -99,7 +99,7 @@ export async function callClaudeWithMessages(
 /**
  * Summarize GitHub commit history
  */
-export async function summarizeCommitHistory(commits: string): Promise<string> {
+export function summarizeCommitHistory(commits: string): Promise<string> {
   const systemPrompt = `You are a helpful assistant that summarizes git commit history. 
 Be concise and focus on the most important changes. 
 Group related commits together and highlight breaking changes or major features.`;
@@ -120,7 +120,7 @@ Provide a clear, organized summary in bullet points.`;
 /**
  * Summarize GitHub PR/issue discussion
  */
-export async function summarizeDiscussion(
+export function summarizeDiscussion(
   title: string,
   body: string,
   comments: string,

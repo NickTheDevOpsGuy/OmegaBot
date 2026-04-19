@@ -96,7 +96,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
   try {
     const notionSearch =
       env.notionEnabled && source !== "faq"
-        ? async (searchQuery: string, limit: number) =>
+        ? (searchQuery: string, limit: number) =>
             searchNotionPages({
               client: createNotionClient(env.requireNotionConfig().token),
               databaseId: env.requireNotionConfig().databaseId,
@@ -111,6 +111,16 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       limit: 5,
       notionSearch,
     });
+
+    getContextLogger().info(
+      {
+        query,
+        source,
+        resultCount: results.length,
+        noticeCount: notices.length,
+      },
+      "[wiki] search completed",
+    );
 
     const reply = [buildReply(query, source, results), ...notices].join("\n\n").trim();
     await interaction.editReply(reply);

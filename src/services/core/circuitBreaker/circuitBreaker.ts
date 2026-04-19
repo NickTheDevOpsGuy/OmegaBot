@@ -26,7 +26,6 @@ export function createCircuitBreaker(options: {
 
   let state: State = "closed";
   let failures = 0;
-  let _lastFailureTime = 0;
   let nextAttemptTime = 0;
 
   async function execute<T>(fn: () => Promise<T>): Promise<T> {
@@ -49,7 +48,6 @@ export function createCircuitBreaker(options: {
       return result;
     } catch (err) {
       failures++;
-      _lastFailureTime = now;
 
       if (state === "half-open" || failures >= threshold) {
         state = "open";

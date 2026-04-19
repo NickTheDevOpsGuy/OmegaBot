@@ -26,7 +26,7 @@ function rollDie(sides: number): number {
   return Math.floor(Math.random() * sides) + 1;
 }
 
-function formatOneRoll(sides: number, roll: number): string {
+function formatOneRoll(roll: number): string {
   // If the rolled value is between 1–6, show emoji + number
   if (roll >= 1 && roll <= 6) {
     const face = D6_FACES[roll - 1] ?? "🎲";
@@ -131,7 +131,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
     const sum = rolls.reduce((a, b) => a + b, 0);
     const total = sum + modifier;
 
-    const display = rolls.map((r) => formatOneRoll(sides, r)).join(", ");
+    const display = rolls.map((r) => formatOneRoll(r)).join(", ");
 
     const lines: string[] = [];
     if (modifier !== 0) {

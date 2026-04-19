@@ -8,7 +8,6 @@ import {
 import { getPullRequest } from "../../../services/integrations/github/githubApi.js";
 import { getContextLogger } from "../../../services/core/logging/requestContext.js";
 import { getGitHubUserMessage } from "../../../services/integrations/github/shared/githubErrorMessage.js";
-import { logger } from "../../../utils/logger.js";
 
 /**
  * /pr command

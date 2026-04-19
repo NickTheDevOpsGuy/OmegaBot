@@ -1,5 +1,5 @@
 import type { AutocompleteInteraction } from "discord.js";
-import { logger } from "../../../../utils/logger.js";
+import { getContextLogger } from "../../../core/logging/requestContext.js";
 import type { CommandClient } from "../commandLoader.js";
 
 export async function handleAutocomplete(
@@ -20,14 +20,14 @@ export async function handleAutocomplete(
       await interaction.respond([]);
     }
   } catch (err) {
-    logger.warn(
+    getContextLogger().warn(
       { err, command: interaction.commandName, interactionId: interaction.id },
       "[interaction] autocomplete failed",
     );
     try {
       await interaction.respond([]);
     } catch (fallbackErr) {
-      logger.debug(
+      getContextLogger().debug(
         { err: fallbackErr, command: interaction.commandName },
         "[interaction] autocomplete fallback respond([]) failed",
       );

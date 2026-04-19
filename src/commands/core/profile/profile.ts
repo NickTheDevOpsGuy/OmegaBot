@@ -1,5 +1,3 @@
-// src/commands/profile/profile.ts
-//
 // User profile management with stats, AFK status, and timezone.
 //
 // Subcommands:
@@ -11,6 +9,7 @@
 
 import type { AutocompleteInteraction } from "discord.js";
 import { SlashCommandBuilder, type ChatInputCommandInteraction } from "discord.js";
+import { getContextLogger } from "../../../services/core/logging/requestContext.js";
 import { filterTimezones } from "./timezones.js";
 import { run as runView } from "./subcommands/view.js";
 import { run as runAfk } from "./subcommands/afk.js";
@@ -54,6 +53,7 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const sub = interaction.options.getSubcommand();
+  const log = getContextLogger();
 
   if (sub === "view") {
     await runView(interaction);
@@ -68,13 +68,16 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     return;
   }
 
-  await interaction
-    .reply({
+  log.warn({ subcommand: sub }, "[profile] unknown subcommand");
+  try {
+    await interaction.reply({
       content:
         "Unknown option. Use `view`, `afk`, or `timezone`. Use `/help topic:profile` for more.",
       ephemeral: true,
-    })
-    .catch(() => {});
+    });
+  } catch (err) {
+    log.warn({ err, subcommand: sub }, "[profile] unknown subcommand reply threw");
+  }
 }
 
 export async function autocomplete(interaction: AutocompleteInteraction): Promise<void> {

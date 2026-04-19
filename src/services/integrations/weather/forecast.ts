@@ -162,7 +162,7 @@ function dailyPopString(item: ForecastDay | undefined): string | null {
 /* Main fetch                                                                 */
 /* -------------------------------------------------------------------------- */
 
-export async function fetchWeatherBundle(args: {
+export function fetchWeatherBundle(args: {
   location: string;
   unit: TempUnit;
   days: number;

@@ -1,7 +1,6 @@
 // src/commands/fun/subcommands/daily.ts
 import { EmbedBuilder, type ChatInputCommandInteraction } from "discord.js";
 import { getContextLogger } from "../../../../../../services/core/logging/requestContext.js";
-import { logger } from "../../../../../../utils/logger.js";
 import { getStats, doCheckIn, getDailyLeaderboard } from "./dailyStore.js";
 import { getNewlyUnlockedAchievementLine } from "../../../../achievements/achievements.js";
 import { getDb } from "../../../../../../services/core/database/db.js";

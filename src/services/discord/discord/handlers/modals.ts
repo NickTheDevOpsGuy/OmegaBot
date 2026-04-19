@@ -1,5 +1,5 @@
 import type { ModalSubmitInteraction } from "discord.js";
-import { logger } from "../../../../utils/logger.js";
+import { getContextLogger } from "../../../core/logging/requestContext.js";
 import {
   isKnownInteractionError,
   logKnownInteractionError,
@@ -12,7 +12,7 @@ async function replyOrEditModal(
 ): Promise<void> {
   try {
     if (interaction.replied || interaction.deferred) {
-      await interaction.editReply({ content }).catch(() => {});
+      await interaction.editReply({ content });
     } else {
       await interaction.reply({ content, ephemeral: true });
     }
@@ -23,7 +23,7 @@ async function replyOrEditModal(
       });
       return;
     }
-    logger.warn(
+    getContextLogger().warn(
       { err, customId: interaction.customId },
       "[interaction] send error reply for modal threw",
     );
@@ -37,7 +37,7 @@ export async function handleModalSubmit(
     try {
       await handleSuggestionModal(interaction);
     } catch (err) {
-      logger.error(
+      getContextLogger().error(
         { err, customId: interaction.customId, interactionId: interaction.id },
         "[interaction] suggestion modal failed",
       );

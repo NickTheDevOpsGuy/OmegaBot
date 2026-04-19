@@ -1,5 +1,3 @@
-// src/commands/info/info.ts
-//
 // Consolidated information command for users and servers.
 //
 // Subcommands:

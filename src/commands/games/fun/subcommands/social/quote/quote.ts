@@ -2,7 +2,6 @@
 // Guild quotes: add, random, list, search, remove. Uses quoteStore for persistence.
 import { type ChatInputCommandInteraction, type User, EmbedBuilder } from "discord.js";
 import { getContextLogger } from "../../../../../../services/core/logging/requestContext.js";
-import { logger } from "../../../../../../utils/logger.js";
 import { t, resolveLocale } from "../../../../../../i18n/index.js";
 import { getDb } from "../../../../../../services/core/database/db.js";
 import {

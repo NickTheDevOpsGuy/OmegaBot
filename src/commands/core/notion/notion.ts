@@ -111,11 +111,13 @@ function noPermissionMessage(): string {
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const sub = interaction.options.getSubcommand(true);
   const ephemeral = interaction.options.getBoolean("private") ?? true;
+  const log = getContextLogger();
 
   await interaction.deferReply(ephemeral ? { flags: MessageFlags.Ephemeral } : undefined);
 
   try {
     if (!env.notionEnabled) {
+      log.warn({ subcommand: sub }, "[notion] command blocked, integration not configured");
       await interaction.editReply(notionConfigMessage());
       return;
     }
@@ -131,6 +133,11 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         query,
         limit: 5,
       });
+
+      log.info(
+        { subcommand: sub, query, resultCount: results.length, ephemeral },
+        "[notion] search completed",
+      );
 
       if (results.length === 0) {
         await interaction.editReply(
@@ -154,12 +161,22 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     }
 
     if (!canUseBotAdmin(interaction)) {
+      log.warn({ subcommand: sub }, "[notion] admin action blocked, missing permission");
       await interaction.editReply(noPermissionMessage());
       return;
     }
 
     if (sub === "status") {
       const status = await getNotionDatabaseStatus({ client, databaseId });
+      log.info(
+        {
+          subcommand: sub,
+          databaseTitle: status.databaseTitle ?? null,
+          titleProperty: status.titleProperty,
+          tagProperty: status.tagProperty?.name ?? null,
+        },
+        "[notion] viewed integration status",
+      );
       const lines = [
         "**Notion integration status**",
         `Configured: ${env.notionEnabled ? "yes" : "no"}`,
@@ -204,6 +221,17 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         ].join("\n"),
       );
 
+      log.info(
+        {
+          subcommand: sub,
+          pageId: page.id,
+          title,
+          tagCount: tags.length,
+          ephemeral,
+        },
+        "[notion] created page via command",
+      );
+
       await interaction.editReply(
         [
           `✅ Created Notion page **${page.title}**`,
@@ -216,9 +244,10 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       return;
     }
 
+    log.warn({ subcommand: sub }, "[notion] command received unknown subcommand");
     await interaction.editReply("That Notion subcommand was not recognized.");
   } catch (err) {
-    getContextLogger().error({ err, sub }, "[notion] command threw");
+    log.error({ err, subcommand: sub }, "[notion] command threw");
     await interaction.editReply("The Notion command hit a snag. Try again in a moment.");
   }
 }

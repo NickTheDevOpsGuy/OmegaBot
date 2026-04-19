@@ -110,9 +110,9 @@ export async function llmSummary(text: string): Promise<string> {
   ].join("\n");
 
   try {
-    const response = await openaiCircuit.execute(async () =>
+    const response = await openaiCircuit.execute(() =>
       withRetries(
-        async () =>
+        () =>
           client!.chat.completions.create({
             model: "gpt-4o-mini",
             messages: [

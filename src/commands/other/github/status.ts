@@ -7,7 +7,6 @@ import {
 } from "discord.js";
 import { env } from "../../../config/env.js";
 import { getContextLogger } from "../../../services/core/logging/requestContext.js";
-import { logger } from "../../../utils/logger.js";
 
 /**
  * /github status command

@@ -15,7 +15,6 @@ import {
   DISCORD_SAFE_TEXT_LIMIT,
 } from "../../../services/stores/transcript/defaults.js";
 import { getContextLogger } from "../../../services/core/logging/requestContext.js";
-import { logger } from "../../../utils/logger.js";
 import { recordInteractionRecovery } from "../../../services/core/metrics/server.js";
 import { safeEditReply } from "../../../services/discord/discord/safeReply.js";
 

@@ -63,12 +63,6 @@ function buildReelLines(grid: Grid, rowCount: number): string[] {
   );
 }
 
-/** Legacy heavy border style for animation frames only. */
-function buildReelBox(grid: Grid, rowCount: number): string[] {
-  const lines = buildReelLines(grid, rowCount);
-  return [...lines, "", lines.join("  ·  ")];
-}
-
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }

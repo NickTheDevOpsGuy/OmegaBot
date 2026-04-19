@@ -10,7 +10,6 @@ import {
 } from "discord.js";
 import { getContextLogger } from "../../../services/core/logging/requestContext.js";
 import { addQuote } from "../../../services/stores/quotes/quoteStore.js";
-import { logger } from "../../../utils/logger.js";
 import { t, resolveLocale } from "../../../i18n/index.js";
 
 export const data = new ContextMenuCommandBuilder()

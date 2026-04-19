@@ -2,7 +2,6 @@
 
 import type { ChatInputCommandInteraction } from "discord.js";
 import { getContextLogger } from "../../../../../../services/core/logging/requestContext.js";
-import { logger } from "../../../../../../utils/logger.js";
 import { getCoinFlipStats } from "../../../coinflipStore.js";
 
 function pct(part: number, total: number): string {

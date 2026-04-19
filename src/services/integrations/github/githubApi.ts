@@ -91,7 +91,7 @@ function is404(err: unknown): err is GitHubApiError {
  * Fetch a single issue by number.
  * CACHED: 5 minutes
  */
-export async function getIssue(
+export function getIssue(
   owner: string,
   repo: string,
   number: number,
@@ -119,7 +119,7 @@ export async function getIssue(
  * Fetch a single pull request by number.
  * CACHED: 5 minutes
  */
-export async function getPullRequest(
+export function getPullRequest(
   owner: string,
   repo: string,
   number: number,
@@ -170,7 +170,7 @@ export async function getIssueOrPr(
  * List issues (issues-only; PRs filtered out)
  * CACHED: 5 minutes
  */
-export async function listIssues(
+export function listIssues(
   owner: string,
   repo: string,
   options?: ListIssuesOptions,
@@ -214,7 +214,7 @@ export async function listIssues(
  * List pull requests (summary view)
  * CACHED: 5 minutes
  */
-export async function listPullRequests(
+export function listPullRequests(
   owner: string,
   repo: string,
   options?: ListPrOptions,

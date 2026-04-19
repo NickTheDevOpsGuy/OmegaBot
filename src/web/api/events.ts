@@ -2,6 +2,7 @@
 // GET /api/events, GET /api/events/:id, POST /api/events/join (uses eventsService).
 
 import type { IncomingMessage, ServerResponse } from "node:http";
+import { getContextLogger } from "../../services/core/logging/requestContext.js";
 import { requireAuth } from "../auth.js";
 import {
   listEvents,
@@ -21,7 +22,11 @@ function parseBody(req: IncomingMessage): Promise<Record<string, unknown>> {
     req.on("end", () => {
       try {
         resolve(body ? (JSON.parse(body) as Record<string, unknown>) : {});
-      } catch {
+      } catch (err) {
+        getContextLogger().warn(
+          { err, bodyLength: body.length },
+          "[web/events] invalid JSON body, using empty object",
+        );
         resolve({});
       }
     });
@@ -29,32 +34,42 @@ function parseBody(req: IncomingMessage): Promise<Record<string, unknown>> {
   });
 }
 
-export async function handleGetEvents(
+export function handleGetEvents(
   _req: IncomingMessage,
   res: ServerResponse,
-): Promise<void> {
+): void {
   const url = new URL(_req.url ?? "", `http://${_req.headers.host}`);
   const status = url.searchParams.get("status") as "active" | "ended" | undefined;
   const limit = Math.min(100, parseInt(url.searchParams.get("limit") ?? "50", 10) || 50);
   const events = listEvents({ status, limit });
+  getContextLogger().debug(
+    { status, limit, resultCount: events.length },
+    "[web/events] listed events",
+  );
   res.setHeader("Content-Type", "application/json");
   res.writeHead(200);
   res.end(JSON.stringify({ events }));
 }
 
-export async function handleGetEvent(
+export function handleGetEvent(
   _req: IncomingMessage,
   res: ServerResponse,
   eventId: string,
-): Promise<void> {
+): void {
+  const log = getContextLogger();
   const event = getEvent(eventId);
   res.setHeader("Content-Type", "application/json");
   if (!event) {
+    log.warn({ eventId }, "[web/events] event not found");
     res.writeHead(404);
     res.end(JSON.stringify({ error: "Event not found" }));
     return;
   }
   const participants = getEventParticipants(eventId);
+  log.debug(
+    { eventId, participantCount: participants.length },
+    "[web/events] fetched event details",
+  );
   res.writeHead(200);
   res.end(JSON.stringify({ ...event, participants }));
 }
@@ -64,9 +79,11 @@ export async function handlePostEventsJoin(
   res: ServerResponse,
   eventId: string,
 ): Promise<void> {
+  const log = getContextLogger();
   const body = await parseBody(req);
   const userId = body.userId as string | undefined;
   if (!userId) {
+    log.warn({ eventId }, "[web/events] join missing userId");
     res.setHeader("Content-Type", "application/json");
     res.writeHead(400);
     res.end(JSON.stringify({ error: "userId required" }));
@@ -75,6 +92,7 @@ export async function handlePostEventsJoin(
   const ok = joinEvent(eventId, userId);
   res.setHeader("Content-Type", "application/json");
   if (!ok) {
+    log.warn({ eventId, userId }, "[web/events] join failed");
     res.writeHead(400);
     res.end(JSON.stringify({ error: "Could not join event (invalid or not active)" }));
     return;
@@ -83,6 +101,10 @@ export async function handlePostEventsJoin(
   const event = getEvent(eventId);
   const participants = getEventParticipants(eventId);
   publish("event", eventId, { ...event, participants });
+  log.info(
+    { eventId, userId, participantCount: participants.length },
+    "[web/events] participant joined",
+  );
   res.writeHead(200);
   res.end(JSON.stringify({ joined: true }));
 }
@@ -91,8 +113,10 @@ export async function handlePostEvents(
   req: IncomingMessage,
   res: ServerResponse,
 ): Promise<void> {
+  const log = getContextLogger();
   const auth = requireAuth(req);
   if (!auth) {
+    log.warn("[web/events] create rejected, missing auth");
     res.setHeader("Content-Type", "application/json");
     res.writeHead(401);
     res.end(JSON.stringify({ error: "Authentication required" }));
@@ -101,6 +125,7 @@ export async function handlePostEvents(
   const body = await parseBody(req);
   const title = typeof body.title === "string" ? body.title.trim() : "";
   if (!title) {
+    log.warn("[web/events] create rejected, missing title");
     res.setHeader("Content-Type", "application/json");
     res.writeHead(400);
     res.end(JSON.stringify({ error: "title required" }));
@@ -127,6 +152,15 @@ export async function handlePostEvents(
     endTime,
     status: status ?? "draft",
   });
+  log.info(
+    {
+      eventId: event.eventId,
+      status: event.status,
+      authType: auth.type,
+      titleLength: title.length,
+    },
+    "[web/events] created event",
+  );
   res.setHeader("Content-Type", "application/json");
   res.writeHead(201);
   res.end(JSON.stringify(event));
@@ -137,8 +171,10 @@ export async function handlePatchEvent(
   res: ServerResponse,
   eventId: string,
 ): Promise<void> {
+  const log = getContextLogger();
   const auth = requireAuth(req);
   if (!auth) {
+    log.warn({ eventId }, "[web/events] patch rejected, missing auth");
     res.setHeader("Content-Type", "application/json");
     res.writeHead(401);
     res.end(JSON.stringify({ error: "Authentication required" }));
@@ -146,6 +182,7 @@ export async function handlePatchEvent(
   }
   const event = getEvent(eventId);
   if (!event) {
+    log.warn({ eventId }, "[web/events] patch target not found");
     res.setHeader("Content-Type", "application/json");
     res.writeHead(404);
     res.end(JSON.stringify({ error: "Event not found" }));
@@ -166,11 +203,16 @@ export async function handlePatchEvent(
   });
   res.setHeader("Content-Type", "application/json");
   if (!ok) {
+    log.warn({ eventId, authType: auth.type }, "[web/events] patch failed");
     res.writeHead(500);
     res.end(JSON.stringify({ error: "Update failed" }));
     return;
   }
   const updated = getEvent(eventId);
+  log.info(
+    { eventId, authType: auth.type, status: updated?.status ?? null },
+    "[web/events] updated event",
+  );
   res.writeHead(200);
   res.end(JSON.stringify(updated));
 }

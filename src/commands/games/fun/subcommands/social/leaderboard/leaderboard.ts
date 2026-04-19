@@ -107,11 +107,9 @@ export async function run(
   const useLog = scope === "weekly" || scope === "server";
   const guildId = mode.kind !== "user" ? mode.guildId : undefined;
 
-  let snapshot = await getFunUsageSnapshot();
-  let totalsByUser = snapshot.totalsByUser;
-  let totalsByCommand = snapshot.totalsByCommand;
-  let byUserByCommand = snapshot.byUserByCommand;
-  const updatedAt = snapshot.updatedAt ?? "unknown";
+  const { totalsByUser, totalsByCommand, byUserByCommand, updatedAt } =
+    await getFunUsageSnapshot();
+  const footerUpdatedAt = updatedAt ?? "unknown";
 
   if (useLog && (mode.kind === "users" || mode.kind === "commands")) {
     try {
@@ -176,7 +174,7 @@ export async function run(
   const anyUserUsage = Object.keys(totalsByUser).length > 0;
   const anyCommandUsage = Object.values(totalsByCommand).some((n) => toCount(n) > 0);
 
-  const embed = new EmbedBuilder().setFooter({ text: `Updated: ${updatedAt}` });
+  const embed = new EmbedBuilder().setFooter({ text: `Updated: ${footerUpdatedAt}` });
 
   if (!anyUserUsage && !anyCommandUsage) {
     embed.setTitle("Fun Leaderboard");

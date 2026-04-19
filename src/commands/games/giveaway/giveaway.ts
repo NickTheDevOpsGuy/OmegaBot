@@ -1,5 +1,3 @@
-// src/commands/giveaway/giveaway.ts
-//
 // Giveaway command handler.
 // Database operations are in giveawayStore.ts. Subcommand logic in handlers.ts.
 
@@ -9,6 +7,7 @@ import {
   type ChatInputCommandInteraction,
   type AutocompleteInteraction,
 } from "discord.js";
+import { getContextLogger } from "../../../services/core/logging/requestContext.js";
 import { getActiveGiveaways, getEndedGiveaways } from "./giveawayStore.js";
 import { handleStart, handleEnd, handleReroll, handleList } from "./handlers.js";
 
@@ -115,16 +114,30 @@ export async function autocomplete(interaction: AutocompleteInteraction): Promis
 
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const sub = interaction.options.getSubcommand();
+  const log = getContextLogger();
 
   if (sub === "start") {
     await handleStart(interaction);
-  } else if (sub === "end") {
-    await handleEnd(interaction);
-  } else if (sub === "reroll") {
-    await handleReroll(interaction);
-  } else if (sub === "list") {
-    await handleList(interaction);
+    return;
   }
+  if (sub === "end") {
+    await handleEnd(interaction);
+    return;
+  }
+  if (sub === "reroll") {
+    await handleReroll(interaction);
+    return;
+  }
+  if (sub === "list") {
+    await handleList(interaction);
+    return;
+  }
+
+  log.warn({ subcommand: sub }, "[giveaway] unknown subcommand");
+  await interaction.reply({
+    content: "That giveaway option wasn't recognized. Try `/giveaway list` or `/help`.",
+    ephemeral: true,
+  });
 }
 
 export { handleGiveawayButton } from "./buttonHandler.js";

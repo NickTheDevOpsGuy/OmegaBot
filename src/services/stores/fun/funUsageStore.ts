@@ -241,6 +241,6 @@ export async function recordFunUsage(args: {
   }
 }
 
-export async function getFunUsageSnapshot(): Promise<FunUsageSnapshot> {
+export function getFunUsageSnapshot(): Promise<FunUsageSnapshot> {
   return loadStore();
 }

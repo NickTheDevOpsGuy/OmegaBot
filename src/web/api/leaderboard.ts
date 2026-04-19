@@ -2,6 +2,7 @@
 // GET /api/leaderboard — usage or per-game leaderboard (uses leaderboardService).
 
 import type { IncomingMessage, ServerResponse } from "node:http";
+import { getContextLogger } from "../../services/core/logging/requestContext.js";
 import {
   getUsageLeaderboard,
   getGameLeaderboard,
@@ -11,6 +12,7 @@ export async function handleGetLeaderboard(
   req: IncomingMessage,
   res: ServerResponse,
 ): Promise<void> {
+  const log = getContextLogger();
   const url = new URL(req.url ?? "", `http://${req.headers.host}`);
   const scope = url.searchParams.get("scope") ?? "users";
   const gameType = url.searchParams.get("game") ?? "";
@@ -27,6 +29,10 @@ export async function handleGetLeaderboard(
   try {
     if (gameType) {
       const data = getGameLeaderboard(gameType, { limit, guildId: guildId ?? null });
+      log.debug(
+        { scope, gameType, guildId: guildId ?? null, limit, resultCount: data.length },
+        "[web/leaderboard] fetched game leaderboard",
+      );
       res.writeHead(200);
       res.end(JSON.stringify({ entries: data }));
       return;
@@ -39,11 +45,24 @@ export async function handleGetLeaderboard(
       guildId: guildId ?? null,
       window: window === "weekly" ? "weekly" : undefined,
     });
+    log.debug(
+      {
+        scope,
+        guildId: guildId ?? null,
+        limit,
+        from: Number.isFinite(from) ? from : null,
+        to: Number.isFinite(to) ? to : null,
+        window: window ?? null,
+        resultCount: Array.isArray(data) ? data.length : 0,
+      },
+      "[web/leaderboard] fetched usage leaderboard",
+    );
     res.writeHead(200);
     res.end(
       JSON.stringify(scope === "commands" ? { commands: data } : { entries: data }),
     );
   } catch (err) {
+    log.error({ err, scope, gameType, guildId }, "[web/leaderboard] request failed");
     res.writeHead(500);
     res.end(JSON.stringify({ error: "Leaderboard unavailable" }));
   }
