@@ -1,11 +1,71 @@
-import {
-  Client,
-  type CreatePageParameters,
-  type QueryDataSourceParameters,
-} from "@notionhq/client";
+import { createRequire } from "node:module";
 import { extractPlainTextFromNotionBlocks, truncateNotionExcerpt } from "./notionText.js";
 
+const require = createRequire(import.meta.url);
+
 type UnknownRecord = Record<string, unknown>;
+type NotionRichTextRequest = {
+  type: "text";
+  text: { content: string };
+};
+type NotionPagePropertyValue =
+  | {
+      title: NotionRichTextRequest[];
+      type?: "title";
+    }
+  | {
+      rich_text: NotionRichTextRequest[];
+      type?: "rich_text";
+    }
+  | {
+      select: { name: string } | null;
+      type?: "select";
+    }
+  | {
+      multi_select: Array<{ name: string }>;
+      type?: "multi_select";
+    };
+type NotionParagraphBlockRequest = {
+  object: "block";
+  type: "paragraph";
+  paragraph: {
+    rich_text: NotionRichTextRequest[];
+  };
+};
+type CreatePageParameters = {
+  parent: { data_source_id: string; type?: "data_source_id" };
+  properties: Record<string, NotionPagePropertyValue>;
+  children?: NotionParagraphBlockRequest[];
+};
+type QueryDataSourceParameters = {
+  data_source_id: string;
+  filter?: {
+    property: string;
+    title: {
+      contains: string;
+    };
+  };
+  page_size?: number;
+  result_type?: "page" | "data_source";
+};
+type NotionClient = {
+  databases: {
+    retrieve(args: { database_id: string }): Promise<unknown>;
+  };
+  dataSources: {
+    retrieve(args: { data_source_id: string }): Promise<unknown>;
+    query(args: QueryDataSourceParameters): Promise<unknown>;
+  };
+  blocks: {
+    children: {
+      list(args: { block_id: string; page_size?: number }): Promise<unknown>;
+    };
+  };
+  pages: {
+    create(args: CreatePageParameters): Promise<unknown>;
+  };
+};
+type NotionClientConstructor = new (args: { auth: string }) => NotionClient;
 
 export type NotionSearchResult = {
   id: string;
@@ -44,7 +104,20 @@ function readTitleParts(value: unknown): string {
     .trim();
 }
 
-export function createNotionClient(token: string): Client {
+function loadNotionClientConstructor(): NotionClientConstructor {
+  const loaded = require("@notionhq/client") as {
+    Client?: NotionClientConstructor;
+  };
+
+  if (!loaded.Client) {
+    throw new Error("Failed to load @notionhq/client. Run `npm install` in the project root.");
+  }
+
+  return loaded.Client;
+}
+
+export function createNotionClient(token: string): NotionClient {
+  const Client = loadNotionClientConstructor();
   return new Client({ auth: token });
 }
 
@@ -77,7 +150,7 @@ export function findDatabaseTagProperty(properties: unknown): NotionDatabaseStat
 }
 
 async function getDatabaseStatus(
-  client: Client,
+  client: NotionClient,
   databaseId: string,
 ): Promise<NotionDatabaseStatus> {
   const databaseResponse = (await client.databases.retrieve({
@@ -125,7 +198,7 @@ function getPageTitle(result: UnknownRecord, titleProperty: string): string {
   return readTitleParts(titleValue) || "Untitled page";
 }
 
-async function getPageExcerpt(client: Client, pageId: string): Promise<string | null> {
+async function getPageExcerpt(client: NotionClient, pageId: string): Promise<string | null> {
   const response = (await client.blocks.children.list({
     block_id: pageId,
     page_size: 20,
@@ -151,7 +224,7 @@ function scoreSearchMatch(query: string, text: string): number {
 }
 
 export async function searchNotionPages(args: {
-  client: Client;
+  client: NotionClient;
   databaseId: string;
   query: string;
   limit?: number;
@@ -210,14 +283,14 @@ export async function searchNotionPages(args: {
 }
 
 export async function getNotionDatabaseStatus(args: {
-  client: Client;
+  client: NotionClient;
   databaseId: string;
 }): Promise<NotionDatabaseStatus> {
   return getDatabaseStatus(args.client, args.databaseId);
 }
 
 export async function createNotionPage(args: {
-  client: Client;
+  client: NotionClient;
   databaseId: string;
   title: string;
   content?: string | null;
