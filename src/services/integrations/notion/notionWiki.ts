@@ -1,10 +1,11 @@
-import { Client } from "@notionhq/client";
+import {
+  Client,
+  type CreatePageParameters,
+  type QueryDataSourceParameters,
+} from "@notionhq/client";
 import { extractPlainTextFromNotionBlocks, truncateNotionExcerpt } from "./notionText.js";
 
 type UnknownRecord = Record<string, unknown>;
-
-type NotionPageCreateParameters = Parameters<Client["pages"]["create"]>[0];
-type NotionDataSourceQueryParameters = Parameters<Client["dataSources"]["query"]>[0];
 
 export type NotionSearchResult = {
   id: string;
@@ -161,7 +162,7 @@ export async function searchNotionPages(args: {
 
   const status = await getDatabaseStatus(args.client, args.databaseId);
 
-  const queryInput: NotionDataSourceQueryParameters = {
+  const queryInput: QueryDataSourceParameters = {
     data_source_id: status.dataSourceId,
     filter: {
       property: status.titleProperty,
@@ -227,7 +228,7 @@ export async function createNotionPage(args: {
 
   const status = await getDatabaseStatus(args.client, args.databaseId);
 
-  const properties: NotionPageCreateParameters["properties"] = {
+  const properties: CreatePageParameters["properties"] = {
     [status.titleProperty]: {
       title: [
         {
@@ -261,7 +262,7 @@ export async function createNotionPage(args: {
   }
 
   const content = args.content?.trim() ?? "";
-  const children: NotionPageCreateParameters["children"] =
+  const children: CreatePageParameters["children"] =
     content.length > 0
       ? [
           {
@@ -281,7 +282,7 @@ export async function createNotionPage(args: {
         ]
       : [];
 
-  const input: NotionPageCreateParameters = {
+  const input: CreatePageParameters = {
     parent: { data_source_id: status.dataSourceId },
     properties,
     children,
