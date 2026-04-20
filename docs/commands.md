@@ -219,8 +219,8 @@ FAQ entries also act as the curated server-doc layer for `/wiki`.
 
 Search curated FAQ docs and, when configured, the Notion wiki too.
 
-| Command | Description |
-| ------- | ----------- |
+| Command | Description                                                           |
+| ------- | --------------------------------------------------------------------- |
 | `/wiki` | Search FAQ entries and optional Notion pages by keyword or page title |
 
 Notes:
@@ -233,11 +233,11 @@ Notes:
 
 ## `/notion` - Notion Wiki Integration
 
-| Command                | Description                                                  |
-| ---------------------- | ------------------------------------------------------------ |
-| `/notion search`       | Search the configured Notion wiki database                   |
-| `/notion status`       | (Admin) Validate config and show detected Notion DB schema   |
-| `/notion create-page`  | (Admin) Create a page in the configured Notion wiki database |
+| Command               | Description                                                  |
+| --------------------- | ------------------------------------------------------------ |
+| `/notion search`      | Search the configured Notion wiki database                   |
+| `/notion status`      | (Admin) Validate config and show detected Notion DB schema   |
+| `/notion create-page` | (Admin) Create a page in the configured Notion wiki database |
 
 ---
 

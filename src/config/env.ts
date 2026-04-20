@@ -64,6 +64,34 @@ const githubAssigneeAnnounceChannelId =
 const notionToken = process.env.NOTION_TOKEN?.trim() || null;
 const notionDatabaseId = process.env.NOTION_DATABASE_ID?.trim() || null;
 
+function getNotionConfigState(): {
+  enabled: boolean;
+  hasToken: boolean;
+  hasDatabaseId: boolean;
+  issues: string[];
+} {
+  const hasToken = Boolean(notionToken);
+  const hasDatabaseId = Boolean(notionDatabaseId);
+  const issues: string[] = [];
+
+  if (hasToken && !hasDatabaseId) {
+    issues.push("NOTION_TOKEN is set but NOTION_DATABASE_ID is missing.");
+  }
+
+  if (!hasToken && hasDatabaseId) {
+    issues.push("NOTION_DATABASE_ID is set but NOTION_TOKEN is missing.");
+  }
+
+  return {
+    enabled: hasToken && hasDatabaseId,
+    hasToken,
+    hasDatabaseId,
+    issues,
+  };
+}
+
+const notionConfig = getNotionConfigState();
+
 export const env = {
   /* ---------------------------------------------------------------- */
   /* Discord (required)                                               */
@@ -123,7 +151,8 @@ export const env = {
 
   notionToken,
   notionDatabaseId,
-  notionEnabled: Boolean(notionToken) && Boolean(notionDatabaseId),
+  notionEnabled: notionConfig.enabled,
+  notionConfig,
 
   /* ---------------------------------------------------------------- */
   /* GitHub                                                           */
@@ -177,8 +206,12 @@ export const env = {
 
   requireNotionConfig(): { token: string; databaseId: string } {
     if (!notionToken || !notionDatabaseId) {
+      const detail =
+        notionConfig.issues.length > 0
+          ? ` ${notionConfig.issues.join(" ")}`
+          : " NOTION_TOKEN and NOTION_DATABASE_ID must both be set.";
       throw new Error(
-        "NOTION_TOKEN and NOTION_DATABASE_ID are required for Notion wiki commands. Set them in .env (see .env.example)",
+        `Notion wiki is not fully configured.${detail} Set them in .env (see .env.example).`,
       );
     }
 

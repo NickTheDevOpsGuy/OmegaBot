@@ -33,10 +33,7 @@ function parseBody(req: IncomingMessage): Promise<Record<string, unknown>> {
   });
 }
 
-export function handleGetPosts(
-  req: IncomingMessage,
-  res: ServerResponse,
-): void {
+export function handleGetPosts(req: IncomingMessage, res: ServerResponse): void {
   const url = new URL(req.url ?? "", `http://${req.headers.host}`);
   const authorId = url.searchParams.get("authorId") ?? undefined;
   const limit = Math.min(100, parseInt(url.searchParams.get("limit") ?? "50", 10) || 50);
@@ -160,7 +157,10 @@ export async function handlePostPostComment(
   }
   const userId = auth.userId ?? (body.userId as string | undefined);
   if (!userId) {
-    log.warn({ postId, authType: auth.type }, "[web/posts] comment rejected, missing userId");
+    log.warn(
+      { postId, authType: auth.type },
+      "[web/posts] comment rejected, missing userId",
+    );
     res.setHeader("Content-Type", "application/json");
     res.writeHead(400);
     res.end(JSON.stringify({ error: "userId required" }));
@@ -169,7 +169,10 @@ export async function handlePostPostComment(
   const comment = addComment(postId, userId, content);
   res.setHeader("Content-Type", "application/json");
   if (!comment) {
-    log.warn({ postId, authorId: userId }, "[web/posts] comment rejected, post not found");
+    log.warn(
+      { postId, authorId: userId },
+      "[web/posts] comment rejected, post not found",
+    );
     res.writeHead(404);
     res.end(JSON.stringify({ error: "Post not found" }));
     return;

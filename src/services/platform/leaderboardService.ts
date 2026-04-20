@@ -124,7 +124,10 @@ export async function getUsageLeaderboard(options: {
         guildId: options.guildId,
       });
     } catch (err) {
-      log.warn({ err, options }, "[leaderboard] usage_log query failed, falling back to snapshot");
+      log.warn(
+        { err, options },
+        "[leaderboard] usage_log query failed, falling back to snapshot",
+      );
     }
   }
   const snapshot = await getFunUsageSnapshot();

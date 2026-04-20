@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  extractPlainTextFromNotionBlocks,
-  truncateNotionExcerpt,
-} from "./notionText.js";
+import { extractPlainTextFromNotionBlocks, truncateNotionExcerpt } from "./notionText.js";
 
 describe("notionText", () => {
   it("extracts plain text from common block payloads", () => {

@@ -95,10 +95,15 @@ function parseTags(raw: string | null): string[] {
 }
 
 function notionConfigMessage(): string {
+  const issues =
+    env.notionConfig.issues.length > 0 ? `\n${env.notionConfig.issues.join("\n")}` : "";
   return [
     "Notion wiki is not configured yet.",
+    issues,
     "Set `NOTION_TOKEN` and `NOTION_DATABASE_ID` in `.env`, then register commands again if needed.",
-  ].join("\n");
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 function noPermissionMessage(): string {
@@ -117,7 +122,10 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
   try {
     if (!env.notionEnabled) {
-      log.warn({ subcommand: sub }, "[notion] command blocked, integration not configured");
+      log.warn(
+        { subcommand: sub },
+        "[notion] command blocked, integration not configured",
+      );
       await interaction.editReply(notionConfigMessage());
       return;
     }

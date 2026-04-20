@@ -65,9 +65,7 @@ async function fetchJson<T>(url: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-export function fetchStatuspageSummary(
-  service: ServiceName,
-): Promise<StatuspageSummary> {
+export function fetchStatuspageSummary(service: ServiceName): Promise<StatuspageSummary> {
   const url = SUMMARY_URL[service];
   return fetchJson<StatuspageSummary>(url);
 }

@@ -18,6 +18,7 @@ import { handleAutoRole } from "./services/stores/roles/autoRoleHandler.js";
 import { onGuildMemberAdd } from "./services/integrations/welcome/welcomeHandler.js";
 import { setupStarboardListeners } from "./services/integrations/starboard/starboardHandler.js";
 import { env } from "./config/env.js";
+import { normalizeError } from "./utils/errors.js";
 import { logger } from "./utils/logger.js";
 import { createReminderScheduler } from "./services/stores/reminders/index.js";
 
@@ -38,6 +39,27 @@ client.commands = new Map();
 initDatabase();
 logger.info("Database initialized");
 
+if (env.notionConfig.enabled) {
+  logger.info(
+    {
+      hasToken: env.notionConfig.hasToken,
+      hasDatabaseId: env.notionConfig.hasDatabaseId,
+    },
+    "[startup] notion integration enabled",
+  );
+} else if (env.notionConfig.issues.length > 0) {
+  logger.warn(
+    {
+      hasToken: env.notionConfig.hasToken,
+      hasDatabaseId: env.notionConfig.hasDatabaseId,
+      issues: env.notionConfig.issues,
+    },
+    "[startup] notion integration partially configured; notion features disabled",
+  );
+} else {
+  logger.info("[startup] notion integration disabled");
+}
+
 if (!process.env.BACKUP_KEEP?.trim()) {
   logger.info(
     "[startup] BACKUP_KEEP not set; consider running npm run db:backup periodically",
@@ -46,15 +68,28 @@ if (!process.env.BACKUP_KEEP?.trim()) {
 
 // Catch unhandled promise rejections (e.g. from collectors or async handlers)
 process.on("unhandledRejection", (reason, promise) => {
+  const err = normalizeError(reason);
   const code = getDiscordErrorCode(reason);
   if (code === 10008 || code === 10062 || code === 40060) {
     logger.info(
-      { reason, code },
+      { err, code },
       "[unhandledRejection] Discord interaction error (user may see 'failed to complete')",
     );
   } else {
-    logger.error({ reason, promise }, "[unhandledRejection] uncaught promise rejection");
+    logger.error(
+      {
+        err,
+        code,
+        promiseType: typeof promise,
+      },
+      "[unhandledRejection] uncaught promise rejection",
+    );
   }
+});
+
+process.on("uncaughtException", (err) => {
+  logger.fatal({ err }, "[uncaughtException] process crash");
+  process.exit(1);
 });
 
 await loadCommands(client);
@@ -188,7 +223,12 @@ async function shutdown(signal: string): Promise<void> {
 process.on("SIGINT", () => void shutdown("SIGINT"));
 process.on("SIGTERM", () => void shutdown("SIGTERM"));
 
-void client.login(env.token);
+try {
+  await client.login(env.token);
+} catch (err) {
+  logger.error({ err }, "[startup] Discord login failed");
+  throw err;
+}
 
 if (githubPrPollingEnabled || githubAssigneePollingEnabled) {
   setInterval(() => {

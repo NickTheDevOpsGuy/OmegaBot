@@ -61,7 +61,10 @@ export function extractPlainTextFromNotionBlocks(blocks: unknown[]): string {
     if (type === "bookmark" && bookmarkUrl) lines.push(bookmarkUrl);
   }
 
-  return lines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+  return lines
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 export function truncateNotionExcerpt(text: string, maxLength = 240): string {

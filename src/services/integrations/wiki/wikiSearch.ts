@@ -97,7 +97,10 @@ export async function searchWiki(args: {
           source: "notion" as const,
           score: scoreMatch(args.query, entry.title) || 50,
           title: entry.title,
-          excerpt: truncateExcerpt(entry.excerpt ?? "No page preview available yet.", 180),
+          excerpt: truncateExcerpt(
+            entry.excerpt ?? "No page preview available yet.",
+            180,
+          ),
           key: null,
           url: entry.url,
           tags: [],

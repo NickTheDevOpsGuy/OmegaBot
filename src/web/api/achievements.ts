@@ -5,10 +5,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { ACHIEVEMENTS } from "../../commands/games/achievements/achievements.js";
 import { getContextLogger } from "../../services/core/logging/requestContext.js";
 
-export function handleGetAchievements(
-  _req: IncomingMessage,
-  res: ServerResponse,
-): void {
+export function handleGetAchievements(_req: IncomingMessage, res: ServerResponse): void {
   const list = ACHIEVEMENTS.map((a) => ({
     id: a.id,
     name: a.name,

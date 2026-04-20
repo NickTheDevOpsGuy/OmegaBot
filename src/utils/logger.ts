@@ -21,9 +21,17 @@ const prettyEnabled =
 
 function createLogger(): Logger {
   const level = process.env.LOG_LEVEL ?? (isProd ? "info" : "debug");
+  const options = {
+    level,
+    serializers: {
+      err: pino.stdSerializers.err,
+      error: pino.stdSerializers.err,
+      reason: pino.stdSerializers.err,
+    },
+  } as const;
 
   // Safe default everywhere
-  const base = pino({ level });
+  const base = pino(options);
 
   if (!prettyEnabled) {
     return base;
@@ -39,7 +47,7 @@ function createLogger(): Logger {
       },
     });
 
-    return pino({ level }, transport);
+    return pino(options, transport);
   } catch {
     // Dev-only dependency missing, fall back cleanly
     return base;

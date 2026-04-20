@@ -4,6 +4,18 @@
 const MAX_LOG_MESSAGE_LENGTH = 200;
 const MAX_USER_MESSAGE_LENGTH = 100;
 
+export function normalizeError(err: unknown): Error {
+  if (err instanceof Error) return err;
+
+  if (typeof err === "string") return new Error(err);
+
+  try {
+    return new Error(JSON.stringify(err));
+  } catch {
+    return new Error(String(err));
+  }
+}
+
 /** Safe one-line summary of an error for log messages. Include in log string so "why" is visible. */
 export function errMessage(err: unknown): string {
   const raw = err instanceof Error ? err.message : String(err);

@@ -111,7 +111,9 @@ function loadNotionClientConstructor(): NotionClientConstructor {
   };
 
   if (!loaded.Client) {
-    throw new Error("Failed to load @notionhq/client. Run `npm install` in the project root.");
+    throw new Error(
+      "Failed to load @notionhq/client. Run `npm install` in the project root.",
+    );
   }
 
   return loaded.Client;
@@ -133,7 +135,9 @@ export function findDatabaseTitlePropertyName(properties: unknown): string | nul
   return null;
 }
 
-export function findDatabaseTagProperty(properties: unknown): NotionDatabaseStatus["tagProperty"] {
+export function findDatabaseTagProperty(
+  properties: unknown,
+): NotionDatabaseStatus["tagProperty"] {
   const record = readRecord(properties);
   if (!record) return null;
 
@@ -168,7 +172,9 @@ async function getDatabaseStatus(
     readString(readRecord(databaseRecord?.["data_source"])?.["id"]);
 
   if (!dataSourceId) {
-    throw new Error("The configured Notion database does not expose a queryable data source.");
+    throw new Error(
+      "The configured Notion database does not expose a queryable data source.",
+    );
   }
 
   const dataSourceResponse = (await client.dataSources.retrieve({
@@ -210,7 +216,10 @@ function getPageTitle(result: UnknownRecord, titleProperty: string): string {
   return readTitleParts(titleValue) || "Untitled page";
 }
 
-async function getPageExcerpt(client: NotionClient, pageId: string): Promise<string | null> {
+async function getPageExcerpt(
+  client: NotionClient,
+  pageId: string,
+): Promise<string | null> {
   const response = (await client.blocks.children.list({
     block_id: pageId,
     page_size: 20,
@@ -283,7 +292,9 @@ export async function searchNotionPages(args: {
     .slice(0, limit);
 
   const excerpts = await Promise.all(
-    scored.map((entry) => getPageExcerpt(args.client, readString(entry.page["id"]) ?? "")),
+    scored.map((entry) =>
+      getPageExcerpt(args.client, readString(entry.page["id"]) ?? ""),
+    ),
   );
 
   const results = scored.map((entry, index) => ({
@@ -336,7 +347,9 @@ export async function createNotionPage(args: {
   if (status.tagProperty && cleanedTags.length > 0) {
     if (status.tagProperty.type === "multi_select") {
       properties[status.tagProperty.name] = {
-        multi_select: cleanedTags.slice(0, 10).map((tag) => ({ name: tag.slice(0, 100) })),
+        multi_select: cleanedTags
+          .slice(0, 10)
+          .map((tag) => ({ name: tag.slice(0, 100) })),
       };
     } else if (status.tagProperty.type === "select") {
       properties[status.tagProperty.name] = {

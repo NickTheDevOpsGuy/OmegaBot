@@ -174,7 +174,9 @@ export async function handleInteraction(
       interactionType: getInteractionKind(interaction),
       username: interaction.user.username,
       customId:
-        interaction.isButton() || interaction.isModalSubmit() ? interaction.customId : null,
+        interaction.isButton() || interaction.isModalSubmit()
+          ? interaction.customId
+          : null,
       clientReady: typeof client.isReady === "function" ? client.isReady() : null,
       registrySize: client.commands?.size ?? null,
     },

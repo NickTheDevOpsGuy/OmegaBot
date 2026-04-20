@@ -62,11 +62,19 @@ function formatResult(result: WikiResult): string {
   return lines.join("\n");
 }
 
-function buildReply(query: string, source: WikiSourceFilter, results: WikiResult[]): string {
+function buildReply(
+  query: string,
+  source: WikiSourceFilter,
+  results: WikiResult[],
+): string {
   const sourceLabel =
     source === "auto" ? "FAQ + Notion" : source === "faq" ? "FAQ only" : "Notion only";
 
   if (results.length === 0) {
+    const notionHint =
+      source !== "faq" && !env.notionEnabled && env.notionConfig.issues.length > 0
+        ? ["", "Notion is partially configured:", ...env.notionConfig.issues]
+        : [];
     return [
       `No wiki results found for **${query}**.`,
       `Scope: ${sourceLabel}`,
@@ -75,6 +83,7 @@ function buildReply(query: string, source: WikiSourceFilter, results: WikiResult
       "- Try a shorter page title or keyword",
       "- Curated server docs can be added with `/faq add`",
       "- Use `/faq list query:<term>` for a broader FAQ-only scan",
+      ...notionHint,
     ].join("\n");
   }
 

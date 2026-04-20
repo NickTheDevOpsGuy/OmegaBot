@@ -136,7 +136,10 @@ export function joinEvent(eventId: string, userId: string): boolean {
     return false;
   }
   if (event.status !== "active") {
-    log.warn({ eventId, userId, status: event.status }, "[events] join rejected, event not active");
+    log.warn(
+      { eventId, userId, status: event.status },
+      "[events] join rejected, event not active",
+    );
     return false;
   }
   const now = Date.now();

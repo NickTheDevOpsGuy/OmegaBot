@@ -34,10 +34,7 @@ function parseBody(req: IncomingMessage): Promise<Record<string, unknown>> {
   });
 }
 
-export function handleGetEvents(
-  _req: IncomingMessage,
-  res: ServerResponse,
-): void {
+export function handleGetEvents(_req: IncomingMessage, res: ServerResponse): void {
   const url = new URL(_req.url ?? "", `http://${_req.headers.host}`);
   const status = url.searchParams.get("status") as "active" | "ended" | undefined;
   const limit = Math.min(100, parseInt(url.searchParams.get("limit") ?? "50", 10) || 50);
