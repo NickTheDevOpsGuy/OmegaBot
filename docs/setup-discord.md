@@ -5,6 +5,18 @@ required scopes, permissions, gateway intents, and common moderation pitfalls.
 
 ---
 
+## Table of Contents
+
+- [Required OAuth Scopes](#required-oauth-scopes)
+- [Required Bot Permissions](#required-bot-permissions)
+- [Gateway Intents](#gateway-intents)
+- [Why Admin Commands Might Fail](#why-admin-commands-might-fail)
+- [Moderator Roles (SQLite-backed)](#moderator-roles-sqlite-backed)
+- [Re-inviting the Bot](#re-inviting-the-bot)
+- [Helpful Links](#helpful-links)
+
+---
+
 ## Required OAuth Scopes
 
 When inviting the bot, you **must** include:

@@ -1,93 +1,42 @@
 # Environment Configuration
 
-OmegaBot uses environment variables for configuration.
-All configuration is done via a `.env` file that is **not committed to source control**.
+OmegaBot uses `.env` for required credentials, optional feature flags, and runtime settings.
+
+This page is the config reference. For feature-specific walkthroughs, use the dedicated setup pages such as [Notion Wiki Setup](setup-notion.md).
 
 ---
 
-### Database (SQLite)
+## Table of Contents
 
-OmegaBot uses SQLite via `better-sqlite3`.
-
-```env
-# Optional. Defaults to data/omegabot.db
-DATABASE_PATH=data/omegabot.db
-```
-
-- `DATABASE_PATH`
-  - Path to the SQLite database file
-  - Use `:memory:` in tests to run entirely in-memory
+- [Quick Start](#quick-start)
+- [Required Variables](#required-variables)
+- [Core Runtime Options](#core-runtime-options)
+- [Optional Features](#optional-features)
+- [Notes On Missing Config](#notes-on-missing-config)
 
 ---
 
-### Metrics & Health HTTP Server
+## Quick Start
 
-```env
-METRICS_PORT=0
-```
-
-- `METRICS_PORT`
-  - Port for `/health` and `/metrics` (Prometheus) HTTP endpoints
-  - If `0` or unset, the HTTP server is disabled
-  - Example: `METRICS_PORT=9090` to enable monitoring
-- `ADMIN_DASHBOARD_TOKEN`
-  - If set, `/dashboard` and `/` require `?token=<value>` (use when exposing metrics port publicly)
-  - If unset, dashboard is open (fine for localhost)
-
----
-
-### Reminders
-
-```env
-# Optional. Enable extra scheduler timing logs (debug-level)
-REMINDER_TIMING_LOGS=0
-```
-
-- `REMINDER_TIMING_LOGS`
-  - Set to `1` to enable debug timing logs for the reminder scheduler tick
-
----
-
-### Web API (optional)
-
-When running the optional Web API (`npm run api`), the same database is used. See [Web platform](web-platform.md) for full setup.
-
-```env
-# Optional. Defaults to 4000
-WEB_API_PORT=4000
-```
-
-- `WEB_API_PORT`
-  - Port for the HTTP API server (profiles, leaderboards, events, games)
-  - Only used when you start the API with `npm run api`
-- `WEB_API_KEY`
-  - Optional. If set, clients can send `X-API-Key: <value>` to authenticate for write endpoints (e.g. POST /api/posts). For writes with API key, include `userId` in the request body where required.
-- `DISCORD_OAUTH_CLIENT_ID`
-  - Optional. Discord OAuth Application ID for web login. Required for `/auth/discord` and `/auth/discord/callback`.
-- `DISCORD_OAUTH_CLIENT_SECRET`
-  - Optional. Discord OAuth client secret. Required for the callback to exchange the code for a token.
-- `DISCORD_OAUTH_REDIRECT_URI`
-  - Optional. Override redirect URI (e.g. `https://yoursite.com/auth/discord/callback`). If unset, the server builds it from the request host.
-- `WEB_APP_URL`
-  - Optional. Where to redirect after Discord OAuth login (default `/`).
-- `CORS_ORIGIN`
-  - Optional. Value for `Access-Control-Allow-Origin` (default `*`). Set to your frontend origin (e.g. `https://yoursite.com`) in production.
-
-## Setup
-
-Copy the example file and fill in real values:
+Create a local env file from the example:
 
 ```bash
 cp .env.example .env
 ```
 
-⚠️ Never commit `.env` files. They contain secrets.
+Then fill in at least the required Discord values before starting the bot.
+
+Important:
+
+- do not commit `.env`
+- treat `.env` values as secrets unless they are clearly non-sensitive
+- restart the bot after changing runtime config
 
 ---
 
 ## Required Variables
 
-These are required for **OmegaBot to start and function**.
+These are required for OmegaBot to start normally:
 
 ```env
 DISCORD_TOKEN=your-bot-token
@@ -95,17 +44,73 @@ DISCORD_APP_ID=your-application-id
 DISCORD_GUILD_ID=your-guild-id
 ```
 
-- `DISCORD_TOKEN` – Bot token from the Discord Developer Portal
-- `DISCORD_APP_ID` – Application ID for slash command registration
-- `DISCORD_GUILD_ID` – Guild ID used for scoped command registration
+- `DISCORD_TOKEN` - bot token from the Discord Developer Portal
+- `DISCORD_APP_ID` - application ID used for command registration
+- `DISCORD_GUILD_ID` - guild ID used for scoped command registration
+
+Without these, the bot cannot fully boot or register slash commands correctly.
+
+---
+
+## Core Runtime Options
+
+### Database (SQLite)
+
+OmegaBot uses SQLite via `better-sqlite3`.
+
+```env
+DATABASE_PATH=data/omegabot.db
+```
+
+- default: `data/omegabot.db`
+- use `:memory:` in tests when you want an in-memory database
+
+### Metrics And Health HTTP Server
+
+```env
+METRICS_PORT=0
+```
+
+- `METRICS_PORT`
+  - enables `/health` and `/metrics` when set to a non-zero value
+  - example: `9090`
+- `ADMIN_DASHBOARD_TOKEN`
+  - optional token for `/dashboard` and `/`
+  - useful when exposing the metrics/dashboard port outside localhost
+
+If `METRICS_PORT` is unset or `0`, the HTTP monitoring server stays disabled.
+
+### Reminders
+
+```env
+REMINDER_TIMING_LOGS=0
+```
+
+- set to `1` to emit extra debug timing logs for the reminder scheduler
+
+### Web API
+
+When running the optional API with `npm run api`, these values apply:
+
+```env
+WEB_API_PORT=4000
+```
+
+- `WEB_API_PORT` - HTTP port for the API server
+- `WEB_API_KEY` - optional API key for authenticated write endpoints
+- `DISCORD_OAUTH_CLIENT_ID` - required for Discord OAuth login on the web side
+- `DISCORD_OAUTH_CLIENT_SECRET` - required for the OAuth callback exchange
+- `DISCORD_OAUTH_REDIRECT_URI` - optional explicit callback URL override
+- `WEB_APP_URL` - optional post-login redirect target
+- `CORS_ORIGIN` - optional CORS allow-origin value
+
+See [Web platform](web-platform.md) for the full web/API flow.
 
 ---
 
 ## Optional Features
 
-If a feature is not configured, OmegaBot will **log a warning and gracefully disable it**.
-
----
+If optional config is missing, OmegaBot should disable that feature cleanly rather than crash.
 
 ### Summaries (LLM-powered)
 
@@ -115,32 +120,21 @@ OPENAI_API_KEY=your-openai-key
 ```
 
 - `SUMMARY_MODE`
-  - `local` – No LLM, simple local summaries
-  - `llm` – Uses OpenAI for higher-quality summaries
+  - `local` for heuristic/local summaries
+  - `llm` for OpenAI-backed summaries
 - `OPENAI_API_KEY`
-  - Required only if `SUMMARY_MODE=llm`
-  - Missing keys fall back to local summaries
-
----
+  - required when `SUMMARY_MODE=llm`
 
 ### Weather (WeatherAPI.com)
-
-OmegaBot uses **WeatherAPI.com** for current conditions and multi-day forecasts.
 
 ```env
 WEATHERAPI_KEY=your-weatherapi-key
 ```
 
-- Required for `/weather` and `/weather7`
-- If missing or invalid:
-  - Bot still starts normally
-  - Weather commands return a friendly error
-  - A warning is logged at startup
+- required for weather commands
+- if missing, weather commands return a friendly error instead of crashing the bot
 
-Get a free API key here:
-https://www.weatherapi.com/
-
----
+Get a key from `https://www.weatherapi.com/`.
 
 ### GitHub Integration
 
@@ -150,15 +144,13 @@ GITHUB_OWNER=org-or-user
 GITHUB_REPO=repo-name
 ```
 
-Recommended permissions:
+Recommended token permissions:
 
 - Contents: Read
 - Issues: Read
 - Pull Requests: Read
 
----
-
-### GitHub Announcement Channels (Optional)
+### GitHub Announcement Channels
 
 ```env
 GITHUB_ANNOUNCE_CHANNEL_ID=channel-id
@@ -166,65 +158,49 @@ GITHUB_PR_ANNOUNCE_CHANNEL_ID=channel-id
 GITHUB_ASSIGNEE_ANNOUNCE_CHANNEL_ID=channel-id
 ```
 
-If no channels are configured, GitHub announcements are disabled.
+If these channels are not configured, GitHub announcement features stay disabled.
 
-### Jokes Discord Role (Optional)
-
-Recommended setup:
-
-1. Create a "Joke Moderator" role in your Discord server
-2. Assign it to trusted members
-3. Add the role ID here
+### Jokes Discord Role
 
 ```env
 JOKE_MODERATOR_ROLE_ID=
 ```
 
-### Hangman Word Management (Optional)
+Recommended setup:
 
-Users with this role can add and list Hangman words via `/fun hangman words add` and `/fun hangman words list`.
+1. create a role such as `Joke Moderator`
+2. assign it to trusted members
+3. paste the role ID into `.env`
 
-1. Create a role (e.g. "Hangman Admin") in your Discord server
-2. Assign it to trusted members
-3. Add the role ID here
+### Hangman Word Management
 
 ```env
 HANGMAN_ADMIN_ROLE_ID=
 ```
 
-If unset, only the built-in word list is used and no one can add words.
+Users with this role can add and list Hangman words via `/fun hangman words add` and `/fun hangman words list`.
 
----
+If unset, only the built-in word list is available.
 
-### Admin / Moderation (Optional)
-
-Control who can use `/admin` (timeout, kick, ban) via **user IDs** in `.env`:
+### Admin / Moderation
 
 ```env
 ADMIN_USER_IDS=123456789012345678,987654321098765432
-```
-
-- **Format:** Comma-separated Discord user IDs (no spaces required).
-- **Get your user ID:** Enable Developer Mode in Discord → Right-click your username → Copy ID.
-- Users listed here can run `/admin` moderation subcommands even without Discord Administrator or moderator roles.
-- If unset or empty, only **role-based** access applies: Discord Administrator, Manage Server, Moderate Members, or roles added with `/config moderator-role`.
-
-**Restrict moderation to a specific role (optional):**
-
-```env
 MODERATION_ALLOWED_ROLE_IDS=111111111111111111
 ```
 
-- **Format:** Comma-separated Discord **role** IDs.
-- **If set:** Only users with one of these roles (or in `ADMIN_USER_IDS`) can use `/admin timeout`, `/admin kick`, and `/admin ban`. Stats and health still use the normal moderator check.
-- **If unset:** Normal rules above apply (Administrator, Manage Server, Moderate Members, `/config moderator-role`).
-- **Get role ID:** Server Settings → Roles → Right-click role → Copy ID.
+- `ADMIN_USER_IDS`
+  - comma-separated Discord user IDs
+  - allows those users to run `/admin` moderation commands even without moderator roles
+- `MODERATION_ALLOWED_ROLE_IDS`
+  - optional comma-separated role IDs
+  - when set, these roles become the stricter allowlist for timeout/kick/ban actions
 
-See [FAQ – Who can use /admin?](faq-admins.md#who-can-use-admin) for details.
+If `MODERATION_ALLOWED_ROLE_IDS` is unset, normal moderator access rules apply instead.
 
-### Bot Admin / Knowledge Base Admin (Optional)
+See [FAQ for Server Admins](faq-admins.md#who-can-use-admin) for the behavior breakdown.
 
-Use these when you want a broader admin group for documentation curation and Notion management without giving full moderator powers to everyone.
+### Bot Admin / Knowledge Base Admin
 
 ```env
 BOT_ADMIN_ROLE_IDS=111111111111111111,222222222222222222
@@ -232,19 +208,14 @@ BOT_ADMIN_AUDIT_CHANNEL_ID=333333333333333333
 ```
 
 - `BOT_ADMIN_ROLE_IDS`
-  - Comma-separated Discord role IDs
-  - Grants access to:
-    - `/faq add`
-    - `/faq remove`
-    - `/notion status`
-    - `/notion create-page`
-  - `ADMIN_USER_IDS` still works too, and Discord Administrator / Manage Server also count
+  - comma-separated role IDs for broader documentation/knowledge-base admin access
+  - applies to actions like `/faq add`, `/faq remove`, `/notion status`, and `/notion create-page`
 - `BOT_ADMIN_AUDIT_CHANNEL_ID`
-  - Optional channel ID for lightweight audit messages when docs are curated or Notion pages are created
+  - optional audit channel for lightweight admin/audit messages
 
-### Notion Wiki Integration (Optional)
+This lets you delegate docs and Notion maintenance without handing out full moderation powers.
 
-OmegaBot can search a Notion wiki database and create new pages from Discord.
+### Notion Wiki Integration
 
 ```env
 NOTION_TOKEN=secret_xxx
@@ -252,24 +223,20 @@ NOTION_DATABASE_ID=0123456789abcdef0123456789abcdef
 ```
 
 - `NOTION_TOKEN`
-  - Internal integration token from Notion
-  - Create it under [Notion integrations](https://www.notion.so/my-integrations)
+  - internal Notion integration token
 - `NOTION_DATABASE_ID`
-  - The database the bot should search and create pages in
-  - Share that database with the integration inside Notion or requests will fail
+  - the specific database OmegaBot should search and write to
 
-Commands enabled by this setup:
+Notion-related commands enabled by this setup:
 
-- `/wiki` – search curated FAQ docs and optional Notion pages together
-- `/notion search` – search the Notion wiki directly
-- `/notion status` – validate config and show detected database schema
-- `/notion create-page` – create a new page in the configured database
+- `/wiki`
+- `/notion search`
+- `/notion status`
+- `/notion create-page`
 
-See [Notion Wiki Setup](setup-notion.md) for the full step-by-step flow.
+Use [Notion Wiki Setup](setup-notion.md) for the full workflow, including the critical "share the database with the integration" step.
 
-### Discord Privileged Intents (Optional)
-
-Only enable these when you need the matching feature, and make sure the same intent is enabled in the Discord Developer Portal.
+### Discord Privileged Intents
 
 ```env
 DISCORD_ENABLE_GUILD_MEMBERS_INTENT=false
@@ -277,16 +244,23 @@ DISCORD_ENABLE_MESSAGE_CONTENT_INTENT=false
 ```
 
 - `DISCORD_ENABLE_GUILD_MEMBERS_INTENT`
-  - Required for member-join flows such as auto-role and welcome handling
+  - required for member-join flows like auto-role and welcome logic
 - `DISCORD_ENABLE_MESSAGE_CONTENT_INTENT`
-  - Required for DM / @mention message chat
-- If either is `true` in `.env` but not enabled in the Discord portal, Discord will reject the bot connection with `Used disallowed intents`
+  - required for DM and `@mention` chat behavior
 
-OmegaBot still always requests its non-privileged core intents in code:
+If you set either to `true` in `.env`, you must also enable the same intent in the Discord Developer Portal.
 
-- `Guilds`
-- `GuildMessages`
-- `GuildMessageReactions`
-- `DirectMessages`
+OmegaBot still always requests its normal non-privileged core intents in code.
 
-Those do not require privileged-intent toggles in the Developer Portal.
+---
+
+## Notes On Missing Config
+
+OmegaBot is designed to fail fast for required config and degrade gracefully for optional config.
+
+That means:
+
+- required Discord config should stop startup quickly
+- optional features like weather, GitHub, Notion, or LLM-backed summaries should log clear status and disable themselves cleanly when not configured
+
+When in doubt, check startup logs and the relevant feature setup page.

@@ -1,52 +1,66 @@
 # Transcripts & Summaries
 
-This system captures messages, produces transcripts, and generates summaries using either local or LLM-based processing.
+This page explains the transcript pipeline and the two summary modes OmegaBot supports.
+
+The key distinction is simple:
+
+- transcripts are the stored record of source messages
+- summaries are derived output generated from those transcripts
 
 ---
 
-## 🔄 Pipeline
+## Table of Contents
 
-Messages flow through the system in the following order:
-
-1. **Messages**  
-   Raw message events collected from the source (e.g., Discord).
-
-2. **Transcript**  
-   Messages are normalized, ordered, and grouped into a transcript with timestamps and metadata.
-
-3. **Summary**  
-   The transcript is summarized into a concise, human-readable format based on the selected mode.
+- [Pipeline](#pipeline)
+- [Timezones](#timezones)
+- [Modes](#modes)
+- [Notes](#notes)
 
 ---
 
-## 🌍 Timezones
+## Pipeline
 
-- Uses **IANA timezone identifiers** (e.g., `America/New_York`, `UTC`)
-- Timestamps are normalized during transcript generation
-- Display timezone can be adjusted without regenerating the transcript
+Messages move through the system in this order:
+
+1. **Messages**
+   Raw messages are collected from the source, such as Discord.
+2. **Transcript**
+   Messages are normalized, ordered, and grouped with timestamps and metadata.
+3. **Summary**
+   The transcript is summarized into a shorter human-readable form using the selected summary mode.
+
+This means the transcript is the durable source record, while the summary is a generated view of that record.
 
 ---
 
-## ⚙️ Modes
+## Timezones
+
+- OmegaBot uses IANA timezone identifiers such as `America/New_York` and `UTC`
+- timestamps are normalized during transcript generation
+- display timezone can change without regenerating the underlying transcript
+
+---
+
+## Modes
 
 ### Local
 
-- Rule-based or heuristic summaries
-- Fast and deterministic
-- No external API calls
-- Best for quick overviews or offline usage
+- heuristic or rule-based summaries
+- fast and deterministic
+- no external API calls
+- useful for quick overviews or offline-friendly behavior
 
 ### LLM
 
-- Uses a language model to generate summaries
-- Produces more contextual and natural summaries
-- Requires external API access
-- Best for detailed or narrative-style summaries
+- uses a language model to generate summaries
+- produces more contextual and natural phrasing
+- requires external API access and the related config
+- useful when you want richer narrative summaries
 
 ---
 
-## 📝 Notes
+## Notes
 
-- Transcripts are the source of truth
-- Summaries can be regenerated without reprocessing messages
-- Mode selection affects summary quality, not transcript integrity
+- transcripts remain the source of truth
+- summaries can be regenerated without reprocessing the original message source
+- changing summary mode affects summary style and quality, not transcript integrity

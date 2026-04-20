@@ -4,6 +4,15 @@ OmegaBot exposes Prometheus metrics when `METRICS_PORT` is set. Import the pre-b
 
 ---
 
+## Table of Contents
+
+- [Prerequisites](#prerequisites)
+- [Import the Dashboard](#import-the-dashboard)
+- [Panels](#panels)
+- [Datasource](#datasource)
+
+---
+
 ## Prerequisites
 
 1. **Prometheus** – Scraping `http://<bot-host>:<METRICS_PORT>/metrics`

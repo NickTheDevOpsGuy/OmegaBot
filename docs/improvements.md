@@ -4,6 +4,18 @@ Suggestions to make OmegaBot more maintainable, observable, and operator-friendl
 
 ---
 
+## Table of Contents
+
+- [CI / Quality](#ci--quality)
+- [Operations / Deploy](#operations--deploy)
+- [Documentation](#documentation)
+- [Code / Maintenance](#code--maintenance)
+- [User / DX](#user--dx)
+- [Security](#security)
+- [What to Skip (For Now)](#what-to-skip-for-now)
+
+---
+
 ## CI / Quality
 
 - ~~**CI: run tests once explicitly**~~ – Done: workflow uses `npm run test:run`.

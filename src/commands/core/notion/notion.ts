@@ -113,6 +113,17 @@ function noPermissionMessage(): string {
   ].join("\n");
 }
 
+function formatNotionFailureMessage(err: unknown): string {
+  const detail = err instanceof Error ? err.message.trim() : "";
+  if (!detail) return "The Notion command hit a snag. Try again in a moment.";
+
+  return [
+    "The Notion command failed.",
+    detail,
+    "Check `NOTION_DATABASE_ID`, make sure the URL points to a database, and confirm the integration has been shared to it.",
+  ].join("\n");
+}
+
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const sub = interaction.options.getSubcommand(true);
   const ephemeral = interaction.options.getBoolean("private") ?? true;
@@ -176,6 +187,21 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
     if (sub === "status") {
       const status = await getNotionDatabaseStatus({ client, databaseId });
+      await sendAdminAuditLog(
+        interaction,
+        [
+          "📘 **Notion status viewed**",
+          `Actor: ${interaction.user?.id ? `<@${interaction.user.id}>` : "unknown"}`,
+          `Guild: ${interaction.guildId ?? "dm"}`,
+          `Database: ${status.databaseTitle ?? "(untitled database)"}`,
+          `Title property: ${status.titleProperty}`,
+          `Tag property: ${
+            status.tagProperty
+              ? `${status.tagProperty.name} (${status.tagProperty.type})`
+              : "not detected"
+          }`,
+        ].join("\n"),
+      );
       log.info(
         {
           subcommand: sub,
@@ -256,6 +282,16 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     await interaction.editReply("That Notion subcommand was not recognized.");
   } catch (err) {
     log.error({ err, subcommand: sub }, "[notion] command threw");
-    await interaction.editReply("The Notion command hit a snag. Try again in a moment.");
+    await sendAdminAuditLog(
+      interaction,
+      [
+        sub === "search" ? "📘 **Notion search failed**" : "📘 **Notion admin action failed**",
+        `Actor: ${interaction.user?.id ? `<@${interaction.user.id}>` : "unknown"}`,
+        `Guild: ${interaction.guildId ?? "dm"}`,
+        `Action: ${sub}`,
+        `Error: ${err instanceof Error ? err.message : "Unknown error"}`,
+      ].join("\n"),
+    );
+    await interaction.editReply(formatNotionFailureMessage(err));
   }
 }

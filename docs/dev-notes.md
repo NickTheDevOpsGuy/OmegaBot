@@ -1,163 +1,156 @@
 # Development Notes
 
-This document captures design decisions, conventions, and architectural guidelines for OmegaBot.
+This page collects the main engineering conventions for OmegaBot: structure, testing, logging, error handling, and a few Discord-specific implementation rules.
+
+Use this page for team conventions. Use [Project structure](project-structure.md) for the codebase map and [Troubleshooting](troubleshooting.md) for operational debugging.
 
 ---
 
-## File and Folder Limits
+## Table of Contents
 
-- **File size:** Keep source and test files under 300 lines. Split by extracting helpers, types, or test suites.
-- **Folder size:** Aim for at most 10 direct children (files + subdirs) per folder. This keeps navigation and imports manageable.
-- **Services:** `src/services` has four groups: `core/` (config, database, logging, metrics, cache, dashboard, circuitBreaker, analytics, time), `discord/discord/`, `integrations/` (ai, github, weather, statuspage, faq, welcome, starboard, summary), `stores/` (quotes, reminders, timezone, transcript, gameStats, fun, joke, roles).
-
----
-
-## Comments
-
-- **File purpose:** Prefer a short comment at the top (path and/or one line describing the module). Example: `// Fun command execution: handler registry, usage tracking, subcommand routing.`
-- **JSDoc:** Use for exported functions and non-obvious behavior (e.g. recovery logic, side effects). Not required for every small helper.
-- **Section headers:** Use `/* ----- Section ----- */` sparingly in long files to separate logical blocks (e.g. Database, Handlers).
-- **In-code:** Comment _why_ when it’s not obvious from the code; avoid restating what the code does.
+- [Codebase Shape](#codebase-shape)
+- [Comments And Documentation](#comments-and-documentation)
+- [Testing](#testing)
+- [Logging](#logging)
+- [User-Facing Errors](#user-facing-errors)
+- [Autocomplete And Interaction Handling](#autocomplete-and-interaction-handling)
+- [Configuration And Feature Gating](#configuration-and-feature-gating)
+- [TypeScript And Discord.js Notes](#typescript-and-discordjs-notes)
+- [Troubleshooting And Future Work](#troubleshooting-and-future-work)
 
 ---
 
-## Architecture Principles
+## Codebase Shape
 
-- Commands are thin and delegate logic to services
-- Services are grouped by domain (discord, github, transcript, summary, timezone)
-- Helpers are pure where possible
-- Side effects (network, fs, Discord I/O) are explicit
+### File and Folder Limits
+
+- Keep source and test files under roughly 300 lines when practical.
+- Aim for at most 10 direct children per folder so navigation and imports stay manageable.
+- Split large files by extracting helpers, types, or focused modules instead of adding more internal sectioning.
+
+### Service Layout
+
+`src/services` is organized into four broad areas:
+
+- `core/` - config, database, logging, metrics, cache, dashboard, circuit breaker, analytics, time
+- `discord/discord/` - command loading, interaction handling, rate limits, Discord-specific utilities
+- `integrations/` - AI, GitHub, weather, statuspage, FAQ, welcome, starboard, summary, Notion
+- `stores/` - quotes, reminders, timezone, transcript, game stats, fun, joke, roles
+
+### Architecture Principles
+
+- Commands stay thin and delegate work to services.
+- Services are grouped by domain rather than by command.
+- Pure helpers stay pure where possible.
+- Side effects like network, filesystem, database, and Discord I/O should be explicit and easy to trace.
+
+### Code Organization Pointers
+
+For the full folder layout, see [Project structure](project-structure.md).
+
+| Area | Location |
+| --- | --- |
+| Database typed helpers | `src/services/core/database/db.ts` |
+| Help topic content | `src/commands/core/help/topics/*.ts` |
+| Interaction routing and errors | `src/services/discord/discord/interaction/` |
+| Interaction handlers | `src/services/discord/discord/handlers/` |
+| Fun subcommand groups | `src/commands/games/fun/funSubcommands/` |
+| Giveaway button logic | `src/commands/games/giveaway/buttonHandler.ts` |
+| Quote store | `src/services/stores/quotes/quoteStore.ts` |
+| Command usage analytics | `src/services/core/analytics/commandUsageStore.ts` |
+| Request context and correlation IDs | `src/services/core/logging/requestContext.ts` |
+| i18n | `src/i18n/index.ts` |
 
 ---
 
-## Code Organization
+## Comments And Documentation
 
-For the full folder layout (command and service groups), see [Project structure](project-structure.md).
-
-| Area                               | Location                                                                                                      |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| Database typed helpers             | `src/services/core/database/db.ts` (`getRow<T>`, `getAll<T>` for SQLite results)                              |
-| Help topic content                 | `src/commands/core/help/topics/*.ts` (overview, changelog, summary in `topics/meta/`)                         |
-| Interaction routing & errors       | `src/services/discord/discord/interaction/` (interactionHandler, interactionErrors, tracedInteractionHandler) |
-| Interaction handlers               | `src/services/discord/discord/handlers/` (autocomplete, modals, buttons, context menus)                       |
-| Fun subcommand groups              | `src/commands/games/fun/funSubcommands/gamesGroup.ts`, `utilityGroup.ts`                                      |
-| Giveaway button logic              | `src/commands/games/giveaway/buttonHandler.ts`                                                                |
-| Hangman stats                      | `src/commands/games/fun/subcommands/games-a/hangman/hangmanStats.ts`                                          |
-| Quote store (slash + context menu) | `src/services/stores/quotes/quoteStore.ts`                                                                    |
-| Command usage analytics (non-game) | `src/services/core/analytics/commandUsageStore.ts`                                                            |
-| Request context / correlation IDs  | `src/services/core/logging/requestContext.ts`                                                                 |
-| i18n                               | `src/i18n/index.ts`                                                                                           |
+- Prefer a short file-purpose comment at the top only when the module is not already obvious.
+- Use JSDoc for exported functions or behavior with side effects, recovery rules, or unusual assumptions.
+- Use section headers like `/* ----- Section ----- */` sparingly in long files.
+- Comment why something is done, not just what the code already says.
+- When docs overlap, keep one page as the source of truth and link to it instead of restating the same instructions.
 
 ---
 
 ## Testing
 
-- **Colocated tests:** Unit and integration tests live next to the code they test: `*.test.ts` and `*.integration.test.ts` in the same directory (or in a `tests/` subfolder where needed, e.g. hangman). There is no central `src/test` folder.
-- **DB-dependent tests:** Tests that need an in-memory SQLite DB use `useInMemoryDb()` from `src/services/core/database/dbTestUtils.ts` (colocated with the database module). Import it from there in your test file.
-- **Vitest:** Config in `vitest.config.ts`; includes `src/**/*.test.ts`, `src/**/*.spec.ts`, and `src/**/*.integration.test.ts`. Run with `npm test`.
+### Test Placement
+
+- Unit and integration tests are colocated near the code they exercise.
+- Use `*.test.ts`, `*.spec.ts`, or `*.integration.test.ts`.
+- There is no central `src/test` folder.
+
+### DB-Backed Tests
+
+- Tests that need SQLite should use `useInMemoryDb()` from `src/services/core/database/dbTestUtils.ts`.
+- Prefer in-memory DBs for fast, isolated tests.
+
+### Common Commands
+
+- `npm test` - watch mode
+- `npm run test:run` - one-shot CI-style run
+- `npm run test:coverage` - coverage report
+
+### Manual Testing
+
+When changing commands or interactions, test:
+
+- success paths
+- invalid input paths
+- permission failures
+- DM vs guild behavior
+- ephemeral vs public replies where relevant
 
 ---
 
 ## Logging
 
-- **Logger:** Single pino instance in `src/utils/logger.ts`. Level via `LOG_LEVEL`; pretty output in dev when `LOG_PRETTY` is not `false`.
-- **Request context:** Every slash command runs inside `runWithContextAsync()` in the interaction handler. Context includes `requestId` (UUID), `userId`, `guildId`, `command`, `subcommand`, and `startedAt`. Message-based chat (DM / @mention) creates its own context per message so chat logs are traceable.
-- **Correlation:** The handler and shared code (e.g. `safeReply`, `interactionErrors`) use `getContextLogger()` from `requestContext.ts`, so their log lines include `requestId`. To tie your command’s logs to the same request, use `getContextLogger()` instead of the base `logger` when logging inside a command or handler that runs within that context.
-- **Recovery:** When `safeReply` falls back to `followUp` after an initial failure, it logs with `interactionFailedRecovery: true`. Use this (and `[interaction] Discord error`) to debug “failed to complete” and rate limits; see [Troubleshooting](troubleshooting.md).
+### Logging Standards
+
+- OmegaBot uses a shared pino logger in `src/utils/logger.ts`.
+- Use `LOG_LEVEL` to control verbosity and `LOG_PRETTY` for local readability.
+- Use `getContextLogger()` inside command handlers and interaction flows so logs include `requestId`.
+- Use the base `logger` for startup, bootstrapping, and code that does not run inside an interaction context.
+
+### Log Levels
+
+- `info` for lifecycle events and normal observability
+- `warn` for recoverable problems
+- `error` for failures that need investigation
+- `debug` for noisy investigation detail
+
+### What To Log
+
+- Log command boundaries, service entry points, and recovery decisions.
+- Include `err` objects in structured logs instead of flattening them into strings.
+- Never log secrets such as `DISCORD_TOKEN`, API keys, or raw credential values.
+
+### Interaction Recovery Notes
+
+- `safeReply` may fall back to `followUp` after an initial failure.
+- Known Discord interaction errors like `10008`, `10062`, and `40060` are logged intentionally with context rather than treated as mysterious crashes.
+- Look for `interactionFailedRecovery: true` when debugging "interaction failed" reports.
 
 ---
 
-## User-facing errors and logging
+## User-Facing Errors
 
-- **User messages:** Never expose stack traces, `.env` names, API keys, or raw internal errors. Use `getUserFacingReason(err)` from `src/utils/errors.ts` in catch blocks when replying to the user; it maps known patterns (rate limit, timeout, permission, etc.) to short, actionable text.
-- **Consistency:** Use `errorReply(interaction, message, suggestions?)` from `src/utils/interactions.ts` when you want a single error line plus optional "Suggestions:" bullets (e.g. "Use `/help topic:fun` to see available commands."). If a command needs an embed instead, build it inline with `EmbedBuilder` or project color constants from `src/utils/colors.ts`.
-- **Logging in commands:** In slash command catch blocks, use `getContextLogger().error(...)` so the log line includes `requestId` and ties to the same interaction. Include `err` in the log object and a short message (e.g. `[fun] subcommand threw: ${errMessage(err)}`). See [Troubleshooting → User-facing errors](troubleshooting.md#user-facing-errors).
-
----
-
-## Discord.js v14 Migration
-
-### Key Changes from v13 to v14
-
-**Intent System:**
-
-- v13: `Intents.FLAGS.GUILDS`
-- v14: `GatewayIntentBits.Guilds`
-
-**Interaction Types:**
-
-- v13: `CommandInteraction`
-- v14: `ChatInputCommandInteraction`
-
-**Message Flags:**
-
-- v13: `ephemeral: true`
-- v14: `flags: MessageFlags.Ephemeral`
-
-**Permissions:**
-
-- v13: `Permissions.FLAGS`
-- v14: `PermissionFlagsBits`
-
-**Builders:**
-
-- v13: `MessageActionRow`
-- v14: `ActionRowBuilder`
-
-### Type Narrowing Best Practices
-
-When checking guild context:
-
-```typescript
-// ✅ Good - use type assertion after check
-if (!interaction.inGuild()) {
-  await (interaction as ChatInputCommandInteraction).editReply("Guild only");
-  return;
-}
-// Now TypeScript knows we're in a guild
-```
-
-When checking permission results:
-
-```typescript
-// ✅ Good - check property existence
-if ("reason" in result && !result.ok) {
-  await interaction.editReply(result.reason);
-}
-```
+- Users should not see stack traces, raw internal exceptions, secret names, or configuration internals unless there is a strong admin-only reason.
+- Prefer short, actionable replies.
+- Use `getUserFacingReason(err)` from `src/utils/errors.ts` when mapping internal failures to user-safe language.
+- Use `errorReply(interaction, message, suggestions?)` from `src/utils/interactions.ts` when you want a consistent error format.
+- Keep detailed diagnosis in logs and, where appropriate, in admin audit channels instead of regular user replies.
 
 ---
 
-## Logging
-
-OmegaBot uses a centralized logger for structured logs.
-
-Guidelines:
-
-- Use logger.info for lifecycle events
-- Use logger.warn for recoverable issues
-- Use logger.error inside catch blocks
-- Avoid logging inside pure helpers
-- Prefer logging at command boundaries and service entry points
-- **Never log secrets**: Do not log `DISCORD_TOKEN`, API keys, or other env vars that contain secrets (e.g. `env.token`, `process.env.WEATHERAPI_KEY`). Log only that a feature is enabled/disabled (e.g. `weather: true`) or use redacted placeholders.
-
-### Error handling
-
-- **Slash commands**: The interaction handler (`services/discord/interaction/interactionHandler.ts`) wraps every `command.execute()` in try/catch, logs with context (command, userId, interactionId), and sends the user an i18n generic message (plus optional Discord error hint). Commands can still catch internally and `editReply` with a specific message before rethrowing.
-- **Known Discord errors** (10062 unknown interaction, 40060 already acknowledged, 10008 unknown message) are logged at INFO via `interaction/interactionErrors.ts` so they don’t flood error level; the user may still see "interaction failed" in Discord.
-- **Buttons & modals**: Handlers in `handlers/buttons.ts` and `handlers/modals.ts` catch handler errors, log with `logger.error`, then try to reply or edit with "Something went wrong…" so the user gets feedback instead of a bare "interaction failed".
-- **Context menus**: Same pattern as slash commands (try/catch, known-error handling, user-facing fallback reply).
-
----
-
-## Autocomplete & Interaction Handling
+## Autocomplete And Interaction Handling
 
 ### Autocomplete
 
-When adding autocomplete to a slash command option (`setAutocomplete(true)`), implement the optional `autocomplete` handler on the command module. The handler must call `interaction.respond(choices)` within ~3 seconds.
+When an option uses `setAutocomplete(true)`, implement the command module's optional `autocomplete` handler and respond within Discord's time window.
 
 ```typescript
-// In your command module
 export const data = new SlashCommandBuilder().addStringOption((o) =>
   o.setName("zone").setDescription("Timezone").setAutocomplete(true),
 );
@@ -169,126 +162,78 @@ export async function autocomplete(interaction: AutocompleteInteraction) {
 }
 ```
 
-If a command has no autocomplete handler, the interaction handler responds with `[]` so Discord does not show an error.
+If a command does not implement autocomplete, the interaction handler should respond safely with an empty list rather than timing out.
 
-### "Interaction Failed" Prevention
+### Preventing "Interaction Failed"
 
-Collectors and button handlers should:
+Collectors and interactive handlers should:
 
-1. **Defer early** – Call `deferUpdate()` or `reply()` before any heavy work (DB, file I/O, game logic).
-2. **Use `message.edit()` after defer** – Once deferred, update the message via `message.edit()`, not `interaction.update()`.
-3. **Catch and recover** – Wrap handlers in try/catch; on error, call `deferUpdate().catch(() => {})` if the interaction was never acked.
+1. Acknowledge early with `deferReply()`, `deferUpdate()`, `reply()`, or `update()`.
+2. Do expensive work only after acknowledgement.
+3. Catch handler errors and try to recover gracefully.
 
-Logs include `interactionFailedRecovery: true` when we recover from an error to prevent "interaction failed". Use this field when monitoring or alerting on interaction issues.
-
----
-
-## Environment Variables
-
-See [.env.example](../.env.example) for the full list of required and optional
-environment variables.
+For deeper debugging, see [Troubleshooting](troubleshooting.md).
 
 ---
 
-## Configuration and Feature Gating
+## Configuration And Feature Gating
 
-OmegaBot uses environment variables not only for secrets, but also
-to enable or disable optional features at runtime.
+Environment variables control both secrets and optional feature enablement.
 
-Design principles:
+Guidelines:
 
-- Required variables are validated at startup and fail fast
-- Optional features are gated by the presence of their related env vars
-- The bot must be able to start and run safely with optional features disabled
-- Feature-specific code should never assume configuration exists
+- Required config should fail fast at startup.
+- Optional features should disable cleanly when their config is missing.
+- Feature-specific code should never assume optional config exists.
 
 Examples:
 
-- GitHub polling is enabled only when all required GitHub env vars are present
-- Auto-role assignment is enabled only when DISCORD_AUTO_ROLE_ID is set
-- LLM summaries are enabled only when SUMMARY_MODE=llm and OPENAI_API_KEY is present
-- Hangman word management (add/list) is available only to users with the role in HANGMAN_ADMIN_ROLE_ID
+- GitHub polling only runs when its required GitHub config is present.
+- LLM summaries only run when `SUMMARY_MODE=llm` and the needed API key exists.
+- Hangman word management only appears for users with the configured role.
+- Notion admin actions only work when the Notion config is valid and the caller has the right Discord-side access.
 
-This allows:
-
-- Safe local development without external services
-- Gradual feature rollout via configuration
-- Clear operational behavior without code changes
+See [Environment Configuration](setup-env.md) for the full config surface.
 
 ---
 
-## Error Handling
+## TypeScript And Discord.js Notes
 
-- Commands must catch errors and reply gracefully
-- Services may throw domain-specific errors
-- Background tasks and pollers must never crash the process
-- Unexpected errors should be logged with context
+### Strict Type Safety
 
----
+OmegaBot uses TypeScript strict mode. Prefer narrowing over assertions whenever possible.
 
-## TypeScript Best Practices
+### Discord.js v14 Reminders
 
-### Strict Type Checking
+- `GatewayIntentBits` replaces old intent flags
+- `ChatInputCommandInteraction` replaces older chat-command types
+- `MessageFlags.Ephemeral` replaces older `ephemeral: true` usage in many code paths
+- `PermissionFlagsBits` replaces older permission flag enums
 
-OmegaBot uses TypeScript's strict mode for better type safety:
+### Type Narrowing
 
-```typescript
-// tsconfig.json
-{
-  "compilerOptions": {
-    "strict": true,
-    "noImplicitAny": true
-  }
-}
-```
-
-### Discord.js Type Narrowing
-
-Always narrow interaction types before accessing specific properties:
+Always narrow interaction types before using specific APIs:
 
 ```typescript
-// Check if it's a chat command
 if (interaction.isChatInputCommand()) {
-  // Safe to use chat command methods
+  // Safe to use chat-input methods
 }
 
-// Check if in guild
 if (interaction.inGuild()) {
-  // Safe to access guild-specific properties
+  // Safe to use guild-specific data
 }
 ```
 
----
-
-## Testing
-
-### Unit Tests
-
-- Run in watch mode: `npm run test`
-- Run once (CI): `npm run test:run`
-- Database-backed tests should use the in-memory SQLite helper: `src/services/core/database/dbTestUtils.ts`
-
-### Manual Testing
-
-When testing commands:
-
-- Test both success and error paths
-- Test with missing permissions
-- Test with invalid inputs
-- Test DM vs guild contexts
-- Test "ephemeral" vs public responses (where supported)
+When checking result objects, narrow by property presence before consuming optional fields.
 
 ---
 
-## Troubleshooting
+## Troubleshooting And Future Work
 
-See [troubleshooting.md](./troubleshooting.md) for debugging "failed to complete" errors and other common issues.
+For operational debugging, see [Troubleshooting](troubleshooting.md).
 
----
+Areas still worth improving:
 
-## Future Improvements
-
-- Replace remaining file stores with database
-- Integration tests for collectors (button/dropdown flows) – dice, slots, ping, health integration tests exist
-- ~~Discord.js version check~~ – Done: `npm run check:discord` in CI
-- ~~Reorganize `src/commands/fun/subcommands` into `games/` and `utility/`~~ – Done: now `games-a/`, `games-b/`, `social/`, `utility/` under `commands/games/fun/subcommands`
+- replace remaining file stores with database-backed storage where appropriate
+- add more integration tests for collector-heavy flows
+- keep reducing doc overlap by linking to source-of-truth pages instead of repeating setup steps

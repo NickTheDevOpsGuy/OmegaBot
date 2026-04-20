@@ -5,6 +5,7 @@ import {
 } from "discord.js";
 import { env } from "../../../config/env.js";
 import { getContextLogger } from "../../../services/core/logging/requestContext.js";
+import { sendAdminAuditLog } from "../../../services/discord/discord/adminAudit.js";
 import {
   createNotionClient,
   searchNotionPages,
@@ -95,6 +96,17 @@ function buildReply(
   ].join("\n");
 }
 
+function formatWikiFailureMessage(err: unknown): string {
+  const detail = err instanceof Error ? err.message.trim() : "";
+  if (!detail) return "The wiki search hit a snag. Try again in a moment.";
+
+  return [
+    "The wiki search failed.",
+    detail,
+    "If this is a Notion search, verify `NOTION_DATABASE_ID` and share the database with the integration.",
+  ].join("\n");
+}
+
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const query = interaction.options.getString("query", true).trim();
   const source = (interaction.options.getString("source") ?? "auto") as WikiSourceFilter;
@@ -135,6 +147,17 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     await interaction.editReply(reply);
   } catch (err) {
     getContextLogger().error({ err, query, source }, "[wiki] search threw");
-    await interaction.editReply("The wiki search hit a snag. Try again in a moment.");
+    await sendAdminAuditLog(
+      interaction,
+      [
+        "📘 **Wiki search failed**",
+        `Actor: ${interaction.user?.id ? `<@${interaction.user.id}>` : "unknown"}`,
+        `Guild: ${interaction.guildId ?? "dm"}`,
+        `Query: ${query}`,
+        `Source: ${source}`,
+        `Error: ${err instanceof Error ? err.message : "Unknown error"}`,
+      ].join("\n"),
+    );
+    await interaction.editReply(formatWikiFailureMessage(err));
   }
 }

@@ -2,6 +2,17 @@
 
 This doc explains how to add games, use progression, achievements, and the shared result renderer. See also [Project structure](project-structure.md) and [File & folder structure](file-structure.md).
 
+## Table of Contents
+
+- [Adding a new game](#adding-a-new-game)
+- [Progression system](#progression-system)
+- [Result rendering](#result-rendering)
+- [Rare random events (optional)](#rare-random-events-optional)
+- [Persistent game sessions (async games)](#persistent-game-sessions-async-games)
+- [Game tiers (classification)](#game-tiers-classification)
+
+---
+
 ## Adding a new game
 
 1. **Command and options**  

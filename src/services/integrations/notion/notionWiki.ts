@@ -95,6 +95,80 @@ function readRecord(value: unknown): UnknownRecord | null {
   return isRecord(value) ? value : null;
 }
 
+function parseJsonRecord(value: unknown): UnknownRecord | null {
+  if (typeof value !== "string") return null;
+
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    return readRecord(parsed);
+  } catch {
+    return null;
+  }
+}
+
+function summarizeNotionError(err: unknown): {
+  message: string;
+  code: string | null;
+  status: number | null;
+  hint: string | null;
+  rawMessage: string | null;
+} {
+  const record = readRecord(err);
+  const bodyRecord = readRecord(record?.["body"]) ?? parseJsonRecord(record?.["body"]);
+  const code = readString(record?.["code"]) ?? readString(bodyRecord?.["code"]);
+  const status =
+    typeof record?.["status"] === "number"
+      ? record["status"]
+      : typeof bodyRecord?.["status"] === "number"
+        ? bodyRecord["status"]
+        : null;
+  const rawMessage =
+    readString(record?.["message"]) ??
+    readString(bodyRecord?.["message"]) ??
+    null;
+
+  if (code === "object_not_found") {
+    return {
+      message:
+        "Notion could not find that database. The ID may be wrong, the integration may not have access, or the URL may point to a page instead of a database.",
+      code,
+      status,
+      hint:
+        "Check NOTION_DATABASE_ID, then open the database in Notion and share it with the integration.",
+      rawMessage,
+    };
+  }
+
+  if (code === "unauthorized") {
+    return {
+      message: "Notion rejected the request because the integration token is not authorized.",
+      code,
+      status,
+      hint: "Verify NOTION_TOKEN and confirm the integration still has access to the database.",
+      rawMessage,
+    };
+  }
+
+  if (code === "validation_error") {
+    return {
+      message: "Notion rejected the request because the database ID or request shape is invalid.",
+      code,
+      status,
+      hint:
+        "Make sure NOTION_DATABASE_ID is the 32-character database ID from the database URL, not a regular page URL.",
+      rawMessage,
+    };
+  }
+
+  return {
+    message: rawMessage ?? "Unknown Notion API error.",
+    code,
+    status,
+    hint: null,
+    rawMessage,
+  };
+}
+
 function readTitleParts(value: unknown): string {
   if (!Array.isArray(value)) return "";
 
@@ -159,9 +233,27 @@ async function getDatabaseStatus(
   databaseId: string,
 ): Promise<NotionDatabaseStatus> {
   const log = getContextLogger();
-  const databaseResponse = (await client.databases.retrieve({
-    database_id: databaseId,
-  })) as unknown;
+  let databaseResponse: unknown;
+  try {
+    databaseResponse = (await client.databases.retrieve({
+      database_id: databaseId,
+    })) as unknown;
+  } catch (err) {
+    const summary = summarizeNotionError(err);
+    log.error(
+      {
+        err,
+        databaseId,
+        notionCode: summary.code,
+        notionStatus: summary.status,
+        notionHint: summary.hint,
+        notionRawMessage: summary.rawMessage,
+      },
+      "[notion] database lookup failed: %s",
+      summary.message,
+    );
+    throw new Error(summary.message);
+  }
 
   const databaseRecord = readRecord(databaseResponse);
   const dataSources = Array.isArray(databaseRecord?.["data_sources"])
@@ -172,14 +264,37 @@ async function getDatabaseStatus(
     readString(readRecord(databaseRecord?.["data_source"])?.["id"]);
 
   if (!dataSourceId) {
+    log.error(
+      { databaseId, databaseKeys: Object.keys(databaseRecord ?? {}) },
+      "[notion] database lookup failed: configured object is not a queryable database",
+    );
     throw new Error(
       "The configured Notion database does not expose a queryable data source.",
     );
   }
 
-  const dataSourceResponse = (await client.dataSources.retrieve({
-    data_source_id: dataSourceId,
-  })) as unknown;
+  let dataSourceResponse: unknown;
+  try {
+    dataSourceResponse = (await client.dataSources.retrieve({
+      data_source_id: dataSourceId,
+    })) as unknown;
+  } catch (err) {
+    const summary = summarizeNotionError(err);
+    log.error(
+      {
+        err,
+        databaseId,
+        dataSourceId,
+        notionCode: summary.code,
+        notionStatus: summary.status,
+        notionHint: summary.hint,
+        notionRawMessage: summary.rawMessage,
+      },
+      "[notion] data source lookup failed: %s",
+      summary.message,
+    );
+    throw new Error(summary.message);
+  }
 
   const dataSourceRecord = readRecord(dataSourceResponse);
   const properties = readRecord(dataSourceRecord?.["properties"]);
@@ -269,7 +384,28 @@ export async function searchNotionPages(args: {
     result_type: "page",
   };
 
-  const response = (await args.client.dataSources.query(queryInput)) as unknown;
+  let response: unknown;
+  try {
+    response = (await args.client.dataSources.query(queryInput)) as unknown;
+  } catch (err) {
+    const summary = summarizeNotionError(err);
+    log.error(
+      {
+        err,
+        databaseId: args.databaseId,
+        dataSourceId: status.dataSourceId,
+        query,
+        titleProperty: status.titleProperty,
+        notionCode: summary.code,
+        notionStatus: summary.status,
+        notionHint: summary.hint,
+        notionRawMessage: summary.rawMessage,
+      },
+      "[notion] search query failed: %s",
+      summary.message,
+    );
+    throw new Error(summary.message);
+  }
   const rawResults = Array.isArray(readRecord(response)?.["results"])
     ? ((readRecord(response)?.["results"] as unknown[]) ?? [])
     : [];
@@ -394,7 +530,28 @@ export async function createNotionPage(args: {
     children,
   };
 
-  const response = (await args.client.pages.create(input)) as unknown;
+  let response: unknown;
+  try {
+    response = (await args.client.pages.create(input)) as unknown;
+  } catch (err) {
+    const summary = summarizeNotionError(err);
+    log.error(
+      {
+        err,
+        databaseId: args.databaseId,
+        dataSourceId: status.dataSourceId,
+        title,
+        tagCount: cleanedTags.length,
+        notionCode: summary.code,
+        notionStatus: summary.status,
+        notionHint: summary.hint,
+        notionRawMessage: summary.rawMessage,
+      },
+      "[notion] create page failed: %s",
+      summary.message,
+    );
+    throw new Error(summary.message);
+  }
   const record = readRecord(response);
 
   const page = {

@@ -4,6 +4,16 @@ Common issues and how to debug them.
 
 ---
 
+## Table of Contents
+
+- ["Failed to complete" on Slash Commands](#failed-to-complete-on-slash-commands)
+- [HTTP Health Endpoint](#http-health-endpoint)
+- [Database Issues](#database-issues)
+- [User-facing errors](#user-facing-errors)
+- [Log Levels](#log-levels)
+
+---
+
 ## "Failed to complete" on Slash Commands
 
 When users see "This interaction failed" or "Application did not respond" in Discord, the bot did not acknowledge the interaction within Discord's 3-second window, or the interaction expired before the bot could respond.

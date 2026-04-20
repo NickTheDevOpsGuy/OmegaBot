@@ -6,6 +6,28 @@ OmegaBot has **20 slash commands** organized into logical groups.
 
 ---
 
+## Table of Contents
+
+- [`/fun` - Games & Entertainment](#fun---games--entertainment)
+- [`/profile` - User Profile](#profile---user-profile)
+- [`/info` - Information](#info---information)
+- [`/achievements` - Achievement System](#achievements---achievement-system)
+- [`/event` - Platform Events](#event---platform-events)
+- [`/giveaway` - Giveaway System](#giveaway---giveaway-system)
+- [`/suggestion` - Suggestion System](#suggestion---suggestion-system)
+- [`/config` - Server Configuration](#config---server-configuration)
+- [`/faq` - FAQ System](#faq---faq-system)
+- [`/wiki` - Knowledge Lookup](#wiki---knowledge-lookup)
+- [`/notion` - Notion Wiki Integration](#notion---notion-wiki-integration)
+- [`/gh` - GitHub Integration](#gh---github-integration)
+- [`/status` - Service Status](#status---service-status)
+- [Context Menus](#context-menus)
+- [`/admin` – Admin & Moderation](#admin--admin--moderation)
+- [Other Commands](#other-commands)
+- [Command Count Summary](#command-count-summary)
+
+---
+
 ## `/fun` - Games & Entertainment
 
 The main hub for all games and fun features.

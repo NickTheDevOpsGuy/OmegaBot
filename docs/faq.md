@@ -11,6 +11,17 @@ The goal is to keep FAQs:
 
 ---
 
+## Table of Contents
+
+- [Storage Model](#storage-model)
+- [FAQ Entry Schema](#faq-entry-schema)
+- [Key Format and Limits](#key-format-and-limits)
+- [Size Limits](#size-limits)
+- [Command Expectations](#command-expectations)
+- [Future Plans](#future-plans)
+
+---
+
 ## Storage Model
 
 FAQs are stored in a file-based JSON store:

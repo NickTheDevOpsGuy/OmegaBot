@@ -4,6 +4,13 @@ OmegaBot records gameplay data for analytics and leaderboards.
 
 ---
 
+## Table of Contents
+
+- [Daily Game Metrics](#daily-game-metrics)
+- [Command Usage (Non-Game)](#command-usage-non-game)
+
+---
+
 ## Daily Game Metrics
 
 The `game_usage_daily` table tracks how often each command is used per user per day.

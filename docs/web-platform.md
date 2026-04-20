@@ -2,6 +2,24 @@
 
 OmegaBot is structured so the same backend can power **Discord** and a **future web UI**. Game logic, progression, events, and profiles live in shared services; Discord commands and the web API both call these services.
 
+## Table of Contents
+
+- [Setting up the website](#setting-up-the-website)
+- [Architecture](#architecture)
+- [User accounts](#user-accounts)
+- [Events](#events)
+- [Posts / social feed](#posts--social-feed)
+- [Persistent games](#persistent-games)
+- [Game API layer](#game-api-layer)
+- [Web API](#web-api)
+- [Leaderboards](#leaderboards)
+- [Achievements](#achievements)
+- [Profiles](#profiles)
+- [Real-time (SSE)](#real-time-sse)
+- [Implemented features (roadmap done)](#implemented-features-roadmap-done)
+
+---
+
 ## Setting up the website
 
 Follow these steps to run the Web API and optionally connect a frontend.

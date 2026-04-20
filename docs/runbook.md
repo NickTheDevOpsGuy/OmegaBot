@@ -1,90 +1,236 @@
 # Runbook
 
-Short guide for running and maintaining OmegaBot.
+This is the operator-facing guide for starting, restarting, monitoring, and backing up OmegaBot.
+
+Use this page for recurring maintenance tasks. Use [Troubleshooting](troubleshooting.md) for failure diagnosis and [Environment Configuration](setup-env.md) for config details.
 
 ---
 
-## Deploy / Start
+## Table of Contents
 
-1. **Node**: Clone (or pull), then: `npm ci && npm run build && npm run register && npm start`
-2. **Docker**: See [Docker](#docker) below.
-3. Or after code changes: `npm run build && npm start` (re-register only if you changed slash command definitions).
+- [Start And Deploy](#start-and-deploy)
+- [Docker](#docker)
+- [Restart](#restart)
+- [Database](#database)
+- [Health And Monitoring](#health-and-monitoring)
+- [Security](#security)
+- [Common Issues](#common-issues)
+- [E2E Tests](#e2e-tests)
+- [Optional Quality Checks](#optional-quality-checks)
 
-**Note:** `npm run register` requires `DISCORD_TOKEN` and `DISCORD_APP_ID` in `.env` (or your environment). If these are not set, registration will fail. See [Environment Setup](setup-env.md).
+---
 
-**Optional Web API:** To run the HTTP API (profiles, leaderboards, events, posts, games, auth): `npm run api` (or `node dist/web/server.js`). Uses the same database; set `WEB_API_PORT` (default 4000) and see [Web platform](web-platform.md).
+## Start And Deploy
+
+### Local or VM Process
+
+For a fresh setup or after pulling changes:
+
+```bash
+npm ci
+npm run build
+npm run register
+npm start
+```
+
+Use `npm run register` when slash command definitions changed or when you are setting up the bot in a new guild.
+
+If you only changed normal runtime code, this is usually enough:
+
+```bash
+npm run build
+npm start
+```
+
+`npm run register` needs `DISCORD_TOKEN` and `DISCORD_APP_ID` to be configured first. See [Environment Configuration](setup-env.md).
+
+### Optional Web API
+
+To run the optional HTTP API for profiles, leaderboards, events, posts, and auth:
+
+```bash
+npm run api
+```
+
+or:
+
+```bash
+node dist/web/server.js
+```
+
+This API uses the same database as the bot. See [Web platform](web-platform.md) for details.
 
 ---
 
 ## Docker
 
+Basic Docker startup:
+
 ```bash
 cp .env.example .env
-# Edit .env: add DISCORD_TOKEN, DISCORD_APP_ID, DISCORD_GUILD_ID
+# Edit .env and set DISCORD_TOKEN, DISCORD_APP_ID, DISCORD_GUILD_ID
 docker compose up -d
 ```
 
-- Data persists in the `omegabot_data` volume.
-- Metrics/health exposed on port 9090 (override with `METRICS_PORT` in `.env`).
-- Logs: `docker compose logs -f bot`
+Notes:
+
+- data persists in the `omegabot_data` volume
+- logs can be tailed with `docker compose logs -f bot`
+- health and metrics are exposed when `METRICS_PORT` is enabled in `.env`
 
 ---
 
 ## Restart
 
-- Stop the process (Ctrl+C or your process manager). The bot performs graceful shutdown (closes Discord, then DB).
-- Start again: `npm start` (or `node dist/bot.js`). State is in SQLite.
+When restarting the bot:
+
+1. Stop the process or container.
+2. Let it shut down cleanly so Discord and SQLite are closed properly.
+3. Start it again with your normal runtime command or process manager.
+
+Examples:
+
+```bash
+npm start
+```
+
+or:
+
+```bash
+node dist/bot.js
+```
+
+State is persisted in SQLite, so a normal restart should not lose bot data.
 
 ---
 
 ## Database
 
-- **Path**: By default `data/omegabot.db` (override with `DATABASE_PATH` in `.env`).
-- **Backup**: Run `npm run db:backup` (or `scripts/backup-db.sh`). Backups go to `data/backups/` by default; set `BACKUP_KEEP` to limit retained backups (default 7). SQLite handles concurrent read—safe to run while bot is up. When `sqlite3` is installed, runs `PRAGMA integrity_check` on the backup and fails if corrupt.
-- **Integrity**: Run `npm run db:check` to verify SQLite health.
-- **Migrations**: Schema changes go in `migrations/*.sql`; run automatically on startup.
+### Default Location
+
+- default path: `data/omegabot.db`
+- override with `DATABASE_PATH` in `.env`
+
+### Backup
+
+Create a backup with:
+
+```bash
+npm run db:backup
+```
+
+or:
+
+```bash
+scripts/backup-db.sh
+```
+
+Behavior:
+
+- backups go to `data/backups/` by default
+- `BACKUP_KEEP` controls how many backups are retained
+- the script is safe to run while the bot is up because SQLite supports concurrent reads
+- if `sqlite3` is installed, the backup script also runs an integrity check
+
+### Integrity Check
+
+Run:
+
+```bash
+npm run db:check
+```
+
+Use this when you suspect corruption, migration drift, or startup issues tied to SQLite.
+
+### Migrations
+
+Schema changes live in `migrations/*.sql` and are applied automatically on startup.
 
 ---
 
-## Health
+## Health And Monitoring
 
-- **Discord**: `/admin health` (Manage Server) shows DB status, env summary, interaction errors, and optional API reachability (Weather, GitHub).
-- **HTTP**: Set `METRICS_PORT=9090` (or another port) to enable:
-  - `GET /` or `GET /dashboard` – Web admin UI (health, DB, Discord, uptime). If `ADMIN_DASHBOARD_TOKEN` is set, require `?token=<token>`.
-  - `GET /health` – JSON with status, database, discord, uptime (200 if all ok, 503 if degraded).
-  - `GET /metrics` – Prometheus scrape endpoint.
-- **Logs**: Set `LOG_LEVEL=debug` for more detail; `info` is default.
+### Discord-Side Health
+
+Use:
+
+```text
+/admin health
+```
+
+This gives admins a quick summary of:
+
+- database health
+- environment/config summary
+- interaction error counts
+- optional external integration reachability
+
+### HTTP Monitoring Endpoints
+
+If you set `METRICS_PORT`, OmegaBot exposes:
+
+- `GET /` or `GET /dashboard` - lightweight admin dashboard
+- `GET /health` - JSON health summary
+- `GET /metrics` - Prometheus scrape endpoint
+
+If `ADMIN_DASHBOARD_TOKEN` is set, `/` and `/dashboard` require `?token=<value>`.
+
+### Logs
+
+- default runtime logging is `info`
+- use `LOG_LEVEL=debug` temporarily when diagnosing issues
 
 ---
 
 ## Security
 
-- **Secrets**: Never log `DISCORD_TOKEN`, API keys, or other secrets. Keep them only in `.env` (not committed).
+- never commit `.env`
+- never log secrets such as Discord tokens or API keys
+- protect `ADMIN_DASHBOARD_TOKEN` if you expose monitoring endpoints publicly
+- prefer least-privilege config for optional integrations and admin roles
 
 ---
 
 ## Common Issues
 
-- **“Interaction failed”** – See [Troubleshooting](troubleshooting.md).
-- **Missing features** – Check `.env` and [Environment Setup](setup-env.md); optional features disable cleanly if not configured.
-- **Rate limits** – Cooldowns are per-user; see [Command Reference](commands.md) for limits.
+- "Interaction failed" - see [Troubleshooting](troubleshooting.md)
+- missing optional features - check `.env` and [Environment Configuration](setup-env.md)
+- rate limit confusion - see [Command Reference](commands.md)
 
 ---
 
 ## E2E Tests
 
-Run `npm run test:e2e` to start the bot and verify it connects to Discord. Requires `DISCORD_TOKEN` and `DISCORD_APP_ID` in `.env`. Uses in-memory DB. The script starts the bot, waits for "ready", then shuts down.
+Run:
 
-In CI (GitHub Actions), the e2e job runs only when `DISCORD_TOKEN` and `DISCORD_APP_ID` are set as repository secrets.
+```bash
+npm run test:e2e
+```
+
+This starts the bot, waits for Discord ready, and shuts it down again.
+
+Requirements:
+
+- `DISCORD_TOKEN`
+- `DISCORD_APP_ID`
+
+The E2E flow uses an in-memory DB and is mainly intended as a connectivity smoke test.
 
 ---
 
-## Optional: Test Coverage
+## Optional Quality Checks
 
-Run `npm run test:coverage` occasionally to see coverage. See [Improvement ideas](improvements.md) if you want to add a coverage gate or badge.
+### Coverage
 
----
+Run:
 
-## Optional: Pre-push Checks
+```bash
+npm run test:coverage
+```
 
-- `git push` runs `precheck` (Prettier, ESLint, TypeScript, tests). To skip: put `[skip-precheck]` in the last commit message.
+### Pre-Push Checks
+
+The repo's `precheck` flow covers formatting, linting, TypeScript, and tests.
+
+- normal `git push` runs pre-push checks
+- `[skip-precheck]` in the most recent commit message skips that hook when you intentionally need to bypass it

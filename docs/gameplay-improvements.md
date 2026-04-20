@@ -4,6 +4,22 @@ Suggestions to improve how games feel to play: clarity, fairness, discoverabilit
 
 ---
 
+## Table of Contents
+
+- [Blackjack](#blackjack)
+- [Wordle](#wordle)
+- [Slots](#slots)
+- [Hangman](#hangman)
+- [Rock–Paper–Scissors](#rockpaperscissors)
+- [Trivia](#trivia)
+- [Connect 4 (PvP)](#connect-4-pvp)
+- [Tic Tac Toe](#tic-tac-toe)
+- [Darts](#darts)
+- [Cross-cutting](#cross-cutting)
+- [Priority summary](#priority-summary)
+
+---
+
 ## Blackjack
 
 **Current:** Hit, Stand, Extend time. Dealer stands on 17. Cooldown 5s, game timeout 1h.

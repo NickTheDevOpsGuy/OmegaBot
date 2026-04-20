@@ -2,6 +2,15 @@
 
 This doc describes the current folder layout. See [Development Notes](dev-notes.md) for conventions (file/folder limits, testing, logging). For an expandable full directory tree, see [File & folder structure](file-structure.md).
 
+## Table of Contents
+
+- [Commands (`src/commands/`)](#commands-srccommands)
+- [Services (`src/services/`)](#services-srcservices)
+- [Other under `src/`](#other-under-src)
+- [Tests](#tests)
+
+---
+
 ## Commands (`src/commands/`)
 
 Commands are grouped into four top-level folders (≤10 items each). The loader discovers `*/<name>/<name>.ts` under each group.

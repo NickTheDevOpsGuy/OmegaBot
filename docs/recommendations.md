@@ -4,6 +4,15 @@ Suggestions for new slash commands and other improvements. Prioritized by impact
 
 ---
 
+## Table of Contents
+
+- [New Slash Commands (Ideas)](#new-slash-commands-ideas)
+- [Improvements (Existing Features)](#improvements-existing-features)
+- [What to Skip (For Now)](#what-to-skip-for-now)
+- [Suggested order of work](#suggested-order-of-work)
+
+---
+
 ## New Slash Commands (Ideas)
 
 ### High value, good fit

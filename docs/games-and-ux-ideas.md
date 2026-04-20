@@ -4,6 +4,15 @@ Ideas to make OmegaBot more fun, sticky, and usable without bloating commands. P
 
 ---
 
+## Table of Contents
+
+- [Making Games More Fun & Addictive](#making-games-more-fun--addictive)
+- [Usability Improvements (Current Commands)](#usability-improvements-current-commands)
+- [New Slash Commands (Only If High Value)](#new-slash-commands-only-if-high-value)
+- [Suggested Order (If Implementing)](#suggested-order-if-implementing)
+
+---
+
 ## Making Games More Fun & Addictive
 
 ### 1. **Achievement pop when you unlock one**

@@ -4,6 +4,16 @@ OmegaBot includes a shared XP and level system that spans several games and dail
 
 ---
 
+## Table of Contents
+
+- [How It Works](#how-it-works)
+- [Current XP Sources](#current-xp-sources)
+- [Level Curve](#level-curve)
+- [User Experience](#user-experience)
+- [Notes](#notes)
+
+---
+
 ## How It Works
 
 - XP is stored in SQLite in `user_progression`.

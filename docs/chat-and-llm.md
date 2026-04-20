@@ -4,6 +4,21 @@ OmegaBot can chat with users using an LLM (OpenAI or Anthropic Claude), with **c
 
 ---
 
+## Table of Contents
+
+- [How to Chat](#how-to-chat)
+- [Conversation Threads (Keys)](#conversation-threads-keys)
+- [Persistence (SQLite)](#persistence-sqlite)
+- [History Limit & Trimming](#history-limit--trimming)
+- [Clearing a Conversation ("New Chat")](#clearing-a-conversation-new-chat)
+- [Chat Modes](#chat-modes)
+- [Supportive / Mental Health Guardrails](#supportive--mental-health-guardrails)
+- [LLM Provider & Env](#llm-provider--env)
+- [Message Content Intent (Discord)](#message-content-intent-discord)
+- [Summary](#summary)
+
+---
+
 ## How to Chat
 
 Users can start or continue a conversation in three ways:

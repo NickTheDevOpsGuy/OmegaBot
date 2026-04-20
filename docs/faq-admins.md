@@ -4,6 +4,19 @@ Common questions when running OmegaBot.
 
 ---
 
+## Table of Contents
+
+- [Who can use /admin?](#who-can-use-admin)
+- [How do I add Hangman words?](#how-do-i-add-hangman-words)
+- [Who can manage FAQ / Notion wiki content?](#who-can-manage-faq--notion-wiki-content)
+- [Why do users see "This interaction failed"?](#why-do-users-see-this-interaction-failed)
+- [How do I back up the bot?](#how-do-i-back-up-the-bot)
+- [Weather / GitHub / summaries don't work](#weather--github--summaries-dont-work)
+- [How do I see if the bot is healthy?](#how-do-i-see-if-the-bot-is-healthy)
+- [Rate limits / cooldowns](#rate-limits--cooldowns)
+
+---
+
 ## Who can use /admin?
 
 **Stats and health** use the same rules as below. **Timeout, kick, and ban** use an extra rule when **`MODERATION_ALLOWED_ROLE_IDS`** is set.
