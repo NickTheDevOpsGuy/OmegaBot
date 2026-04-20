@@ -123,9 +123,7 @@ function summarizeNotionError(err: unknown): {
         ? bodyRecord["status"]
         : null;
   const rawMessage =
-    readString(record?.["message"]) ??
-    readString(bodyRecord?.["message"]) ??
-    null;
+    readString(record?.["message"]) ?? readString(bodyRecord?.["message"]) ?? null;
 
   if (code === "object_not_found") {
     return {
@@ -133,15 +131,15 @@ function summarizeNotionError(err: unknown): {
         "Notion could not find that database. The ID may be wrong, the integration may not have access, or the URL may point to a page instead of a database.",
       code,
       status,
-      hint:
-        "Check NOTION_DATABASE_ID, then open the database in Notion and share it with the integration.",
+      hint: "Check NOTION_DATABASE_ID, then open the database in Notion and share it with the integration.",
       rawMessage,
     };
   }
 
   if (code === "unauthorized") {
     return {
-      message: "Notion rejected the request because the integration token is not authorized.",
+      message:
+        "Notion rejected the request because the integration token is not authorized.",
       code,
       status,
       hint: "Verify NOTION_TOKEN and confirm the integration still has access to the database.",
@@ -151,11 +149,11 @@ function summarizeNotionError(err: unknown): {
 
   if (code === "validation_error") {
     return {
-      message: "Notion rejected the request because the database ID or request shape is invalid.",
+      message:
+        "Notion rejected the request because the database ID or request shape is invalid.",
       code,
       status,
-      hint:
-        "Make sure NOTION_DATABASE_ID is the 32-character database ID from the database URL, not a regular page URL.",
+      hint: "Make sure NOTION_DATABASE_ID is the 32-character database ID from the database URL, not a regular page URL.",
       rawMessage,
     };
   }

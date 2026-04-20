@@ -285,7 +285,9 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     await sendAdminAuditLog(
       interaction,
       [
-        sub === "search" ? "📘 **Notion search failed**" : "📘 **Notion admin action failed**",
+        sub === "search"
+          ? "📘 **Notion search failed**"
+          : "📘 **Notion admin action failed**",
         `Actor: ${interaction.user?.id ? `<@${interaction.user.id}>` : "unknown"}`,
         `Guild: ${interaction.guildId ?? "dm"}`,
         `Action: ${sub}`,

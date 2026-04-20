@@ -48,18 +48,18 @@ Use this page for team conventions. Use [Project structure](project-structure.md
 
 For the full folder layout, see [Project structure](project-structure.md).
 
-| Area | Location |
-| --- | --- |
-| Database typed helpers | `src/services/core/database/db.ts` |
-| Help topic content | `src/commands/core/help/topics/*.ts` |
-| Interaction routing and errors | `src/services/discord/discord/interaction/` |
-| Interaction handlers | `src/services/discord/discord/handlers/` |
-| Fun subcommand groups | `src/commands/games/fun/funSubcommands/` |
-| Giveaway button logic | `src/commands/games/giveaway/buttonHandler.ts` |
-| Quote store | `src/services/stores/quotes/quoteStore.ts` |
-| Command usage analytics | `src/services/core/analytics/commandUsageStore.ts` |
-| Request context and correlation IDs | `src/services/core/logging/requestContext.ts` |
-| i18n | `src/i18n/index.ts` |
+| Area                                | Location                                           |
+| ----------------------------------- | -------------------------------------------------- |
+| Database typed helpers              | `src/services/core/database/db.ts`                 |
+| Help topic content                  | `src/commands/core/help/topics/*.ts`               |
+| Interaction routing and errors      | `src/services/discord/discord/interaction/`        |
+| Interaction handlers                | `src/services/discord/discord/handlers/`           |
+| Fun subcommand groups               | `src/commands/games/fun/funSubcommands/`           |
+| Giveaway button logic               | `src/commands/games/giveaway/buttonHandler.ts`     |
+| Quote store                         | `src/services/stores/quotes/quoteStore.ts`         |
+| Command usage analytics             | `src/services/core/analytics/commandUsageStore.ts` |
+| Request context and correlation IDs | `src/services/core/logging/requestContext.ts`      |
+| i18n                                | `src/i18n/index.ts`                                |
 
 ---
 
