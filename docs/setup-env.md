@@ -266,3 +266,27 @@ Commands enabled by this setup:
 - `/notion create-page` – create a new page in the configured database
 
 See [Notion Wiki Setup](setup-notion.md) for the full step-by-step flow.
+
+### Discord Privileged Intents (Optional)
+
+Only enable these when you need the matching feature, and make sure the same intent is enabled in the Discord Developer Portal.
+
+```env
+DISCORD_ENABLE_GUILD_MEMBERS_INTENT=false
+DISCORD_ENABLE_MESSAGE_CONTENT_INTENT=false
+```
+
+- `DISCORD_ENABLE_GUILD_MEMBERS_INTENT`
+  - Required for member-join flows such as auto-role and welcome handling
+- `DISCORD_ENABLE_MESSAGE_CONTENT_INTENT`
+  - Required for DM / @mention message chat
+- If either is `true` in `.env` but not enabled in the Discord portal, Discord will reject the bot connection with `Used disallowed intents`
+
+OmegaBot still always requests its non-privileged core intents in code:
+
+- `Guilds`
+- `GuildMessages`
+- `GuildMessageReactions`
+- `DirectMessages`
+
+Those do not require privileged-intent toggles in the Developer Portal.

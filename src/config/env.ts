@@ -20,6 +20,16 @@ function envInt(name: string, defaultValue: number): number {
   return n;
 }
 
+function envFlag(name: string, defaultValue: boolean): boolean {
+  const raw = process.env[name];
+  if (!raw) return defaultValue;
+
+  const normalized = raw.trim().toLowerCase();
+  if (["1", "true", "yes", "on"].includes(normalized)) return true;
+  if (["0", "false", "no", "off"].includes(normalized)) return false;
+  return defaultValue;
+}
+
 type SummaryMode = "local" | "llm";
 
 const summaryMode = (process.env.SUMMARY_MODE ?? "local") as SummaryMode;
@@ -91,6 +101,11 @@ function getNotionConfigState(): {
 }
 
 const notionConfig = getNotionConfigState();
+const guildMembersIntentEnabled = envFlag("DISCORD_ENABLE_GUILD_MEMBERS_INTENT", false);
+const messageContentIntentEnabled = envFlag(
+  "DISCORD_ENABLE_MESSAGE_CONTENT_INTENT",
+  false,
+);
 
 export const env = {
   /* ---------------------------------------------------------------- */
@@ -103,6 +118,8 @@ export const env = {
   guildId: process.env.DISCORD_GUILD_ID ?? null,
 
   discordAutoRoleId: process.env.DISCORD_AUTO_ROLE_ID ?? null,
+  guildMembersIntentEnabled,
+  messageContentIntentEnabled,
 
   /**
    * Discord user IDs allowed to use /admin moderation (timeout, kick, ban).

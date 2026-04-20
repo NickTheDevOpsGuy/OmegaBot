@@ -40,12 +40,52 @@ For full functionality, especially **admin/moderation commands**, the bot role n
 
 ## Gateway Intents
 
-Enable in **Developer Portal → Bot → Privileged Gateway Intents**:
+OmegaBot always requests these standard gateway intents:
+
+- `Guilds`
+  - Required for slash commands, guild context, channel lookups, and most bot operation
+- `GuildMessages`
+  - Required for message-based features in servers, including message event handling
+- `GuildMessageReactions`
+  - Required for reaction-driven features like starboard
+- `DirectMessages`
+  - Required for DM handling
+
+These do **not** need a special toggle in the Discord Developer Portal.
+
+Enable these in **Developer Portal → Bot → Privileged Gateway Intents** only when you need the matching feature:
 
 - **Server Members Intent** (required for auto-role, welcome, etc.)
 - **Message Content Intent** (required only if you want message-based chat: DM the bot or @mention it to get an LLM reply; uses `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`)
 
-Your code requests these intents when enabled.
+OmegaBot only requests these when the matching `.env` flags are enabled:
+
+```env
+DISCORD_ENABLE_GUILD_MEMBERS_INTENT=true
+DISCORD_ENABLE_MESSAGE_CONTENT_INTENT=true
+```
+
+If either flag is `true`, the same intent must also be enabled in the Discord Developer Portal.
+
+### Feature → Intent Mapping
+
+- Slash commands, config, admin, info, FAQ, GitHub, Notion, web-linked commands
+  - `Guilds`
+- Starboard / reaction-based message features
+  - `GuildMessageReactions`
+- DM support
+  - `DirectMessages`
+- DM / @mention chat message handling
+  - `GuildMessages` and `DirectMessages`
+  - `Message Content Intent` also required if you want the bot to read message text
+- Welcome flow / auto-role on member join
+  - `GuildMembers`
+
+If you are unsure, the safest setup is:
+
+- Always allow the default non-privileged intents the bot requests
+- Turn on `Server Members Intent` only if you use welcome / auto-role
+- Turn on `Message Content Intent` only if you use DM or @mention chat
 
 ---
 

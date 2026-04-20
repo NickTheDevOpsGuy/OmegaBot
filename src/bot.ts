@@ -22,15 +22,41 @@ import { normalizeError } from "./utils/errors.js";
 import { logger } from "./utils/logger.js";
 import { createReminderScheduler } from "./services/stores/reminders/index.js";
 
+const requestedIntents: GatewayIntentBits[] = [
+  GatewayIntentBits.Guilds,
+  GatewayIntentBits.GuildMessageReactions,
+  GatewayIntentBits.GuildMessages,
+  GatewayIntentBits.DirectMessages,
+];
+
+if (env.guildMembersIntentEnabled) {
+  requestedIntents.push(GatewayIntentBits.GuildMembers);
+}
+
+if (env.messageContentIntentEnabled) {
+  requestedIntents.push(GatewayIntentBits.MessageContent);
+}
+
+function requestedPrivilegedIntentNames(): string[] {
+  const names: string[] = [];
+  if (env.guildMembersIntentEnabled) names.push("Server Members Intent");
+  if (env.messageContentIntentEnabled) names.push("Message Content Intent");
+  return names;
+}
+
+function logDisallowedIntentGuidance(err: Error): void {
+  logger.fatal(
+    {
+      err,
+      requestedPrivilegedIntents: requestedPrivilegedIntentNames(),
+      hint: "Enable the same privileged intents in Discord Developer Portal -> Bot, or disable them in .env with DISCORD_ENABLE_GUILD_MEMBERS_INTENT=false and/or DISCORD_ENABLE_MESSAGE_CONTENT_INTENT=false.",
+    },
+    "[startup] Discord rejected privileged intents",
+  );
+}
+
 const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMembers,
-    GatewayIntentBits.GuildMessageReactions,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.DirectMessages,
-    GatewayIntentBits.MessageContent,
-  ],
+  intents: requestedIntents,
   partials: [Partials.Message, Partials.Reaction, Partials.User, Partials.Channel],
 }) as CommandClient;
 
@@ -66,6 +92,15 @@ if (!process.env.BACKUP_KEEP?.trim()) {
   );
 }
 
+logger.info(
+  {
+    guildMembersIntentEnabled: env.guildMembersIntentEnabled,
+    messageContentIntentEnabled: env.messageContentIntentEnabled,
+    requestedPrivilegedIntents: requestedPrivilegedIntentNames(),
+  },
+  "[startup] discord intents configuration",
+);
+
 // Catch unhandled promise rejections (e.g. from collectors or async handlers)
 process.on("unhandledRejection", (reason, promise) => {
   const err = normalizeError(reason);
@@ -88,6 +123,9 @@ process.on("unhandledRejection", (reason, promise) => {
 });
 
 process.on("uncaughtException", (err) => {
+  if (err.message.includes("Used disallowed intents")) {
+    logDisallowedIntentGuidance(err);
+  }
   logger.fatal({ err }, "[uncaughtException] process crash");
   process.exit(1);
 });
@@ -100,19 +138,25 @@ client.on("interactionCreate", async (interaction) => {
   await handleInteraction(interaction, client);
 });
 
-client.on("guildMemberAdd", async (member) => {
-  logger.info(
-    {
-      guildId: member.guild.id,
-      userId: member.user.id,
-      username: member.user.username,
-    },
-    "guildMemberAdd event fired",
-  );
+if (env.guildMembersIntentEnabled) {
+  client.on("guildMemberAdd", async (member) => {
+    logger.info(
+      {
+        guildId: member.guild.id,
+        userId: member.user.id,
+        username: member.user.username,
+      },
+      "guildMemberAdd event fired",
+    );
 
-  await handleAutoRole(member);
-  await onGuildMemberAdd(member);
-});
+    await handleAutoRole(member);
+    await onGuildMemberAdd(member);
+  });
+} else {
+  logger.info(
+    "[startup] guildMemberAdd handlers disabled; enable DISCORD_ENABLE_GUILD_MEMBERS_INTENT=true if you want welcome/auto-role flows",
+  );
+}
 
 const githubPrPollingEnabled = env.githubPrPollingEnabled;
 const githubAssigneePollingEnabled = env.githubAssigneePollingEnabled;
@@ -123,8 +167,14 @@ client.once("clientReady", () => {
   // Setup starboard reaction listeners
   setupStarboardListeners(client);
 
-  // Chat via message: DM or @mention the bot (uses OPENAI_API_KEY / ANTHROPIC_API_KEY)
-  setupChatMessageHandler(client);
+  if (env.messageContentIntentEnabled) {
+    // Chat via message: DM or @mention the bot (uses OPENAI_API_KEY / ANTHROPIC_API_KEY)
+    setupChatMessageHandler(client);
+  } else {
+    logger.info(
+      "[startup] message-content chat disabled; enable DISCORD_ENABLE_MESSAGE_CONTENT_INTENT=true if you want DM/@mention chat",
+    );
+  }
 
   logger.info(
     {
@@ -226,7 +276,11 @@ process.on("SIGTERM", () => void shutdown("SIGTERM"));
 try {
   await client.login(env.token);
 } catch (err) {
-  logger.error({ err }, "[startup] Discord login failed");
+  const normalized = normalizeError(err);
+  if (normalized.message.includes("Used disallowed intents")) {
+    logDisallowedIntentGuidance(normalized);
+  }
+  logger.error({ err: normalized }, "[startup] Discord login failed");
   throw err;
 }
 
