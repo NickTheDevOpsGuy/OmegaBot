@@ -1,7 +1,13 @@
 import {
+  ActionRowBuilder,
   MessageFlags,
+  ModalBuilder,
   SlashCommandBuilder,
+  TextInputBuilder,
+  TextInputStyle,
+  type AutocompleteInteraction,
   type ChatInputCommandInteraction,
+  type ModalSubmitInteraction,
 } from "discord.js";
 import { env } from "../../../config/env.js";
 import { getContextLogger } from "../../../services/core/logging/requestContext.js";
@@ -11,13 +17,22 @@ import {
   createNotionClient,
   createNotionPage,
   getNotionDatabaseStatus,
+  type NotionTemplatePropertyInput,
   searchNotionPages,
 } from "../../../services/integrations/notion/notionWiki.js";
+import {
+  getNotionAddTemplate,
+  hasNotionAddTemplate,
+  listNotionAddTemplates,
+  type NotionAddTemplate,
+} from "../../../services/integrations/notion/notionTemplates.js";
 
 export const meta = {
   group: "integration",
   adminOnly: false,
 };
+
+const NOTION_ADD_MODAL_TIMEOUT_MS = 120_000;
 
 export const data = new SlashCommandBuilder()
   .setName("notion")
@@ -84,6 +99,25 @@ export const data = new SlashCommandBuilder()
           .setRequired(false),
       ),
   )
+  .addSubcommand((sub) =>
+    sub
+      .setName("add")
+      .setDescription("Guided Notion page prompt with optional template fields")
+      .addStringOption((opt) =>
+        opt
+          .setName("template")
+          .setDescription("Template key (for example: basic, feature)")
+          .setRequired(false)
+          .setMaxLength(40)
+          .setAutocomplete(true),
+      )
+      .addBooleanOption((opt) =>
+        opt
+          .setName("private")
+          .setDescription("Only show the result to you")
+          .setRequired(false),
+      ),
+  )
   .setDMPermission(false);
 
 function parseTags(raw: string | null): string[] {
@@ -124,10 +158,208 @@ function formatNotionFailureMessage(err: unknown): string {
   ].join("\n");
 }
 
+function listTemplateKeys(): string {
+  const names = listNotionAddTemplates().map((template) => template.key);
+  return names.length > 0 ? names.join(", ") : "basic";
+}
+
+function templatePromptPreview(template: NotionAddTemplate): string | null {
+  if (template.fields.length === 0) return null;
+  return template.fields.map((field) => `${field.label} -> ${field.property}`).join("; ");
+}
+
+function buildNotionAddModal(
+  customId: string,
+  template: NotionAddTemplate,
+): ModalBuilder {
+  const modal = new ModalBuilder()
+    .setCustomId(customId)
+    .setTitle(`Notion Add: ${template.label}`);
+
+  modal.addComponents(
+    new ActionRowBuilder<TextInputBuilder>().addComponents(
+      new TextInputBuilder()
+        .setCustomId("title")
+        .setLabel("Page title")
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true)
+        .setMaxLength(200),
+    ),
+  );
+
+  modal.addComponents(
+    new ActionRowBuilder<TextInputBuilder>().addComponents(
+      new TextInputBuilder()
+        .setCustomId("content")
+        .setLabel("Opening paragraph (optional)")
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(false)
+        .setMaxLength(1800),
+    ),
+  );
+
+  modal.addComponents(
+    new ActionRowBuilder<TextInputBuilder>().addComponents(
+      new TextInputBuilder()
+        .setCustomId("tags")
+        .setLabel("Tags (optional, comma-separated)")
+        .setStyle(TextInputStyle.Short)
+        .setRequired(false)
+        .setMaxLength(200),
+    ),
+  );
+
+  for (const field of template.fields) {
+    const input = new TextInputBuilder()
+      .setCustomId(`template:${field.id}`)
+      .setLabel(field.label)
+      .setStyle(TextInputStyle.Short)
+      .setRequired(field.required)
+      .setMaxLength(400);
+    if (field.placeholder) input.setPlaceholder(field.placeholder);
+
+    modal.addComponents(new ActionRowBuilder<TextInputBuilder>().addComponents(input));
+  }
+
+  return modal;
+}
+
+function getTemplatePropertyInputs(
+  modalSubmit: ModalSubmitInteraction,
+  template: NotionAddTemplate,
+): NotionTemplatePropertyInput[] {
+  const collected: NotionTemplatePropertyInput[] = [];
+  for (const field of template.fields) {
+    const value = modalSubmit.fields.getTextInputValue(`template:${field.id}`).trim();
+    if (!value) continue;
+    collected.push({
+      property: field.property,
+      type: field.type,
+      value,
+    });
+  }
+  return collected;
+}
+
+async function executeNotionAdd(
+  interaction: ChatInputCommandInteraction,
+  ephemeral: boolean,
+): Promise<void> {
+  const log = getContextLogger();
+  if (!env.notionEnabled) {
+    await interaction.reply({
+      content: notionConfigMessage(),
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
+  if (!canUseBotAdmin(interaction)) {
+    await interaction.reply({
+      content: noPermissionMessage(),
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
+  const requestedTemplate = interaction.options.getString("template");
+  if (requestedTemplate && !hasNotionAddTemplate(requestedTemplate)) {
+    await interaction.reply({
+      content: `Unknown template \`${requestedTemplate}\`. Available templates: ${listTemplateKeys()}`,
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
+  const template = getNotionAddTemplate(requestedTemplate);
+  const modalCustomId = `notion-add:${interaction.id}`;
+  const modal = buildNotionAddModal(modalCustomId, template);
+  await interaction.showModal(modal);
+
+  let modalSubmit: ModalSubmitInteraction;
+  try {
+    modalSubmit = await interaction.awaitModalSubmit({
+      time: NOTION_ADD_MODAL_TIMEOUT_MS,
+      filter: (candidate) =>
+        candidate.customId === modalCustomId && candidate.user.id === interaction.user.id,
+    });
+  } catch {
+    return;
+  }
+
+  await modalSubmit.deferReply(ephemeral ? { flags: MessageFlags.Ephemeral } : undefined);
+
+  try {
+    const { token, databaseId } = env.requireNotionConfig();
+    const client = createNotionClient(token);
+    const title = modalSubmit.fields.getTextInputValue("title").trim();
+    const content = modalSubmit.fields.getTextInputValue("content").trim();
+    const tags = parseTags(modalSubmit.fields.getTextInputValue("tags"));
+    const templateProperties = getTemplatePropertyInputs(modalSubmit, template);
+
+    const page = await createNotionPage({
+      client,
+      databaseId,
+      title,
+      content: content || null,
+      tags,
+      templateProperties,
+    });
+
+    await sendAdminAuditLog(
+      interaction,
+      [
+        "📘 **Notion page created (guided)**",
+        `Actor: <@${interaction.user.id}>`,
+        `Guild: ${interaction.guildId ?? "dm"}`,
+        `Template: ${template.key}`,
+        `Title: **${page.title}**`,
+        `Tags: ${tags.length > 0 ? tags.join(", ") : "(none)"}`,
+        `Template fields: ${templateProperties.length}`,
+        page.url,
+      ].join("\n"),
+    );
+
+    await modalSubmit.editReply(
+      [
+        `✅ Created Notion page **${page.title}**`,
+        `Template: \`${template.key}\`${template.description ? ` - ${template.description}` : ""}`,
+        templatePromptPreview(template)
+          ? `Mapped fields: ${templatePromptPreview(template)}`
+          : null,
+        tags.length > 0 ? `Tags: ${tags.join(", ")}` : null,
+        page.url,
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    );
+
+    log.info(
+      {
+        subcommand: "add",
+        pageId: page.id,
+        title,
+        template: template.key,
+        tagCount: tags.length,
+        templatePropertyCount: templateProperties.length,
+      },
+      "[notion] created page via guided add flow",
+    );
+  } catch (err) {
+    log.error({ err, subcommand: "add" }, "[notion] guided add flow threw");
+    await modalSubmit.editReply(formatNotionFailureMessage(err));
+  }
+}
+
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const sub = interaction.options.getSubcommand(true);
   const ephemeral = interaction.options.getBoolean("private") ?? true;
   const log = getContextLogger();
+
+  if (sub === "add") {
+    await executeNotionAdd(interaction, ephemeral);
+    return;
+  }
 
   await interaction.deferReply(ephemeral ? { flags: MessageFlags.Ephemeral } : undefined);
 
@@ -296,4 +528,31 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     );
     await interaction.editReply(formatNotionFailureMessage(err));
   }
+}
+
+export async function autocomplete(interaction: AutocompleteInteraction): Promise<void> {
+  const sub = interaction.options.getSubcommand(false);
+  const focused = interaction.options.getFocused(true);
+  if (sub !== "add" || focused.name !== "template") {
+    await interaction.respond([]);
+    return;
+  }
+
+  const needle = String(focused.value).trim().toLowerCase();
+  const templates = listNotionAddTemplates();
+  const choices = templates
+    .filter((template) => {
+      if (!needle) return true;
+      return (
+        template.key.toLowerCase().includes(needle) ||
+        template.label.toLowerCase().includes(needle)
+      );
+    })
+    .slice(0, 25)
+    .map((template) => ({
+      name: `${template.key} - ${template.label}`.slice(0, 100),
+      value: template.key,
+    }));
+
+  await interaction.respond(choices);
 }

@@ -25,6 +25,14 @@ type NotionPagePropertyValue =
   | {
       multi_select: Array<{ name: string }>;
       type?: "multi_select";
+    }
+  | {
+      number: number | null;
+      type?: "number";
+    }
+  | {
+      checkbox: boolean;
+      type?: "checkbox";
     };
 type NotionParagraphBlockRequest = {
   object: "block";
@@ -81,6 +89,12 @@ export type NotionDatabaseStatus = {
   dataSourceId: string;
   titleProperty: string;
   tagProperty: { name: string; type: "multi_select" | "select" | "rich_text" } | null;
+};
+
+export type NotionTemplatePropertyInput = {
+  property: string;
+  type: "rich_text" | "select" | "multi_select" | "number" | "checkbox";
+  value: string;
 };
 
 function isRecord(value: unknown): value is UnknownRecord {
@@ -357,6 +371,14 @@ function scoreSearchMatch(query: string, text: string): number {
   return 50;
 }
 
+function parseBooleanInput(value: string): boolean | null {
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) return null;
+  if (["true", "yes", "y", "1", "on"].includes(normalized)) return true;
+  if (["false", "no", "n", "0", "off"].includes(normalized)) return false;
+  return null;
+}
+
 export async function searchNotionPages(args: {
   client: NotionClient;
   databaseId: string;
@@ -459,6 +481,7 @@ export async function createNotionPage(args: {
   title: string;
   content?: string | null;
   tags?: string[];
+  templateProperties?: NotionTemplatePropertyInput[];
 }): Promise<{ id: string; title: string; url: string }> {
   const log = getContextLogger();
   const title = args.title.trim();
@@ -499,6 +522,58 @@ export async function createNotionPage(args: {
         ],
       };
     }
+  }
+
+  const templateProperties = (args.templateProperties ?? [])
+    .map((item) => ({
+      property: item.property.trim(),
+      type: item.type,
+      value: item.value.trim(),
+    }))
+    .filter((item) => item.property.length > 0 && item.value.length > 0);
+
+  for (const item of templateProperties) {
+    if (item.property === status.titleProperty) continue;
+
+    if (item.type === "select") {
+      properties[item.property] = { select: { name: item.value.slice(0, 100) } };
+      continue;
+    }
+
+    if (item.type === "multi_select") {
+      const values = item.value
+        .split(",")
+        .map((entry) => entry.trim())
+        .filter(Boolean)
+        .slice(0, 10)
+        .map((name) => ({ name: name.slice(0, 100) }));
+      if (values.length > 0) properties[item.property] = { multi_select: values };
+      continue;
+    }
+
+    if (item.type === "number") {
+      const value = Number(item.value);
+      if (Number.isNaN(value)) {
+        throw new Error(`Template field "${item.property}" expects a number.`);
+      }
+      properties[item.property] = { number: value };
+      continue;
+    }
+
+    if (item.type === "checkbox") {
+      const value = parseBooleanInput(item.value);
+      if (value === null) {
+        throw new Error(
+          `Template field "${item.property}" expects yes/no (or true/false).`,
+        );
+      }
+      properties[item.property] = { checkbox: value };
+      continue;
+    }
+
+    properties[item.property] = {
+      rich_text: [{ type: "text", text: { content: item.value.slice(0, 1800) } }],
+    };
   }
 
   const content = args.content?.trim() ?? "";
@@ -564,6 +639,7 @@ export async function createNotionPage(args: {
       title,
       hasContent: content.length > 0,
       tagCount: cleanedTags.length,
+      templatePropertyCount: templateProperties.length,
     },
     "[notion] created page",
   );

@@ -260,6 +260,7 @@ Notes:
 | `/notion search`      | Search the configured Notion wiki database                   |
 | `/notion status`      | (Admin) Validate config and show detected Notion DB schema   |
 | `/notion create-page` | (Admin) Create a page in the configured Notion wiki database |
+| `/notion add`         | (Admin) Guided modal flow with optional template prompts     |
 
 ---
 

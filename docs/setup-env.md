@@ -209,7 +209,7 @@ BOT_ADMIN_AUDIT_CHANNEL_ID=333333333333333333
 
 - `BOT_ADMIN_ROLE_IDS`
   - comma-separated role IDs for broader documentation/knowledge-base admin access
-  - applies to actions like `/faq add`, `/faq remove`, `/notion status`, and `/notion create-page`
+  - applies to actions like `/faq add`, `/faq remove`, `/notion status`, `/notion create-page`, and `/notion add`
 - `BOT_ADMIN_AUDIT_CHANNEL_ID`
   - optional audit channel for lightweight admin/audit messages
 
@@ -233,6 +233,7 @@ Notion-related commands enabled by this setup:
 - `/notion search`
 - `/notion status`
 - `/notion create-page`
+- `/notion add`
 
 Use [Notion Wiki Setup](setup-notion.md) for the full workflow, including the critical "share the database with the integration" step.
 

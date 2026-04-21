@@ -4,7 +4,7 @@ This guide connects OmegaBot to a Notion database so:
 
 - Discord users can search wiki content with `/wiki` and `/notion search`
 - bot admins can validate the setup with `/notion status`
-- bot admins can create new pages with `/notion create-page`
+- bot admins can create new pages with `/notion create-page` or the guided `/notion add`
 
 In this doc, "database" means the Notion database that holds your wiki pages. OmegaBot does not search an entire workspace. It talks to one specific database that you choose in `.env`.
 
@@ -123,6 +123,7 @@ BOT_ADMIN_AUDIT_CHANNEL_ID=333333333333333333
 
 - `/notion status`
 - `/notion create-page`
+- `/notion add`
 - Notion setup/search failures
 - FAQ admin changes
 
@@ -152,8 +153,17 @@ Admin-facing:
 
 - `/notion status`
 - `/notion create-page title:<title> content:<optional paragraph> tags:<comma,separated>`
+- `/notion add template:<optional key>`
 
 `/notion status` is the best first test after setup. Run it before trying search so you can confirm the database is reachable and the schema was detected.
+
+`/notion add` opens a guided Discord modal and can apply template-backed field mappings (configured in `src/config/notionAddTemplates.ts`) so admins can fill extra structured properties without manually building payloads.
+
+Template notes:
+
+- `template` supports autocomplete in Discord (type part of the key/label).
+- `basic` is the default template.
+- You can customize/add templates in `src/config/notionAddTemplates.ts`.
 
 Curated server docs:
 
@@ -210,6 +220,6 @@ The bot only auto-populates a tags field when the database exposes a property na
 There are two different access checks involved:
 
 - Notion access: the database must be shared with the integration
-- Discord admin access: your Discord account must match one of the allowed admin paths above for `/notion status` and `/notion create-page`
+- Discord admin access: your Discord account must match one of the allowed admin paths above for `/notion status`, `/notion create-page`, and `/notion add`
 
 Regular users can still use `/notion search` if the Notion integration itself is configured correctly.

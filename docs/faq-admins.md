@@ -57,6 +57,7 @@ These actions use the broader bot-admin rules:
 - `/faq remove`
 - `/notion status`
 - `/notion create-page`
+- `/notion add`
 
 Access is granted by any of:
 
