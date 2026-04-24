@@ -82,10 +82,7 @@ export async function sendAdminAuditLog(
       content: truncateAuditContent(content),
     });
   } catch (err) {
-    if (
-      err instanceof DiscordAPIError &&
-      (err.code === 50001 || err.code === 50013)
-    ) {
+    if (err instanceof DiscordAPIError && (err.code === 50001 || err.code === 50013)) {
       getContextLogger().warn(
         { channelId, code: err.code, status: err.status },
         "[admin-audit] skipping audit log because channel access is missing",
