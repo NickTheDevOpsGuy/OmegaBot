@@ -34,7 +34,9 @@ export const meta = {
 
 const NOTION_ADD_MODAL_TIMEOUT_MS = 120_000;
 
-function responseOptions(ephemeral: boolean): { flags: MessageFlags.Ephemeral } | undefined {
+function responseOptions(
+  ephemeral: boolean,
+): { flags: MessageFlags.Ephemeral } | undefined {
   return ephemeral ? { flags: MessageFlags.Ephemeral } : undefined;
 }
 

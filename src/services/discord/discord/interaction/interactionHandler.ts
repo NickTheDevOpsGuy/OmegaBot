@@ -138,8 +138,7 @@ function getInteractionDiagnostics(interaction: Interaction): Record<string, unk
     acknowledged:
       "deferred" in interaction || "replied" in interaction
         ? {
-            deferred:
-              "deferred" in interaction ? Boolean(interaction.deferred) : null,
+            deferred: "deferred" in interaction ? Boolean(interaction.deferred) : null,
             replied: "replied" in interaction ? Boolean(interaction.replied) : null,
           }
         : null,
