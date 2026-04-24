@@ -1,6 +1,7 @@
 // src/services/discord/interaction/interactionHandler.ts
 // Routes interactions to commands, autocomplete, modals, buttons, context menus; wraps execute in try/catch.
 import { performance } from "node:perf_hooks";
+import { hostname } from "node:os";
 import type {
   ChatInputCommandInteraction,
   Interaction,
@@ -32,6 +33,7 @@ import {
 } from "../handlers/contextMenus.js";
 
 const DISCORD_EPOCH_MS = 1_420_070_400_000;
+const PROCESS_HOSTNAME = hostname();
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return !!v && typeof v === "object";
@@ -127,6 +129,23 @@ function getInteractionAgeMs(interaction: Interaction): number | null {
   return createdAtMs === null ? null : Date.now() - createdAtMs;
 }
 
+function getInteractionDiagnostics(interaction: Interaction): Record<string, unknown> {
+  return {
+    applicationId:
+      "applicationId" in interaction && typeof interaction.applicationId === "string"
+        ? interaction.applicationId
+        : null,
+    acknowledged:
+      "deferred" in interaction || "replied" in interaction
+        ? {
+            deferred:
+              "deferred" in interaction ? Boolean(interaction.deferred) : null,
+            replied: "replied" in interaction ? Boolean(interaction.replied) : null,
+          }
+        : null,
+  };
+}
+
 async function safeRepliableReply(
   interaction: RepliableInteraction,
   content: string,
@@ -195,6 +214,9 @@ export async function handleInteraction(
       clientReady: typeof client.isReady === "function" ? client.isReady() : null,
       registrySize: client.commands?.size ?? null,
       interactionAgeMs: getInteractionAgeMs(interaction),
+      pid: process.pid,
+      hostname: PROCESS_HOSTNAME,
+      ...getInteractionDiagnostics(interaction),
     },
   });
 
@@ -245,6 +267,9 @@ async function handleChatCommand(
     clientReady: typeof client.isReady === "function" ? client.isReady() : null,
     registrySize: client.commands?.size ?? null,
     interactionAgeMs: getInteractionAgeMs(interaction),
+    pid: process.pid,
+    hostname: PROCESS_HOSTNAME,
+    ...getInteractionDiagnostics(interaction),
   };
 
   log.debug(meta, "[interaction] received");

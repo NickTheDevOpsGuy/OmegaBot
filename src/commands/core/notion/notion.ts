@@ -34,6 +34,10 @@ export const meta = {
 
 const NOTION_ADD_MODAL_TIMEOUT_MS = 120_000;
 
+function responseOptions(ephemeral: boolean): { flags: MessageFlags.Ephemeral } | undefined {
+  return ephemeral ? { flags: MessageFlags.Ephemeral } : undefined;
+}
+
 export const data = new SlashCommandBuilder()
   .setName("notion")
   .setDescription("Notion wiki helpers")
@@ -287,7 +291,7 @@ async function executeNotionAdd(
     return;
   }
 
-  await modalSubmit.deferReply({ ephemeral });
+  await modalSubmit.deferReply(responseOptions(ephemeral));
 
   try {
     const { token, databaseId } = env.requireNotionConfig();
@@ -361,7 +365,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     return;
   }
 
-  await interaction.deferReply({ ephemeral });
+  await interaction.deferReply(responseOptions(ephemeral));
 
   try {
     if (!env.notionEnabled) {
