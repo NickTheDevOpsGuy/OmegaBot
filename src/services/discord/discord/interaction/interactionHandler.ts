@@ -31,6 +31,8 @@ import {
   handleMessageContextMenu,
 } from "../handlers/contextMenus.js";
 
+const DISCORD_EPOCH_MS = 1_420_070_400_000;
+
 function isRecord(v: unknown): v is Record<string, unknown> {
   return !!v && typeof v === "object";
 }
@@ -112,6 +114,19 @@ function getInteractionChannelId(interaction: Interaction): string | undefined {
     : undefined;
 }
 
+function getInteractionCreatedAtMs(interactionId: string): number | null {
+  try {
+    return Number((BigInt(interactionId) >> 22n) + BigInt(DISCORD_EPOCH_MS));
+  } catch {
+    return null;
+  }
+}
+
+function getInteractionAgeMs(interaction: Interaction): number | null {
+  const createdAtMs = getInteractionCreatedAtMs(interaction.id);
+  return createdAtMs === null ? null : Date.now() - createdAtMs;
+}
+
 async function safeRepliableReply(
   interaction: RepliableInteraction,
   content: string,
@@ -179,6 +194,7 @@ export async function handleInteraction(
           : null,
       clientReady: typeof client.isReady === "function" ? client.isReady() : null,
       registrySize: client.commands?.size ?? null,
+      interactionAgeMs: getInteractionAgeMs(interaction),
     },
   });
 
@@ -228,6 +244,7 @@ async function handleChatCommand(
     channelId: interaction.channelId ?? null,
     clientReady: typeof client.isReady === "function" ? client.isReady() : null,
     registrySize: client.commands?.size ?? null,
+    interactionAgeMs: getInteractionAgeMs(interaction),
   };
 
   log.debug(meta, "[interaction] received");

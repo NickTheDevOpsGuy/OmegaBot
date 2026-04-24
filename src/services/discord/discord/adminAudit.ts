@@ -1,10 +1,16 @@
-import type { ChatInputCommandInteraction, TextBasedChannel } from "discord.js";
+import {
+  DiscordAPIError,
+  PermissionsBitField,
+  type ChatInputCommandInteraction,
+  type TextBasedChannel,
+} from "discord.js";
 import { env } from "../../../config/env.js";
 import { getContextLogger } from "../../core/logging/requestContext.js";
 
 const MAX_AUDIT_MESSAGE_LENGTH = 1800;
 
 type SendableChannel = TextBasedChannel & {
+  permissionsFor?: (memberOrUser: string) => PermissionsBitField | null;
   send: (payload: { content: string }) => Promise<unknown>;
 };
 
@@ -28,6 +34,18 @@ function truncateAuditContent(content: string): string {
   return content.slice(0, MAX_AUDIT_MESSAGE_LENGTH - 3) + "...";
 }
 
+function canSendAuditMessage(channel: SendableChannel, clientUserId: string): boolean {
+  if (typeof channel.permissionsFor !== "function") return true;
+
+  const permissions = channel.permissionsFor(clientUserId);
+  if (!permissions) return false;
+
+  return (
+    permissions.has(PermissionsBitField.Flags.ViewChannel) &&
+    permissions.has(PermissionsBitField.Flags.SendMessages)
+  );
+}
+
 export async function sendAdminAuditLog(
   interaction: ChatInputCommandInteraction,
   content: string,
@@ -46,10 +64,35 @@ export async function sendAdminAuditLog(
       return;
     }
 
+    const clientUserId = interaction.client.user?.id;
+    if (!clientUserId) {
+      getContextLogger().warn({ channelId }, "[admin-audit] client user unavailable");
+      return;
+    }
+
+    if (!canSendAuditMessage(channel, clientUserId)) {
+      getContextLogger().warn(
+        { channelId, clientUserId },
+        "[admin-audit] bot lacks permission to send to audit channel",
+      );
+      return;
+    }
+
     await channel.send({
       content: truncateAuditContent(content),
     });
   } catch (err) {
+    if (
+      err instanceof DiscordAPIError &&
+      (err.code === 50001 || err.code === 50013)
+    ) {
+      getContextLogger().warn(
+        { channelId, code: err.code, status: err.status },
+        "[admin-audit] skipping audit log because channel access is missing",
+      );
+      return;
+    }
+
     getContextLogger().warn({ err, channelId }, "[admin-audit] send threw");
   }
 }

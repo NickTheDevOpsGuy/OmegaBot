@@ -287,7 +287,7 @@ async function executeNotionAdd(
     return;
   }
 
-  await modalSubmit.deferReply(ephemeral ? { flags: MessageFlags.Ephemeral } : undefined);
+  await modalSubmit.deferReply({ ephemeral });
 
   try {
     const { token, databaseId } = env.requireNotionConfig();
@@ -306,20 +306,6 @@ async function executeNotionAdd(
       templateProperties,
     });
 
-    await sendAdminAuditLog(
-      interaction,
-      [
-        "📘 **Notion page created (guided)**",
-        `Actor: <@${interaction.user.id}>`,
-        `Guild: ${interaction.guildId ?? "dm"}`,
-        `Template: ${template.key}`,
-        `Title: **${page.title}**`,
-        `Tags: ${tags.length > 0 ? tags.join(", ") : "(none)"}`,
-        `Template fields: ${templateProperties.length}`,
-        page.url,
-      ].join("\n"),
-    );
-
     await modalSubmit.editReply(
       [
         `✅ Created Notion page **${page.title}**`,
@@ -332,6 +318,20 @@ async function executeNotionAdd(
       ]
         .filter(Boolean)
         .join("\n"),
+    );
+
+    await sendAdminAuditLog(
+      interaction,
+      [
+        "📘 **Notion page created (guided)**",
+        `Actor: <@${interaction.user.id}>`,
+        `Guild: ${interaction.guildId ?? "dm"}`,
+        `Template: ${template.key}`,
+        `Title: **${page.title}**`,
+        `Tags: ${tags.length > 0 ? tags.join(", ") : "(none)"}`,
+        `Template fields: ${templateProperties.length}`,
+        page.url,
+      ].join("\n"),
     );
 
     log.info(
@@ -361,7 +361,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     return;
   }
 
-  await interaction.deferReply(ephemeral ? { flags: MessageFlags.Ephemeral } : undefined);
+  await interaction.deferReply({ ephemeral });
 
   try {
     if (!env.notionEnabled) {
@@ -419,6 +419,23 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
     if (sub === "status") {
       const status = await getNotionDatabaseStatus({ client, databaseId });
+      const lines = [
+        "**Notion integration status**",
+        `Configured: ${env.notionEnabled ? "yes" : "no"}`,
+        `Database title: ${status.databaseTitle ?? "(untitled database)"}`,
+        `Title property: ${status.titleProperty}`,
+        `Tag property: ${
+          status.tagProperty
+            ? `${status.tagProperty.name} (${status.tagProperty.type})`
+            : "not detected"
+        }`,
+        `Admin user allowlist entries: ${env.adminUserIds.size}`,
+        `Admin role allowlist entries: ${env.botAdminRoleIds.size}`,
+        `Audit channel: ${env.botAdminAuditChannelId ?? "(unset)"}`,
+      ];
+
+      await interaction.editReply(lines.join("\n"));
+
       await sendAdminAuditLog(
         interaction,
         [
@@ -443,22 +460,6 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         },
         "[notion] viewed integration status",
       );
-      const lines = [
-        "**Notion integration status**",
-        `Configured: ${env.notionEnabled ? "yes" : "no"}`,
-        `Database title: ${status.databaseTitle ?? "(untitled database)"}`,
-        `Title property: ${status.titleProperty}`,
-        `Tag property: ${
-          status.tagProperty
-            ? `${status.tagProperty.name} (${status.tagProperty.type})`
-            : "not detected"
-        }`,
-        `Admin user allowlist entries: ${env.adminUserIds.size}`,
-        `Admin role allowlist entries: ${env.botAdminRoleIds.size}`,
-        `Audit channel: ${env.botAdminAuditChannelId ?? "(unset)"}`,
-      ];
-
-      await interaction.editReply(lines.join("\n"));
       return;
     }
 
@@ -474,18 +475,6 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         content,
         tags,
       });
-
-      await sendAdminAuditLog(
-        interaction,
-        [
-          "📘 **Notion page created**",
-          `Actor: ${interaction.user?.id ? `<@${interaction.user.id}>` : "unknown"}`,
-          `Guild: ${interaction.guildId ?? "dm"}`,
-          `Title: **${page.title}**`,
-          `Tags: ${tags.length > 0 ? tags.join(", ") : "(none)"}`,
-          page.url,
-        ].join("\n"),
-      );
 
       log.info(
         {
@@ -506,6 +495,18 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         ]
           .filter(Boolean)
           .join("\n"),
+      );
+
+      await sendAdminAuditLog(
+        interaction,
+        [
+          "📘 **Notion page created**",
+          `Actor: ${interaction.user?.id ? `<@${interaction.user.id}>` : "unknown"}`,
+          `Guild: ${interaction.guildId ?? "dm"}`,
+          `Title: **${page.title}**`,
+          `Tags: ${tags.length > 0 ? tags.join(", ") : "(none)"}`,
+          page.url,
+        ].join("\n"),
       );
       return;
     }
