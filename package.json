@@ -28,7 +28,7 @@
     "api": "npm run build && node dist/web/server.js"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.71.2",
+    "@anthropic-ai/sdk": "^0.91.1",
     "@notionhq/client": "^5.19.0",
     "better-sqlite3": "^12.6.2",
     "discord.js": "^14.25.1",
