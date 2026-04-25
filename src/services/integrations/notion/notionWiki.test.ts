@@ -177,6 +177,58 @@ describe("searchNotionPages", () => {
     expect(results[0]?.title).toBe("Video Editing Guide");
     expect(results[0]?.tags).toEqual(["Capcut", "Editing"]);
   });
+
+  it("does not include unrelated recent pages when they do not match the query", async () => {
+    const client = createBaseClient({
+      queryResults: [
+        {
+          object: "page",
+          id: "page-1",
+          url: "https://www.notion.so/page-1",
+          last_edited_time: "2026-04-25T12:33:00.000Z",
+          properties: {
+            Name: {
+              title: [{ plain_text: "Capcut" }],
+            },
+            Summary: {
+              rich_text: [{ plain_text: "Capcut is a video-editing application." }],
+            },
+          },
+        },
+        {
+          object: "page",
+          id: "page-2",
+          url: "https://www.notion.so/page-2",
+          last_edited_time: "2026-04-25T12:32:00.000Z",
+          properties: {
+            Name: {
+              title: [{ plain_text: "Carrd" }],
+            },
+          },
+        },
+        {
+          object: "page",
+          id: "page-3",
+          url: "https://www.notion.so/page-3",
+          last_edited_time: "2026-04-25T12:31:00.000Z",
+          properties: {
+            Name: {
+              title: [{ plain_text: "Linktree" }],
+            },
+          },
+        },
+      ],
+    });
+
+    const results = await searchNotionPages({
+      client: client as never,
+      databaseId: "db_unrelated",
+      query: "Capcut",
+    });
+
+    expect(results).toHaveLength(1);
+    expect(results[0]?.title).toBe("Capcut");
+  });
 });
 
 describe("notion autocomplete helpers", () => {

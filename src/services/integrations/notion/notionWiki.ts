@@ -592,7 +592,7 @@ function scoreSearchMatch(query: string, text: string): number {
   if (needle === hay) return 100;
   if (hay.startsWith(needle)) return 85;
   if (hay.includes(needle)) return 70;
-  return 50;
+  return 0;
 }
 
 function compareNotionPagesByRecent(a: IndexedNotionPage, b: IndexedNotionPage): number {
