@@ -241,9 +241,9 @@ FAQ entries also act as the curated server-doc layer for `/wiki`.
 
 Search curated FAQ docs and, when configured, the Notion wiki too.
 
-| Command | Description                                                           |
-| ------- | --------------------------------------------------------------------- |
-| `/wiki` | Search FAQ entries and optional Notion pages by keyword or page title |
+| Command | Description                                                            |
+| ------- | ---------------------------------------------------------------------- |
+| `/wiki` | Search FAQ entries and optional Notion pages by keyword, tag, or title |
 
 Notes:
 
@@ -255,12 +255,17 @@ Notes:
 
 ## `/notion` - Notion Wiki Integration
 
-| Command               | Description                                                  |
-| --------------------- | ------------------------------------------------------------ |
-| `/notion search`      | Search the configured Notion wiki database                   |
-| `/notion status`      | (Admin) Validate config and show detected Notion DB schema   |
-| `/notion create-page` | (Admin) Create a page in the configured Notion wiki database |
-| `/notion add`         | (Admin) Guided modal flow with optional template prompts     |
+| Command               | Description                                                     |
+| --------------------- | --------------------------------------------------------------- |
+| `/notion search`      | Search the configured Notion wiki database                      |
+| `/notion open`        | Open a page by title (title autocomplete)                       |
+| `/notion browse`      | Browse pages by tag (tag autocomplete)                          |
+| `/notion recent`      | Show recently edited pages                                      |
+| `/notion random`      | Open a random page, optionally filtered by tag                  |
+| `/notion status`      | (Admin) Validate config and show detected Notion DB schema      |
+| `/notion templates`   | (Admin) List guided Notion add templates and mapped fields      |
+| `/notion create-page` | (Admin) Create a page in the configured Notion wiki database    |
+| `/notion add`         | (Admin) Guided modal flow with optional template-backed prompts |
 
 ---
 

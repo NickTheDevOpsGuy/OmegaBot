@@ -53,7 +53,7 @@ export async function handleStarboardReaction(
 
     if (message.author?.bot) return;
 
-    const config = getGuildConfig(message.guildId);
+    const config = await getGuildConfig(message.guildId);
     if (!config.starboardChannelId) return;
 
     const threshold = config.starboardThreshold ?? 3;

@@ -11,11 +11,14 @@ import { runPvP, runResume } from "./pvp.js";
 import { listActiveForUser } from "../../../../../../services/games/sessionManager.js";
 
 export async function run(interaction: ChatInputCommandInteraction): Promise<void> {
-  const showStatsFlag = interaction.options.getBoolean("stats") ?? false;
-  const continueFlag = interaction.options.getBoolean("continue") ?? false;
+  const legacyShowStats = interaction.options.getBoolean("stats") ?? false;
+  const legacyContinue = interaction.options.getBoolean("continue") ?? false;
+  const view =
+    interaction.options.getString("view") ??
+    (legacyShowStats ? "stats" : legacyContinue ? "continue" : "play");
   const opponent = interaction.options.getUser("user");
 
-  if (showStatsFlag) {
+  if (view === "stats") {
     const stats = getStats(interaction.user.id);
     const total = stats.wins + stats.losses + stats.ties;
 
@@ -30,7 +33,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
     return;
   }
 
-  if (continueFlag) {
+  if (view === "continue") {
     const sessions = listActiveForUser(interaction.user.id, "connect4");
     if (sessions.length === 0) {
       await interaction.editReply(
@@ -80,7 +83,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
 
   if (!p2) {
     await interaction.editReply(
-      "Connect 4 needs an opponent. Use: `/fun connect4 user:@someone` — or use **continue: true** to resume an active game.",
+      "Connect 4 needs an opponent. Use `/fun connect4 user:@someone`, or use `/fun connect4 view:continue` to resume an active game.",
     );
     return;
   }

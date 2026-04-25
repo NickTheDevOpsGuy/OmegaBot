@@ -2,6 +2,11 @@
 // Utility subcommands for /fun (poll, weather, chat, etc.). Grouped to stay under Discord's 25-option limit.
 
 import type { SlashCommandSubcommandGroupBuilder } from "discord.js";
+import {
+  addLimitOption,
+  addPrivateOption,
+  addUserOption,
+} from "../../../../services/discord/discord/slashOptions.js";
 
 export function buildUtilityGroup(
   group: SlashCommandSubcommandGroupBuilder,
@@ -38,7 +43,7 @@ export function buildUtilityGroup(
             .setDescription("Temperature unit")
             .addChoices({ name: "F", value: "f" }, { name: "C", value: "c" }),
         )
-        .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+        .addBooleanOption(addPrivateOption),
     )
     .addSubcommand((s) =>
       s
@@ -53,7 +58,7 @@ export function buildUtilityGroup(
             .setDescription("Temperature unit")
             .addChoices({ name: "F", value: "f" }, { name: "C", value: "c" }),
         )
-        .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+        .addBooleanOption(addPrivateOption),
     )
     .addSubcommand((s) =>
       s
@@ -90,7 +95,7 @@ export function buildUtilityGroup(
             ),
         )
         .addBooleanOption((o) =>
-          o.setName("private").setDescription("Only show the reply to you"),
+          addPrivateOption(o, { description: "Only show the reply to you" }),
         ),
     )
     .addSubcommand((s) =>
@@ -98,18 +103,18 @@ export function buildUtilityGroup(
         .setName("roast")
         .setDescription("Get a playful AI roast (or roast a friend)")
         .addUserOption((o) =>
-          o.setName("user").setDescription("Who to roast (default: you)"),
+          addUserOption(o, { description: "Who to roast (default: you)" }),
         )
-        .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+        .addBooleanOption(addPrivateOption),
     )
     .addSubcommand((s) =>
       s
         .setName("compliment")
         .setDescription("Get a nice AI compliment (or compliment a friend)")
         .addUserOption((o) =>
-          o.setName("user").setDescription("Who to compliment (default: you)"),
+          addUserOption(o, { description: "Who to compliment (default: you)" }),
         )
-        .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+        .addBooleanOption(addPrivateOption),
     )
     .addSubcommand((s) =>
       s
@@ -136,14 +141,14 @@ export function buildUtilityGroup(
             ),
         )
         .addUserOption((o) =>
-          o.setName("user").setDescription("User for single-user view"),
+          addUserOption(o, { description: "User for single-user view" }),
         )
         .addIntegerOption((o) =>
-          o
-            .setName("limit")
-            .setDescription("Rows to show")
-            .setMinValue(1)
-            .setMaxValue(25),
+          addLimitOption(o, {
+            description: "Rows to show",
+            min: 1,
+            max: 25,
+          }),
         ),
     )
     .addSubcommand((s) =>

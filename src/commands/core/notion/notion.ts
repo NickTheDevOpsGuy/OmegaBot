@@ -14,9 +14,21 @@ import { getContextLogger } from "../../../services/core/logging/requestContext.
 import { canUseBotAdmin } from "../../../services/core/permissions/botAdmin.js";
 import { sendAdminAuditLog } from "../../../services/discord/discord/adminAudit.js";
 import {
+  addLimitOption,
+  addPrivateOption,
+  addQueryOption,
+} from "../../../services/discord/discord/slashOptions.js";
+import {
   createNotionClient,
   createNotionPage,
+  getNotionPageTitleSuggestions,
+  getNotionPagesByTag,
+  getNotionRecentPages,
+  getNotionTagSuggestions,
   getNotionDatabaseStatus,
+  getRandomNotionPage,
+  openNotionPage,
+  type NotionPageSummary,
   type NotionTemplatePropertyInput,
   searchNotionPages,
 } from "../../../services/integrations/notion/notionWiki.js";
@@ -33,11 +45,52 @@ export const meta = {
 };
 
 const NOTION_ADD_MODAL_TIMEOUT_MS = 120_000;
+const NOTION_ADD_MODAL_MAX_TEMPLATE_FIELDS = 2;
 
 function responseOptions(
   ephemeral: boolean,
 ): { flags: MessageFlags.Ephemeral } | undefined {
   return ephemeral ? { flags: MessageFlags.Ephemeral } : undefined;
+}
+
+function formatMaskedLink(label: string, url: string | null): string {
+  if (!url) return label;
+  const safeLabel = label
+    .replace(/\\/g, "\\\\")
+    .replace(/\[/g, "\\[")
+    .replace(/\]/g, "\\]");
+  return `[${safeLabel}](${url})`;
+}
+
+function formatLastEditedTime(value: string | null): string | null {
+  if (!value) return null;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.valueOf())) return null;
+  return parsed.toLocaleString("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+}
+
+function formatTagLine(tags: string[]): string | null {
+  return tags.length > 0 ? `Tags: ${tags.join(", ")}` : null;
+}
+
+function formatNotionPageBlock(page: NotionPageSummary): string {
+  return [
+    formatMaskedLink(page.title, page.url),
+    formatLastEditedTime(page.lastEditedTime)
+      ? `Updated: ${formatLastEditedTime(page.lastEditedTime)}`
+      : null,
+    formatTagLine(page.tags),
+    page.excerpt ?? "No page preview available yet.",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+function formatTemplateChoiceLabel(template: NotionAddTemplate): string {
+  return `${template.key} - ${template.label}`.slice(0, 100);
 }
 
 export const data = new SlashCommandBuilder()
@@ -48,30 +101,96 @@ export const data = new SlashCommandBuilder()
       .setName("search")
       .setDescription("Search the configured Notion wiki")
       .addStringOption((opt) =>
-        opt
-          .setName("query")
-          .setDescription("Page title or keyword")
-          .setRequired(true)
-          .setMinLength(2)
-          .setMaxLength(100),
+        addQueryOption(opt, {
+          description: "Page title, tag, or keyword",
+          required: true,
+          minLength: 2,
+          maxLength: 100,
+          autocomplete: true,
+        }),
       )
-      .addBooleanOption((opt) =>
+      .addIntegerOption((opt) =>
+        addLimitOption(opt, {
+          description: "How many pages to show",
+          min: 1,
+          max: 10,
+        }),
+      )
+      .addBooleanOption(addPrivateOption),
+  )
+  .addSubcommand((sub) =>
+    sub
+      .setName("open")
+      .setDescription("Open a Notion page by title")
+      .addStringOption((opt) =>
         opt
-          .setName("private")
-          .setDescription("Only show the result to you")
-          .setRequired(false),
-      ),
+          .setName("title")
+          .setDescription("Page title")
+          .setRequired(true)
+          .setMaxLength(200)
+          .setAutocomplete(true),
+      )
+      .addBooleanOption(addPrivateOption),
+  )
+  .addSubcommand((sub) =>
+    sub
+      .setName("browse")
+      .setDescription("Browse Notion pages by tag")
+      .addStringOption((opt) =>
+        opt
+          .setName("tag")
+          .setDescription("Tag to browse")
+          .setRequired(true)
+          .setMaxLength(100)
+          .setAutocomplete(true),
+      )
+      .addIntegerOption((opt) =>
+        addLimitOption(opt, {
+          description: "How many tagged pages to show",
+          min: 1,
+          max: 10,
+        }),
+      )
+      .addBooleanOption(addPrivateOption),
+  )
+  .addSubcommand((sub) =>
+    sub
+      .setName("recent")
+      .setDescription("Show recently edited Notion pages")
+      .addIntegerOption((opt) =>
+        addLimitOption(opt, {
+          description: "How many recent pages to show",
+          min: 1,
+          max: 10,
+        }),
+      )
+      .addBooleanOption(addPrivateOption),
+  )
+  .addSubcommand((sub) =>
+    sub
+      .setName("random")
+      .setDescription("Open a random Notion page")
+      .addStringOption((opt) =>
+        opt
+          .setName("tag")
+          .setDescription("Optional tag filter")
+          .setRequired(false)
+          .setMaxLength(100)
+          .setAutocomplete(true),
+      )
+      .addBooleanOption(addPrivateOption),
   )
   .addSubcommand((sub) =>
     sub
       .setName("status")
       .setDescription("Show Notion integration status")
-      .addBooleanOption((opt) =>
-        opt
-          .setName("private")
-          .setDescription("Only show the result to you")
-          .setRequired(false),
-      ),
+      .addBooleanOption(addPrivateOption),
+  )
+  .addSubcommand((sub) =>
+    sub
+      .setName("templates")
+      .setDescription("List guided Notion add templates")
+      .addBooleanOption(addPrivateOption),
   )
   .addSubcommand((sub) =>
     sub
@@ -98,12 +217,7 @@ export const data = new SlashCommandBuilder()
           .setRequired(false)
           .setMaxLength(200),
       )
-      .addBooleanOption((opt) =>
-        opt
-          .setName("private")
-          .setDescription("Only show the result to you")
-          .setRequired(false),
-      ),
+      .addBooleanOption(addPrivateOption),
   )
   .addSubcommand((sub) =>
     sub
@@ -117,12 +231,7 @@ export const data = new SlashCommandBuilder()
           .setMaxLength(40)
           .setAutocomplete(true),
       )
-      .addBooleanOption((opt) =>
-        opt
-          .setName("private")
-          .setDescription("Only show the result to you")
-          .setRequired(false),
-      ),
+      .addBooleanOption(addPrivateOption),
   )
   .setDMPermission(false);
 
@@ -178,6 +287,12 @@ function buildNotionAddModal(
   customId: string,
   template: NotionAddTemplate,
 ): ModalBuilder {
+  if (template.fields.length > NOTION_ADD_MODAL_MAX_TEMPLATE_FIELDS) {
+    throw new Error(
+      `Notion template "${template.key}" has too many fields for a Discord modal. Limit: ${NOTION_ADD_MODAL_MAX_TEMPLATE_FIELDS} extra fields.`,
+    );
+  }
+
   const modal = new ModalBuilder()
     .setCustomId(customId)
     .setTitle(`Notion Add: ${template.label}`);
@@ -314,13 +429,12 @@ async function executeNotionAdd(
 
     await modalSubmit.editReply(
       [
-        `✅ Created Notion page **${page.title}**`,
+        `✅ Created Notion page ${formatMaskedLink(page.title, page.url)}`,
         `Template: \`${template.key}\`${template.description ? ` - ${template.description}` : ""}`,
         templatePromptPreview(template)
           ? `Mapped fields: ${templatePromptPreview(template)}`
           : null,
         tags.length > 0 ? `Tags: ${tags.join(", ")}` : null,
-        page.url,
       ]
         .filter(Boolean)
         .join("\n"),
@@ -384,21 +498,22 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
     if (sub === "search") {
       const query = interaction.options.getString("query", true).trim();
+      const limit = interaction.options.getInteger("limit") ?? 5;
       const results = await searchNotionPages({
         client,
         databaseId,
         query,
-        limit: 5,
+        limit,
       });
 
       log.info(
-        { subcommand: sub, query, resultCount: results.length, ephemeral },
+        { subcommand: sub, query, limit, resultCount: results.length, ephemeral },
         "[notion] search completed",
       );
 
       if (results.length === 0) {
         await interaction.editReply(
-          `No Notion pages found for **${query}**. Try a shorter page title or keyword.`,
+          `No Notion pages found for **${query}**. Try a page title, a tag, or use \`/notion recent\`.`,
         );
         return;
       }
@@ -407,13 +522,121 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         [
           `**Notion results for "${query}"**`,
           "",
-          ...results.map((result) =>
-            [result.title, result.excerpt ?? "No page preview available yet.", result.url]
-              .filter(Boolean)
-              .join("\n"),
-          ),
+          ...results.map(formatNotionPageBlock),
         ].join("\n\n"),
       );
+      return;
+    }
+
+    if (sub === "open") {
+      const title = interaction.options.getString("title", true).trim();
+      const page = await openNotionPage({
+        client,
+        databaseId,
+        title,
+      });
+
+      log.info(
+        { subcommand: sub, title, found: Boolean(page), ephemeral },
+        "[notion] open completed",
+      );
+
+      if (!page) {
+        await interaction.editReply(
+          `I couldn't find a Notion page matching **${title}**. Try \`/notion search\` or autocomplete from \`/notion open\`.`,
+        );
+        return;
+      }
+
+      await interaction.editReply(
+        ["**Notion page**", "", formatNotionPageBlock(page)].join("\n"),
+      );
+      return;
+    }
+
+    if (sub === "browse") {
+      const tag = interaction.options.getString("tag", true).trim();
+      const limit = interaction.options.getInteger("limit") ?? 5;
+      const results = await getNotionPagesByTag({
+        client,
+        databaseId,
+        tag,
+        limit,
+      });
+
+      log.info(
+        { subcommand: sub, tag, limit, resultCount: results.length, ephemeral },
+        "[notion] browse completed",
+      );
+
+      if (results.length === 0) {
+        await interaction.editReply(
+          `No Notion pages were found for tag **${tag}**. Try another tag or use \`/notion recent\`.`,
+        );
+        return;
+      }
+
+      await interaction.editReply(
+        [
+          `**Notion pages tagged "${tag}"**`,
+          "",
+          ...results.map(formatNotionPageBlock),
+        ].join("\n\n"),
+      );
+      return;
+    }
+
+    if (sub === "recent") {
+      const limit = interaction.options.getInteger("limit") ?? 5;
+      const results = await getNotionRecentPages({
+        client,
+        databaseId,
+        limit,
+      });
+
+      log.info(
+        { subcommand: sub, limit, resultCount: results.length, ephemeral },
+        "[notion] recent completed",
+      );
+
+      if (results.length === 0) {
+        await interaction.editReply("No recent Notion pages were found yet.");
+        return;
+      }
+
+      await interaction.editReply(
+        ["**Recent Notion pages**", "", ...results.map(formatNotionPageBlock)].join(
+          "\n\n",
+        ),
+      );
+      return;
+    }
+
+    if (sub === "random") {
+      const tag = interaction.options.getString("tag");
+      const page = await getRandomNotionPage({
+        client,
+        databaseId,
+        tag,
+      });
+
+      log.info(
+        { subcommand: sub, tag, found: Boolean(page), ephemeral },
+        "[notion] random completed",
+      );
+
+      if (!page) {
+        const detail = tag
+          ? `I couldn't find any Notion pages tagged **${tag}**.`
+          : "I couldn't find any Notion pages to pick from yet.";
+        await interaction.editReply(detail);
+        return;
+      }
+
+      const heading = tag
+        ? `**Random Notion page from "${tag}"**`
+        : "**Random Notion page**";
+      await interaction.editReply([heading, "", formatNotionPageBlock(page)].join("\n"));
       return;
     }
 
@@ -435,6 +658,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
             ? `${status.tagProperty.name} (${status.tagProperty.type})`
             : "not detected"
         }`,
+        `Guided templates: ${listNotionAddTemplates().length}`,
         `Admin user allowlist entries: ${env.adminUserIds.size}`,
         `Admin role allowlist entries: ${env.botAdminRoleIds.size}`,
         `Audit channel: ${env.botAdminAuditChannelId ?? "(unset)"}`,
@@ -469,6 +693,37 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       return;
     }
 
+    if (sub === "templates") {
+      const templates = listNotionAddTemplates();
+      const lines = [
+        "**Notion add templates**",
+        "",
+        ...templates.flatMap((template) => [
+          `**${template.key}** - ${template.label}`,
+          template.description ?? "No description set.",
+          template.fields.length > 0
+            ? `Fields: ${template.fields
+                .map((field) => `${field.label} -> ${field.property} (${field.type})`)
+                .join("; ")}`
+            : "Fields: none",
+          "",
+        ]),
+      ];
+
+      await interaction.editReply(lines.join("\n").trim());
+
+      await sendAdminAuditLog(
+        interaction,
+        [
+          "📘 **Notion templates viewed**",
+          `Actor: ${interaction.user?.id ? `<@${interaction.user.id}>` : "unknown"}`,
+          `Guild: ${interaction.guildId ?? "dm"}`,
+          `Template count: ${templates.length}`,
+        ].join("\n"),
+      );
+      return;
+    }
+
     if (sub === "create-page") {
       const title = interaction.options.getString("title", true).trim();
       const content = interaction.options.getString("content");
@@ -495,8 +750,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
       await interaction.editReply(
         [
-          `✅ Created Notion page **${page.title}**`,
-          page.url,
+          `✅ Created Notion page ${formatMaskedLink(page.title, page.url)}`,
           tags.length > 0 ? `Tags: ${tags.join(", ")}` : null,
         ]
           .filter(Boolean)
@@ -520,11 +774,14 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     log.warn({ subcommand: sub }, "[notion] command received unknown subcommand");
     await interaction.editReply("That Notion subcommand was not recognized.");
   } catch (err) {
+    const isUserLookupAction = ["search", "open", "browse", "recent", "random"].includes(
+      sub,
+    );
     log.error({ err, subcommand: sub }, "[notion] command threw");
     await sendAdminAuditLog(
       interaction,
       [
-        sub === "search"
+        isUserLookupAction
           ? "📘 **Notion search failed**"
           : "📘 **Notion admin action failed**",
         `Actor: ${interaction.user?.id ? `<@${interaction.user.id}>` : "unknown"}`,
@@ -540,26 +797,77 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 export async function autocomplete(interaction: AutocompleteInteraction): Promise<void> {
   const sub = interaction.options.getSubcommand(false);
   const focused = interaction.options.getFocused(true);
-  if (sub !== "add" || focused.name !== "template") {
+  const needle = String(focused.value).trim();
+
+  if (sub === "add" && focused.name === "template") {
+    const choices = listNotionAddTemplates()
+      .filter((template) => {
+        if (!needle) return true;
+        const normalized = needle.toLowerCase();
+        return (
+          template.key.toLowerCase().includes(normalized) ||
+          template.label.toLowerCase().includes(normalized)
+        );
+      })
+      .slice(0, 25)
+      .map((template) => ({
+        name: formatTemplateChoiceLabel(template),
+        value: template.key,
+      }));
+
+    await interaction.respond(choices);
+    return;
+  }
+
+  if (!env.notionEnabled) {
     await interaction.respond([]);
     return;
   }
 
-  const needle = String(focused.value).trim().toLowerCase();
-  const templates = listNotionAddTemplates();
-  const choices = templates
-    .filter((template) => {
-      if (!needle) return true;
-      return (
-        template.key.toLowerCase().includes(needle) ||
-        template.label.toLowerCase().includes(needle)
-      );
-    })
-    .slice(0, 25)
-    .map((template) => ({
-      name: `${template.key} - ${template.label}`.slice(0, 100),
-      value: template.key,
-    }));
+  try {
+    const { token, databaseId } = env.requireNotionConfig();
+    const client = createNotionClient(token);
 
-  await interaction.respond(choices);
+    if (
+      (sub === "search" && focused.name === "query") ||
+      (sub === "open" && focused.name === "title")
+    ) {
+      const titles = await getNotionPageTitleSuggestions({
+        client,
+        databaseId,
+        query: needle,
+        limit: 25,
+      });
+      await interaction.respond(
+        titles.map((title) => ({
+          name: title.slice(0, 100),
+          value: title,
+        })),
+      );
+      return;
+    }
+
+    if ((sub === "browse" || sub === "random") && focused.name === "tag") {
+      const tags = await getNotionTagSuggestions({
+        client,
+        databaseId,
+        query: needle,
+        limit: 25,
+      });
+      await interaction.respond(
+        tags.map((tag) => ({
+          name: tag.slice(0, 100),
+          value: tag,
+        })),
+      );
+      return;
+    }
+  } catch (err) {
+    getContextLogger().warn(
+      { err, sub, focused: focused.name },
+      "[notion] autocomplete threw",
+    );
+  }
+
+  await interaction.respond([]);
 }

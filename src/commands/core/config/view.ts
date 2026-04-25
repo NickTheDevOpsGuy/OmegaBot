@@ -8,7 +8,7 @@ import { listModeratorRoles } from "./moderatorRole.js";
 export async function handleView(
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
-  const config = getGuildConfig(interaction.guildId!);
+  const config = await getGuildConfig(interaction.guildId!);
 
   const embed = new EmbedBuilder().setTitle("⚙️ Server Configuration").setColor(0x5865f2);
 

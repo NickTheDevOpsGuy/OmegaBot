@@ -50,7 +50,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
 
     const tags = parseTags(tagsRaw);
 
-    const entry = create({
+    const entry = await create({
       key,
       title,
       body,

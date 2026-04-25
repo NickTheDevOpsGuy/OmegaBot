@@ -25,7 +25,7 @@ function isSendableChannel(
  * 3) First available text-based channel
  */
 async function resolveWelcomeChannel(guild: Guild): Promise<TextBasedChannel | null> {
-  const cfg = getGuildConfig(guild.id);
+  const cfg = await getGuildConfig(guild.id);
 
   // Allow per-guild disabling of welcome messages.
   if (!cfg.welcomeEnabled) return null;

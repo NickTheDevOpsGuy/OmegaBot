@@ -13,37 +13,37 @@ import { create } from "./services.js";
 
 describe("FAQ service", () => {
   describe("create", () => {
-    it("throws when key is empty or whitespace", () => {
-      expect(() =>
+    it("throws when key is empty or whitespace", async () => {
+      await expect(
         create({
           key: "   ",
           title: "Test title",
           body: "Test body",
           actor: "test-user",
         }),
-      ).toThrow();
+      ).rejects.toThrow();
     });
 
-    it("throws when title is empty or whitespace", () => {
-      expect(() =>
+    it("throws when title is empty or whitespace", async () => {
+      await expect(
         create({
           key: "valid-key",
           title: "   ",
           body: "Test body",
           actor: "test-user",
         }),
-      ).toThrow();
+      ).rejects.toThrow();
     });
 
-    it("throws when body is empty or whitespace", () => {
-      expect(() =>
+    it("throws when body is empty or whitespace", async () => {
+      await expect(
         create({
           key: "valid-key",
           title: "Test title",
           body: "   ",
           actor: "test-user",
         }),
-      ).toThrow();
+      ).rejects.toThrow();
     });
   });
 });

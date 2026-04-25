@@ -44,7 +44,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
     if (!rawKey) return;
 
     // Lookup entry (service normalizes internally too, but we keep messaging clean here)
-    const existing = getByKey(rawKey);
+    const existing = await getByKey(rawKey);
     if (!existing) {
       await interaction.editReply(`❌ FAQ not found: **${rawKey}**`);
       return;
@@ -92,7 +92,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
     }
 
     // Confirm path
-    const ok = remove(existing.key);
+    const ok = await remove(existing.key);
 
     await clicked.update({
       content: ok

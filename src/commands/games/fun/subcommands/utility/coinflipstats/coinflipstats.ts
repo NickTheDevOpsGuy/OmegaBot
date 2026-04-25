@@ -2,7 +2,7 @@
 
 import type { ChatInputCommandInteraction } from "discord.js";
 import { getContextLogger } from "../../../../../../services/core/logging/requestContext.js";
-import { getCoinFlipStats } from "../../../coinflipStore.js";
+import { getCoinFlipLeaderboard, getCoinFlipStats } from "../../../coinflipStore.js";
 
 function pct(part: number, total: number): string {
   if (total <= 0) return "0%";
@@ -16,10 +16,36 @@ function emoji(result: "heads" | "tails"): string {
 export async function run(interaction: ChatInputCommandInteraction): Promise<void> {
   // Parent (fun.ts) owns deferReply(). We only editReply() here.
 
+  const legacyShowLeaderboard = interaction.options.getBoolean("leaderboard") ?? false;
+  const view =
+    interaction.options.getString("view") ??
+    (legacyShowLeaderboard ? "leaderboard" : "stats");
   const target = interaction.options.getUser("user") ?? interaction.user;
+  const limit = interaction.options.getInteger("limit") ?? 10;
 
   try {
-    const stats = getCoinFlipStats(target.id, 10);
+    if (view === "leaderboard") {
+      const leaders = getCoinFlipLeaderboard(limit);
+
+      if (leaders.length === 0) {
+        await interaction.editReply(
+          "🪙 **Coin Flip Leaderboard**\n\nNo coin flips recorded yet. Be the first with `/fun coinflip`.",
+        );
+        return;
+      }
+
+      const lines = ["🪙 **Coin Flip Leaderboard**", ""];
+      leaders.forEach((leader, index) => {
+        lines.push(
+          `${index + 1}. <@${leader.userId}> — ${leader.total} flips (${leader.heads} heads, ${leader.tails} tails)`,
+        );
+      });
+
+      await interaction.editReply(lines.join("\n"));
+      return;
+    }
+
+    const stats = getCoinFlipStats(target.id, limit);
 
     const lines: string[] = [];
     lines.push(`🪙 Coin Flip Stats for ${target.toString()}`);
@@ -39,7 +65,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
     await interaction.editReply(lines.join("\n"));
   } catch (err) {
     getContextLogger().error(
-      { err, userId: interaction.user.id, targetId: target.id },
+      { err, userId: interaction.user.id, targetId: target.id, view, limit },
       "[fun/coinflipstats] failed",
     );
     await interaction.editReply("Coin flip stats didn't load. Try again in a moment.");

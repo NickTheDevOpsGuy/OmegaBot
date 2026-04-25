@@ -9,12 +9,15 @@ const TOPICS: HelpTopic[] = [
   "games",
   "profile",
   "quotes",
+  "notion",
   "github",
   "status",
   "admin",
   "commands",
   "changelog",
   "summary",
+  "info",
+  "event",
 ];
 
 describe("buildHelpText", () => {
@@ -75,5 +78,17 @@ describe("buildHelpText", () => {
       topic: "commands",
     });
     expect(result).toContain("/ping");
+  });
+
+  it("notion topic mentions wiki search", () => {
+    const result = buildHelpText({
+      isAdmin: false,
+      commands: [],
+      topic: "notion",
+    });
+    expect(result).toContain("/wiki");
+    expect(result).toContain("/notion search");
+    expect(result).toContain("/notion open");
+    expect(result).toContain("/notion browse");
   });
 });

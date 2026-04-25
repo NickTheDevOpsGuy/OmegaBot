@@ -32,7 +32,7 @@ export type GameResultInput = {
   achievementUnlocked?: string;
   /** Milestone line (e.g. "🎉 Milestone: 5 slots wins!") */
   milestoneLine?: string;
-  /** Footer hint lines (e.g. "Try: /fun slots stats • /fun leaderboard") */
+  /** Footer hint lines (e.g. "Try: /fun slots view:stats • /fun utility leaderboard") */
   footerHints?: string[];
   /** Embed color (hex number). Defaults by outcome: win=green, loss=gray, draw=blue */
   color?: number;
@@ -101,7 +101,7 @@ export function buildGameResultEmbed(input: GameResultInput): EmbedBuilder {
 
   const footerParts = input.footerHints?.length
     ? input.footerHints
-    : ["Play again • /fun slots stats • /fun utility leaderboard"];
+    : ["Play again • /fun slots view:stats • /fun utility leaderboard"];
   embed.setFooter({ text: footerParts.join(" • ") });
 
   return embed;

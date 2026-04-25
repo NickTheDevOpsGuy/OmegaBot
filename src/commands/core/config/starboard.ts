@@ -24,7 +24,7 @@ export async function handleStarboard(
       return;
     }
 
-    setGuildConfig(interaction.guildId!, {
+    await setGuildConfig(interaction.guildId!, {
       starboardChannelId: channel.id,
       starboardThreshold: threshold,
     });
@@ -39,7 +39,7 @@ export async function handleStarboard(
       flags: MessageFlags.Ephemeral,
     });
   } else if (sub === "status") {
-    const config = getGuildConfig(interaction.guildId!);
+    const config = await getGuildConfig(interaction.guildId!);
 
     if (!config.starboardChannelId) {
       await interaction.reply({
@@ -55,7 +55,7 @@ export async function handleStarboard(
       flags: MessageFlags.Ephemeral,
     });
   } else if (sub === "clear") {
-    setGuildConfig(interaction.guildId!, {
+    await setGuildConfig(interaction.guildId!, {
       starboardChannelId: null,
       starboardThreshold: 3,
     });

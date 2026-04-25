@@ -29,10 +29,12 @@ import { handleChallenge } from "./challenge.js";
 import { showStats } from "./stats.js";
 
 export async function run(interaction: ChatInputCommandInteraction): Promise<void> {
-  const showStatsFlag = interaction.options.getBoolean("stats") ?? false;
+  const view =
+    interaction.options.getString("view") ??
+    ((interaction.options.getBoolean("stats") ?? false) ? "stats" : "play");
   const opponent = interaction.options.getUser("opponent");
 
-  if (showStatsFlag) {
+  if (view === "stats") {
     await showStats(interaction, opponent ?? undefined);
     return;
   }

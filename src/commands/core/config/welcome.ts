@@ -20,7 +20,7 @@ export async function handleWelcome(
       return;
     }
 
-    setGuildConfig(interaction.guildId!, {
+    await setGuildConfig(interaction.guildId!, {
       welcomeChannelId: channel.id,
       welcomeEnabled: true,
     });
@@ -35,7 +35,7 @@ export async function handleWelcome(
       flags: MessageFlags.Ephemeral,
     });
   } else if (sub === "clear") {
-    setGuildConfig(interaction.guildId!, {
+    await setGuildConfig(interaction.guildId!, {
       welcomeChannelId: null,
       welcomeEnabled: false,
     });

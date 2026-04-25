@@ -10,6 +10,10 @@
 import type { AutocompleteInteraction } from "discord.js";
 import { SlashCommandBuilder, type ChatInputCommandInteraction } from "discord.js";
 import { getContextLogger } from "../../../services/core/logging/requestContext.js";
+import {
+  addPrivateOption,
+  addUserOption,
+} from "../../../services/discord/discord/slashOptions.js";
 import { filterTimezones } from "./timezones.js";
 import { run as runView } from "./subcommands/view.js";
 import { run as runAfk } from "./subcommands/afk.js";
@@ -22,8 +26,8 @@ export const data = new SlashCommandBuilder()
     s
       .setName("view")
       .setDescription("View your or another user's profile")
-      .addUserOption((o) => o.setName("user").setDescription("User to view"))
-      .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+      .addUserOption((o) => addUserOption(o, { description: "User to view" }))
+      .addBooleanOption(addPrivateOption),
   )
   .addSubcommand((s) =>
     s
@@ -47,7 +51,7 @@ export const data = new SlashCommandBuilder()
           .setAutocomplete(true),
       )
       .addUserOption((o) =>
-        o.setName("user").setDescription("View another user's timezone"),
+        addUserOption(o, { description: "View another user's timezone" }),
       ),
   );
 

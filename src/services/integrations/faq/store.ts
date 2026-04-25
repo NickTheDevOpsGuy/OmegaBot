@@ -1,6 +1,6 @@
 // src/services/faq/store.ts
 
-import fs from "fs";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "path";
 import { z } from "zod";
 import { logger } from "../../../utils/logger.js";
@@ -45,15 +45,15 @@ const EMPTY_STORE: FaqStoreV1 = {
  * - Writes an empty store if the file does not exist
  * - Safe to call multiple times
  */
-export function ensureStoreFile(): void {
-  if (fs.existsSync(STORE_PATH)) {
+export async function ensureStoreFile(): Promise<void> {
+  try {
+    await readFile(STORE_PATH, "utf8");
     return;
+  } catch {
+    await mkdir(path.dirname(STORE_PATH), { recursive: true });
+    await writeFile(STORE_PATH, JSON.stringify(EMPTY_STORE, null, 2), "utf8");
+    logger.info("[faq] created empty FAQ store");
   }
-
-  fs.mkdirSync(path.dirname(STORE_PATH), { recursive: true });
-  fs.writeFileSync(STORE_PATH, JSON.stringify(EMPTY_STORE, null, 2), "utf8");
-
-  logger.info("[faq] created empty FAQ store");
 }
 
 /**
@@ -65,11 +65,11 @@ export function ensureStoreFile(): void {
  * - Validates basic schema shape
  * - Falls back to an empty store on error
  */
-export function loadStore(): FaqStoreV1 {
-  ensureStoreFile();
+export async function loadStore(): Promise<FaqStoreV1> {
+  await ensureStoreFile();
 
   try {
-    const raw = fs.readFileSync(STORE_PATH, "utf8");
+    const raw = await readFile(STORE_PATH, "utf8");
     const json = JSON.parse(raw) as unknown;
     const result = FaqStoreV1Schema.safeParse(json);
     if (result.success) return result.data;
@@ -89,6 +89,7 @@ export function loadStore(): FaqStoreV1 {
  *
  * Overwrites the entire store atomically.
  */
-export function saveStore(store: FaqStoreV1): void {
-  fs.writeFileSync(STORE_PATH, JSON.stringify(store, null, 2), "utf8");
+export async function saveStore(store: FaqStoreV1): Promise<void> {
+  await mkdir(path.dirname(STORE_PATH), { recursive: true });
+  await writeFile(STORE_PATH, JSON.stringify(store, null, 2), "utf8");
 }

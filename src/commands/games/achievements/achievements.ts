@@ -5,6 +5,10 @@
 
 import { SlashCommandBuilder, type ChatInputCommandInteraction } from "discord.js";
 import { getDb } from "../../../services/core/database/db.js";
+import {
+  addPrivateOption,
+  addUserOption,
+} from "../../../services/discord/discord/slashOptions.js";
 import { buildAchievementsEmbed } from "./embedBuilder.js";
 import { ACHIEVEMENTS, type Achievement } from "./definitions.js";
 
@@ -47,8 +51,10 @@ export function getNewlyUnlockedAchievementLine(
 export const data = new SlashCommandBuilder()
   .setName("achievements")
   .setDescription("View your achievements and progress")
-  .addUserOption((o) => o.setName("user").setDescription("User to view achievements for"))
-  .addBooleanOption((o) => o.setName("private").setDescription("Only show to you"));
+  .addUserOption((o) =>
+    addUserOption(o, { description: "User to view achievements for" }),
+  )
+  .addBooleanOption(addPrivateOption);
 
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const ephemeral = interaction.options.getBoolean("private") ?? true;

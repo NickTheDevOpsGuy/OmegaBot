@@ -48,14 +48,25 @@ type CreatePageParameters = {
 };
 type QueryDataSourceParameters = {
   data_source_id: string;
-  filter?: {
-    property: string;
-    title: {
-      contains: string;
-    };
-  };
+  filter?: UnknownRecord;
   page_size?: number;
+  sorts?: Array<
+    | {
+        property: string;
+        direction: "ascending" | "descending";
+      }
+    | {
+        timestamp: "created_time" | "last_edited_time";
+        direction: "ascending" | "descending";
+      }
+  >;
   result_type?: "page" | "data_source";
+  start_cursor?: string;
+};
+type ListBlockChildrenParameters = {
+  block_id: string;
+  page_size?: number;
+  start_cursor?: string;
 };
 type NotionClient = {
   databases: {
@@ -67,7 +78,7 @@ type NotionClient = {
   };
   blocks: {
     children: {
-      list(args: { block_id: string; page_size?: number }): Promise<unknown>;
+      list(args: ListBlockChildrenParameters): Promise<unknown>;
     };
   };
   pages: {
@@ -80,6 +91,16 @@ export type NotionSearchResult = {
   id: string;
   title: string;
   url: string;
+  excerpt: string | null;
+  lastEditedTime: string | null;
+  tags: string[];
+};
+
+export type NotionPageSummary = {
+  id: string;
+  title: string;
+  url: string;
+  tags: string[];
   excerpt: string | null;
   lastEditedTime: string | null;
 };
@@ -96,6 +117,35 @@ export type NotionTemplatePropertyInput = {
   type: "rich_text" | "select" | "multi_select" | "number" | "checkbox";
   value: string;
 };
+
+const NOTION_PREVIEW_BLOCK_LIMIT = 40;
+const NOTION_PREVIEW_CHILD_PAGE_SIZE = 20;
+const NOTION_PREVIEW_NESTED_DEPTH = 3;
+const NOTION_STATUS_CACHE_MS = 5 * 60_000;
+const NOTION_PAGE_INDEX_CACHE_MS = 60_000;
+const NOTION_PAGE_INDEX_LIMIT = 100;
+
+type IndexedNotionPage = {
+  id: string;
+  title: string;
+  url: string;
+  tags: string[];
+  summaryExcerpt: string | null;
+  lastEditedTime: string | null;
+};
+
+type CachedNotionStatus = {
+  expiresAt: number;
+  status: NotionDatabaseStatus;
+};
+
+type CachedNotionPageIndex = {
+  expiresAt: number;
+  pages: IndexedNotionPage[];
+};
+
+const notionStatusCache = new Map<string, CachedNotionStatus>();
+const notionPageIndexCache = new Map<string, CachedNotionPageIndex>();
 
 function isRecord(value: unknown): value is UnknownRecord {
   return !!value && typeof value === "object" && !Array.isArray(value);
@@ -245,6 +295,11 @@ async function getDatabaseStatus(
   databaseId: string,
 ): Promise<NotionDatabaseStatus> {
   const log = getContextLogger();
+  const cached = notionStatusCache.get(databaseId);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.status;
+  }
+
   let databaseResponse: unknown;
   try {
     databaseResponse = (await client.databases.retrieve({
@@ -334,6 +389,10 @@ async function getDatabaseStatus(
     },
     "[notion] resolved database status",
   );
+  notionStatusCache.set(databaseId, {
+    expiresAt: Date.now() + NOTION_STATUS_CACHE_MS,
+    status,
+  });
   return status;
 }
 
@@ -343,19 +402,184 @@ function getPageTitle(result: UnknownRecord, titleProperty: string): string {
   return readTitleParts(titleValue) || "Untitled page";
 }
 
+function getPageSummaryExcerpt(result: UnknownRecord): string | null {
+  const properties = readRecord(result["properties"]);
+  if (!properties) return null;
+
+  for (const [name, value] of Object.entries(properties)) {
+    if (!/summary|preview|excerpt|description/i.test(name)) continue;
+
+    const property = readRecord(value);
+    if (!property) continue;
+
+    const richText = readTitleParts(property["rich_text"]);
+    if (richText) return truncateNotionExcerpt(richText, 240);
+
+    const titleText = readTitleParts(property["title"]);
+    if (titleText) return truncateNotionExcerpt(titleText, 240);
+
+    const selectName = readString(readRecord(property["select"])?.["name"]);
+    if (selectName) return truncateNotionExcerpt(selectName, 240);
+  }
+
+  return null;
+}
+
+function getPageTags(
+  result: UnknownRecord,
+  tagProperty: NotionDatabaseStatus["tagProperty"],
+): string[] {
+  if (!tagProperty) return [];
+
+  const properties = readRecord(result["properties"]);
+  if (!properties) return [];
+
+  const property = readRecord(properties[tagProperty.name]);
+  if (!property) return [];
+
+  if (tagProperty.type === "multi_select") {
+    const values = Array.isArray(property["multi_select"])
+      ? (property["multi_select"] as unknown[])
+      : [];
+    return values
+      .map((entry) => readString(readRecord(entry)?.["name"]))
+      .filter((entry): entry is string => Boolean(entry));
+  }
+
+  if (tagProperty.type === "select") {
+    const value = readString(readRecord(property["select"])?.["name"]);
+    return value ? [value] : [];
+  }
+
+  const richText = readTitleParts(property["rich_text"]);
+  if (!richText) return [];
+
+  return richText
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter(Boolean);
+}
+
+function toIndexedNotionPage(
+  page: UnknownRecord,
+  status: NotionDatabaseStatus,
+): IndexedNotionPage {
+  return {
+    id: readString(page["id"]) ?? "",
+    title: getPageTitle(page, status.titleProperty),
+    url: readString(page["url"]) ?? "",
+    tags: getPageTags(page, status.tagProperty),
+    summaryExcerpt: getPageSummaryExcerpt(page),
+    lastEditedTime: readString(page["last_edited_time"]),
+  };
+}
+
+function dedupeNotionPages(pages: IndexedNotionPage[]): IndexedNotionPage[] {
+  const unique = new Map<string, IndexedNotionPage>();
+
+  for (const page of pages) {
+    if (!page.id) continue;
+    const existing = unique.get(page.id);
+    if (!existing) {
+      unique.set(page.id, page);
+      continue;
+    }
+
+    unique.set(page.id, {
+      ...existing,
+      ...page,
+      tags: page.tags.length > 0 ? page.tags : existing.tags,
+      summaryExcerpt: page.summaryExcerpt ?? existing.summaryExcerpt,
+      lastEditedTime: page.lastEditedTime ?? existing.lastEditedTime,
+      title: page.title || existing.title,
+      url: page.url || existing.url,
+    });
+  }
+
+  return [...unique.values()];
+}
+
+function getBlockId(block: unknown): string | null {
+  return readString(readRecord(block)?.["id"]);
+}
+
+function blockHasChildren(block: unknown): boolean {
+  return readRecord(block)?.["has_children"] === true;
+}
+
+async function listBlockChildren(
+  client: NotionClient,
+  blockId: string,
+  limit: number,
+): Promise<unknown[]> {
+  const blocks: unknown[] = [];
+  let cursor: string | undefined;
+
+  while (blocks.length < limit) {
+    const response = (await client.blocks.children.list({
+      block_id: blockId,
+      page_size: Math.min(NOTION_PREVIEW_CHILD_PAGE_SIZE, limit - blocks.length),
+      start_cursor: cursor,
+    })) as unknown;
+
+    const record = readRecord(response);
+    const pageBlocks = Array.isArray(record?.["results"])
+      ? ((record?.["results"] as unknown[]) ?? [])
+      : [];
+    blocks.push(...pageBlocks.slice(0, limit - blocks.length));
+
+    const hasMore = record?.["has_more"] === true;
+    const nextCursor = readString(record?.["next_cursor"]);
+    if (!hasMore || !nextCursor) break;
+    cursor = nextCursor;
+  }
+
+  return blocks;
+}
+
+async function collectPreviewBlocks(
+  client: NotionClient,
+  blockId: string,
+  limit: number,
+  nestedDepthRemaining: number,
+): Promise<unknown[]> {
+  const directBlocks = await listBlockChildren(client, blockId, limit);
+  const collected: unknown[] = [];
+
+  for (const block of directBlocks) {
+    if (collected.length >= limit) break;
+    collected.push(block);
+
+    if (!blockHasChildren(block) || nestedDepthRemaining <= 0) continue;
+
+    const childBlockId = getBlockId(block);
+    if (!childBlockId) continue;
+
+    const remaining = limit - collected.length;
+    if (remaining <= 0) break;
+
+    const nestedBlocks = await collectPreviewBlocks(
+      client,
+      childBlockId,
+      remaining,
+      nestedDepthRemaining - 1,
+    );
+    collected.push(...nestedBlocks.slice(0, remaining));
+  }
+
+  return collected;
+}
+
 async function getPageExcerpt(
   client: NotionClient,
   pageId: string,
 ): Promise<string | null> {
-  const response = (await client.blocks.children.list({
-    block_id: pageId,
-    page_size: 20,
-  })) as unknown;
-
-  const blocks = Array.isArray(readRecord(response)?.["results"])
-    ? ((readRecord(response)?.["results"] as unknown[]) ?? [])
-    : [];
-
+  const blocks = await collectPreviewBlocks(
+    client,
+    pageId,
+    NOTION_PREVIEW_BLOCK_LIMIT,
+    NOTION_PREVIEW_NESTED_DEPTH,
+  );
   const plainText = extractPlainTextFromNotionBlocks(blocks);
   if (!plainText) return null;
   return truncateNotionExcerpt(plainText, 240);
@@ -369,6 +593,131 @@ function scoreSearchMatch(query: string, text: string): number {
   if (hay.startsWith(needle)) return 85;
   if (hay.includes(needle)) return 70;
   return 50;
+}
+
+function compareNotionPagesByRecent(a: IndexedNotionPage, b: IndexedNotionPage): number {
+  const aTime = a.lastEditedTime ? Date.parse(a.lastEditedTime) : 0;
+  const bTime = b.lastEditedTime ? Date.parse(b.lastEditedTime) : 0;
+  return bTime - aTime || a.title.localeCompare(b.title);
+}
+
+function scoreNotionPage(query: string, page: IndexedNotionPage): number {
+  const titleScore = scoreSearchMatch(query, page.title);
+  const summaryScore = page.summaryExcerpt
+    ? scoreSearchMatch(query, page.summaryExcerpt)
+    : 0;
+  const tagScore = Math.max(
+    0,
+    ...page.tags.map((tag) => {
+      const score = scoreSearchMatch(query, tag);
+      return score > 0 ? score + 5 : 0;
+    }),
+  );
+
+  return Math.max(titleScore, summaryScore > 0 ? summaryScore - 10 : 0, tagScore);
+}
+
+async function queryNotionPages(args: {
+  client: NotionClient;
+  dataSourceId: string;
+  filter?: UnknownRecord;
+  limit: number;
+  sorts?: QueryDataSourceParameters["sorts"];
+}): Promise<UnknownRecord[]> {
+  const pages: UnknownRecord[] = [];
+  let cursor: string | undefined;
+
+  while (pages.length < args.limit) {
+    let response: unknown;
+    try {
+      response = (await args.client.dataSources.query({
+        data_source_id: args.dataSourceId,
+        filter: args.filter,
+        page_size: Math.min(args.limit - pages.length, 100),
+        result_type: "page",
+        sorts: args.sorts,
+        start_cursor: cursor,
+      })) as unknown;
+    } catch (err) {
+      const summary = summarizeNotionError(err);
+      throw new Error(summary.message);
+    }
+
+    const record = readRecord(response);
+    const chunk = Array.isArray(record?.["results"])
+      ? ((record?.["results"] as unknown[]) ?? [])
+      : [];
+
+    for (const item of chunk) {
+      const page = readRecord(item);
+      if (!page || readString(page["object"]) !== "page") continue;
+      pages.push(page);
+      if (pages.length >= args.limit) break;
+    }
+
+    const hasMore = record?.["has_more"] === true;
+    const nextCursor = readString(record?.["next_cursor"]);
+    if (!hasMore || !nextCursor) break;
+    cursor = nextCursor;
+  }
+
+  return pages;
+}
+
+async function getNotionPageIndex(args: {
+  client: NotionClient;
+  databaseId: string;
+}): Promise<{ pages: IndexedNotionPage[]; status: NotionDatabaseStatus }> {
+  const status = await getDatabaseStatus(args.client, args.databaseId);
+  const cached = notionPageIndexCache.get(args.databaseId);
+  if (cached && cached.expiresAt > Date.now()) {
+    return { pages: cached.pages, status };
+  }
+
+  const rawPages = await queryNotionPages({
+    client: args.client,
+    dataSourceId: status.dataSourceId,
+    limit: NOTION_PAGE_INDEX_LIMIT,
+    sorts: [{ timestamp: "last_edited_time", direction: "descending" }],
+  });
+
+  const pages = dedupeNotionPages(
+    rawPages.map((page) => toIndexedNotionPage(page, status)),
+  ).sort(compareNotionPagesByRecent);
+
+  notionPageIndexCache.set(args.databaseId, {
+    expiresAt: Date.now() + NOTION_PAGE_INDEX_CACHE_MS,
+    pages,
+  });
+
+  return { pages, status };
+}
+
+async function getNotionSearchCandidates(args: {
+  client: NotionClient;
+  databaseId: string;
+  query: string;
+}): Promise<IndexedNotionPage[]> {
+  const { pages: indexedPages, status } = await getNotionPageIndex(args);
+  const queryText = args.query.trim();
+  if (!queryText) return indexedPages;
+
+  const titleMatches = await queryNotionPages({
+    client: args.client,
+    dataSourceId: status.dataSourceId,
+    filter: {
+      property: status.titleProperty,
+      title: {
+        contains: queryText,
+      },
+    },
+    limit: 25,
+  });
+
+  return dedupeNotionPages([
+    ...titleMatches.map((page) => toIndexedNotionPage(page, status)),
+    ...indexedPages,
+  ]);
 }
 
 function parseBooleanInput(value: string): boolean | null {
@@ -390,32 +739,21 @@ export async function searchNotionPages(args: {
   const query = args.query.trim();
   if (!query) return [];
 
-  const status = await getDatabaseStatus(args.client, args.databaseId);
-
-  const queryInput: QueryDataSourceParameters = {
-    data_source_id: status.dataSourceId,
-    filter: {
-      property: status.titleProperty,
-      title: {
-        contains: query,
-      },
-    },
-    page_size: Math.min(limit * 2, 20),
-    result_type: "page",
-  };
-
-  let response: unknown;
+  let candidates: IndexedNotionPage[];
   try {
-    response = (await args.client.dataSources.query(queryInput)) as unknown;
+    candidates = await getNotionSearchCandidates(args);
   } catch (err) {
+    const status = await getDatabaseStatus(args.client, args.databaseId).catch(
+      () => null,
+    );
     const summary = summarizeNotionError(err);
     log.error(
       {
         err,
         databaseId: args.databaseId,
-        dataSourceId: status.dataSourceId,
+        dataSourceId: status?.dataSourceId ?? null,
         query,
-        titleProperty: status.titleProperty,
+        titleProperty: status?.titleProperty ?? null,
         notionCode: summary.code,
         notionStatus: summary.status,
         notionHint: summary.hint,
@@ -426,46 +764,191 @@ export async function searchNotionPages(args: {
     );
     throw new Error(summary.message);
   }
-  const rawResults = Array.isArray(readRecord(response)?.["results"])
-    ? ((readRecord(response)?.["results"] as unknown[]) ?? [])
-    : [];
 
-  const pages = rawResults
-    .map((item) => readRecord(item))
-    .filter((item): item is UnknownRecord => Boolean(item))
-    .filter((item) => readString(item["object"]) === "page");
-
-  const scored = pages
+  const scored = candidates
     .map((page) => ({
       page,
-      title: getPageTitle(page, status.titleProperty),
+      score: scoreNotionPage(query, page),
     }))
-    .map((entry) => ({
-      ...entry,
-      score: scoreSearchMatch(query, entry.title),
-    }))
-    .sort((a, b) => b.score - a.score || a.title.localeCompare(b.title))
+    .filter((entry) => entry.score > 0)
+    .sort((a, b) => b.score - a.score || compareNotionPagesByRecent(a.page, b.page))
     .slice(0, limit);
 
-  const excerpts = await Promise.all(
-    scored.map((entry) =>
-      getPageExcerpt(args.client, readString(entry.page["id"]) ?? ""),
-    ),
-  );
+  const results = await Promise.all(
+    scored.map(async (entry) => {
+      const excerpt =
+        entry.page.summaryExcerpt ?? (await getPageExcerpt(args.client, entry.page.id));
 
-  const results = scored.map((entry, index) => ({
-    id: readString(entry.page["id"]) ?? "",
-    title: entry.title,
-    url: readString(entry.page["url"]) ?? "",
-    excerpt: excerpts[index] ?? null,
-    lastEditedTime: readString(entry.page["last_edited_time"]),
-  }));
+      return {
+        id: entry.page.id,
+        title: entry.page.title,
+        url: entry.page.url,
+        excerpt,
+        lastEditedTime: entry.page.lastEditedTime,
+        tags: entry.page.tags,
+      };
+    }),
+  );
 
   log.info(
     { databaseId: args.databaseId, query, limit, resultCount: results.length },
     "[notion] searched pages",
   );
   return results;
+}
+
+export async function getNotionPageTitleSuggestions(args: {
+  client: NotionClient;
+  databaseId: string;
+  query: string;
+  limit?: number;
+}): Promise<string[]> {
+  const limit = Math.min(Math.max(args.limit ?? 10, 1), 25);
+  const query = args.query.trim();
+  const candidates = await getNotionSearchCandidates(args);
+
+  return candidates
+    .map((page) => ({
+      title: page.title,
+      score: query ? scoreSearchMatch(query, page.title) : 1,
+      lastEditedTime: page.lastEditedTime,
+    }))
+    .filter((entry) => entry.score > 0)
+    .sort(
+      (a, b) =>
+        b.score - a.score ||
+        (b.lastEditedTime ? Date.parse(b.lastEditedTime) : 0) -
+          (a.lastEditedTime ? Date.parse(a.lastEditedTime) : 0) ||
+        a.title.localeCompare(b.title),
+    )
+    .map((entry) => entry.title)
+    .filter((title, index, titles) => titles.indexOf(title) === index)
+    .slice(0, limit);
+}
+
+export async function getNotionTagSuggestions(args: {
+  client: NotionClient;
+  databaseId: string;
+  query: string;
+  limit?: number;
+}): Promise<string[]> {
+  const limit = Math.min(Math.max(args.limit ?? 10, 1), 25);
+  const query = args.query.trim().toLowerCase();
+  const { pages } = await getNotionPageIndex(args);
+
+  return [...new Set(pages.flatMap((page) => page.tags))]
+    .filter((tag) => (!query ? true : tag.toLowerCase().includes(query)))
+    .sort((a, b) => a.localeCompare(b))
+    .slice(0, limit);
+}
+
+export async function getNotionRecentPages(args: {
+  client: NotionClient;
+  databaseId: string;
+  limit?: number;
+}): Promise<NotionPageSummary[]> {
+  const limit = Math.min(Math.max(args.limit ?? 5, 1), 10);
+  const { pages } = await getNotionPageIndex(args);
+
+  return Promise.all(
+    pages.slice(0, limit).map(async (page) => ({
+      id: page.id,
+      title: page.title,
+      url: page.url,
+      tags: page.tags,
+      excerpt: page.summaryExcerpt ?? (await getPageExcerpt(args.client, page.id)),
+      lastEditedTime: page.lastEditedTime,
+    })),
+  );
+}
+
+export async function getNotionPagesByTag(args: {
+  client: NotionClient;
+  databaseId: string;
+  tag: string;
+  limit?: number;
+}): Promise<NotionPageSummary[]> {
+  const limit = Math.min(Math.max(args.limit ?? 5, 1), 10);
+  const tag = args.tag.trim().toLowerCase();
+  if (!tag) return [];
+
+  const { pages } = await getNotionPageIndex(args);
+  const matches = pages
+    .filter((page) => page.tags.some((entry) => entry.toLowerCase() === tag))
+    .sort(compareNotionPagesByRecent)
+    .slice(0, limit);
+
+  return Promise.all(
+    matches.map(async (page) => ({
+      id: page.id,
+      title: page.title,
+      url: page.url,
+      tags: page.tags,
+      excerpt: page.summaryExcerpt ?? (await getPageExcerpt(args.client, page.id)),
+      lastEditedTime: page.lastEditedTime,
+    })),
+  );
+}
+
+export async function openNotionPage(args: {
+  client: NotionClient;
+  databaseId: string;
+  title: string;
+}): Promise<NotionPageSummary | null> {
+  const title = args.title.trim();
+  if (!title) return null;
+
+  const candidates = await getNotionSearchCandidates({
+    client: args.client,
+    databaseId: args.databaseId,
+    query: title,
+  });
+
+  const match = candidates
+    .map((page) => ({
+      page,
+      score: scoreSearchMatch(title, page.title),
+    }))
+    .filter((entry) => entry.score > 0)
+    .sort(
+      (a, b) => b.score - a.score || compareNotionPagesByRecent(a.page, b.page),
+    )[0]?.page;
+
+  if (!match) return null;
+
+  return {
+    id: match.id,
+    title: match.title,
+    url: match.url,
+    tags: match.tags,
+    excerpt: match.summaryExcerpt ?? (await getPageExcerpt(args.client, match.id)),
+    lastEditedTime: match.lastEditedTime,
+  };
+}
+
+export async function getRandomNotionPage(args: {
+  client: NotionClient;
+  databaseId: string;
+  tag?: string | null;
+}): Promise<NotionPageSummary | null> {
+  const tag = args.tag?.trim().toLowerCase() ?? "";
+  const { pages } = await getNotionPageIndex(args);
+  const pool = tag
+    ? pages.filter((page) => page.tags.some((entry) => entry.toLowerCase() === tag))
+    : pages;
+
+  if (pool.length === 0) return null;
+
+  const page = pool[Math.floor(Math.random() * pool.length)]!;
+
+  return {
+    id: page.id,
+    title: page.title,
+    url: page.url,
+    tags: page.tags,
+    excerpt: page.summaryExcerpt ?? (await getPageExcerpt(args.client, page.id)),
+    lastEditedTime: page.lastEditedTime,
+  };
 }
 
 export function getNotionDatabaseStatus(args: {
@@ -632,6 +1115,7 @@ export async function createNotionPage(args: {
     title,
     url: readString(record?.["url"]) ?? "",
   };
+  notionPageIndexCache.delete(args.databaseId);
   log.info(
     {
       databaseId: args.databaseId,

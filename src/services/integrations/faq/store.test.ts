@@ -56,7 +56,7 @@ describe("faq store", () => {
 
     expect(fs.existsSync(storePath)).toBe(false);
 
-    const store = loadStore();
+    const store = await loadStore();
 
     expect(fs.existsSync(storePath)).toBe(true);
     expect(store.version).toBe(1);
@@ -66,10 +66,10 @@ describe("faq store", () => {
   it("falls back to empty store when JSON is malformed", async () => {
     const { loadStore, ensureStoreFile } = await importStoreFresh();
 
-    ensureStoreFile();
+    await ensureStoreFile();
     fs.writeFileSync(storePath, "not json", "utf8");
 
-    const store = loadStore();
+    const store = await loadStore();
 
     expect(store.version).toBe(1);
     expect(store.entries).toEqual({});
@@ -78,12 +78,12 @@ describe("faq store", () => {
   it("falls back to empty store when shape is invalid", async () => {
     const { loadStore, ensureStoreFile } = await importStoreFresh();
 
-    ensureStoreFile();
+    await ensureStoreFile();
 
     // Wrong version + missing entries
     fs.writeFileSync(storePath, JSON.stringify({ version: 999 }, null, 2), "utf8");
 
-    const store = loadStore();
+    const store = await loadStore();
 
     expect(store.version).toBe(1);
     expect(store.entries).toEqual({});
@@ -92,7 +92,7 @@ describe("faq store", () => {
   it("saveStore writes valid JSON that loadStore can read back", async () => {
     const { loadStore, saveStore } = await importStoreFresh();
 
-    const store = loadStore();
+    const store = await loadStore();
 
     store.entries["hello"] = {
       key: "hello",
@@ -106,9 +106,9 @@ describe("faq store", () => {
       usageCount: 0,
     };
 
-    saveStore(store);
+    await saveStore(store);
 
-    const reread = loadStore();
+    const reread = await loadStore();
     expect(reread.entries["hello"]?.title).toBe("Hello");
     expect(reread.entries["hello"]?.tags).toEqual(["test"]);
   });

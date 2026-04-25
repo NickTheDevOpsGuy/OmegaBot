@@ -82,9 +82,21 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
 }
 
 async function runSlots(interaction: ChatInputCommandInteraction): Promise<void> {
-  const showStatsFlag = interaction.options.getBoolean("stats") ?? false;
-  const showLeaderboard = interaction.options.getBoolean("leaderboard") ?? false;
-  const showPaytable = interaction.options.getBoolean("paytable") ?? false;
+  const legacyShowStats = interaction.options.getBoolean("stats") ?? false;
+  const legacyShowLeaderboard = interaction.options.getBoolean("leaderboard") ?? false;
+  const legacyShowPaytable = interaction.options.getBoolean("paytable") ?? false;
+  const view =
+    interaction.options.getString("view") ??
+    (legacyShowPaytable
+      ? "paytable"
+      : legacyShowLeaderboard
+        ? "leaderboard"
+        : legacyShowStats
+          ? "stats"
+          : "spin");
+  const showStatsFlag = view === "stats";
+  const showLeaderboard = view === "leaderboard";
+  const showPaytable = view === "paytable";
 
   if (!showStatsFlag && !showLeaderboard && !showPaytable) {
     const remaining = checkSlotsCooldown(interaction.user.id);
@@ -235,7 +247,7 @@ async function runSlots(interaction: ChatInputCommandInteraction): Promise<void>
         milestoneLine: milestoneLine ?? undefined,
         footerHints: [
           "Play again: /fun slots",
-          "Stats: /fun slots stats",
+          "Stats: /fun slots view:stats",
           "Leaderboard: /fun utility leaderboard",
         ],
         color: isJackpot ? 0xffd700 : isWin ? 0x22c55e : 0x64748b,
