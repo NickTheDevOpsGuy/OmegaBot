@@ -490,7 +490,9 @@ function getPageImageUrl(result: UnknownRecord): string | null {
 }
 
 function getPageLastEditedBy(result: UnknownRecord): string | null {
-  const personName = readString(readRecord(readRecord(result["last_edited_by"])?.["person"])?.["email"]);
+  const personName = readString(
+    readRecord(readRecord(result["last_edited_by"])?.["person"])?.["email"],
+  );
   if (personName) return personName;
   return readString(readRecord(result["last_edited_by"])?.["name"]);
 }

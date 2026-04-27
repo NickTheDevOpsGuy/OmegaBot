@@ -711,7 +711,10 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       collector.on("collect", async (componentInteraction) => {
         const customId = componentInteraction.customId;
 
-        if (customId.startsWith("notion_search_pick:") && componentInteraction.isStringSelectMenu()) {
+        if (
+          customId.startsWith("notion_search_pick:") &&
+          componentInteraction.isStringSelectMenu()
+        ) {
           const choice = Number(componentInteraction.values[0]);
           selectedIndex = Number.isNaN(choice)
             ? selectedIndex
