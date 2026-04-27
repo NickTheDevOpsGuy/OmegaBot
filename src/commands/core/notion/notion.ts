@@ -1,8 +1,12 @@
 import {
   ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  EmbedBuilder,
   MessageFlags,
   ModalBuilder,
   SlashCommandBuilder,
+  StringSelectMenuBuilder,
   TextInputBuilder,
   TextInputStyle,
   type AutocompleteInteraction,
@@ -72,18 +76,38 @@ function formatLastEditedTime(value: string | null): string | null {
   });
 }
 
+function formatUpdatedDate(value: string | null): string {
+  if (!value) return "Unknown";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.valueOf())) return "Unknown";
+  return parsed.toISOString().slice(0, 10);
+}
+
+function formatShortDate(value: string | null): string {
+  if (!value) return "Unknown";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.valueOf())) return "Unknown";
+  return parsed.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
 function formatTagLine(tags: string[]): string | null {
   return tags.length > 0 ? `Tags: ${tags.join(", ")}` : null;
 }
 
 function formatNotionPageBlock(page: NotionPageSummary): string {
   return [
-    formatMaskedLink(page.title, page.url),
+    `**${page.title}**`,
+    page.excerpt ?? "No description available yet.",
+    `Page: ${formatMaskedLink("Open in Notion", page.url)}`,
+    page.imageUrl ? `Image: ${page.imageUrl}` : null,
     formatLastEditedTime(page.lastEditedTime)
       ? `Updated: ${formatLastEditedTime(page.lastEditedTime)}`
       : null,
     formatTagLine(page.tags),
-    page.excerpt ?? "No page preview available yet.",
   ]
     .filter(Boolean)
     .join("\n");
@@ -91,6 +115,142 @@ function formatNotionPageBlock(page: NotionPageSummary): string {
 
 function formatTemplateChoiceLabel(template: NotionAddTemplate): string {
   return `${template.key} - ${template.label}`.slice(0, 100);
+}
+
+function buildNotionSearchEmbed(args: {
+  query: string;
+  results: Array<{
+    id: string;
+    title: string;
+    url: string;
+    tags: string[];
+    lastEditedTime: string | null;
+    lastEditedBy: string | null;
+    relevanceScore: number;
+    imageUrl: string | null;
+    excerpt: string | null;
+  }>;
+  pageIndex: number;
+  pageSize: number;
+}): EmbedBuilder {
+  const start = args.pageIndex * args.pageSize;
+  const pageResults = args.results.slice(start, start + args.pageSize);
+  const totalPages = Math.max(1, Math.ceil(args.results.length / args.pageSize));
+
+  const description = pageResults
+    .map((result, index) => {
+      const ordinal = start + index + 1;
+      const tagLine = `🏷️ Tags: ${result.tags.length > 0 ? result.tags.join(", ") : "none"}`;
+      const dateLine = `📅 Updated: ${formatUpdatedDate(result.lastEditedTime)}`;
+      const authorLine = result.lastEditedBy ? `👤 By: ${result.lastEditedBy}` : null;
+      const scoreLine = `📊 Relevance: ${Math.max(1, Math.min(100, result.relevanceScore))}%`;
+      return [
+        `${ordinal}. [${result.title}](${result.url})`,
+        tagLine,
+        dateLine,
+        authorLine,
+        scoreLine,
+      ]
+        .filter(Boolean)
+        .join("\n");
+    })
+    .join("\n\n");
+
+  return new EmbedBuilder()
+    .setColor(0x3b82f6)
+    .setTitle("📘 Notion Search Results")
+    .setDescription(description || "No search results on this page.")
+    .addFields({ name: "Query", value: `"${args.query}"`, inline: false })
+    .setFooter({ text: `Page ${args.pageIndex + 1}/${totalPages}` });
+}
+
+function buildNotionSearchDetailEmbed(args: {
+  query: string;
+  result: {
+    title: string;
+    url: string;
+    tags: string[];
+    lastEditedTime: string | null;
+    lastEditedBy: string | null;
+    relevanceScore: number;
+    imageUrl: string | null;
+    excerpt: string | null;
+  };
+  index: number;
+  total: number;
+}): EmbedBuilder {
+  const result = args.result;
+  const details = [
+    `Type: Page`,
+    `Tags: ${result.tags.length > 0 ? result.tags.join(", ") : "none"}`,
+    `Last Updated: ${formatShortDate(result.lastEditedTime)}`,
+    result.lastEditedBy ? `Updated By: ${result.lastEditedBy}` : null,
+    `Relevance: ${Math.max(1, Math.min(100, result.relevanceScore))}%`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const embed = new EmbedBuilder()
+    .setColor(0x2563eb)
+    .setTitle(`📄 ${result.title}`)
+    .setDescription(
+      [details, "", "**Summary**", result.excerpt ?? "No summary/preview available yet."]
+        .filter(Boolean)
+        .join("\n"),
+    )
+    .addFields(
+      { name: "Notion URL", value: `[Open in Notion](${result.url})`, inline: false },
+      { name: "Query", value: `"${args.query}"`, inline: true },
+      { name: "Result", value: `${args.index + 1} of ${args.total}`, inline: true },
+    );
+
+  if (result.imageUrl) embed.setImage(result.imageUrl);
+  return embed;
+}
+
+function buildNotionSearchPaginationRow(args: {
+  interactionId: string;
+  pageIndex: number;
+  totalPages: number;
+}): ActionRowBuilder<ButtonBuilder> {
+  return new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`notion_search_prev:${args.interactionId}`)
+      .setStyle(ButtonStyle.Secondary)
+      .setLabel("Prev")
+      .setDisabled(args.pageIndex <= 0),
+    new ButtonBuilder()
+      .setCustomId(`notion_search_next:${args.interactionId}`)
+      .setStyle(ButtonStyle.Secondary)
+      .setLabel("Next")
+      .setDisabled(args.pageIndex >= args.totalPages - 1),
+    new ButtonBuilder()
+      .setCustomId(`notion_search_close:${args.interactionId}`)
+      .setStyle(ButtonStyle.Danger)
+      .setLabel("Close"),
+  );
+}
+
+function buildNotionSearchSelectRow(args: {
+  interactionId: string;
+  pageIndex: number;
+  pageSize: number;
+  results: Array<{ title: string; id: string }>;
+}): ActionRowBuilder<StringSelectMenuBuilder> {
+  const start = args.pageIndex * args.pageSize;
+  const pageResults = args.results.slice(start, start + args.pageSize);
+  return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+    new StringSelectMenuBuilder()
+      .setCustomId(`notion_search_pick:${args.interactionId}`)
+      .setPlaceholder("Open result details")
+      .addOptions(
+        pageResults.map((entry, index) => ({
+          label: `${start + index + 1}. ${entry.title}`.slice(0, 100),
+          value: String(start + index),
+          description: entry.id.slice(0, 100),
+        })),
+      ),
+  );
 }
 
 export const data = new SlashCommandBuilder()
@@ -499,6 +659,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     if (sub === "search") {
       const query = interaction.options.getString("query", true).trim();
       const limit = interaction.options.getInteger("limit") ?? 5;
+      const pageSize = 3;
       const results = await searchNotionPages({
         client,
         databaseId,
@@ -518,13 +679,130 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         return;
       }
 
-      await interaction.editReply(
-        [
-          `**Notion results for "${query}"**`,
-          "",
-          ...results.map(formatNotionPageBlock),
-        ].join("\n\n"),
-      );
+      const totalPages = Math.max(1, Math.ceil(results.length / pageSize));
+      let pageIndex = 0;
+      let selectedIndex = 0;
+
+      await interaction.editReply({
+        embeds: [buildNotionSearchEmbed({ query, results, pageIndex, pageSize })],
+        components: [
+          buildNotionSearchPaginationRow({
+            interactionId: interaction.id,
+            pageIndex,
+            totalPages,
+          }),
+          buildNotionSearchSelectRow({
+            interactionId: interaction.id,
+            pageIndex,
+            pageSize,
+            results,
+          }),
+        ],
+      });
+
+      const message = await interaction.fetchReply();
+      const collector = message.createMessageComponentCollector({
+        time: 5 * 60_000,
+        filter: (componentInteraction) =>
+          componentInteraction.user.id === interaction.user.id &&
+          componentInteraction.customId.endsWith(`:${interaction.id}`),
+      });
+
+      collector.on("collect", async (componentInteraction) => {
+        const customId = componentInteraction.customId;
+
+        if (customId.startsWith("notion_search_pick:") && componentInteraction.isStringSelectMenu()) {
+          const choice = Number(componentInteraction.values[0]);
+          selectedIndex = Number.isNaN(choice)
+            ? selectedIndex
+            : Math.max(0, Math.min(results.length - 1, choice));
+          const selected = results[selectedIndex]!;
+          await componentInteraction.update({
+            embeds: [
+              buildNotionSearchDetailEmbed({
+                query,
+                result: selected,
+                index: selectedIndex,
+                total: results.length,
+              }),
+            ],
+            components: [
+              new ActionRowBuilder<ButtonBuilder>().addComponents(
+                new ButtonBuilder()
+                  .setCustomId(`notion_search_back:${interaction.id}`)
+                  .setStyle(ButtonStyle.Secondary)
+                  .setLabel("Back to Results"),
+                new ButtonBuilder()
+                  .setStyle(ButtonStyle.Link)
+                  .setLabel("Open in Notion")
+                  .setURL(selected.url),
+                new ButtonBuilder()
+                  .setCustomId(`notion_search_close:${interaction.id}`)
+                  .setStyle(ButtonStyle.Danger)
+                  .setLabel("Close"),
+              ),
+            ],
+          });
+          return;
+        }
+
+        if (customId.startsWith("notion_search_close:")) {
+          collector.stop("closed");
+          await componentInteraction.update({ components: [] });
+          return;
+        }
+
+        if (customId.startsWith("notion_search_back:")) {
+          await componentInteraction.update({
+            embeds: [buildNotionSearchEmbed({ query, results, pageIndex, pageSize })],
+            components: [
+              buildNotionSearchPaginationRow({
+                interactionId: interaction.id,
+                pageIndex,
+                totalPages,
+              }),
+              buildNotionSearchSelectRow({
+                interactionId: interaction.id,
+                pageIndex,
+                pageSize,
+                results,
+              }),
+            ],
+          });
+          return;
+        }
+
+        if (customId.startsWith("notion_search_prev:")) {
+          pageIndex = Math.max(0, pageIndex - 1);
+        } else if (customId.startsWith("notion_search_next:")) {
+          pageIndex = Math.min(totalPages - 1, pageIndex + 1);
+        }
+
+        await componentInteraction.update({
+          embeds: [buildNotionSearchEmbed({ query, results, pageIndex, pageSize })],
+          components: [
+            buildNotionSearchPaginationRow({
+              interactionId: interaction.id,
+              pageIndex,
+              totalPages,
+            }),
+            buildNotionSearchSelectRow({
+              interactionId: interaction.id,
+              pageIndex,
+              pageSize,
+              results,
+            }),
+          ],
+        });
+      });
+
+      collector.on("end", async () => {
+        try {
+          await interaction.editReply({ components: [] });
+        } catch {
+          // message was likely deleted or expired; ignore cleanup error.
+        }
+      });
       return;
     }
 

@@ -38,6 +38,12 @@ Put that token in `.env`:
 NOTION_TOKEN=secret_xxx
 ```
 
+If you want to share a direct onboarding link to your wiki in welcome messages, also set:
+
+```env
+NOTION_INVITE_URL=https://www.notion.so/your-workspace/Your-Wiki-Page-Id?source=copy_link
+```
+
 ---
 
 ## 2. Find the database you want OmegaBot to use
@@ -221,6 +227,11 @@ Search and browse examples:
 - `/notion recent limit:3`
 - `/notion random tag:video`
 - `/wiki query:onboarding source:notion limit:5`
+
+Optional onboarding link:
+
+- add `NOTION_INVITE_URL` in `.env` to keep a single canonical Notion invite/share URL for welcome flows
+- this does not replace `NOTION_DATABASE_ID`; it is only for user-facing onboarding links
 
 Create-page examples:
 

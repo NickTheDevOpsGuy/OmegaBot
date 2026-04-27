@@ -92,7 +92,10 @@ export type NotionSearchResult = {
   title: string;
   url: string;
   excerpt: string | null;
+  imageUrl: string | null;
   lastEditedTime: string | null;
+  lastEditedBy: string | null;
+  relevanceScore: number;
   tags: string[];
 };
 
@@ -102,6 +105,7 @@ export type NotionPageSummary = {
   url: string;
   tags: string[];
   excerpt: string | null;
+  imageUrl: string | null;
   lastEditedTime: string | null;
 };
 
@@ -131,7 +135,9 @@ type IndexedNotionPage = {
   url: string;
   tags: string[];
   summaryExcerpt: string | null;
+  imageUrl: string | null;
   lastEditedTime: string | null;
+  lastEditedBy: string | null;
 };
 
 type CachedNotionStatus = {
@@ -407,6 +413,19 @@ function getPageSummaryExcerpt(result: UnknownRecord): string | null {
   if (!properties) return null;
 
   for (const [name, value] of Object.entries(properties)) {
+    if (!/description/i.test(name)) continue;
+
+    const property = readRecord(value);
+    if (!property) continue;
+
+    const richText = readTitleParts(property["rich_text"]);
+    if (richText) return truncateNotionExcerpt(richText, 240);
+
+    const titleText = readTitleParts(property["title"]);
+    if (titleText) return truncateNotionExcerpt(titleText, 240);
+  }
+
+  for (const [name, value] of Object.entries(properties)) {
     if (!/summary|preview|excerpt|description/i.test(name)) continue;
 
     const property = readRecord(value);
@@ -423,6 +442,57 @@ function getPageSummaryExcerpt(result: UnknownRecord): string | null {
   }
 
   return null;
+}
+
+function getPropertyImageUrl(property: UnknownRecord): string | null {
+  const fileEntries = Array.isArray(property["files"])
+    ? (property["files"] as unknown[])
+    : [];
+  for (const fileEntry of fileEntries) {
+    const file = readRecord(fileEntry);
+    if (!file) continue;
+    const externalUrl = readString(readRecord(file["external"])?.["url"]);
+    if (externalUrl) return externalUrl;
+    const notionFileUrl = readString(readRecord(file["file"])?.["url"]);
+    if (notionFileUrl) return notionFileUrl;
+  }
+
+  const directUrl = readString(property["url"]);
+  if (directUrl) return directUrl;
+
+  const richText = readTitleParts(property["rich_text"]);
+  if (richText && /^https?:\/\//i.test(richText)) return richText;
+
+  return null;
+}
+
+function getPageImageUrl(result: UnknownRecord): string | null {
+  const cover = readRecord(result["cover"]);
+  if (cover) {
+    const externalUrl = readString(readRecord(cover["external"])?.["url"]);
+    if (externalUrl) return externalUrl;
+    const notionFileUrl = readString(readRecord(cover["file"])?.["url"]);
+    if (notionFileUrl) return notionFileUrl;
+  }
+
+  const properties = readRecord(result["properties"]);
+  if (!properties) return null;
+
+  for (const [name, value] of Object.entries(properties)) {
+    if (!/image|thumbnail|cover|banner|hero/i.test(name)) continue;
+    const property = readRecord(value);
+    if (!property) continue;
+    const imageUrl = getPropertyImageUrl(property);
+    if (imageUrl) return imageUrl;
+  }
+
+  return null;
+}
+
+function getPageLastEditedBy(result: UnknownRecord): string | null {
+  const personName = readString(readRecord(readRecord(result["last_edited_by"])?.["person"])?.["email"]);
+  if (personName) return personName;
+  return readString(readRecord(result["last_edited_by"])?.["name"]);
 }
 
 function getPageTags(
@@ -470,7 +540,9 @@ function toIndexedNotionPage(
     url: readString(page["url"]) ?? "",
     tags: getPageTags(page, status.tagProperty),
     summaryExcerpt: getPageSummaryExcerpt(page),
+    imageUrl: getPageImageUrl(page),
     lastEditedTime: readString(page["last_edited_time"]),
+    lastEditedBy: getPageLastEditedBy(page),
   };
 }
 
@@ -490,7 +562,9 @@ function dedupeNotionPages(pages: IndexedNotionPage[]): IndexedNotionPage[] {
       ...page,
       tags: page.tags.length > 0 ? page.tags : existing.tags,
       summaryExcerpt: page.summaryExcerpt ?? existing.summaryExcerpt,
+      imageUrl: page.imageUrl ?? existing.imageUrl,
       lastEditedTime: page.lastEditedTime ?? existing.lastEditedTime,
+      lastEditedBy: page.lastEditedBy ?? existing.lastEditedBy,
       title: page.title || existing.title,
       url: page.url || existing.url,
     });
@@ -784,7 +858,10 @@ export async function searchNotionPages(args: {
         title: entry.page.title,
         url: entry.page.url,
         excerpt,
+        imageUrl: entry.page.imageUrl,
         lastEditedTime: entry.page.lastEditedTime,
+        lastEditedBy: entry.page.lastEditedBy,
+        relevanceScore: entry.score,
         tags: entry.page.tags,
       };
     }),
@@ -857,6 +934,7 @@ export async function getNotionRecentPages(args: {
       url: page.url,
       tags: page.tags,
       excerpt: page.summaryExcerpt ?? (await getPageExcerpt(args.client, page.id)),
+      imageUrl: page.imageUrl,
       lastEditedTime: page.lastEditedTime,
     })),
   );
@@ -885,6 +963,7 @@ export async function getNotionPagesByTag(args: {
       url: page.url,
       tags: page.tags,
       excerpt: page.summaryExcerpt ?? (await getPageExcerpt(args.client, page.id)),
+      imageUrl: page.imageUrl,
       lastEditedTime: page.lastEditedTime,
     })),
   );
@@ -922,6 +1001,7 @@ export async function openNotionPage(args: {
     url: match.url,
     tags: match.tags,
     excerpt: match.summaryExcerpt ?? (await getPageExcerpt(args.client, match.id)),
+    imageUrl: match.imageUrl,
     lastEditedTime: match.lastEditedTime,
   };
 }
@@ -947,6 +1027,7 @@ export async function getRandomNotionPage(args: {
     url: page.url,
     tags: page.tags,
     excerpt: page.summaryExcerpt ?? (await getPageExcerpt(args.client, page.id)),
+    imageUrl: page.imageUrl,
     lastEditedTime: page.lastEditedTime,
   };
 }

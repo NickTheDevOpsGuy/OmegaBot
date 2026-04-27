@@ -220,12 +220,16 @@ This lets you delegate docs and Notion maintenance without handing out full mode
 ```env
 NOTION_TOKEN=secret_xxx
 NOTION_DATABASE_ID=0123456789abcdef0123456789abcdef
+NOTION_INVITE_URL=https://www.notion.so/your-workspace/Your-Wiki-Page-Id?source=copy_link
 ```
 
 - `NOTION_TOKEN`
   - internal Notion integration token
 - `NOTION_DATABASE_ID`
   - the specific database OmegaBot should search and write to
+- `NOTION_INVITE_URL`
+  - optional share/invite URL to show in welcome or onboarding messages
+  - intended for users; not used by the Notion API client for search/create
 
 Notion-related commands enabled by this setup:
 
