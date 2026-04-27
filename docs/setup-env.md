@@ -212,6 +212,7 @@ BOT_ADMIN_AUDIT_CHANNEL_ID=333333333333333333
   - applies to actions like `/faq add`, `/faq remove`, `/notion status`, `/notion templates`, `/notion create-page`, and `/notion add`
 - `BOT_ADMIN_AUDIT_CHANNEL_ID`
   - optional audit channel for lightweight admin/audit messages
+  - the bot role must have **View Channel** and **Send Messages** in that channel
 
 This lets you delegate docs and Notion maintenance without handing out full moderation powers.
 
@@ -225,6 +226,7 @@ NOTION_INVITE_URL=https://www.notion.so/your-workspace/Your-Wiki-Page-Id?source=
 
 - `NOTION_TOKEN`
   - internal Notion integration token
+  - the integration needs Notion capabilities for **Read content**, **Update content**, and **Insert content**
 - `NOTION_DATABASE_ID`
   - the specific database OmegaBot should search and write to
 - `NOTION_INVITE_URL`

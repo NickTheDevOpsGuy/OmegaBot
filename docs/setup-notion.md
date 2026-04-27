@@ -30,7 +30,11 @@ In this doc, "database" means the Notion database that holds your wiki pages. Om
 1. Open [Notion integrations](https://www.notion.so/my-integrations)
 2. Create a new **internal** integration
 3. Give it a recognizable name, for example `Discord-OmegaBot`
-4. Copy the integration token
+4. Enable these integration capabilities:
+   - Read content
+   - Update content
+   - Insert content
+5. Copy the integration token
 
 Put that token in `.env`:
 
@@ -108,6 +112,8 @@ What `/notion status` tells you:
 
 If `BOT_ADMIN_AUDIT_CHANNEL_ID` is configured, OmegaBot can also send setup failures and admin-side Notion actions to that audit channel.
 
+That Discord audit channel must allow the OmegaBot role to **View Channel** and **Send Messages**. If those permissions are missing, the Notion command still runs, but the audit message is skipped and the bot logs `bot lacks permission to send to audit channel`.
+
 ---
 
 ## 4. Recommended database shape
@@ -171,6 +177,8 @@ BOT_ADMIN_AUDIT_CHANNEL_ID=333333333333333333
 - `/notion add`
 - Notion setup/search failures
 - FAQ admin changes
+
+The audit channel must be a text channel where the bot role can **View Channel** and **Send Messages**. Channel-specific permission overrides can block this even when the bot has those permissions at the server level.
 
 ---
 

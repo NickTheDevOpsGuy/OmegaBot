@@ -19,13 +19,14 @@ required scopes, permissions, gateway intents, and common moderation pitfalls.
 
 ## Required OAuth Scopes
 
-When inviting the bot, you **must** include:
+When generating the Discord invite URL, select these OAuth2 scopes:
 
-- bot
-- applications.commands
-- Use Slash Commands
+- `bot`
+- `applications.commands`
 
-If you change scopes later, you must re-invite the bot.
+Do not use workspace/API scopes like `guilds`, `guilds.channels.read`, `guilds.members.read`, `dm_channels.read`, or `presences.write` for the server bot invite. OmegaBot uses the Discord bot gateway and slash-command install flow, not those OAuth user/API scopes.
+
+If `applications.commands` is missing, slash commands may not install or update correctly. If you change scopes later, you must re-invite the bot.
 
 ---
 
@@ -39,6 +40,14 @@ For full functionality, especially **admin/moderation commands**, the bot role n
 - Send Messages
 - Read Message History
 - Embed Links
+- Use Slash Commands
+
+For `BOT_ADMIN_AUDIT_CHANNEL_ID`, the bot must have these permissions in the configured audit channel:
+
+- View Channel
+- Send Messages
+
+If the audit channel has channel-specific role overrides, check that the OmegaBot role is allowed there too. Server-level permissions are not enough when a channel override denies access.
 
 ### Moderation (Admin commands)
 
