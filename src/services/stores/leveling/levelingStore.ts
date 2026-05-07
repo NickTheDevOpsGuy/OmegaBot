@@ -149,10 +149,7 @@ export function awardGuildMessageXp(
   };
 }
 
-export function getGuildLeaderboard(
-  guildId: string,
-  limit = 10,
-): LeaderboardEntry[] {
+export function getGuildLeaderboard(guildId: string, limit = 10): LeaderboardEntry[] {
   ensureLevelingTables();
   const rows = getDb()
     .prepare(

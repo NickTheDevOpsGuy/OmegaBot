@@ -25,9 +25,7 @@ export const data = new SlashCommandBuilder()
       .addBooleanOption((opt) =>
         opt.setName("invites").setDescription("Delete Discord invite links"),
       )
-      .addBooleanOption((opt) =>
-        opt.setName("links").setDescription("Delete web links"),
-      )
+      .addBooleanOption((opt) => opt.setName("links").setDescription("Delete web links"))
       .addBooleanOption((opt) =>
         opt.setName("caps").setDescription("Delete excessive caps messages"),
       )

@@ -8,7 +8,8 @@ import {
 } from "./automodStore.js";
 import { addWarning } from "./warningsStore.js";
 
-const INVITE_RE = /(?:https?:\/\/)?(?:www\.)?(?:discord\.gg|discord(?:app)?\.com\/invite)\/[a-z0-9-]+/i;
+const INVITE_RE =
+  /(?:https?:\/\/)?(?:www\.)?(?:discord\.gg|discord(?:app)?\.com\/invite)\/[a-z0-9-]+/i;
 const URL_RE = /https?:\/\/|(?:^|\s)(?:www\.)?[a-z0-9-]+\.[a-z]{2,}(?:\/\S*)?/i;
 const recentMessages = new Map<string, number[]>();
 
@@ -32,7 +33,7 @@ function isSendableChannel(channel: unknown): channel is SendableChannel {
 function hasManageMessages(message: Message): boolean {
   return Boolean(
     message.member?.permissions.has(PermissionFlagsBits.ManageMessages) ||
-      message.member?.permissions.has(PermissionFlagsBits.Administrator),
+    message.member?.permissions.has(PermissionFlagsBits.Administrator),
   );
 }
 

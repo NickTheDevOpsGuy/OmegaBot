@@ -1,8 +1,4 @@
-import {
-  ChannelType,
-  MessageFlags,
-  type ChatInputCommandInteraction,
-} from "discord.js";
+import { ChannelType, MessageFlags, type ChatInputCommandInteraction } from "discord.js";
 import {
   getGuildConfig,
   setGuildConfig,
@@ -88,7 +84,9 @@ export async function handleLeveling(
     const rewards = listLevelRoleRewards(interaction.guildId!);
     const rewardText =
       rewards.length > 0
-        ? rewards.map((reward) => `Level ${reward.level}: <@&${reward.roleId}>`).join("\n")
+        ? rewards
+            .map((reward) => `Level ${reward.level}: <@&${reward.roleId}>`)
+            .join("\n")
         : "No role rewards configured.";
 
     await interaction.reply({

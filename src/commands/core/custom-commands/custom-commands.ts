@@ -24,7 +24,9 @@ export const data = new SlashCommandBuilder()
       .addStringOption((opt) =>
         opt
           .setName("response")
-          .setDescription("Response text. Supports {user}, {username}, {server}, {channel}")
+          .setDescription(
+            "Response text. Supports {user}, {username}, {server}, {channel}",
+          )
           .setRequired(true)
           .setMaxLength(1900),
       ),

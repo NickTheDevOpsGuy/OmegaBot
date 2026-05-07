@@ -60,10 +60,7 @@ export function upsertCustomCommand(input: {
   return getCustomCommand(input.guildId, name)!;
 }
 
-export function getCustomCommand(
-  guildId: string,
-  name: string,
-): CustomCommand | null {
+export function getCustomCommand(guildId: string, name: string): CustomCommand | null {
   ensureCustomCommandTable();
   const row = getDb()
     .prepare(

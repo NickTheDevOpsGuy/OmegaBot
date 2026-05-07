@@ -89,8 +89,7 @@ export function getAutomodSettings(guildId: string): AutomodSettings {
     blockCaps: bool(row?.blockCaps, DEFAULT_AUTOMOD_SETTINGS.blockCaps),
     blockSpam: bool(row?.blockSpam, DEFAULT_AUTOMOD_SETTINGS.blockSpam),
     capsPercent: row?.capsPercent ?? DEFAULT_AUTOMOD_SETTINGS.capsPercent,
-    spamMessageCount:
-      row?.spamMessageCount ?? DEFAULT_AUTOMOD_SETTINGS.spamMessageCount,
+    spamMessageCount: row?.spamMessageCount ?? DEFAULT_AUTOMOD_SETTINGS.spamMessageCount,
     spamWindowSeconds:
       row?.spamWindowSeconds ?? DEFAULT_AUTOMOD_SETTINGS.spamWindowSeconds,
   };
@@ -171,9 +170,7 @@ export function removeBannedWord(guildId: string, word: string): boolean {
 export function listBannedWords(guildId: string): string[] {
   ensureAutomodTables();
   const rows = getDb()
-    .prepare(
-      `SELECT word FROM automod_banned_words WHERE guild_id = ? ORDER BY word ASC`,
-    )
+    .prepare(`SELECT word FROM automod_banned_words WHERE guild_id = ? ORDER BY word ASC`)
     .all(guildId) as { word: string }[];
   return rows.map((row) => row.word);
 }

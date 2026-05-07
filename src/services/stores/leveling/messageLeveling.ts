@@ -1,10 +1,7 @@
 import type { Client, Message } from "discord.js";
 import { getGuildConfig } from "../../core/config/guildConfigStore.js";
 import { logger } from "../../../utils/logger.js";
-import {
-  awardGuildMessageXp,
-  getUnlockedLevelRoleRewards,
-} from "./levelingStore.js";
+import { awardGuildMessageXp, getUnlockedLevelRoleRewards } from "./levelingStore.js";
 
 const MESSAGE_XP_MIN = 15;
 const MESSAGE_XP_MAX = 25;
