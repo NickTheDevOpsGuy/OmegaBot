@@ -57,6 +57,20 @@ describe("buildHelpText", () => {
     });
     expect(result).toContain("Getting Started");
     expect(result).toContain("OmegaBot Help");
+    expect(result).toContain("/levels rank");
+  });
+
+  it("admin topic includes server management features", () => {
+    const result = buildHelpText({
+      isAdmin: true,
+      commands: [],
+      topic: "admin",
+    });
+    expect(result).toContain("/automod enable");
+    expect(result).toContain("/warnings add");
+    expect(result).toContain("/reaction-roles add");
+    expect(result).toContain("/custom-commands set");
+    expect(result).toContain("/config leveling");
   });
 
   it("changelog includes version 3.9", () => {

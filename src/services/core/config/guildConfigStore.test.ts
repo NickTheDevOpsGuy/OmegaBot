@@ -1,47 +1,41 @@
 // src/services/core/config/guildConfigStore.test.ts
-// Unit tests for guild config (JSON store). Uses mocked fs so we don't touch real data dir.
+// Unit tests for guild config (SQLite store).
 
-import { describe, expect, it, vi, beforeEach } from "vitest";
-import * as fs from "node:fs/promises";
+import { describe, expect, it } from "vitest";
+import { getDb } from "../database/db.js";
+import { useInMemoryDb } from "../database/dbTestUtils.js";
 import { getGuildConfig, setGuildConfig } from "./guildConfigStore.js";
 
-vi.mock("node:fs/promises", () => ({
-  mkdir: vi.fn(),
-  readFile: vi.fn(),
-  writeFile: vi.fn(),
-}));
-
 describe("guildConfigStore", () => {
-  beforeEach(() => {
-    vi.mocked(fs.mkdir).mockResolvedValue(undefined);
-    vi.mocked(fs.readFile).mockResolvedValue("{}");
-    vi.mocked(fs.writeFile).mockResolvedValue(undefined);
-  });
+  useInMemoryDb();
 
   it("getGuildConfig returns defaults when guild has no stored config", async () => {
-    vi.mocked(fs.readFile).mockResolvedValue("{}");
-
     const config = await getGuildConfig("guild-1");
 
     expect(config.guildId).toBe("guild-1");
     expect(config.welcomeEnabled).toBe(true);
     expect(config.starboardThreshold).toBe(3);
     expect(config.rulesChannelId).toBeNull();
+    expect(config.levelingEnabled).toBe(true);
   });
 
-  it("getGuildConfig returns merged config when store has data", async () => {
-    vi.mocked(fs.readFile).mockResolvedValue(
-      JSON.stringify({
-        "guild-2": {
+  it("getGuildConfig returns merged config when database has data", async () => {
+    getDb()
+      .prepare(
+        `INSERT INTO guild_config (guild_id, config, updated_at)
+         VALUES (?, ?, ?)`,
+      )
+      .run(
+        "guild-2",
+        JSON.stringify({
           welcomeEnabled: false,
           welcomeChannelId: "123",
           starboardChannelId: null,
           starboardThreshold: 3,
           rulesChannelId: "456",
-          updatedAt: 0,
-        },
-      }),
-    );
+        }),
+        1000,
+      );
 
     const config = await getGuildConfig("guild-2");
 
@@ -50,11 +44,11 @@ describe("guildConfigStore", () => {
     expect(config.welcomeChannelId).toBe("123");
     expect(config.starboardThreshold).toBe(3);
     expect(config.rulesChannelId).toBe("456");
+    expect(config.levelingEnabled).toBe(true);
+    expect(config.updatedAt).toBe(1000);
   });
 
   it("setGuildConfig patches and persists", async () => {
-    vi.mocked(fs.readFile).mockResolvedValue("{}");
-
     const updated = await setGuildConfig("guild-3", {
       welcomeChannelId: "chan-1",
       starboardThreshold: 5,
@@ -63,15 +57,11 @@ describe("guildConfigStore", () => {
     expect(updated.guildId).toBe("guild-3");
     expect(updated.welcomeChannelId).toBe("chan-1");
     expect(updated.starboardThreshold).toBe(5);
-    expect(fs.writeFile).toHaveBeenCalled();
-  });
+    expect(updated.updatedAt).toBeGreaterThan(0);
 
-  it("getGuildConfig returns empty defaults when file missing", async () => {
-    vi.mocked(fs.readFile).mockRejectedValue(new Error("ENOENT"));
+    const reloaded = await getGuildConfig("guild-3");
 
-    const config = await getGuildConfig("guild-new");
-
-    expect(config.guildId).toBe("guild-new");
-    expect(config.welcomeEnabled).toBe(true);
+    expect(reloaded.welcomeChannelId).toBe("chan-1");
+    expect(reloaded.starboardThreshold).toBe(5);
   });
 });

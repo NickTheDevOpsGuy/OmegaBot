@@ -1,31 +1,27 @@
 // src/services/config/guildConfigStore.ts
 
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import path from "path";
 import {
   DEFAULT_GUILD_CONFIG,
   type GuildConfig,
   type GuildConfigPatch,
 } from "./types.js";
+import { getDb } from "../database/db.js";
+import { logger } from "../../../utils/logger.js";
 
 /**
- * Simple JSON-backed store for guild configuration.
+ * SQLite-backed store for guild configuration.
  *
- * Design goals:
- * - Extremely easy to run locally
- * - No external dependencies (DB)
- * - Durable across restarts
- *
- * Notes:
- * - This implementation reads/writes the file per call.
- *   That’s fine for small bots. If you scale, add caching + periodic flush.
+ * The old JSON file is still read as a one-way import path when a guild has no
+ * database row yet. New writes go only to SQLite.
  */
 
 const DATA_DIR = path.join(process.cwd(), "data");
-const FILE_PATH = path.join(DATA_DIR, "guild-config.json");
+const LEGACY_FILE_PATH = path.join(DATA_DIR, "guild-config.json");
 
 /**
- * Stored JSON shape:
+ * Legacy JSON shape:
  * {
  *   "<guildId>": { welcomeEnabled: true, welcomeChannelId: "..." },
  *   "<guildId2>": { ... }
@@ -33,20 +29,73 @@ const FILE_PATH = path.join(DATA_DIR, "guild-config.json");
  */
 type StoreShape = Record<string, Omit<GuildConfig, "guildId">>;
 
-async function readStore(): Promise<StoreShape> {
+type GuildConfigRow = {
+  config: string;
+  updated_at: number;
+};
+
+function ensureGuildConfigTable(): void {
+  getDb().exec(`
+    CREATE TABLE IF NOT EXISTS guild_config (
+      guild_id TEXT PRIMARY KEY,
+      config TEXT NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+  `);
+}
+
+async function readLegacyStore(): Promise<StoreShape> {
   try {
-    const raw = await readFile(FILE_PATH, "utf8");
+    const raw = await readFile(LEGACY_FILE_PATH, "utf8");
     const parsed = JSON.parse(raw) as StoreShape;
     return parsed ?? {};
   } catch {
-    // Missing file, invalid JSON, etc.
+    // Missing file, invalid JSON, etc. Legacy import is best-effort.
     return {};
   }
 }
 
-async function writeStore(store: StoreShape): Promise<void> {
-  await mkdir(DATA_DIR, { recursive: true });
-  await writeFile(FILE_PATH, JSON.stringify(store, null, 2), "utf8");
+function parseStoredConfig(guildId: string, row: GuildConfigRow): GuildConfig {
+  try {
+    const saved = JSON.parse(row.config) as Partial<Omit<GuildConfig, "guildId">>;
+    return {
+      guildId,
+      ...DEFAULT_GUILD_CONFIG,
+      ...saved,
+      updatedAt: row.updated_at,
+    };
+  } catch (err) {
+    logger.warn({ err, guildId }, "[config] stored guild config JSON invalid");
+    return { guildId, ...DEFAULT_GUILD_CONFIG };
+  }
+}
+
+function writeConfig(guildId: string, config: Omit<GuildConfig, "guildId">): void {
+  ensureGuildConfigTable();
+  getDb()
+    .prepare(
+      `INSERT INTO guild_config (guild_id, config, updated_at)
+       VALUES (?, ?, ?)
+       ON CONFLICT(guild_id) DO UPDATE SET
+        config = excluded.config,
+        updated_at = excluded.updated_at`,
+    )
+    .run(guildId, JSON.stringify(config), config.updatedAt);
+}
+
+async function importLegacyConfig(guildId: string): Promise<GuildConfig | null> {
+  const legacy = await readLegacyStore();
+  const saved = legacy[guildId];
+  if (!saved) return null;
+
+  const next: Omit<GuildConfig, "guildId"> = {
+    ...DEFAULT_GUILD_CONFIG,
+    ...saved,
+    updatedAt: saved.updatedAt || Date.now(),
+  };
+  writeConfig(guildId, next);
+  logger.info({ guildId }, "[config] imported legacy JSON guild config into SQLite");
+  return { guildId, ...next };
 }
 
 /**
@@ -54,9 +103,17 @@ async function writeStore(store: StoreShape): Promise<void> {
  * Always returns a fully-populated config object (defaults applied).
  */
 export async function getGuildConfig(guildId: string): Promise<GuildConfig> {
-  const store = await readStore();
-  const saved = store[guildId] ?? {};
-  return { guildId, ...DEFAULT_GUILD_CONFIG, ...saved };
+  ensureGuildConfigTable();
+  const row = getDb()
+    .prepare(`SELECT config, updated_at FROM guild_config WHERE guild_id = ?`)
+    .get(guildId) as GuildConfigRow | undefined;
+
+  if (row) return parseStoredConfig(guildId, row);
+
+  const imported = await importLegacyConfig(guildId);
+  if (imported) return imported;
+
+  return { guildId, ...DEFAULT_GUILD_CONFIG };
 }
 
 /**
@@ -67,14 +124,15 @@ export async function setGuildConfig(
   guildId: string,
   patch: GuildConfigPatch,
 ): Promise<GuildConfig> {
-  const store = await readStore();
+  const current = await getGuildConfig(guildId);
+  const { guildId: _guildId, ...currentValues } = current;
+  const next: Omit<GuildConfig, "guildId"> = {
+    ...currentValues,
+    ...patch,
+    updatedAt: Date.now(),
+  };
 
-  // Apply defaults for new guilds, then patch on top.
-  const current = store[guildId] ?? DEFAULT_GUILD_CONFIG;
-  const next: Omit<GuildConfig, "guildId"> = { ...current, ...patch };
-
-  store[guildId] = next;
-  await writeStore(store);
+  writeConfig(guildId, next);
 
   return { guildId, ...next };
 }
