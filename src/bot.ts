@@ -15,6 +15,9 @@ import { handleInteraction } from "./services/discord/discord/interaction/intera
 import { pollPullRequestsOnce } from "./services/integrations/github/prPoller.js";
 import { pollIssueAssigneesOnce } from "./services/integrations/github/issueAssigneePoller.js";
 import { handleAutoRole } from "./services/stores/roles/autoRoleHandler.js";
+import { setupLevelingMessageHandler } from "./services/stores/leveling/messageLeveling.js";
+import { setupServerToolsMessageHandler } from "./services/stores/serverTools/messageHandlers.js";
+import { setupReactionRoleListeners } from "./services/stores/serverTools/reactionRoleHandler.js";
 import { onGuildMemberAdd } from "./services/integrations/welcome/welcomeHandler.js";
 import { setupStarboardListeners } from "./services/integrations/starboard/starboardHandler.js";
 import { env } from "./config/env.js";
@@ -166,13 +169,16 @@ client.once("clientReady", () => {
 
   // Setup starboard reaction listeners
   setupStarboardListeners(client);
+  setupReactionRoleListeners(client);
 
   if (env.messageContentIntentEnabled) {
     // Chat via message: DM or @mention the bot (uses OPENAI_API_KEY / ANTHROPIC_API_KEY)
     setupChatMessageHandler(client);
+    setupLevelingMessageHandler(client);
+    setupServerToolsMessageHandler(client);
   } else {
     logger.info(
-      "[startup] message-content chat disabled; enable DISCORD_ENABLE_MESSAGE_CONTENT_INTENT=true if you want DM/@mention chat",
+      "[startup] message-content features disabled; enable DISCORD_ENABLE_MESSAGE_CONTENT_INTENT=true if you want DM/@mention chat and message XP",
     );
   }
 

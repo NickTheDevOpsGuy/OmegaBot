@@ -9,6 +9,7 @@ required scopes, permissions, gateway intents, and common moderation pitfalls.
 
 - [Required OAuth Scopes](#required-oauth-scopes)
 - [Required Bot Permissions](#required-bot-permissions)
+- [Notion Audit Channel Permissions](#notion-audit-channel-permissions)
 - [Gateway Intents](#gateway-intents)
 - [Why Admin Commands Might Fail](#why-admin-commands-might-fail)
 - [Moderator Roles (SQLite-backed)](#moderator-roles-sqlite-backed)
@@ -42,12 +43,18 @@ For full functionality, especially **admin/moderation commands**, the bot role n
 - Embed Links
 - Use Slash Commands
 
-For `BOT_ADMIN_AUDIT_CHANNEL_ID`, the bot must have these permissions in the configured audit channel:
+### Notion Audit Channel Permissions
+
+Notion itself is configured in [Notion Wiki Setup](setup-notion.md), but the optional Discord audit channel still depends on Discord permissions.
+
+If `BOT_ADMIN_AUDIT_CHANNEL_ID` is set, OmegaBot sends lightweight audit messages for Notion admin actions such as `/notion status`, `/notion templates`, `/notion create-page`, and `/notion add`.
+
+The bot must have these permissions in the configured audit channel:
 
 - View Channel
 - Send Messages
 
-If the audit channel has channel-specific role overrides, check that the OmegaBot role is allowed there too. Server-level permissions are not enough when a channel override denies access.
+If the audit channel has channel-specific role overrides, check that the OmegaBot role is allowed there too. Server-level permissions are not enough when a channel override denies access. When these permissions are missing, the Notion command can still run, but the audit message will not be posted.
 
 ### Moderation (Admin commands)
 

@@ -27,6 +27,12 @@ export type GuildConfig = {
   rulesChannelId: string | null;
 
   /* ------------------------------------------------------------------ */
+  /* Leveling                                                            */
+  /* ------------------------------------------------------------------ */
+  levelingEnabled: boolean;
+  levelingAnnounceChannelId: string | null;
+
+  /* ------------------------------------------------------------------ */
   /* Metadata                                                            */
   /* ------------------------------------------------------------------ */
   updatedAt: number;
@@ -46,6 +52,10 @@ export const DEFAULT_GUILD_CONFIG: Omit<GuildConfig, "guildId"> = {
 
   // Rules
   rulesChannelId: null,
+
+  // Leveling
+  levelingEnabled: true,
+  levelingAnnounceChannelId: null,
 
   // Metadata
   updatedAt: 0,

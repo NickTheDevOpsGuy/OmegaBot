@@ -3,6 +3,7 @@
 
 import { EmbedBuilder, MessageFlags, type ChatInputCommandInteraction } from "discord.js";
 import { getGuildConfig } from "../../../services/core/config/guildConfigStore.js";
+import { listLevelRoleRewards } from "../../../services/stores/leveling/levelingStore.js";
 import { listModeratorRoles } from "./moderatorRole.js";
 
 export async function handleView(
@@ -36,6 +37,26 @@ export async function handleView(
   embed.addFields({
     name: "📜 Rules",
     value: rulesStatus,
+    inline: false,
+  });
+
+  const rewards = listLevelRoleRewards(interaction.guildId!);
+  const levelingLines = [
+    config.levelingEnabled ? "✅ Enabled" : "❌ Disabled",
+    `Announcements: ${
+      config.levelingAnnounceChannelId
+        ? `<#${config.levelingAnnounceChannelId}>`
+        : "same channel"
+    }`,
+    rewards.length > 0
+      ? `Role rewards: ${rewards
+          .map((reward) => `L${reward.level} <@&${reward.roleId}>`)
+          .join(", ")}`
+      : "Role rewards: none",
+  ];
+  embed.addFields({
+    name: "✨ Leveling",
+    value: levelingLines.join("\n"),
     inline: false,
   });
 
