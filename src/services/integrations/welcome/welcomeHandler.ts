@@ -28,16 +28,34 @@ async function resolveWelcomeChannel(guild: Guild): Promise<TextBasedChannel | n
   const cfg = await getGuildConfig(guild.id);
 
   // Allow per-guild disabling of welcome messages.
-  if (!cfg.welcomeEnabled) return null;
+  if (!cfg.welcomeEnabled) {
+    logger.info({ guildId: guild.id }, "[welcome] skipped; welcome disabled");
+    return null;
+  }
 
   // Prefer configured welcome channel.
   if (cfg.welcomeChannelId) {
     const ch = await guild.channels.fetch(cfg.welcomeChannelId).catch((): null => null);
-    if (ch?.isTextBased()) return ch;
+    if (ch?.isTextBased()) {
+      logger.debug(
+        { guildId: guild.id, channelId: cfg.welcomeChannelId },
+        "[welcome] using configured channel",
+      );
+      return ch;
+    }
+
+    logger.warn(
+      { guildId: guild.id, channelId: cfg.welcomeChannelId },
+      "[welcome] configured channel missing or not text-based; falling back",
+    );
   }
 
   // Fallback to system channel.
   if (guild.systemChannel?.isTextBased()) {
+    logger.debug(
+      { guildId: guild.id, channelId: guild.systemChannel.id },
+      "[welcome] using system channel",
+    );
     return guild.systemChannel;
   }
 
@@ -46,7 +64,13 @@ async function resolveWelcomeChannel(guild: Guild): Promise<TextBasedChannel | n
   if (!channels) return null;
 
   for (const [, ch] of channels) {
-    if (ch?.isTextBased()) return ch;
+    if (ch?.isTextBased()) {
+      logger.debug(
+        { guildId: guild.id, channelId: ch.id },
+        "[welcome] using first text-based channel",
+      );
+      return ch;
+    }
   }
 
   return null;
@@ -77,6 +101,10 @@ export async function onGuildMemberAdd(member: GuildMember): Promise<void> {
     }
 
     await channel.send(buildWelcomeMessage(member));
+    logger.info(
+      { guildId: member.guild.id, userId: member.user.id },
+      "[welcome] welcome message sent",
+    );
   } catch (err) {
     logger.error(
       { err, guildId: member.guild.id, userId: member.user.id },

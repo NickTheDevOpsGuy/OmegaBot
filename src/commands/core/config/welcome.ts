@@ -77,7 +77,7 @@ export async function handleWelcome(
   } else if (sub === "clear") {
     await setGuildConfig(interaction.guildId!, {
       welcomeChannelId: null,
-      welcomeEnabled: false,
+      welcomeEnabled: true,
     });
 
     getContextLogger().info(

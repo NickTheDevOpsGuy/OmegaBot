@@ -13,9 +13,11 @@ export async function handleView(
 
   const embed = new EmbedBuilder().setTitle("⚙️ Server Configuration").setColor(0x5865f2);
 
-  const welcomeStatus = config.welcomeChannelId
-    ? `✅ Enabled - <#${config.welcomeChannelId}>`
-    : "❌ Not configured";
+  const welcomeStatus = config.welcomeEnabled
+    ? config.welcomeChannelId
+      ? `✅ Enabled - <#${config.welcomeChannelId}>`
+      : "✅ Enabled - system channel fallback"
+    : "❌ Disabled";
   embed.addFields({
     name: "👋 Welcome Messages",
     value: welcomeStatus,
