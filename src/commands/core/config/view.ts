@@ -18,9 +18,12 @@ export async function handleView(
       ? `✅ Enabled - <#${config.welcomeChannelId}>`
       : "✅ Enabled - system channel fallback"
     : "❌ Disabled";
+  const welcomeMessageStatus = config.welcomeMessage
+    ? `Custom message (${config.welcomeMessage.length} chars)`
+    : "Default message";
   embed.addFields({
     name: "👋 Welcome Messages",
-    value: welcomeStatus,
+    value: `${welcomeStatus}\nMessage: ${welcomeMessageStatus}`,
     inline: false,
   });
 

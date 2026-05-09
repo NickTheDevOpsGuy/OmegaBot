@@ -14,6 +14,7 @@ describe("guildConfigStore", () => {
 
     expect(config.guildId).toBe("guild-1");
     expect(config.welcomeEnabled).toBe(true);
+    expect(config.welcomeMessage).toBeNull();
     expect(config.starboardThreshold).toBe(3);
     expect(config.rulesChannelId).toBeNull();
     expect(config.levelingEnabled).toBe(true);
@@ -42,6 +43,7 @@ describe("guildConfigStore", () => {
     expect(config.guildId).toBe("guild-2");
     expect(config.welcomeEnabled).toBe(false);
     expect(config.welcomeChannelId).toBe("123");
+    expect(config.welcomeMessage).toBeNull();
     expect(config.starboardThreshold).toBe(3);
     expect(config.rulesChannelId).toBe("456");
     expect(config.levelingEnabled).toBe(true);
@@ -51,17 +53,20 @@ describe("guildConfigStore", () => {
   it("setGuildConfig patches and persists", async () => {
     const updated = await setGuildConfig("guild-3", {
       welcomeChannelId: "chan-1",
+      welcomeMessage: "Welcome {user}",
       starboardThreshold: 5,
     });
 
     expect(updated.guildId).toBe("guild-3");
     expect(updated.welcomeChannelId).toBe("chan-1");
+    expect(updated.welcomeMessage).toBe("Welcome {user}");
     expect(updated.starboardThreshold).toBe(5);
     expect(updated.updatedAt).toBeGreaterThan(0);
 
     const reloaded = await getGuildConfig("guild-3");
 
     expect(reloaded.welcomeChannelId).toBe("chan-1");
+    expect(reloaded.welcomeMessage).toBe("Welcome {user}");
     expect(reloaded.starboardThreshold).toBe(5);
   });
 });

@@ -12,6 +12,20 @@ export const WIKI_URL = "https://github.com/WRDLNKDN/WebDev/wiki";
 /** Agreements repo – contributor policies, reimbursement, and official agreements. */
 export const AGREEMENTS_URL = "https://github.com/WRDLNKDN/Agreements";
 
+export function renderWelcomeTemplate(member: GuildMember, template: string): string {
+  const handle = member.displayName || member.user.username;
+  const botName = member.client?.user?.username;
+  const name = handle && handle !== botName ? handle : "there";
+  const username = member.user.username;
+  const server = member.guild.name;
+
+  return template
+    .replaceAll("{user}", `<@${member.user.id}>`)
+    .replaceAll("{name}", name)
+    .replaceAll("{username}", username)
+    .replaceAll("{server}", server);
+}
+
 /**
  * Build a welcome message for a new member.
  *
@@ -20,7 +34,14 @@ export const AGREEMENTS_URL = "https://github.com/WRDLNKDN/Agreements";
  * - no env lookups
  * - easy to tweak copy later
  */
-export function buildWelcomeMessage(member: GuildMember): string {
+export function buildWelcomeMessage(
+  member: GuildMember,
+  customMessage?: string | null,
+): string {
+  if (customMessage?.trim()) {
+    return renderWelcomeTemplate(member, customMessage.trim());
+  }
+
   const handle = member.displayName || member.user.username;
   const botName = member.client?.user?.username;
   const name = handle && handle !== botName ? handle : "there";

@@ -5,7 +5,8 @@ import { AGREEMENTS_URL, buildWelcomeMessage } from "./welcomeMessage.js";
 function mockMember(displayName: string, username = "fallback-user"): GuildMember {
   return {
     displayName,
-    user: { username },
+    user: { id: "user-1", username },
+    guild: { name: "Test Server" },
   } as unknown as GuildMember;
 }
 
@@ -22,5 +23,14 @@ describe("buildWelcomeMessage", () => {
     const message = buildWelcomeMessage(mockMember("", "nick-user"));
 
     expect(message).toContain("Welcome to OmegaBot, nick-user");
+  });
+
+  it("renders a custom template with placeholders", () => {
+    const message = buildWelcomeMessage(
+      mockMember("Nick", "nick-user"),
+      "Welcome {user} / {name} / {username} to {server}",
+    );
+
+    expect(message).toBe("Welcome <@user-1> / Nick / nick-user to Test Server");
   });
 });

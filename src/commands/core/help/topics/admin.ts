@@ -14,6 +14,8 @@ export function buildAdminHelp(args: { isAdmin: boolean }): string {
     "`/config view`                  View all settings",
     "`/config welcome set`           Set welcome channel",
     "`/config welcome clear`         Clear welcome channel",
+    "`/config welcome message`       Set welcome message text",
+    "`/config welcome reset-message` Use default welcome message",
     "`/config welcome test`          Send a test welcome message",
     "`/config starboard set`         Set up starboard",
     "`/config starboard clear`       Disable starboard",

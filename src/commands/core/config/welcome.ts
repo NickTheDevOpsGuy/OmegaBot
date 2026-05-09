@@ -55,6 +55,42 @@ export async function handleWelcome(
       content: "✅ Welcome channel cleared. Using system channel as fallback.",
       flags: MessageFlags.Ephemeral,
     });
+  } else if (sub === "message") {
+    const text = interaction.options.getString("text", true).trim();
+
+    await setGuildConfig(interaction.guildId!, {
+      welcomeMessage: text,
+      welcomeEnabled: true,
+    });
+
+    getContextLogger().info(
+      {
+        guildId: interaction.guildId,
+        messageLength: text.length,
+      },
+      "[config] welcome message set",
+    );
+
+    await interaction.reply({
+      content: "✅ Welcome message updated. Use `/config welcome test` to preview it.",
+      flags: MessageFlags.Ephemeral,
+    });
+  } else if (sub === "reset-message") {
+    await setGuildConfig(interaction.guildId!, {
+      welcomeMessage: null,
+      welcomeEnabled: true,
+    });
+
+    getContextLogger().info(
+      { guildId: interaction.guildId },
+      "[config] welcome message reset",
+    );
+
+    await interaction.reply({
+      content:
+        "✅ Welcome message reset to the default. Use `/config welcome test` to preview it.",
+      flags: MessageFlags.Ephemeral,
+    });
   } else if (sub === "test") {
     const member = await interaction.guild?.members
       .fetch(interaction.user.id)
@@ -86,9 +122,15 @@ export async function handleWelcome(
 
       await interaction.reply({
         content:
-          result.reason === "not-sendable"
-            ? "I found a welcome channel, but it is not sendable."
-            : "I could not resolve a welcome channel. Use `/config welcome set` or set a server system channel.",
+          result.reason === "missing-permissions"
+            ? `I cannot send welcome messages in ${result.channelId ? `<#${result.channelId}>` : "the resolved welcome channel"}. Missing: ${result.missingPermissions?.join(", ") ?? "channel permissions"}.`
+            : result.reason === "missing-access"
+              ? `Discord says I do not have access to ${result.channelId ? `<#${result.channelId}>` : "the resolved welcome channel"}. Check View Channel permissions.`
+              : result.reason === "not-sendable"
+                ? "I found a welcome channel, but it is not sendable."
+                : result.reason === "send-failed"
+                  ? "I found the welcome channel, but Discord rejected the send. Check the bot logs for the Discord error code."
+                  : "I could not resolve a welcome channel. Use `/config welcome set` or set a server system channel.",
         flags: MessageFlags.Ephemeral,
       });
     } catch (err) {

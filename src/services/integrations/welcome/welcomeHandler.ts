@@ -1,14 +1,32 @@
 // src/services/welcome/welcomeHandler.ts
 
-import type { Guild, GuildMember, TextBasedChannel } from "discord.js";
+import {
+  PermissionFlagsBits,
+  type Guild,
+  type GuildMember,
+  type TextBasedChannel,
+} from "discord.js";
 import { env } from "../../../config/env.js";
+import { getDiscordErrorCode } from "../../discord/discord/interaction/interactionErrors.js";
 import { logger } from "../../../utils/logger.js";
 import { buildWelcomeMessage } from "./welcomeMessage.js";
 import { getGuildConfig } from "../../core/config/index.js";
+import type { GuildConfig } from "../../core/config/index.js";
 
 export type WelcomeMessageResult =
   | { sent: true; channelId: string | null }
-  | { sent: false; reason: "disabled" | "no-channel" | "not-sendable" };
+  | {
+      sent: false;
+      reason:
+        | "disabled"
+        | "no-channel"
+        | "not-sendable"
+        | "missing-access"
+        | "missing-permissions"
+        | "send-failed";
+      channelId?: string | null;
+      missingPermissions?: string[];
+    };
 
 /**
  * Type guard to ensure a text-based channel supports `.send()`.
@@ -29,9 +47,10 @@ function isSendableChannel(
  * 2) Guild system channel
  * 3) First available text-based channel
  */
-async function resolveWelcomeChannel(guild: Guild): Promise<TextBasedChannel | null> {
-  const cfg = await getGuildConfig(guild.id);
-
+async function resolveWelcomeChannel(
+  guild: Guild,
+  cfg: GuildConfig,
+): Promise<TextBasedChannel | null> {
   // Allow per-guild disabling of welcome messages.
   if (!cfg.welcomeEnabled) {
     logger.info({ guildId: guild.id }, "[welcome] skipped; welcome disabled");
@@ -104,11 +123,31 @@ function getChannelId(channel: TextBasedChannel): string | null {
   return "id" in channel && typeof channel.id === "string" ? channel.id : null;
 }
 
+function missingSendPermissions(
+  member: GuildMember,
+  channel: TextBasedChannel,
+): string[] {
+  if (!("permissionsFor" in channel) || typeof channel.permissionsFor !== "function") {
+    return [];
+  }
+
+  const permissions = channel.permissionsFor(
+    member.guild.members.me ?? member.client.user,
+  );
+  if (!permissions) return ["View Channel", "Send Messages"];
+
+  return [
+    permissions.has(PermissionFlagsBits.ViewChannel) ? null : "View Channel",
+    permissions.has(PermissionFlagsBits.SendMessages) ? null : "Send Messages",
+  ].filter((permission): permission is string => Boolean(permission));
+}
+
 export async function sendWelcomeMessageForMember(
   member: GuildMember,
   source: "join" | "config-test" = "join",
 ): Promise<WelcomeMessageResult> {
-  const channel = await resolveWelcomeChannel(member.guild);
+  const cfg = await getGuildConfig(member.guild.id);
+  const channel = await resolveWelcomeChannel(member.guild, cfg);
 
   if (!channel) {
     logger.info(
@@ -127,11 +166,56 @@ export async function sendWelcomeMessageForMember(
   }
 
   const channelId = getChannelId(channel);
-  await channel.send(buildWelcomeMessage(member));
-  logger.info(
-    { guildId: member.guild.id, userId: member.user.id, channelId, source },
-    "[welcome] welcome message sent",
-  );
+  const missingPermissions = missingSendPermissions(member, channel);
+  if (missingPermissions.length > 0) {
+    logger.warn(
+      {
+        guildId: member.guild.id,
+        userId: member.user.id,
+        channelId,
+        source,
+        missingPermissions,
+      },
+      "[welcome] missing channel permissions for welcome message",
+    );
+    return {
+      sent: false,
+      reason: "missing-permissions",
+      channelId,
+      missingPermissions,
+    };
+  }
+
+  try {
+    await channel.send(buildWelcomeMessage(member, cfg.welcomeMessage));
+    logger.info(
+      { guildId: member.guild.id, userId: member.user.id, channelId, source },
+      "[welcome] welcome message sent",
+    );
+  } catch (err) {
+    const code = getDiscordErrorCode(err);
+    const reason =
+      code === 50001
+        ? "missing-access"
+        : code === 50013
+          ? "missing-permissions"
+          : "send-failed";
+
+    logger.warn(
+      {
+        err,
+        code,
+        reason,
+        guildId: member.guild.id,
+        userId: member.user.id,
+        channelId,
+        source,
+      },
+      "[welcome] welcome message send failed",
+    );
+
+    return { sent: false, reason, channelId };
+  }
 
   return { sent: true, channelId };
 }

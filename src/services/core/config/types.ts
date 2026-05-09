@@ -14,6 +14,7 @@ export type GuildConfig = {
   /* ------------------------------------------------------------------ */
   welcomeEnabled: boolean;
   welcomeChannelId: string | null;
+  welcomeMessage: string | null;
 
   /* ------------------------------------------------------------------ */
   /* Starboard                                                           */
@@ -45,6 +46,7 @@ export const DEFAULT_GUILD_CONFIG: Omit<GuildConfig, "guildId"> = {
   // Welcome
   welcomeEnabled: true,
   welcomeChannelId: null,
+  welcomeMessage: null,
 
   // Starboard
   starboardChannelId: null,
