@@ -117,6 +117,7 @@ export const env = {
 
   guildId: process.env.DISCORD_GUILD_ID ?? null,
 
+  discordWelcomeChannelId: process.env.DISCORD_WELCOME_CHANNEL_ID ?? null,
   discordAutoRoleId: process.env.DISCORD_AUTO_ROLE_ID ?? null,
   guildMembersIntentEnabled,
   messageContentIntentEnabled,

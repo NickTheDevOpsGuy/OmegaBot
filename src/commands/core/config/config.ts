@@ -2,7 +2,7 @@
 //
 // Subcommand groups:
 // - /config view                    - View all server settings
-// - /config welcome set/clear       - Configure welcome messages
+// - /config welcome set/clear/test  - Configure welcome messages
 // - /config starboard set/status/clear - Configure starboard
 // - /config leveling ...            - Configure message XP leveling
 //
@@ -47,6 +47,9 @@ export const data = new SlashCommandBuilder()
       )
       .addSubcommand((sub) =>
         sub.setName("clear").setDescription("Clear the welcome channel"),
+      )
+      .addSubcommand((sub) =>
+        sub.setName("test").setDescription("Send a test welcome message"),
       ),
   )
   // Starboard

@@ -142,6 +142,10 @@ client.on("interactionCreate", async (interaction) => {
 });
 
 if (env.guildMembersIntentEnabled) {
+  logger.info(
+    "[startup] guildMemberAdd handlers enabled; welcome and auto-role flows can run",
+  );
+
   client.on("guildMemberAdd", async (member) => {
     logger.info(
       {

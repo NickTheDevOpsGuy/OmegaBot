@@ -1,9 +1,14 @@
 // src/services/welcome/welcomeHandler.ts
 
 import type { Guild, GuildMember, TextBasedChannel } from "discord.js";
+import { env } from "../../../config/env.js";
 import { logger } from "../../../utils/logger.js";
 import { buildWelcomeMessage } from "./welcomeMessage.js";
 import { getGuildConfig } from "../../core/config/index.js";
+
+export type WelcomeMessageResult =
+  | { sent: true; channelId: string | null }
+  | { sent: false; reason: "disabled" | "no-channel" | "not-sendable" };
 
 /**
  * Type guard to ensure a text-based channel supports `.send()`.
@@ -50,6 +55,25 @@ async function resolveWelcomeChannel(guild: Guild): Promise<TextBasedChannel | n
     );
   }
 
+  // Environment fallback for single-server deployments.
+  if (env.discordWelcomeChannelId) {
+    const ch = await guild.channels
+      .fetch(env.discordWelcomeChannelId)
+      .catch((): null => null);
+    if (ch?.isTextBased()) {
+      logger.debug(
+        { guildId: guild.id, channelId: env.discordWelcomeChannelId },
+        "[welcome] using env channel",
+      );
+      return ch;
+    }
+
+    logger.warn(
+      { guildId: guild.id, channelId: env.discordWelcomeChannelId },
+      "[welcome] env channel missing or not text-based; falling back",
+    );
+  }
+
   // Fallback to system channel.
   if (guild.systemChannel?.isTextBased()) {
     logger.debug(
@@ -76,35 +100,49 @@ async function resolveWelcomeChannel(guild: Guild): Promise<TextBasedChannel | n
   return null;
 }
 
+function getChannelId(channel: TextBasedChannel): string | null {
+  return "id" in channel && typeof channel.id === "string" ? channel.id : null;
+}
+
+export async function sendWelcomeMessageForMember(
+  member: GuildMember,
+  source: "join" | "config-test" = "join",
+): Promise<WelcomeMessageResult> {
+  const channel = await resolveWelcomeChannel(member.guild);
+
+  if (!channel) {
+    logger.info(
+      { guildId: member.guild.id, source },
+      "Welcome handler skipped (no channel resolved or disabled)",
+    );
+    return { sent: false, reason: "no-channel" };
+  }
+
+  if (!isSendableChannel(channel)) {
+    logger.warn(
+      { guildId: member.guild.id, channelId: getChannelId(channel), source },
+      "Resolved welcome channel is not sendable",
+    );
+    return { sent: false, reason: "not-sendable" };
+  }
+
+  const channelId = getChannelId(channel);
+  await channel.send(buildWelcomeMessage(member));
+  logger.info(
+    { guildId: member.guild.id, userId: member.user.id, channelId, source },
+    "[welcome] welcome message sent",
+  );
+
+  return { sent: true, channelId };
+}
+
 /**
  * Event handler for new members joining a guild.
  * Never throws — background event safety.
  */
 export async function onGuildMemberAdd(member: GuildMember): Promise<void> {
   try {
-    const channel = await resolveWelcomeChannel(member.guild);
-
-    if (!channel) {
-      logger.info(
-        { guildId: member.guild.id },
-        "Welcome handler skipped (no channel resolved or disabled)",
-      );
-      return;
-    }
-
-    if (!isSendableChannel(channel)) {
-      logger.warn(
-        { guildId: member.guild.id },
-        "Resolved welcome channel is not sendable",
-      );
-      return;
-    }
-
-    await channel.send(buildWelcomeMessage(member));
-    logger.info(
-      { guildId: member.guild.id, userId: member.user.id },
-      "[welcome] welcome message sent",
-    );
+    await sendWelcomeMessageForMember(member, "join");
   } catch (err) {
     logger.error(
       { err, guildId: member.guild.id, userId: member.user.id },

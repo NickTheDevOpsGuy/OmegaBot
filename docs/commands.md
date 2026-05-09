@@ -213,6 +213,7 @@ Requires **Manage Server** permission.
 | `/config view`                  | View all settings            |
 | `/config welcome set`           | Set welcome channel          |
 | `/config welcome clear`         | Clear welcome channel        |
+| `/config welcome test`          | Send a test welcome message  |
 | `/config starboard set`         | Set up starboard             |
 | `/config starboard status`      | View starboard settings      |
 | `/config starboard clear`       | Disable starboard            |
