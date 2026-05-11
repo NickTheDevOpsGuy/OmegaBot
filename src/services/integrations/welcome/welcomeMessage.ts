@@ -32,10 +32,6 @@ export function buildWelcomeMessage(
     return renderWelcomeTemplate(member, customMessage.trim());
   }
 
-  const handle = member.displayName || member.user.username;
-  const botName = member.client?.user?.username;
-  const name = handle && handle !== botName ? handle : "there";
-
   return renderWelcomeTemplate(
     member,
     [
