@@ -19,6 +19,7 @@
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "db:check": "node --import=ts-node/register/transpile-only scripts/db-check.ts",
+    "welcome:config": "node --import=ts-node/register/transpile-only scripts/welcome-config.ts",
     "notion:check": "node --import=ts-node/register/transpile-only scripts/check-notion.ts",
     "db:backup": "bash scripts/backup-db.sh",
     "db:seed": "node scripts/seed-dev-db.mjs",
