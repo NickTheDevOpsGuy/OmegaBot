@@ -5,8 +5,8 @@ CREATE TABLE IF NOT EXISTS faqs (
   title TEXT NOT NULL,
   body TEXT NOT NULL,
   tags TEXT NOT NULL,
-  created_at INTEGER NOT NULL,
-  updated_at INTEGER NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
   usage_count INTEGER DEFAULT 0,
   created_by TEXT,
   updated_by TEXT
@@ -16,6 +16,17 @@ CREATE TABLE IF NOT EXISTS user_timezones (
   user_id TEXT PRIMARY KEY,
   timezone TEXT NOT NULL,
   updated_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS user_timezones_scoped (
+  scope TEXT NOT NULL CHECK (scope IN ('guild','global')),
+  guild_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  timezone TEXT NOT NULL,
+  label TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  PRIMARY KEY (scope, guild_id, user_id)
 );
 
 CREATE TABLE IF NOT EXISTS guild_config (
@@ -116,6 +127,19 @@ CREATE TABLE IF NOT EXISTS fun_usage (
 
 CREATE INDEX IF NOT EXISTS idx_fun_usage_user ON fun_usage(user_id);
 CREATE INDEX IF NOT EXISTS idx_fun_usage_command ON fun_usage(command);
+
+CREATE TABLE IF NOT EXISTS fun_polls (
+  message_id TEXT PRIMARY KEY,
+  channel_id TEXT NOT NULL,
+  guild_id TEXT,
+  creator_user_id TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  question TEXT NOT NULL,
+  options_json TEXT NOT NULL,
+  counts_json TEXT NOT NULL,
+  votes_json TEXT NOT NULL
+);
 
 CREATE TABLE IF NOT EXISTS jokes (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

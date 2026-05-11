@@ -55,7 +55,7 @@ export async function handleWelcome(
       content: "✅ Welcome channel cleared. Using system channel as fallback.",
       flags: MessageFlags.Ephemeral,
     });
-  } else if (sub === "message") {
+  } else if (sub === "message" || sub === "set-message") {
     const text = interaction.options.getString("text", true).trim();
 
     await setGuildConfig(interaction.guildId!, {

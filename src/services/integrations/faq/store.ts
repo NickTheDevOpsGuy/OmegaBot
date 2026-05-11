@@ -1,95 +1,105 @@
 // src/services/faq/store.ts
 
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import path from "path";
-import { z } from "zod";
-import { logger } from "../../../utils/logger.js";
-import type { FaqStoreV1 } from "./types.js";
+import { getDb } from "../../core/database/db.js";
+import type { FaqEntry, FaqStoreV1 } from "./types.js";
 
-const FaqEntrySchema = z.object({
-  key: z.string(),
-  title: z.string(),
-  body: z.string(),
-  tags: z.array(z.string()),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-  createdBy: z.string(),
-  updatedBy: z.string(),
-  usageCount: z.number(),
-});
-
-const FaqStoreV1Schema = z.object({
-  version: z.literal(1),
-  entries: z.record(z.string(), FaqEntrySchema),
-});
-
-/**
- * Absolute path to the FAQ data file.
- * Stored outside src/ so it persists across builds.
- */
-const STORE_PATH = path.join(process.cwd(), "data", "faqs.json");
-
-/**
- * Empty FAQ store template (schema v1).
- * Used on first run or when recovery is required.
- */
-const EMPTY_STORE: FaqStoreV1 = {
-  version: 1,
-  entries: {},
-};
-
-/**
- * Ensure the FAQ store file exists on disk.
- *
- * - Creates parent directories if missing
- * - Writes an empty store if the file does not exist
- * - Safe to call multiple times
- */
-export async function ensureStoreFile(): Promise<void> {
+function parseTags(raw: string): string[] {
   try {
-    await readFile(STORE_PATH, "utf8");
-    return;
+    const tags = JSON.parse(raw) as unknown;
+    return Array.isArray(tags)
+      ? tags.filter((tag): tag is string => typeof tag === "string")
+      : [];
   } catch {
-    await mkdir(path.dirname(STORE_PATH), { recursive: true });
-    await writeFile(STORE_PATH, JSON.stringify(EMPTY_STORE, null, 2), "utf8");
-    logger.info("[faq] created empty FAQ store");
+    return [];
   }
 }
 
-/**
- * Load the FAQ store from disk.
- *
- * Behavior:
- * - Ensures the store file exists
- * - Parses JSON from disk
- * - Validates basic schema shape
- * - Falls back to an empty store on error
- */
+function toEntry(row: {
+  key: string;
+  title: string;
+  body: string;
+  tags: string;
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+  updated_by: string | null;
+  usage_count: number | null;
+}): FaqEntry {
+  return {
+    key: row.key,
+    title: row.title,
+    body: row.body,
+    tags: parseTags(row.tags),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    createdBy: row.created_by ?? "system",
+    updatedBy: row.updated_by ?? "system",
+    usageCount: row.usage_count ?? 0,
+  };
+}
+
+export async function ensureStoreFile(): Promise<void> {
+  getDb().exec(`
+    CREATE TABLE IF NOT EXISTS faqs (
+      key TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      body TEXT NOT NULL,
+      tags TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      usage_count INTEGER DEFAULT 0,
+      created_by TEXT,
+      updated_by TEXT
+    );
+  `);
+}
+
 export async function loadStore(): Promise<FaqStoreV1> {
   await ensureStoreFile();
 
-  try {
-    const raw = await readFile(STORE_PATH, "utf8");
-    const json = JSON.parse(raw) as unknown;
-    const result = FaqStoreV1Schema.safeParse(json);
-    if (result.success) return result.data;
-    logger.warn(
-      { err: result.error.flatten(), path: STORE_PATH },
-      "[faq] store validation failed, falling back to empty store",
-    );
-    return { version: 1, entries: {} };
-  } catch (err) {
-    logger.error({ err }, "[faq] load store threw, falling back to empty store");
-    return { version: 1, entries: {} };
+  const rows = getDb()
+    .prepare(
+      `SELECT key, title, body, tags, created_at, updated_at, created_by, updated_by, usage_count
+       FROM faqs
+       ORDER BY key ASC`,
+    )
+    .all() as Parameters<typeof toEntry>[0][];
+
+  const entries: Record<string, FaqEntry> = {};
+  for (const row of rows) {
+    const entry = toEntry(row);
+    entries[entry.key] = entry;
   }
+
+  return { version: 1, entries };
 }
 
-/**
- * Persist the FAQ store back to disk.
- *
- * Overwrites the entire store atomically.
- */
 export async function saveStore(store: FaqStoreV1): Promise<void> {
-  await mkdir(path.dirname(STORE_PATH), { recursive: true });
-  await writeFile(STORE_PATH, JSON.stringify(store, null, 2), "utf8");
+  await ensureStoreFile();
+
+  const db = getDb();
+  const tx = db.transaction(() => {
+    db.prepare("DELETE FROM faqs").run();
+    const insert = db.prepare(
+      `INSERT INTO faqs
+        (key, title, body, tags, created_at, updated_at, usage_count, created_by, updated_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    );
+
+    for (const entry of Object.values(store.entries)) {
+      insert.run(
+        entry.key,
+        entry.title,
+        entry.body,
+        JSON.stringify(entry.tags),
+        entry.createdAt,
+        entry.updatedAt,
+        entry.usageCount,
+        entry.createdBy,
+        entry.updatedBy,
+      );
+    }
+  });
+
+  tx();
 }

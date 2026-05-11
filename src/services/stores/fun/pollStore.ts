@@ -1,5 +1,4 @@
-import { promises as fs } from "node:fs";
-import path from "node:path";
+import { getDb } from "../../core/database/db.js";
 import { logger } from "../../../utils/logger.js";
 
 export type StoredPoll = {
@@ -12,58 +11,47 @@ export type StoredPoll = {
   updatedAt: string;
   question: string;
   options: string[];
-  counts: number[]; // same length as options
-  votesByUser: Record<string, number>; // userId -> optionIndex
+  counts: number[];
+  votesByUser: Record<string, number>;
 };
-
-type PollStoreFileV1 = {
-  version: 1;
-  updatedAt: string;
-  polls: Record<string, StoredPoll>; // messageId -> poll
-};
-
-const DATA_DIR = path.join(process.cwd(), "data");
-const STORE_PATH = path.join(DATA_DIR, "fun-polls.json");
 
 function nowIso(): string {
   return new Date().toISOString();
 }
 
-async function ensureDataDir(): Promise<void> {
-  await fs.mkdir(DATA_DIR, { recursive: true });
-}
-
-function emptyStore(): PollStoreFileV1 {
-  return {
-    version: 1,
-    updatedAt: nowIso(),
-    polls: {},
-  };
-}
-
-async function loadStore(): Promise<PollStoreFileV1> {
+function parseJson<T>(raw: string, fallback: T): T {
   try {
-    const raw = await fs.readFile(STORE_PATH, "utf8");
-    const parsed = JSON.parse(raw) as Partial<PollStoreFileV1> | null;
-
-    if (!parsed || typeof parsed !== "object") return emptyStore();
-    if (parsed.version !== 1) return emptyStore();
-
-    const polls = parsed.polls && typeof parsed.polls === "object" ? parsed.polls : {};
-
-    return {
-      version: 1,
-      updatedAt: typeof parsed.updatedAt === "string" ? parsed.updatedAt : nowIso(),
-      polls: polls as Record<string, StoredPoll>,
-    };
+    return JSON.parse(raw) as T;
   } catch {
-    return emptyStore();
+    return fallback;
   }
 }
 
-async function saveStore(store: PollStoreFileV1): Promise<void> {
-  await ensureDataDir();
-  await fs.writeFile(STORE_PATH, JSON.stringify(store, null, 2), "utf8");
+function toPoll(row: {
+  message_id: string;
+  channel_id: string;
+  guild_id: string | null;
+  creator_user_id: string;
+  created_at: string;
+  updated_at: string;
+  question: string;
+  options_json: string;
+  counts_json: string;
+  votes_json: string;
+}): StoredPoll {
+  return {
+    version: 1,
+    messageId: row.message_id,
+    channelId: row.channel_id,
+    guildId: row.guild_id,
+    creatorUserId: row.creator_user_id,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    question: row.question,
+    options: parseJson<string[]>(row.options_json, []),
+    counts: parseJson<number[]>(row.counts_json, []),
+    votesByUser: parseJson<Record<string, number>>(row.votes_json, {}),
+  };
 }
 
 export async function createPoll(args: {
@@ -74,8 +62,6 @@ export async function createPoll(args: {
   question: string;
   options: string[];
 }): Promise<StoredPoll> {
-  const store = await loadStore();
-
   const createdAt = nowIso();
   const poll: StoredPoll = {
     version: 1,
@@ -91,21 +77,53 @@ export async function createPoll(args: {
     votesByUser: {},
   };
 
-  store.polls[poll.messageId] = poll;
-  store.updatedAt = nowIso();
-
   try {
-    await saveStore(store);
+    getDb()
+      .prepare(
+        `INSERT INTO fun_polls
+          (message_id, channel_id, guild_id, creator_user_id, created_at, updated_at,
+           question, options_json, counts_json, votes_json)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(message_id) DO UPDATE SET
+          channel_id = excluded.channel_id,
+          guild_id = excluded.guild_id,
+          creator_user_id = excluded.creator_user_id,
+          updated_at = excluded.updated_at,
+          question = excluded.question,
+          options_json = excluded.options_json,
+          counts_json = excluded.counts_json,
+          votes_json = excluded.votes_json`,
+      )
+      .run(
+        poll.messageId,
+        poll.channelId,
+        poll.guildId,
+        poll.creatorUserId,
+        poll.createdAt,
+        poll.updatedAt,
+        poll.question,
+        JSON.stringify(poll.options),
+        JSON.stringify(poll.counts),
+        JSON.stringify(poll.votesByUser),
+      );
   } catch (err) {
-    logger.error({ err }, "[fun/pollStore] save poll store threw");
+    logger.error({ err }, "[fun/pollStore] save poll threw");
   }
 
   return poll;
 }
 
 export async function getPoll(messageId: string): Promise<StoredPoll | null> {
-  const store = await loadStore();
-  return store.polls[messageId] ?? null;
+  const row = getDb()
+    .prepare(
+      `SELECT message_id, channel_id, guild_id, creator_user_id, created_at, updated_at,
+              question, options_json, counts_json, votes_json
+       FROM fun_polls
+       WHERE message_id = ?`,
+    )
+    .get(messageId) as Parameters<typeof toPoll>[0] | undefined;
+
+  return row ? toPoll(row) : null;
 }
 
 export async function recordVote(args: {
@@ -117,9 +135,7 @@ export async function recordVote(args: {
   | { kind: "alreadyVoted"; previousOptionIndex: number }
   | { kind: "notFound" }
 > {
-  const store = await loadStore();
-  const poll = store.polls[args.messageId];
-
+  const poll = await getPoll(args.messageId);
   if (!poll) return { kind: "notFound" };
 
   const prev = poll.votesByUser[args.userId];
@@ -128,18 +144,24 @@ export async function recordVote(args: {
   }
 
   poll.votesByUser[args.userId] = args.optionIndex;
-
-  const current = poll.counts[args.optionIndex] ?? 0;
-  poll.counts[args.optionIndex] = current + 1;
-
+  poll.counts[args.optionIndex] = (poll.counts[args.optionIndex] ?? 0) + 1;
   poll.updatedAt = nowIso();
-  store.updatedAt = nowIso();
-  store.polls[poll.messageId] = poll;
 
   try {
-    await saveStore(store);
+    getDb()
+      .prepare(
+        `UPDATE fun_polls
+         SET updated_at = ?, counts_json = ?, votes_json = ?
+         WHERE message_id = ?`,
+      )
+      .run(
+        poll.updatedAt,
+        JSON.stringify(poll.counts),
+        JSON.stringify(poll.votesByUser),
+        poll.messageId,
+      );
   } catch (err) {
-    logger.error({ err }, "[fun/pollStore] save poll store threw");
+    logger.error({ err }, "[fun/pollStore] save vote threw");
   }
 
   return { kind: "ok", poll };

@@ -7,7 +7,7 @@ The goal is to keep FAQs:
 - Easy to manage
 - Safe for Discord limits
 - Auditable
-- Simple to migrate to a database later
+- Persisted in SQLite with the rest of OmegaBot state
 
 ---
 
@@ -24,13 +24,10 @@ The goal is to keep FAQs:
 
 ## Storage Model
 
-FAQs are stored in a file-based JSON store:
+FAQs are stored in SQLite in the `faqs` table.
 
-```
-data/faqs.json
-```
-
-This file is the single source of truth for all FAQ entries.
+The database is the single source of truth for FAQ entries. FAQ tags are stored
+as JSON text inside the `tags` column, but the store itself is not file-backed.
 
 ---
 

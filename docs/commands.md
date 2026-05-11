@@ -213,7 +213,8 @@ Requires **Manage Server** permission.
 | `/config view`                  | View all settings            |
 | `/config welcome set`           | Set welcome channel          |
 | `/config welcome clear`         | Clear welcome channel        |
-| `/config welcome message`       | Set welcome message text     |
+| `/config welcome set-message`   | Set welcome message text     |
+| `/config welcome message`       | Alias for set-message        |
 | `/config welcome reset-message` | Use default welcome message  |
 | `/config welcome test`          | Send a test welcome message  |
 | `/config starboard set`         | Set up starboard             |
@@ -224,6 +225,11 @@ Requires **Manage Server** permission.
 | `/config moderator-role add`    | Add role that can use /admin |
 | `/config moderator-role remove` | Remove moderator role        |
 | `/config moderator-role list`   | List moderator roles         |
+
+Welcome channel and message settings are stored in SQLite in `guild_config`.
+Welcome message text supports `{user}`, `{name}`, `{username}`, and `{server}`.
+After changing welcome config, use `/config welcome test` to verify channel
+permissions and preview the rendered message.
 
 ---
 

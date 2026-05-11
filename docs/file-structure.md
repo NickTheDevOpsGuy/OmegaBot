@@ -54,7 +54,6 @@ The tree below is a simplified overview. The repo uses **command groups** (`core
 │   └── src
 │       └── …
 ├── data
-│   ├── fun-usage.json
 │   ├── omegabot.db
 │   └── test-seed.db
 ├── docs

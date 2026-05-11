@@ -2,7 +2,7 @@
 //
 // Subcommand groups:
 // - /config view                    - View all server settings
-// - /config welcome set/clear/message/reset-message/test - Configure welcome messages
+// - /config welcome set/clear/set-message/message/reset-message/test - Configure welcome messages
 // - /config starboard set/status/clear - Configure starboard
 // - /config leveling ...            - Configure message XP leveling
 //
@@ -51,6 +51,21 @@ export const data = new SlashCommandBuilder()
       .addSubcommand((sub) =>
         sub
           .setName("message")
+          .setDescription("Set the welcome message text")
+          .addStringOption((opt) =>
+            opt
+              .setName("text")
+              .setDescription(
+                "Message text. Supports {user}, {name}, {username}, and {server}.",
+              )
+              .setRequired(true)
+              .setMinLength(1)
+              .setMaxLength(1800),
+          ),
+      )
+      .addSubcommand((sub) =>
+        sub
+          .setName("set-message")
           .setDescription("Set the welcome message text")
           .addStringOption((opt) =>
             opt

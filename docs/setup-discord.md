@@ -109,6 +109,33 @@ If either flag is `true`, the same intent must also be enabled in the Discord De
 - Welcome flow / auto-role on member join
   - `GuildMembers`
 
+### Welcome Messages
+
+Welcome channel and message settings are stored in SQLite, not in `.env` or a
+text file. Configure them from Discord:
+
+```text
+/config welcome set channel:#welcome
+/config welcome set-message text:"Welcome {user} to {server}!"
+/config welcome test
+```
+
+Supported message placeholders:
+
+- `{user}` - mention the joining user
+- `{name}` - display name
+- `{username}` - username
+- `{server}` - server name
+
+If `/config welcome test` reports missing permissions, give the bot **View
+Channel** and **Send Messages** in the resolved welcome channel.
+
+If `/config welcome test` works but real joins do not, check both sides of the
+member intent setup:
+
+- `.env`: `DISCORD_ENABLE_GUILD_MEMBERS_INTENT=true`
+- Developer Portal: **Server Members Intent** enabled
+
 If you are unsure, the safest setup is:
 
 - Always allow the default non-privileged intents the bot requests
