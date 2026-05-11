@@ -134,7 +134,7 @@ See [Environment Setup](setup-env.md) and `.env.example` for where to get API ke
 
 ## Message Content Intent (Discord)
 
-To read DM and channel message content, the bot needs the **Message Content** privileged intent. Enable it in the [Discord Developer Portal](https://discord.com/developers/applications) under your app → Bot → Privileged Gateway Intents. Your code already requests this intent when the bot starts. See [Discord Bot Setup](setup-discord.md#gateway-intents).
+To read DM and channel message content, the bot needs the **Message Content** privileged intent. Enable it in the [Discord Developer Portal](https://discord.com/developers/applications) under your app → Bot → Privileged Gateway Intents, then set `DISCORD_ENABLE_MESSAGE_CONTENT_INTENT=true` in `.env`. See [Discord Bot Setup](setup-discord.md#gateway-intents).
 
 ---
 
