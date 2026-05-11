@@ -7,7 +7,11 @@ import {
   type ChatInputCommandInteraction,
   type GuildMember,
 } from "discord.js";
-import { setGuildConfig } from "../../../services/core/config/guildConfigStore.js";
+import {
+  clearGuildWelcomeMessage,
+  setGuildConfig,
+  setGuildWelcomeMessage,
+} from "../../../services/core/config/guildConfigStore.js";
 import { sendWelcomeMessageForMember } from "../../../services/integrations/welcome/welcomeHandler.js";
 import { getContextLogger } from "../../../services/core/logging/requestContext.js";
 
@@ -58,10 +62,7 @@ export async function handleWelcome(
   } else if (sub === "message" || sub === "set-message") {
     const text = interaction.options.getString("text", true).trim();
 
-    await setGuildConfig(interaction.guildId!, {
-      welcomeMessage: text,
-      welcomeEnabled: true,
-    });
+    await setGuildWelcomeMessage(interaction.guildId!, text);
 
     getContextLogger().info(
       {
@@ -76,10 +77,7 @@ export async function handleWelcome(
       flags: MessageFlags.Ephemeral,
     });
   } else if (sub === "reset-message") {
-    await setGuildConfig(interaction.guildId!, {
-      welcomeMessage: null,
-      welcomeEnabled: true,
-    });
+    await clearGuildWelcomeMessage(interaction.guildId!);
 
     getContextLogger().info(
       { guildId: interaction.guildId },

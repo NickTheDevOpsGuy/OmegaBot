@@ -4,7 +4,12 @@
 import { describe, expect, it } from "vitest";
 import { getDb } from "../database/db.js";
 import { useInMemoryDb } from "../database/dbTestUtils.js";
-import { getGuildConfig, setGuildConfig } from "./guildConfigStore.js";
+import {
+  clearGuildWelcomeMessage,
+  getGuildConfig,
+  setGuildConfig,
+  setGuildWelcomeMessage,
+} from "./guildConfigStore.js";
 
 describe("guildConfigStore", () => {
   useInMemoryDb();
@@ -68,5 +73,30 @@ describe("guildConfigStore", () => {
     expect(reloaded.welcomeChannelId).toBe("chan-1");
     expect(reloaded.welcomeMessage).toBe("Welcome {user}");
     expect(reloaded.starboardThreshold).toBe(5);
+  });
+
+  it("replaces and clears stored custom welcome messages", async () => {
+    await setGuildWelcomeMessage(
+      "guild-4",
+      "Old WRDLNKDN welcome message https://github.com/WRDLNKDN/Agreements",
+    );
+
+    await setGuildWelcomeMessage("guild-4", "Fresh welcome for {server}");
+    const replaced = await getGuildConfig("guild-4");
+
+    expect(replaced.welcomeMessage).toBe("Fresh welcome for {server}");
+
+    await clearGuildWelcomeMessage("guild-4");
+
+    const cleared = await getGuildConfig("guild-4");
+    expect(cleared.welcomeMessage).toBeNull();
+
+    const row = getDb()
+      .prepare(`SELECT config FROM guild_config WHERE guild_id = ?`)
+      .get("guild-4") as { config: string };
+
+    const stored = JSON.parse(row.config) as Record<string, unknown>;
+    expect(stored).not.toHaveProperty("welcomeMessage");
+    expect(row.config).not.toContain("WRDLNKDN");
   });
 });

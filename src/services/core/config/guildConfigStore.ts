@@ -42,7 +42,10 @@ function parseStoredConfig(guildId: string, row: GuildConfigRow): GuildConfig {
   }
 }
 
-function writeConfig(guildId: string, config: Omit<GuildConfig, "guildId">): void {
+function writeConfig(
+  guildId: string,
+  config: Partial<Omit<GuildConfig, "guildId">> & { updatedAt: number },
+): void {
   ensureGuildConfigTable();
   getDb()
     .prepare(
@@ -89,4 +92,30 @@ export async function setGuildConfig(
   writeConfig(guildId, next);
 
   return { guildId, ...next };
+}
+
+export async function setGuildWelcomeMessage(
+  guildId: string,
+  welcomeMessage: string,
+): Promise<GuildConfig> {
+  return setGuildConfig(guildId, {
+    welcomeMessage,
+    welcomeEnabled: true,
+  });
+}
+
+export async function clearGuildWelcomeMessage(
+  guildId: string,
+): Promise<GuildConfig> {
+  const current = await getGuildConfig(guildId);
+  const { guildId: _guildId, welcomeMessage: _welcomeMessage, ...currentValues } = current;
+  const next = {
+    ...currentValues,
+    welcomeEnabled: true,
+    updatedAt: Date.now(),
+  };
+
+  writeConfig(guildId, next);
+
+  return { guildId, ...next, welcomeMessage: null };
 }
