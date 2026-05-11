@@ -35,9 +35,6 @@ Thumbs.db
 # Optional: ignore zip files
 *.zip
 
-# Runtime data
-*.json
-
 # Cache files (ADDED)
 .eslintcache
 *.cache
@@ -53,7 +50,5 @@ coverage/
 *.swo
 *~
 
-# SQLite databases (ADDED)
-data/*.db
-data/*.db-wal
-data/*.db-shm
+# Runtime data directory (SQLite DBs, WAL files, backups)
+data/

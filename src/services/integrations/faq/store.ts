@@ -38,7 +38,7 @@ function toEntry(row: {
   };
 }
 
-export async function ensureStoreFile(): Promise<void> {
+export async function ensureFaqTable(): Promise<void> {
   getDb().exec(`
     CREATE TABLE IF NOT EXISTS faqs (
       key TEXT PRIMARY KEY,
@@ -55,7 +55,7 @@ export async function ensureStoreFile(): Promise<void> {
 }
 
 export async function loadStore(): Promise<FaqStoreV1> {
-  await ensureStoreFile();
+  await ensureFaqTable();
 
   const rows = getDb()
     .prepare(
@@ -75,7 +75,7 @@ export async function loadStore(): Promise<FaqStoreV1> {
 }
 
 export async function saveStore(store: FaqStoreV1): Promise<void> {
-  await ensureStoreFile();
+  await ensureFaqTable();
 
   const db = getDb();
   const tx = db.transaction(() => {
