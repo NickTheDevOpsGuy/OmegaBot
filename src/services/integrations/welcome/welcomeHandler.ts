@@ -40,12 +40,11 @@ function isSendableChannel(
 }
 
 /**
- * Resolve the best channel to post onboarding messages.
+ * Resolve an unconfigured fallback channel to post onboarding messages.
  *
  * Order:
- * 1) Guild config (welcomeEnabled / welcomeChannelId)
- * 2) Guild system channel
- * 3) First available text-based channel
+ * 1) Guild system channel
+ * 2) First available text-based channel
  */
 async function resolveWelcomeChannel(
   guild: Guild,
@@ -57,45 +56,9 @@ async function resolveWelcomeChannel(
     return null;
   }
 
-  // Prefer configured welcome channel.
-  if (cfg.welcomeChannelId) {
-    const ch = await guild.channels.fetch(cfg.welcomeChannelId).catch((): null => null);
-    if (ch?.isTextBased()) {
-      logger.debug(
-        { guildId: guild.id, channelId: cfg.welcomeChannelId },
-        "[welcome] using configured channel",
-      );
-      return ch;
-    }
-
-    logger.warn(
-      { guildId: guild.id, channelId: cfg.welcomeChannelId },
-      "[welcome] configured channel missing or not text-based; falling back",
-    );
-  }
-
-  // Environment fallback for single-server deployments.
-  if (env.discordWelcomeChannelId) {
-    const ch = await guild.channels
-      .fetch(env.discordWelcomeChannelId)
-      .catch((): null => null);
-    if (ch?.isTextBased()) {
-      logger.debug(
-        { guildId: guild.id, channelId: env.discordWelcomeChannelId },
-        "[welcome] using env channel",
-      );
-      return ch;
-    }
-
-    logger.warn(
-      { guildId: guild.id, channelId: env.discordWelcomeChannelId },
-      "[welcome] env channel missing or not text-based; falling back",
-    );
-  }
-
   // Fallback to system channel.
   if (guild.systemChannel?.isTextBased()) {
-    logger.debug(
+    logger.info(
       { guildId: guild.id, channelId: guild.systemChannel.id },
       "[welcome] using system channel",
     );
@@ -108,12 +71,47 @@ async function resolveWelcomeChannel(
 
   for (const [, ch] of channels) {
     if (ch?.isTextBased()) {
-      logger.debug(
+      logger.info(
         { guildId: guild.id, channelId: ch.id },
         "[welcome] using first text-based channel",
       );
       return ch;
     }
+  }
+
+  return null;
+}
+
+async function fetchWelcomeChannel(
+  guild: Guild,
+  channelId: string,
+  source: "guild-config" | "env",
+): Promise<TextBasedChannel | null> {
+  try {
+    const channel = await guild.channels.fetch(channelId);
+    if (channel?.isTextBased()) {
+      logger.info(
+        { guildId: guild.id, channelId, source },
+        "[welcome] resolved welcome channel",
+      );
+      return channel;
+    }
+
+    logger.warn(
+      {
+        guildId: guild.id,
+        channelId,
+        source,
+        channelType: channel?.type ?? null,
+      },
+      "[welcome] configured welcome channel missing or not text-based",
+    );
+  } catch (err) {
+    const code = getDiscordErrorCode(err);
+    logger.warn(
+      { err, code, guildId: guild.id, channelId, source },
+      "[welcome] failed to fetch configured welcome channel",
+    );
   }
 
   return null;
@@ -147,12 +145,40 @@ export async function sendWelcomeMessageForMember(
   source: "join" | "config-test" = "join",
 ): Promise<WelcomeMessageResult> {
   const cfg = await getGuildConfig(member.guild.id);
-  const channel = await resolveWelcomeChannel(member.guild, cfg);
+  if (!cfg.welcomeEnabled) {
+    logger.info(
+      { guildId: member.guild.id, userId: member.user.id, source },
+      "[welcome] skipped; welcome disabled",
+    );
+    return { sent: false, reason: "disabled" };
+  }
+
+  let channel: TextBasedChannel | null = null;
+
+  if (cfg.welcomeChannelId) {
+    channel = await fetchWelcomeChannel(
+      member.guild,
+      cfg.welcomeChannelId,
+      "guild-config",
+    );
+  }
+
+  if (!channel && env.discordWelcomeChannelId) {
+    channel = await fetchWelcomeChannel(
+      member.guild,
+      env.discordWelcomeChannelId,
+      "env",
+    );
+  }
 
   if (!channel) {
-    logger.info(
-      { guildId: member.guild.id, source },
-      "Welcome handler skipped (no channel resolved or disabled)",
+    channel = await resolveWelcomeChannel(member.guild, cfg);
+  }
+
+  if (!channel) {
+    logger.warn(
+      { guildId: member.guild.id, userId: member.user.id, source },
+      "[welcome] skipped; no welcome channel resolved",
     );
     return { sent: false, reason: "no-channel" };
   }
@@ -226,7 +252,19 @@ export async function sendWelcomeMessageForMember(
  */
 export async function onGuildMemberAdd(member: GuildMember): Promise<void> {
   try {
-    await sendWelcomeMessageForMember(member, "join");
+    const result = await sendWelcomeMessageForMember(member, "join");
+    if (!result.sent) {
+      logger.warn(
+        {
+          guildId: member.guild.id,
+          userId: member.user.id,
+          reason: result.reason,
+          channelId: result.channelId ?? null,
+          missingPermissions: result.missingPermissions,
+        },
+        "[welcome] member joined but welcome message was not sent",
+      );
+    }
   } catch (err) {
     logger.error(
       { err, guildId: member.guild.id, userId: member.user.id },
