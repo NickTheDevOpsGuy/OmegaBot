@@ -80,7 +80,8 @@ if (!action || !guildId) usage();
 
 const dbPath = resolveDbPath();
 if (!fs.existsSync(dbPath)) {
-  throw new Error(`Database file not found: ${dbPath}`);
+  fs.mkdirSync(path.dirname(dbPath), { recursive: true });
+  console.log(`Database file not found; creating ${dbPath}`);
 }
 
 const db = new Database(dbPath);
