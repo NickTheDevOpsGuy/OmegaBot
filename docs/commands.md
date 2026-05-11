@@ -228,6 +228,7 @@ Requires **Manage Server** permission.
 
 Welcome channel and message settings are stored in SQLite in `guild_config`.
 Welcome message text supports `{user}`, `{name}`, `{username}`, and `{server}`.
+If no custom message is set, OmegaBot uses a generic built-in welcome message.
 After changing welcome config, use `/config welcome test` to verify channel
 permissions and preview the rendered message.
 

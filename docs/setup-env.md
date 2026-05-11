@@ -273,6 +273,9 @@ Welcome messages are configured with slash commands and stored in SQLite:
 ```
 
 The message supports `{user}`, `{name}`, `{username}`, and `{server}`.
+If no custom message is set, OmegaBot uses a generic built-in welcome message
+with the server name. Use `/config welcome set-message` for server-specific
+links, rules, forms, or onboarding instructions.
 
 `DISCORD_WELCOME_CHANNEL_ID` is only an environment fallback for simple
 single-server deployments. Prefer `/config welcome set` because it persists the

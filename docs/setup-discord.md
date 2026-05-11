@@ -127,6 +127,10 @@ Supported message placeholders:
 - `{username}` - username
 - `{server}` - server name
 
+If no custom message is set, OmegaBot uses a generic built-in welcome message.
+Use `/config welcome set-message` for server-specific links, rules, forms, or
+onboarding instructions.
+
 If `/config welcome test` reports missing permissions, give the bot **View
 Channel** and **Send Messages** in the resolved welcome channel.
 
