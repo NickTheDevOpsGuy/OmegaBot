@@ -3,6 +3,7 @@
 Glad to have you here 🚀
 
 This server is all about:
+
 - learning
 - building cool things
 - helping each other grow
