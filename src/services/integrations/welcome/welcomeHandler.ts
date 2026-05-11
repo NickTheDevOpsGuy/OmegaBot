@@ -164,11 +164,7 @@ export async function sendWelcomeMessageForMember(
   }
 
   if (!channel && env.discordWelcomeChannelId) {
-    channel = await fetchWelcomeChannel(
-      member.guild,
-      env.discordWelcomeChannelId,
-      "env",
-    );
+    channel = await fetchWelcomeChannel(member.guild, env.discordWelcomeChannelId, "env");
   }
 
   if (!channel) {
