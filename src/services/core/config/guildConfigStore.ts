@@ -104,11 +104,13 @@ export async function setGuildWelcomeMessage(
   });
 }
 
-export async function clearGuildWelcomeMessage(
-  guildId: string,
-): Promise<GuildConfig> {
+export async function clearGuildWelcomeMessage(guildId: string): Promise<GuildConfig> {
   const current = await getGuildConfig(guildId);
-  const { guildId: _guildId, welcomeMessage: _welcomeMessage, ...currentValues } = current;
+  const {
+    guildId: _guildId,
+    welcomeMessage: _welcomeMessage,
+    ...currentValues
+  } = current;
   const next = {
     ...currentValues,
     welcomeEnabled: true,
