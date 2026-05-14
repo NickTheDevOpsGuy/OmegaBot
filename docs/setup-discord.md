@@ -43,6 +43,12 @@ For full functionality, especially **admin/moderation commands**, the bot role n
 - Embed Links
 - Use Slash Commands
 
+### Role Management
+
+- Manage Roles
+
+This is required for `/roles choose`, `/roles remove`, and reaction-role assignment. The bot's highest role must also be above every role it needs to grant or remove.
+
 ### Notion Audit Channel Permissions
 
 Notion itself is configured in [Notion Wiki Setup](setup-notion.md), but the optional Discord audit channel still depends on Discord permissions.
@@ -101,6 +107,8 @@ If either flag is `true`, the same intent must also be enabled in the Discord De
   - `Guilds`
 - Starboard / reaction-based message features
   - `GuildMessageReactions`
+- Self-assignable roles with `/roles`
+  - `Guilds`; no privileged member intent is required for slash-command role choice
 - DM support
   - `DirectMessages`
 - DM / @mention chat message handling
@@ -170,6 +178,32 @@ Only users with:
 - A configured moderator role
 
 can run moderation commands.
+
+## Self-assignable Roles
+
+OmegaBot supports slash-command role selection with `/roles`.
+
+Admins with **Manage Roles** can configure choices:
+
+```text
+/roles enable role:@Announcements description:"Server updates and event pings"
+/roles disable role:@Announcements
+```
+
+Members can then use:
+
+```text
+/roles list
+/roles choose role:@Announcements
+/roles remove role:@Announcements
+```
+
+Setup notes:
+
+- The bot needs **Manage Roles**.
+- The bot's highest role must be above every self-assignable role.
+- Managed integration roles and `@everyone` cannot be self-assigned.
+- Disabling a role stops future self-assignment but does not remove it from members who already have it.
 
 ---
 

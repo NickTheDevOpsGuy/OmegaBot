@@ -2,7 +2,7 @@
 
 This file is the **single source of truth** for command behavior; update it when adding or changing commands.
 
-OmegaBot has **20 slash commands** organized into logical groups.
+OmegaBot has slash commands organized into logical groups.
 
 ---
 
@@ -16,6 +16,7 @@ OmegaBot has **20 slash commands** organized into logical groups.
 - [`/giveaway` - Giveaway System](#giveaway---giveaway-system)
 - [`/suggestion` - Suggestion System](#suggestion---suggestion-system)
 - [`/config` - Server Configuration](#config---server-configuration)
+- [`/roles` - Self-assignable Roles](#roles---self-assignable-roles)
 - [`/faq` - FAQ System](#faq---faq-system)
 - [`/wiki` - Knowledge Lookup](#wiki---knowledge-lookup)
 - [`/notion` - Notion Wiki Integration](#notion---notion-wiki-integration)
@@ -234,6 +235,26 @@ permissions and preview the rendered message.
 
 ---
 
+## `/roles` - Self-assignable Roles
+
+Let members choose approved server roles with slash commands. Admin setup requires **Manage Roles**. The bot also needs **Manage Roles**, and its highest role must be above every role it grants or removes.
+
+| Command          | Description                                                  |
+| ---------------- | ------------------------------------------------------------ |
+| `/roles list`    | List roles members can choose                                |
+| `/roles choose`  | Add a configured role to yourself                            |
+| `/roles remove`  | Remove one of your configured self-assignable roles          |
+| `/roles enable`  | (Admin) Allow members to choose a role; optional description |
+| `/roles disable` | (Admin) Stop offering a role; existing members keep it       |
+
+Notes:
+
+- Only roles configured with `/roles enable` can be chosen or removed through `/roles`.
+- Managed integration roles and `@everyone` cannot be self-assigned.
+- If assignment fails, move the OmegaBot role above the target role and confirm the bot has **Manage Roles**.
+
+---
+
 ## `/faq` - FAQ System
 
 | Command       | Description                         |
@@ -342,6 +363,7 @@ Restricted to users in **`ADMIN_USER_IDS`** (in `.env`) or with a server moderat
 | Command     | Description                                                               |
 | ----------- | ------------------------------------------------------------------------- |
 | `/help`     | Command help (use `topic:changelog` for changelog)                        |
+| `/roles`    | Choose approved self-assignable server roles                              |
 | `/ping`     | Health check                                                              |
 | `/status`   | Vercel / Supabase status                                                  |
 | `/rules`    | View server rules (link to configured channel)                            |
@@ -352,15 +374,15 @@ Restricted to users in **`ADMIN_USER_IDS`** (in `.env`) or with a server moderat
 
 ---
 
-## Command Count Summary
+## Command Summary
 
-| Category          | Commands                                                  |
-| ----------------- | --------------------------------------------------------- |
-| Core              | 7 (help, ping, info, profile, achievements, admin, rules) |
-| Fun               | 1 (with 25+ subcommands)                                  |
-| Server Management | 3 (config, giveaway, suggestion)                          |
-| Content           | 4 (faq, summary, history, playback)                       |
-| Integration       | 2 (gh, status)                                            |
-| **Total**         | **17 slash commands**                                     |
+| Category          | Commands                                                         |
+| ----------------- | ---------------------------------------------------------------- |
+| Core              | 8 (help, ping, info, profile, achievements, admin, rules, roles) |
+| Fun               | 1 (with 25+ subcommands)                                         |
+| Server Management | 3 (config, giveaway, suggestion)                                 |
+| Content           | 4 (faq, summary, history, playback)                              |
+| Integration       | 2 (gh, status)                                                   |
+| More              | See the command list above and `/help topic:commands`            |
 
 ---

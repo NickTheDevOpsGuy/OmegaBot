@@ -13,6 +13,7 @@ This folder collects the main OmegaBot reference docs, setup guides, and project
 ## Features
 
 - [Commands](commands.md) - Slash command coverage and behavior
+- [Discord setup](setup-discord.md#self-assignable-roles) - Permissions and setup notes for `/roles`
 - [FAQ](faq.md) - Curated FAQ system overview
 - [FAQ Admins](faq-admins.md) - Admin workflows for FAQ maintenance
 - [Chat and LLM](chat-and-llm.md) - AI/chat behavior and related configuration

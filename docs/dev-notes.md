@@ -43,6 +43,9 @@ Use this page for team conventions. Use [Project structure](project-structure.md
 - Services are grouped by domain rather than by command.
 - Pure helpers stay pure where possible.
 - Side effects like network, filesystem, database, and Discord I/O should be explicit and easy to trace.
+- Runtime state and server configuration must live in SQLite, not ad-hoc JSON
+  files. Keep JSON files limited to required project metadata such as
+  `package.json`, `package-lock.json`, and `tsconfig.json`.
 
 ### Code Organization Pointers
 

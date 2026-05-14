@@ -37,7 +37,7 @@ function parseStoredConfig(guildId: string, row: GuildConfigRow): GuildConfig {
       updatedAt: row.updated_at,
     };
   } catch (err) {
-    logger.warn({ err, guildId }, "[config] stored guild config JSON invalid");
+    logger.warn({ err, guildId }, "[config] stored guild config payload invalid");
     return { guildId, ...DEFAULT_GUILD_CONFIG };
   }
 }

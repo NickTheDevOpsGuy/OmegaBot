@@ -20,13 +20,11 @@ OmegaBot exposes Prometheus metrics when `METRICS_PORT` is set. Import the pre-b
 
 ---
 
-## Import the Dashboard
+## Build the Dashboard
 
-1. In Grafana, go to **Dashboards** → **Import**.
-2. Click **Upload JSON file**.
-3. Select `grafana/omegabot-dashboard.json` from this repo.
-4. Pick your Prometheus datasource.
-5. Click **Import**.
+OmegaBot does not keep dashboard JSON exports in the repo. Create a dashboard in
+Grafana and add panels using the metrics below, then store any local dashboard
+exports outside the repository.
 
 ---
 

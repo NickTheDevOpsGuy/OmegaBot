@@ -21,6 +21,7 @@ OmegaBot combines games, progression, moderation, utility commands, and AI-assis
 - Runs a broad `/fun` command hub with games, reminders, polls, quotes, weather, chat, and leaderboards.
 - Tracks progression with achievements, shared XP/levels, and daily quests.
 - Supports server utility features like FAQ, rules, welcome flows, starboard, suggestions, and status checks.
+- Lets members choose approved server roles with the `/roles` slash command.
 - Can search curated FAQ docs plus an optional Notion wiki via `/wiki` and `/notion search`.
 - Includes admin-focused health, metrics, backup, and troubleshooting support for self-hosted operation.
 - Stores persistent data in SQLite so state survives restarts.
@@ -88,7 +89,7 @@ npm run api
 
 ### Server operations
 
-- FAQ, rules, welcome handling, starboard, and suggestions
+- FAQ, rules, welcome handling, starboard, self-assignable roles, and suggestions
 - **`/event`** — Create, join, list, and manage platform events (create, update, join, list, results)
 - `/admin health`, metrics, dashboard, DB backup, and DB integrity checks
 - Graceful shutdown, rate limiting, and resilient interaction recovery
@@ -196,7 +197,7 @@ npm run dev:watch     # Run with hot reload (restarts on file change)
 npm run api           # Start the optional Web API (see docs/web-platform.md)
 ```
 
-35+ test files (200+ tests): unit tests (games, stores, services, config, rate limiting, metrics) and integration tests (dice, slots, ping, admin, help, status, config, FAQ, rules, suggestion).
+35+ test files (200+ tests): unit tests (games, stores, services, config, roles, rate limiting, metrics) and integration tests (dice, slots, ping, admin, help, status, config, FAQ, rules, suggestion).
 
 ---
 

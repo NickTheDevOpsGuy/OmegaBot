@@ -68,6 +68,7 @@ describe("buildHelpText", () => {
     });
     expect(result).toContain("/automod enable");
     expect(result).toContain("/warnings add");
+    expect(result).toContain("/roles enable");
     expect(result).toContain("/reaction-roles add");
     expect(result).toContain("/custom-commands set");
     expect(result).toContain("/config leveling");

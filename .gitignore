@@ -52,3 +52,9 @@ coverage/
 
 # Runtime data directory (SQLite DBs, WAL files, backups)
 data/
+
+# Runtime/config state belongs in SQLite. Do not add ad-hoc JSON state files.
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json

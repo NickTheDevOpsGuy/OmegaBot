@@ -20,6 +20,12 @@ import {
   listReactionRoles,
   removeReactionRole,
 } from "./reactionRoleStore.js";
+import {
+  getSelfAssignableRole,
+  listSelfAssignableRoles,
+  removeSelfAssignableRole,
+  upsertSelfAssignableRole,
+} from "../roles/selfAssignableRoleStore.js";
 import { addWarning, clearWarning, listWarnings } from "./warningsStore.js";
 
 describe("server tools stores", () => {
@@ -84,5 +90,31 @@ describe("server tools stores", () => {
     expect(listReactionRoles("guild1")).toHaveLength(1);
     expect(removeReactionRole("guild1", "message1", "✅")).toBe(true);
     expect(getReactionRole("guild1", "message1", "✅")).toBeNull();
+  });
+
+  it("manages self-assignable roles", () => {
+    upsertSelfAssignableRole({
+      guildId: "guild1",
+      roleId: "role1",
+      description: "Events and announcements",
+      createdBy: "mod1",
+    });
+
+    expect(getSelfAssignableRole("guild1", "role1")?.description).toBe(
+      "Events and announcements",
+    );
+    expect(listSelfAssignableRoles("guild1")).toHaveLength(1);
+
+    upsertSelfAssignableRole({
+      guildId: "guild1",
+      roleId: "role1",
+      description: "Updated",
+      createdBy: "mod2",
+    });
+    expect(listSelfAssignableRoles("guild1")).toHaveLength(1);
+    expect(getSelfAssignableRole("guild1", "role1")?.description).toBe("Updated");
+
+    expect(removeSelfAssignableRole("guild1", "role1")).toBe(true);
+    expect(getSelfAssignableRole("guild1", "role1")).toBeNull();
   });
 });

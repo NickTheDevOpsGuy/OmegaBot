@@ -65,7 +65,8 @@ DATABASE_PATH=data/omegabot.db
 - default: `data/omegabot.db`
 - use `:memory:` in tests when you want an in-memory database
 - server configuration such as welcome channels, welcome message text, starboard,
-  rules, moderator roles, and leveling settings is stored in SQLite
+  rules, moderator roles, self-assignable roles, and leveling settings is stored
+  in SQLite
 
 ### Metrics And Health HTTP Server
 

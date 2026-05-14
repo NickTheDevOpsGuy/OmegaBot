@@ -118,6 +118,19 @@ CREATE TABLE IF NOT EXISTS reaction_roles (
 CREATE INDEX IF NOT EXISTS idx_reaction_roles_message
   ON reaction_roles(guild_id, message_id);
 
+CREATE TABLE IF NOT EXISTS self_assignable_roles (
+  guild_id TEXT NOT NULL,
+  role_id TEXT NOT NULL,
+  description TEXT,
+  created_by TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (guild_id, role_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_self_assignable_roles_guild
+  ON self_assignable_roles(guild_id, updated_at DESC);
+
 CREATE TABLE IF NOT EXISTS fun_usage (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id TEXT NOT NULL,
