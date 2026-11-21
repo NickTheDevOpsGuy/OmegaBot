@@ -3,12 +3,7 @@
 // Trivia question data and selection logic.
 
 export type TriviaCategory =
-  | "general"
-  | "science"
-  | "history"
-  | "geography"
-  | "entertainment"
-  | "sports";
+  "general" | "science" | "history" | "geography" | "entertainment" | "sports";
 
 export type Difficulty = "easy" | "medium" | "hard";
 

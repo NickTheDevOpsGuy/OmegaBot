@@ -90,8 +90,7 @@ export function getSessionInternal(
          COALESCE(status, 'active') AS status
        FROM game_sessions WHERE game_id = ?`;
   const row = db.prepare(sql).get(...(activeOnly ? [gameId, now] : [gameId])) as
-    | Record<string, unknown>
-    | undefined;
+    Record<string, unknown> | undefined;
   return row ? (row as unknown as GameSession) : null;
 }
 

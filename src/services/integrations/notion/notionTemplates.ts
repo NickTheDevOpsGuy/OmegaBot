@@ -1,11 +1,7 @@
 import { notionAddTemplatesConfig as rawTemplateConfig } from "../../../config/notionAddTemplates.js";
 
 export type NotionTemplateFieldType =
-  | "rich_text"
-  | "select"
-  | "multi_select"
-  | "number"
-  | "checkbox";
+  "rich_text" | "select" | "multi_select" | "number" | "checkbox";
 
 export type NotionAddTemplateField = {
   id: string;

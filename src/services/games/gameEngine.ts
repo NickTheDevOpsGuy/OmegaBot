@@ -30,8 +30,7 @@ export type GameState = {
 };
 
 export type MoveResult =
-  | { ok: true; winner?: string; draw?: boolean }
-  | { ok: false; error: string };
+  { ok: true; winner?: string; draw?: boolean } | { ok: false; error: string };
 
 /**
  * Get public game state for API/Discord. Does not return internal-only fields.

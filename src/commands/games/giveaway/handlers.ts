@@ -109,8 +109,7 @@ export async function handleEnd(interaction: ChatInputCommandInteraction): Promi
 
   try {
     const channel = interaction.guild?.channels.cache.get(giveaway.channel_id) as
-      | TextChannel
-      | undefined;
+      TextChannel | undefined;
     if (channel && giveaway.message_id) {
       const message = await channel.messages.fetch(giveaway.message_id);
       const updatedGiveaway = getGiveaway(giveawayId)!;

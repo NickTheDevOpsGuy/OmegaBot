@@ -89,9 +89,7 @@ export async function handleChallenge(
       }
 
       const action = buttonInteraction.customId.split(":")[2] as
-        | Choice
-        | "decline"
-        | "extend";
+        Choice | "decline" | "extend";
 
       if (action === "extend") {
         if (playerId !== challenger.id) {

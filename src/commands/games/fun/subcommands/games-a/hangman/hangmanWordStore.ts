@@ -37,8 +37,7 @@ export function getRandomWord(difficulty?: HangmanDifficulty): string | null {
           "SELECT word FROM hangman_words WHERE difficulty = ? ORDER BY RANDOM() LIMIT 1",
         );
   const row = (difficulty == null ? stmt.get() : stmt.get(difficulty)) as
-    | { word: string }
-    | undefined;
+    { word: string } | undefined;
   return row?.word ?? null;
 }
 
