@@ -5,6 +5,7 @@ import {
   type ChatInputCommandInteraction,
 } from "discord.js";
 import { getContextLogger } from "../../../services/core/logging/requestContext.js";
+import { addPrivateOption } from "../../../services/discord/discord/slashOptions.js";
 import { buildHelpText, type HelpTopic } from "./helpText.js";
 import type { CommandClient } from "../../../services/discord/discord/commandLoader.js";
 import { extractCommandList } from "../../../services/discord/discord/commandMeta.js";
@@ -23,6 +24,7 @@ const HELP_TOPICS: HelpTopic[] = [
   "games",
   "profile",
   "quotes",
+  "notion",
   "github",
   "status",
   "admin",
@@ -52,6 +54,7 @@ export const data = new SlashCommandBuilder()
         { name: "Games", value: "games" },
         { name: "Profile & timezone", value: "profile" },
         { name: "Quotes", value: "quotes" },
+        { name: "Notion & wiki", value: "notion" },
         { name: "GitHub", value: "github" },
         { name: "Status", value: "status" },
         { name: "Admin", value: "admin" },
@@ -63,7 +66,7 @@ export const data = new SlashCommandBuilder()
       ),
   )
   .addBooleanOption((opt) =>
-    opt.setName("private").setDescription("Only show help to you").setRequired(false),
+    addPrivateOption(opt, { description: "Only show help to you" }),
   );
 
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {

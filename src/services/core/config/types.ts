@@ -14,6 +14,7 @@ export type GuildConfig = {
   /* ------------------------------------------------------------------ */
   welcomeEnabled: boolean;
   welcomeChannelId: string | null;
+  welcomeMessage: string | null;
 
   /* ------------------------------------------------------------------ */
   /* Starboard                                                           */
@@ -25,6 +26,12 @@ export type GuildConfig = {
   /* Rules                                                               */
   /* ------------------------------------------------------------------ */
   rulesChannelId: string | null;
+
+  /* ------------------------------------------------------------------ */
+  /* Leveling                                                            */
+  /* ------------------------------------------------------------------ */
+  levelingEnabled: boolean;
+  levelingAnnounceChannelId: string | null;
 
   /* ------------------------------------------------------------------ */
   /* Metadata                                                            */
@@ -39,6 +46,7 @@ export const DEFAULT_GUILD_CONFIG: Omit<GuildConfig, "guildId"> = {
   // Welcome
   welcomeEnabled: true,
   welcomeChannelId: null,
+  welcomeMessage: null,
 
   // Starboard
   starboardChannelId: null,
@@ -46,6 +54,10 @@ export const DEFAULT_GUILD_CONFIG: Omit<GuildConfig, "guildId"> = {
 
   // Rules
   rulesChannelId: null,
+
+  // Leveling
+  levelingEnabled: true,
+  levelingAnnounceChannelId: null,
 
   // Metadata
   updatedAt: 0,

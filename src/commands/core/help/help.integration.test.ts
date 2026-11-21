@@ -46,4 +46,18 @@ describe("help integration", () => {
       (mock.editReply as ReturnType<typeof vi.fn>).mock.calls[0]?.[0]?.content ?? "";
     expect(content.length).toBeGreaterThan(0);
   });
+
+  it("includes notion help content when topic is notion", async () => {
+    const mock = createMockInteraction("notion");
+
+    await execute(mock);
+
+    expect(mock.editReply).toHaveBeenCalled();
+    const content =
+      (mock.editReply as ReturnType<typeof vi.fn>).mock.calls[0]?.[0]?.content ?? "";
+    expect(content).toContain("/notion search");
+    expect(content).toContain("/notion open");
+    expect(content).toContain("/notion recent");
+    expect(content).toContain("/wiki");
+  });
 });

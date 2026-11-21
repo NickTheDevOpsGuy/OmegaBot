@@ -2,6 +2,11 @@
 // Game subcommands for /fun
 
 import type { SlashCommandSubcommandsOnlyBuilder } from "discord.js";
+import {
+  addLimitOption,
+  addPrivateOption,
+  addUserOption,
+} from "../../../../services/discord/discord/slashOptions.js";
 
 export function addGamesSubcommands(
   builder: SlashCommandSubcommandsOnlyBuilder,
@@ -18,7 +23,7 @@ export function addGamesSubcommands(
             .setRequired(true)
             .setMaxLength(200),
         )
-        .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+        .addBooleanOption(addPrivateOption),
     )
     .addSubcommand((s) =>
       s
@@ -37,8 +42,16 @@ export function addGamesSubcommands(
         .addUserOption((o) =>
           o.setName("opponent").setDescription("Challenge another player"),
         )
-        .addBooleanOption((o) => o.setName("stats").setDescription("Show your RPS stats"))
-        .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+        .addStringOption((o) =>
+          o
+            .setName("view")
+            .setDescription("Play or inspect stats")
+            .addChoices(
+              { name: "Play", value: "play" },
+              { name: "Stats", value: "stats" },
+            ),
+        )
+        .addBooleanOption(addPrivateOption),
     )
     .addSubcommand((s) =>
       s
@@ -57,25 +70,33 @@ export function addGamesSubcommands(
               { name: "⚽ Sports", value: "sports" },
             ),
         )
-        .addBooleanOption((o) =>
-          o.setName("stats").setDescription("Show your trivia stats"),
+        .addStringOption((o) =>
+          o
+            .setName("view")
+            .setDescription("Play, view stats, or open the leaderboard")
+            .addChoices(
+              { name: "Play", value: "play" },
+              { name: "Stats", value: "stats" },
+              { name: "Leaderboard", value: "leaderboard" },
+            ),
         )
-        .addBooleanOption((o) =>
-          o.setName("leaderboard").setDescription("Show trivia leaderboard"),
-        )
-        .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+        .addBooleanOption(addPrivateOption),
     )
     .addSubcommand((s) =>
       s
         .setName("daily")
         .setDescription("Daily check-in for points and streaks")
-        .addBooleanOption((o) =>
-          o.setName("stats").setDescription("Show your daily stats"),
+        .addStringOption((o) =>
+          o
+            .setName("view")
+            .setDescription("Check in, view stats, or open the leaderboard")
+            .addChoices(
+              { name: "Check in", value: "checkin" },
+              { name: "Stats", value: "stats" },
+              { name: "Leaderboard", value: "leaderboard" },
+            ),
         )
-        .addBooleanOption((o) =>
-          o.setName("leaderboard").setDescription("Show daily leaderboard"),
-        )
-        .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+        .addBooleanOption(addPrivateOption),
     )
     .addSubcommand((s) =>
       s
@@ -89,7 +110,7 @@ export function addGamesSubcommands(
         .addBooleanOption((o) =>
           o.setName("stats").setDescription("Show your Tic Tac Toe stats"),
         )
-        .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+        .addBooleanOption(addPrivateOption),
     )
     .addSubcommand((s) =>
       s
@@ -98,22 +119,26 @@ export function addGamesSubcommands(
         .addBooleanOption((o) =>
           o.setName("stats").setDescription("Show your blackjack stats"),
         )
-        .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+        .addBooleanOption(addPrivateOption),
     )
     .addSubcommand((s) =>
       s
         .setName("connect4")
         .setDescription("Play Connect 4 vs another user (persistent, multi-day games)")
         .addUserOption((o) =>
-          o.setName("user").setDescription("Opponent").setRequired(false),
+          addUserOption(o, { description: "Opponent for a new game" }),
         )
-        .addBooleanOption((o) =>
-          o.setName("continue").setDescription("List and continue an active game"),
+        .addStringOption((o) =>
+          o
+            .setName("view")
+            .setDescription("Start a game, continue a game, or view stats")
+            .addChoices(
+              { name: "Play", value: "play" },
+              { name: "Continue", value: "continue" },
+              { name: "Stats", value: "stats" },
+            ),
         )
-        .addBooleanOption((o) =>
-          o.setName("stats").setDescription("Show your Connect 4 stats"),
-        )
-        .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+        .addBooleanOption(addPrivateOption),
     )
     .addSubcommand((s) =>
       s
@@ -122,19 +147,19 @@ export function addGamesSubcommands(
         .addUserOption((o) =>
           o.setName("opponent").setDescription("Challenge this user to a game"),
         )
-        .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+        .addBooleanOption(addPrivateOption),
     )
     .addSubcommand((s) =>
       s
         .setName("would-you-rather")
         .setDescription("Would you rather… vote with buttons")
-        .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+        .addBooleanOption(addPrivateOption),
     )
     .addSubcommand((s) =>
       s
         .setName("fact")
         .setDescription("Random interesting fact")
-        .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+        .addBooleanOption(addPrivateOption),
     )
     .addSubcommand((s) =>
       s
@@ -143,7 +168,7 @@ export function addGamesSubcommands(
         .addBooleanOption((o) =>
           o.setName("stats").setDescription("Show your Wordle stats"),
         )
-        .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+        .addBooleanOption(addPrivateOption),
     )
     .addSubcommand((s) =>
       s
@@ -165,7 +190,7 @@ export function addGamesSubcommands(
               { name: "PvP wins", value: "pvp" },
             ),
         )
-        .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+        .addBooleanOption(addPrivateOption),
     )
     .addSubcommand((s) =>
       s
@@ -181,41 +206,43 @@ export function addGamesSubcommands(
               { name: "5 rows", value: 5 },
             ),
         )
-        .addBooleanOption((o) =>
-          o.setName("stats").setDescription("Show your slots stats"),
+        .addStringOption((o) =>
+          o
+            .setName("view")
+            .setDescription("Spin, view stats, leaderboard, or paytable")
+            .addChoices(
+              { name: "Spin", value: "spin" },
+              { name: "Stats", value: "stats" },
+              { name: "Leaderboard", value: "leaderboard" },
+              { name: "Paytable", value: "paytable" },
+            ),
         )
-        .addBooleanOption((o) =>
-          o.setName("leaderboard").setDescription("Show jackpot leaderboard"),
-        )
-        .addBooleanOption((o) =>
-          o.setName("paytable").setDescription("Show payout table"),
-        )
-        .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+        .addBooleanOption(addPrivateOption),
     )
     .addSubcommand((s) =>
       s
         .setName("memory")
         .setDescription("Match pairs of cards (memory game)")
-        .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+        .addBooleanOption(addPrivateOption),
     )
     .addSubcommand((s) =>
       s
         .setName("higherlower")
         .setDescription("Think of a number 1–100; bot guesses with Higher/Lower")
-        .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+        .addBooleanOption(addPrivateOption),
     )
     .addSubcommand((s) =>
       s
         .setName("quest")
         .setDescription("View today's rotating quests and auto-claim rewards")
-        .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+        .addBooleanOption(addPrivateOption),
     )
     .addSubcommand((s) =>
       s
         .setName("stats")
         .setDescription("View all your fun command stats in one place")
-        .addUserOption((o) => o.setName("user").setDescription("User to view stats for"))
-        .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+        .addUserOption((o) => addUserOption(o, { description: "User to view stats for" }))
+        .addBooleanOption(addPrivateOption),
     )
     .addSubcommand((s) =>
       s
@@ -235,7 +262,7 @@ export function addGamesSubcommands(
             .setMinValue(1)
             .setMaxValue(20),
         )
-        .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+        .addBooleanOption(addPrivateOption),
     )
     .addSubcommand((s) =>
       s
@@ -261,29 +288,35 @@ export function addGamesSubcommands(
             .setMinValue(1)
             .setMaxValue(10),
         )
-        .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+        .addBooleanOption(addPrivateOption),
     )
     .addSubcommand((s) =>
       s
         .setName("coinflip")
         .setDescription("Flip a coin")
-        .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+        .addBooleanOption(addPrivateOption),
     )
     .addSubcommand((s) =>
       s
         .setName("coinflipstats")
         .setDescription("View coin flip stats or leaderboard")
-        .addBooleanOption((o) =>
-          o.setName("leaderboard").setDescription("Show leaderboard"),
-        )
-        .addUserOption((o) => o.setName("user").setDescription("User to inspect"))
-        .addIntegerOption((o) =>
+        .addStringOption((o) =>
           o
-            .setName("limit")
-            .setDescription("Rows to show")
-            .setMinValue(1)
-            .setMaxValue(25),
+            .setName("view")
+            .setDescription("Show user stats or the leaderboard")
+            .addChoices(
+              { name: "Stats", value: "stats" },
+              { name: "Leaderboard", value: "leaderboard" },
+            ),
         )
-        .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+        .addUserOption((o) => addUserOption(o, { description: "User to inspect" }))
+        .addIntegerOption((o) =>
+          addLimitOption(o, {
+            description: "Rows to show",
+            min: 1,
+            max: 25,
+          }),
+        )
+        .addBooleanOption(addPrivateOption),
     );
 }

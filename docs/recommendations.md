@@ -71,7 +71,7 @@ Suggestions for new slash commands and other improvements. Prioritized by impact
 
 - **commands.md:** Keep the `/status` table aligned with all live subcommands (vercel, supabase, chatgpt, claude, cursor, llms).
 - **Changelog:** When you ship a release, add a short entry to the in-repo changelog (and optionally to `/help topic:changelog`).
-- **Runbook:** Add a “Common tasks” section (e.g. “Add admin user”, “Change welcome channel”, “Back up DB”) with one-line commands or links to the right doc.
+- **Runbook:** Add a “Common tasks” section (e.g. “Add admin user”, “Change welcome channel/message with `/config welcome ...`”, “Back up DB”) with one-line commands or links to the right doc.
 
 ### Code / Quality
 

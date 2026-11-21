@@ -19,6 +19,15 @@ const isProd = process.env.NODE_ENV === "production";
 const prettyEnabled =
   !isProd && (process.env.LOG_PRETTY ?? "true").toLowerCase() === "true";
 
+function colorizeLogs(): boolean {
+  const value = process.env.LOG_COLOR?.toLowerCase();
+
+  if (value === "true") return true;
+  if (value === "false" || "NO_COLOR" in process.env) return false;
+
+  return Boolean(process.stdout.isTTY || process.stderr.isTTY);
+}
+
 function createLogger(): Logger {
   const level = process.env.LOG_LEVEL ?? (isProd ? "info" : "debug");
   const options = {
@@ -41,7 +50,7 @@ function createLogger(): Logger {
     const transport = pino.transport({
       target: "pino-pretty",
       options: {
-        colorize: true,
+        colorize: colorizeLogs(),
         translateTime: "SYS:standard",
         ignore: "pid,hostname",
       },

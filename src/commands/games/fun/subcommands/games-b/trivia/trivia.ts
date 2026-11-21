@@ -21,13 +21,16 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
 }
 
 async function runTrivia(interaction: ChatInputCommandInteraction): Promise<void> {
-  const showStats = interaction.options.getBoolean("stats") ?? false;
-  const showLeaderboard = interaction.options.getBoolean("leaderboard") ?? false;
+  const legacyShowStats = interaction.options.getBoolean("stats") ?? false;
+  const legacyShowLeaderboard = interaction.options.getBoolean("leaderboard") ?? false;
+  const view =
+    interaction.options.getString("view") ??
+    (legacyShowStats ? "stats" : legacyShowLeaderboard ? "leaderboard" : "play");
   const categoryInput = interaction.options.getString(
     "category",
   ) as TriviaCategory | null;
 
-  if (showStats) {
+  if (view === "stats") {
     const stats = getStats(interaction.user.id);
     const lines = [
       `🧠 **Trivia Stats for ${interaction.user}**`,
@@ -43,7 +46,7 @@ async function runTrivia(interaction: ChatInputCommandInteraction): Promise<void
     return;
   }
 
-  if (showLeaderboard) {
+  if (view === "leaderboard") {
     const leaders = getTriviaLeaderboard(10);
 
     if (leaders.length === 0) {

@@ -7,6 +7,7 @@ export function buildFunHelp(): string {
     "",
     "**Daily & Stats**",
     "`/fun daily`          Check in for points & streaks",
+    "`/fun daily view:stats`  View your daily stats",
     "`/fun quest`          View today's rotating quests and auto-claim XP rewards",
     "`/fun stats`          View all your game stats",
     "`/fun utility leaderboard`  See top players",
@@ -36,5 +37,6 @@ export function buildFunHelp(): string {
     "`/fun utility compliment`  Nice AI compliment (you or a friend)",
     "`/fun utility leaderboard` Top players",
     "`/fun fact`                Random interesting fact",
+    "`/fun slots view:paytable` View slots payouts",
   ].join("\n");
 }

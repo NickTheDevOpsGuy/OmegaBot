@@ -1,83 +1,123 @@
 // src/services/config/guildConfigStore.ts
 
-import fs from "fs";
-import path from "path";
 import {
   DEFAULT_GUILD_CONFIG,
   type GuildConfig,
   type GuildConfigPatch,
 } from "./types.js";
+import { getDb } from "../database/db.js";
+import { logger } from "../../../utils/logger.js";
 
 /**
- * Simple JSON-backed store for guild configuration.
- *
- * Design goals:
- * - Extremely easy to run locally
- * - No external dependencies (DB)
- * - Durable across restarts
- *
- * Notes:
- * - This implementation reads/writes the file per call.
- *   That’s fine for small bots. If you scale, add caching + periodic flush.
+ * SQLite-backed store for guild configuration.
  */
 
-const DATA_DIR = path.join(process.cwd(), "data");
-const FILE_PATH = path.join(DATA_DIR, "guild-config.json");
+type GuildConfigRow = {
+  config: string;
+  updated_at: number;
+};
 
-/**
- * Stored JSON shape:
- * {
- *   "<guildId>": { welcomeEnabled: true, welcomeChannelId: "..." },
- *   "<guildId2>": { ... }
- * }
- */
-type StoreShape = Record<string, Omit<GuildConfig, "guildId">>;
-
-function ensureDataDir(): void {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
+function ensureGuildConfigTable(): void {
+  getDb().exec(`
+    CREATE TABLE IF NOT EXISTS guild_config (
+      guild_id TEXT PRIMARY KEY,
+      config TEXT NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+  `);
 }
 
-function readStore(): StoreShape {
+function parseStoredConfig(guildId: string, row: GuildConfigRow): GuildConfig {
   try {
-    const raw = fs.readFileSync(FILE_PATH, "utf8");
-    const parsed = JSON.parse(raw) as StoreShape;
-    return parsed ?? {};
-  } catch {
-    // Missing file, invalid JSON, etc.
-    return {};
+    const saved = JSON.parse(row.config) as Partial<Omit<GuildConfig, "guildId">>;
+    return {
+      guildId,
+      ...DEFAULT_GUILD_CONFIG,
+      ...saved,
+      updatedAt: row.updated_at,
+    };
+  } catch (err) {
+    logger.warn({ err, guildId }, "[config] stored guild config payload invalid");
+    return { guildId, ...DEFAULT_GUILD_CONFIG };
   }
 }
 
-function writeStore(store: StoreShape): void {
-  ensureDataDir();
-  fs.writeFileSync(FILE_PATH, JSON.stringify(store, null, 2), "utf8");
+function writeConfig(
+  guildId: string,
+  config: Partial<Omit<GuildConfig, "guildId">> & { updatedAt: number },
+): void {
+  ensureGuildConfigTable();
+  getDb()
+    .prepare(
+      `INSERT INTO guild_config (guild_id, config, updated_at)
+       VALUES (?, ?, ?)
+       ON CONFLICT(guild_id) DO UPDATE SET
+        config = excluded.config,
+        updated_at = excluded.updated_at`,
+    )
+    .run(guildId, JSON.stringify(config), config.updatedAt);
 }
 
 /**
  * Get the effective config for a guild.
  * Always returns a fully-populated config object (defaults applied).
  */
-export function getGuildConfig(guildId: string): GuildConfig {
-  const store = readStore();
-  const saved = store[guildId] ?? {};
-  return { guildId, ...DEFAULT_GUILD_CONFIG, ...saved };
+export async function getGuildConfig(guildId: string): Promise<GuildConfig> {
+  ensureGuildConfigTable();
+  const row = getDb()
+    .prepare(`SELECT config, updated_at FROM guild_config WHERE guild_id = ?`)
+    .get(guildId) as GuildConfigRow | undefined;
+
+  if (row) return parseStoredConfig(guildId, row);
+
+  return { guildId, ...DEFAULT_GUILD_CONFIG };
 }
 
 /**
  * Update the stored config for a guild by patching values.
  * Returns the updated effective config (defaults applied).
  */
-export function setGuildConfig(guildId: string, patch: GuildConfigPatch): GuildConfig {
-  const store = readStore();
+export async function setGuildConfig(
+  guildId: string,
+  patch: GuildConfigPatch,
+): Promise<GuildConfig> {
+  const current = await getGuildConfig(guildId);
+  const { guildId: _guildId, ...currentValues } = current;
+  const next: Omit<GuildConfig, "guildId"> = {
+    ...currentValues,
+    ...patch,
+    updatedAt: Date.now(),
+  };
 
-  // Apply defaults for new guilds, then patch on top.
-  const current = store[guildId] ?? DEFAULT_GUILD_CONFIG;
-  const next: Omit<GuildConfig, "guildId"> = { ...current, ...patch };
-
-  store[guildId] = next;
-  writeStore(store);
+  writeConfig(guildId, next);
 
   return { guildId, ...next };
+}
+
+export async function setGuildWelcomeMessage(
+  guildId: string,
+  welcomeMessage: string,
+): Promise<GuildConfig> {
+  return setGuildConfig(guildId, {
+    welcomeMessage,
+    welcomeEnabled: true,
+  });
+}
+
+export async function clearGuildWelcomeMessage(guildId: string): Promise<GuildConfig> {
+  const current = await getGuildConfig(guildId);
+  const {
+    guildId: _guildId,
+    welcomeMessage: _welcomeMessage,
+    ...currentValues
+  } = current;
+  const next = {
+    ...currentValues,
+    welcomeEnabled: true,
+    updatedAt: Date.now(),
+  };
+
+  writeConfig(guildId, next);
+
+  return { guildId, ...next, welcomeMessage: null };
 }

@@ -16,7 +16,15 @@ export type WikiResult = {
 export type NotionSearchRunner = (
   query: string,
   limit: number,
-) => Promise<Array<{ title: string; excerpt: string | null; url: string; id: string }>>;
+) => Promise<
+  Array<{
+    title: string;
+    excerpt: string | null;
+    url: string;
+    id: string;
+    tags: string[];
+  }>
+>;
 
 function truncateExcerpt(text: string, maxLength = 180): string {
   const compact = text.replace(/\s+/g, " ").trim();
@@ -86,7 +94,7 @@ export async function searchWiki(args: {
   const results: WikiResult[] = [];
 
   if (args.source === "auto" || args.source === "faq") {
-    results.push(...searchFaqEntriesInMemory(getAll(), args.query, limit));
+    results.push(...searchFaqEntriesInMemory(await getAll(), args.query, limit));
   }
 
   if (args.source === "auto" || args.source === "notion") {
@@ -103,7 +111,7 @@ export async function searchWiki(args: {
           ),
           key: null,
           url: entry.url,
-          tags: [],
+          tags: entry.tags,
         })),
       );
     } else if (args.source === "notion") {

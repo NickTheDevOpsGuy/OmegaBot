@@ -20,7 +20,7 @@ export async function handleRules(
       return;
     }
 
-    setGuildConfig(interaction.guildId!, {
+    await setGuildConfig(interaction.guildId!, {
       rulesChannelId: channel.id,
     });
 
@@ -34,7 +34,7 @@ export async function handleRules(
       flags: MessageFlags.Ephemeral,
     });
   } else if (sub === "clear") {
-    setGuildConfig(interaction.guildId!, {
+    await setGuildConfig(interaction.guildId!, {
       rulesChannelId: null,
     });
 

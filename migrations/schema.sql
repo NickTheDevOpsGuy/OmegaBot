@@ -5,8 +5,8 @@ CREATE TABLE IF NOT EXISTS faqs (
   title TEXT NOT NULL,
   body TEXT NOT NULL,
   tags TEXT NOT NULL,
-  created_at INTEGER NOT NULL,
-  updated_at INTEGER NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
   usage_count INTEGER DEFAULT 0,
   created_by TEXT,
   updated_by TEXT
@@ -18,11 +18,118 @@ CREATE TABLE IF NOT EXISTS user_timezones (
   updated_at INTEGER NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS user_timezones_scoped (
+  scope TEXT NOT NULL CHECK (scope IN ('guild','global')),
+  guild_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  timezone TEXT NOT NULL,
+  label TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  PRIMARY KEY (scope, guild_id, user_id)
+);
+
 CREATE TABLE IF NOT EXISTS guild_config (
   guild_id TEXT PRIMARY KEY,
   config TEXT NOT NULL,
   updated_at INTEGER NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS guild_user_xp (
+  guild_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  xp INTEGER NOT NULL DEFAULT 0,
+  message_count INTEGER NOT NULL DEFAULT 0,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (guild_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_guild_user_xp_leaderboard
+  ON guild_user_xp(guild_id, xp DESC, updated_at ASC);
+
+CREATE TABLE IF NOT EXISTS level_role_rewards (
+  guild_id TEXT NOT NULL,
+  level INTEGER NOT NULL,
+  role_id TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (guild_id, level)
+);
+
+CREATE INDEX IF NOT EXISTS idx_level_role_rewards_guild
+  ON level_role_rewards(guild_id, level);
+
+CREATE TABLE IF NOT EXISTS automod_settings (
+  guild_id TEXT PRIMARY KEY,
+  enabled INTEGER NOT NULL DEFAULT 0,
+  block_invites INTEGER NOT NULL DEFAULT 1,
+  block_links INTEGER NOT NULL DEFAULT 0,
+  block_caps INTEGER NOT NULL DEFAULT 0,
+  block_spam INTEGER NOT NULL DEFAULT 1,
+  caps_percent INTEGER NOT NULL DEFAULT 75,
+  spam_message_count INTEGER NOT NULL DEFAULT 5,
+  spam_window_seconds INTEGER NOT NULL DEFAULT 10,
+  updated_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS automod_banned_words (
+  guild_id TEXT NOT NULL,
+  word TEXT NOT NULL,
+  added_by TEXT NOT NULL,
+  added_at INTEGER NOT NULL,
+  PRIMARY KEY (guild_id, word)
+);
+
+CREATE TABLE IF NOT EXISTS mod_warnings (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  guild_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  moderator_id TEXT NOT NULL,
+  reason TEXT NOT NULL,
+  source TEXT NOT NULL DEFAULT 'manual',
+  created_at INTEGER NOT NULL,
+  cleared_at INTEGER
+);
+
+CREATE INDEX IF NOT EXISTS idx_mod_warnings_user
+  ON mod_warnings(guild_id, user_id, cleared_at, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS custom_commands (
+  guild_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  response TEXT NOT NULL,
+  created_by TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  uses INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (guild_id, name)
+);
+
+CREATE TABLE IF NOT EXISTS reaction_roles (
+  guild_id TEXT NOT NULL,
+  message_id TEXT NOT NULL,
+  emoji TEXT NOT NULL,
+  role_id TEXT NOT NULL,
+  channel_id TEXT NOT NULL,
+  created_by TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (guild_id, message_id, emoji)
+);
+
+CREATE INDEX IF NOT EXISTS idx_reaction_roles_message
+  ON reaction_roles(guild_id, message_id);
+
+CREATE TABLE IF NOT EXISTS self_assignable_roles (
+  guild_id TEXT NOT NULL,
+  role_id TEXT NOT NULL,
+  description TEXT,
+  created_by TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (guild_id, role_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_self_assignable_roles_guild
+  ON self_assignable_roles(guild_id, updated_at DESC);
 
 CREATE TABLE IF NOT EXISTS fun_usage (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -33,6 +140,19 @@ CREATE TABLE IF NOT EXISTS fun_usage (
 
 CREATE INDEX IF NOT EXISTS idx_fun_usage_user ON fun_usage(user_id);
 CREATE INDEX IF NOT EXISTS idx_fun_usage_command ON fun_usage(command);
+
+CREATE TABLE IF NOT EXISTS fun_polls (
+  message_id TEXT PRIMARY KEY,
+  channel_id TEXT NOT NULL,
+  guild_id TEXT,
+  creator_user_id TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  question TEXT NOT NULL,
+  options_json TEXT NOT NULL,
+  counts_json TEXT NOT NULL,
+  votes_json TEXT NOT NULL
+);
 
 CREATE TABLE IF NOT EXISTS jokes (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

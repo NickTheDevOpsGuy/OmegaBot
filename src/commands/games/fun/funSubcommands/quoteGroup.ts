@@ -1,6 +1,10 @@
 // src/commands/fun/funSubcommands/quoteGroup.ts
 
 import type { SlashCommandSubcommandGroupBuilder } from "discord.js";
+import {
+  addLimitOption,
+  addQueryOption,
+} from "../../../../services/discord/discord/slashOptions.js";
 
 export function buildQuoteGroup(g: SlashCommandSubcommandGroupBuilder) {
   return g
@@ -36,14 +40,14 @@ export function buildQuoteGroup(g: SlashCommandSubcommandGroupBuilder) {
         .setDescription("List recent quotes")
         .addUserOption((o) => o.setName("author").setDescription("Filter by author"))
         .addIntegerOption((o) =>
-          o
-            .setName("limit")
-            .setDescription("Number to show (default: 25)")
-            .addChoices(
+          addLimitOption(o, {
+            description: "Number to show (default: 25)",
+            choices: [
               { name: "5", value: 5 },
               { name: "10", value: 10 },
               { name: "25", value: 25 },
-            ),
+            ],
+          }),
         ),
     )
     .addSubcommand((s) =>
@@ -63,17 +67,17 @@ export function buildQuoteGroup(g: SlashCommandSubcommandGroupBuilder) {
         .setName("search")
         .setDescription("Search quotes")
         .addStringOption((o) =>
-          o.setName("query").setDescription("Search text").setRequired(true),
+          addQueryOption(o, { description: "Search text", required: true }),
         )
         .addIntegerOption((o) =>
-          o
-            .setName("limit")
-            .setDescription("Max results (default: 10)")
-            .addChoices(
+          addLimitOption(o, {
+            description: "Max results (default: 10)",
+            choices: [
               { name: "5", value: 5 },
               { name: "10", value: 10 },
               { name: "25", value: 25 },
-            ),
+            ],
+          }),
         ),
     );
 }

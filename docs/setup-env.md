@@ -64,6 +64,9 @@ DATABASE_PATH=data/omegabot.db
 
 - default: `data/omegabot.db`
 - use `:memory:` in tests when you want an in-memory database
+- server configuration such as welcome channels, welcome message text, starboard,
+  rules, moderator roles, self-assignable roles, and leveling settings is stored
+  in SQLite
 
 ### Metrics And Health HTTP Server
 
@@ -209,9 +212,10 @@ BOT_ADMIN_AUDIT_CHANNEL_ID=333333333333333333
 
 - `BOT_ADMIN_ROLE_IDS`
   - comma-separated role IDs for broader documentation/knowledge-base admin access
-  - applies to actions like `/faq add`, `/faq remove`, `/notion status`, `/notion create-page`, and `/notion add`
+  - applies to actions like `/faq add`, `/faq remove`, `/notion status`, `/notion templates`, `/notion create-page`, and `/notion add`
 - `BOT_ADMIN_AUDIT_CHANNEL_ID`
   - optional audit channel for lightweight admin/audit messages
+  - the bot role must have **View Channel** and **Send Messages** in that channel
 
 This lets you delegate docs and Notion maintenance without handing out full moderation powers.
 
@@ -220,18 +224,24 @@ This lets you delegate docs and Notion maintenance without handing out full mode
 ```env
 NOTION_TOKEN=secret_xxx
 NOTION_DATABASE_ID=0123456789abcdef0123456789abcdef
+NOTION_INVITE_URL=https://www.notion.so/your-workspace/Your-Wiki-Page-Id?source=copy_link
 ```
 
 - `NOTION_TOKEN`
   - internal Notion integration token
+  - the integration needs Notion capabilities for **Read content**, **Update content**, and **Insert content**
 - `NOTION_DATABASE_ID`
   - the specific database OmegaBot should search and write to
+- `NOTION_INVITE_URL`
+  - optional share/invite URL to show in welcome or onboarding messages
+  - intended for users; not used by the Notion API client for search/create
 
 Notion-related commands enabled by this setup:
 
 - `/wiki`
 - `/notion search`
 - `/notion status`
+- `/notion templates`
 - `/notion create-page`
 - `/notion add`
 
@@ -252,6 +262,31 @@ DISCORD_ENABLE_MESSAGE_CONTENT_INTENT=false
 If you set either to `true` in `.env`, you must also enable the same intent in the Discord Developer Portal.
 
 OmegaBot still always requests its normal non-privileged core intents in code.
+
+### Welcome Messages
+
+Welcome messages are configured with slash commands and stored in SQLite:
+
+```text
+/config welcome set channel:#welcome
+/config welcome set-message text:"Welcome {user} to {server}!"
+/config welcome test
+```
+
+The message supports `{user}`, `{name}`, `{username}`, and `{server}`.
+If no custom message is set, OmegaBot uses a generic built-in welcome message
+with the server name. Use `/config welcome set-message` for server-specific
+links, rules, forms, or onboarding instructions.
+
+`DISCORD_WELCOME_CHANNEL_ID` is only an environment fallback for simple
+single-server deployments. Prefer `/config welcome set` because it persists the
+channel in the database per server.
+
+Welcome-on-join requires:
+
+- `DISCORD_ENABLE_GUILD_MEMBERS_INTENT=true`
+- Discord Developer Portal → Bot → Privileged Gateway Intents → Server Members Intent
+- bot permissions in the welcome channel: View Channel and Send Messages
 
 ---
 

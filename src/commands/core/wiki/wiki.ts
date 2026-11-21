@@ -7,6 +7,11 @@ import { env } from "../../../config/env.js";
 import { getContextLogger } from "../../../services/core/logging/requestContext.js";
 import { sendAdminAuditLog } from "../../../services/discord/discord/adminAudit.js";
 import {
+  addLimitOption,
+  addPrivateOption,
+  addQueryOption,
+} from "../../../services/discord/discord/slashOptions.js";
+import {
   createNotionClient,
   searchNotionPages,
 } from "../../../services/integrations/notion/notionWiki.js";
@@ -25,12 +30,12 @@ export const data = new SlashCommandBuilder()
   .setName("wiki")
   .setDescription("Search curated docs and the optional Notion wiki")
   .addStringOption((opt) =>
-    opt
-      .setName("query")
-      .setDescription("What are you looking for?")
-      .setRequired(true)
-      .setMinLength(2)
-      .setMaxLength(100),
+    addQueryOption(opt, {
+      description: "What are you looking for?",
+      required: true,
+      minLength: 2,
+      maxLength: 100,
+    }),
   )
   .addStringOption((opt) =>
     opt
@@ -43,22 +48,32 @@ export const data = new SlashCommandBuilder()
         { name: "Notion only", value: "notion" },
       ),
   )
-  .addBooleanOption((opt) =>
-    opt
-      .setName("private")
-      .setDescription("Only show the result to you")
-      .setRequired(false),
+  .addIntegerOption((opt) =>
+    addLimitOption(opt, {
+      description: "How many results to show",
+      min: 1,
+      max: 10,
+    }),
   )
+  .addBooleanOption(addPrivateOption)
   .setDMPermission(true);
 
+function formatMaskedLink(label: string, url: string | null): string {
+  if (!url) return label;
+  const safeLabel = label
+    .replace(/\\/g, "\\\\")
+    .replace(/\[/g, "\\[")
+    .replace(/\]/g, "\\]");
+  return `[${safeLabel}](${url})`;
+}
+
 function formatResult(result: WikiResult): string {
-  const sourceLabel = result.source === "faq" ? "FAQ" : "Notion";
-  const lines = [`**[${sourceLabel}] ${result.title}**`];
+  const title = result.url ? formatMaskedLink(result.title, result.url) : result.title;
+  const lines = [result.url ? title : `**${title}**`];
 
   if (result.key) lines.push(`Key: \`${result.key}\``);
   if (result.tags.length > 0) lines.push(`Tags: ${result.tags.join(", ")}`);
   lines.push(result.excerpt);
-  if (result.url) lines.push(result.url);
 
   return lines.join("\n");
 }
@@ -110,6 +125,7 @@ function formatWikiFailureMessage(err: unknown): string {
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const query = interaction.options.getString("query", true).trim();
   const source = (interaction.options.getString("source") ?? "auto") as WikiSourceFilter;
+  const limit = interaction.options.getInteger("limit") ?? 5;
   const ephemeral = interaction.options.getBoolean("private") ?? true;
 
   await interaction.deferReply(ephemeral ? { flags: MessageFlags.Ephemeral } : undefined);
@@ -129,7 +145,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     const { results, notices } = await searchWiki({
       query,
       source,
-      limit: 5,
+      limit,
       notionSearch,
     });
 
@@ -137,6 +153,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       {
         query,
         source,
+        limit,
         resultCount: results.length,
         noticeCount: notices.length,
       },
@@ -146,7 +163,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     const reply = [buildReply(query, source, results), ...notices].join("\n\n").trim();
     await interaction.editReply(reply);
   } catch (err) {
-    getContextLogger().error({ err, query, source }, "[wiki] search threw");
+    getContextLogger().error({ err, query, source, limit }, "[wiki] search threw");
     await sendAdminAuditLog(
       interaction,
       [
@@ -155,6 +172,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         `Guild: ${interaction.guildId ?? "dm"}`,
         `Query: ${query}`,
         `Source: ${source}`,
+        `Limit: ${limit}`,
         `Error: ${err instanceof Error ? err.message : "Unknown error"}`,
       ].join("\n"),
     );

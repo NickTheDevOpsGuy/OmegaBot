@@ -39,7 +39,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
 
     // Fetch all entries from the service layer.
     // Filtering and sorting happens in formatFaqList (via _shared.ts).
-    const entries = getAll();
+    const entries = await getAll();
 
     const text = formatFaqList(entries, {
       query: query.length ? query : undefined,

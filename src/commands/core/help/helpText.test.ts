@@ -9,12 +9,15 @@ const TOPICS: HelpTopic[] = [
   "games",
   "profile",
   "quotes",
+  "notion",
   "github",
   "status",
   "admin",
   "commands",
   "changelog",
   "summary",
+  "info",
+  "event",
 ];
 
 describe("buildHelpText", () => {
@@ -54,6 +57,21 @@ describe("buildHelpText", () => {
     });
     expect(result).toContain("Getting Started");
     expect(result).toContain("OmegaBot Help");
+    expect(result).toContain("/levels rank");
+  });
+
+  it("admin topic includes server management features", () => {
+    const result = buildHelpText({
+      isAdmin: true,
+      commands: [],
+      topic: "admin",
+    });
+    expect(result).toContain("/automod enable");
+    expect(result).toContain("/warnings add");
+    expect(result).toContain("/roles enable");
+    expect(result).toContain("/reaction-roles add");
+    expect(result).toContain("/custom-commands set");
+    expect(result).toContain("/config leveling");
   });
 
   it("changelog includes version 3.9", () => {
@@ -75,5 +93,17 @@ describe("buildHelpText", () => {
       topic: "commands",
     });
     expect(result).toContain("/ping");
+  });
+
+  it("notion topic mentions wiki search", () => {
+    const result = buildHelpText({
+      isAdmin: false,
+      commands: [],
+      topic: "notion",
+    });
+    expect(result).toContain("/wiki");
+    expect(result).toContain("/notion search");
+    expect(result).toContain("/notion open");
+    expect(result).toContain("/notion browse");
   });
 });

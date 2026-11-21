@@ -8,6 +8,7 @@ import {
 import { env } from "../../../config/env.js";
 import { getDb } from "../../../services/core/database/db.js";
 import { getContextLogger } from "../../../services/core/logging/requestContext.js";
+import { addUserOption } from "../../../services/discord/discord/slashOptions.js";
 import { t, resolveLocale } from "../../../i18n/index.js";
 
 import { safeReply } from "./utils.js";
@@ -31,7 +32,7 @@ export const data = new SlashCommandBuilder()
       .setName("timeout")
       .setDescription("Timeout a user")
       .addUserOption((opt) =>
-        opt.setName("user").setDescription("User to timeout").setRequired(true),
+        addUserOption(opt, { description: "User to timeout", required: true }),
       )
       .addIntegerOption((opt) =>
         opt
@@ -60,7 +61,7 @@ export const data = new SlashCommandBuilder()
       .setName("kick")
       .setDescription("Kick a user from the server")
       .addUserOption((opt) =>
-        opt.setName("user").setDescription("User to kick").setRequired(true),
+        addUserOption(opt, { description: "User to kick", required: true }),
       )
       .addStringOption((opt) =>
         opt.setName("reason").setDescription("Reason for kick").setRequired(false),
@@ -71,7 +72,7 @@ export const data = new SlashCommandBuilder()
       .setName("ban")
       .setDescription("Ban a user from the server")
       .addUserOption((opt) =>
-        opt.setName("user").setDescription("User to ban").setRequired(true),
+        addUserOption(opt, { description: "User to ban", required: true }),
       )
       .addStringOption((opt) =>
         opt.setName("reason").setDescription("Reason for ban").setRequired(false),

@@ -20,6 +20,11 @@ import {
   type ChatInputCommandInteraction,
 } from "discord.js";
 import { getContextLogger } from "../../../services/core/logging/requestContext.js";
+import {
+  addLimitOption,
+  addPrivateOption,
+  addQueryOption,
+} from "../../../services/discord/discord/slashOptions.js";
 
 import { getAll } from "../../../services/integrations/faq/services.js";
 import { run as runAdd } from "./subcommands/add.js";
@@ -59,12 +64,7 @@ export const data = new SlashCommandBuilder()
           .setDescription("Comma-separated tags (optional)")
           .setRequired(false),
       )
-      .addBooleanOption((o) =>
-        o
-          .setName("private")
-          .setDescription("Only show the result to you")
-          .setRequired(false),
-      ),
+      .addBooleanOption(addPrivateOption),
   )
 
   // /faq get
@@ -82,12 +82,7 @@ export const data = new SlashCommandBuilder()
       .addBooleanOption((o) =>
         o.setName("full").setDescription("Show the full answer text").setRequired(false),
       )
-      .addBooleanOption((o) =>
-        o
-          .setName("private")
-          .setDescription("Only show the result to you")
-          .setRequired(false),
-      ),
+      .addBooleanOption(addPrivateOption),
   )
 
   // /faq list
@@ -96,10 +91,9 @@ export const data = new SlashCommandBuilder()
       .setName("list")
       .setDescription("List FAQ entries")
       .addStringOption((o) =>
-        o
-          .setName("query")
-          .setDescription("Search in key/title/body (optional)")
-          .setRequired(false),
+        addQueryOption(o, {
+          description: "Search in key, title, or body",
+        }),
       )
       .addStringOption((o) =>
         o
@@ -114,12 +108,14 @@ export const data = new SlashCommandBuilder()
           .setDescription("Show full entries (not just a compact list)")
           .setRequired(false),
       )
-      .addBooleanOption((o) =>
-        o
-          .setName("private")
-          .setDescription("Only show the result to you")
-          .setRequired(false),
-      ),
+      .addIntegerOption((o) =>
+        addLimitOption(o, {
+          description: "How many entries to show",
+          min: 1,
+          max: 50,
+        }),
+      )
+      .addBooleanOption(addPrivateOption),
   )
 
   // /faq remove
@@ -134,12 +130,7 @@ export const data = new SlashCommandBuilder()
           .setRequired(true)
           .setAutocomplete(true),
       )
-      .addBooleanOption((o) =>
-        o
-          .setName("private")
-          .setDescription("Only show the result to you")
-          .setRequired(false),
-      ),
+      .addBooleanOption(addPrivateOption),
   );
 
 /**
@@ -191,7 +182,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 export async function autocomplete(interaction: AutocompleteInteraction): Promise<void> {
   const focused = interaction.options.getFocused(true);
   const needle = String(focused.value).trim().toLowerCase();
-  const entries = getAll();
+  const entries = await getAll();
 
   if (focused.name === "key") {
     const keys = entries.map((e) => e.key);

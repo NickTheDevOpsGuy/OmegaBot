@@ -2,7 +2,7 @@
 
 This file is the **single source of truth** for command behavior; update it when adding or changing commands.
 
-OmegaBot has **20 slash commands** organized into logical groups.
+OmegaBot has slash commands organized into logical groups.
 
 ---
 
@@ -16,6 +16,7 @@ OmegaBot has **20 slash commands** organized into logical groups.
 - [`/giveaway` - Giveaway System](#giveaway---giveaway-system)
 - [`/suggestion` - Suggestion System](#suggestion---suggestion-system)
 - [`/config` - Server Configuration](#config---server-configuration)
+- [`/roles` - Self-assignable Roles](#roles---self-assignable-roles)
 - [`/faq` - FAQ System](#faq---faq-system)
 - [`/wiki` - Knowledge Lookup](#wiki---knowledge-lookup)
 - [`/notion` - Notion Wiki Integration](#notion---notion-wiki-integration)
@@ -213,6 +214,10 @@ Requires **Manage Server** permission.
 | `/config view`                  | View all settings            |
 | `/config welcome set`           | Set welcome channel          |
 | `/config welcome clear`         | Clear welcome channel        |
+| `/config welcome set-message`   | Set welcome message text     |
+| `/config welcome message`       | Alias for set-message        |
+| `/config welcome reset-message` | Use default welcome message  |
+| `/config welcome test`          | Send a test welcome message  |
 | `/config starboard set`         | Set up starboard             |
 | `/config starboard status`      | View starboard settings      |
 | `/config starboard clear`       | Disable starboard            |
@@ -221,6 +226,32 @@ Requires **Manage Server** permission.
 | `/config moderator-role add`    | Add role that can use /admin |
 | `/config moderator-role remove` | Remove moderator role        |
 | `/config moderator-role list`   | List moderator roles         |
+
+Welcome channel and message settings are stored in SQLite in `guild_config`.
+Welcome message text supports `{user}`, `{name}`, `{username}`, and `{server}`.
+If no custom message is set, OmegaBot uses a generic built-in welcome message.
+After changing welcome config, use `/config welcome test` to verify channel
+permissions and preview the rendered message.
+
+---
+
+## `/roles` - Self-assignable Roles
+
+Let members choose approved server roles with slash commands. Admin setup requires **Manage Roles**. The bot also needs **Manage Roles**, and its highest role must be above every role it grants or removes.
+
+| Command          | Description                                                  |
+| ---------------- | ------------------------------------------------------------ |
+| `/roles list`    | List roles members can choose                                |
+| `/roles choose`  | Add a configured role to yourself                            |
+| `/roles remove`  | Remove one of your configured self-assignable roles          |
+| `/roles enable`  | (Admin) Allow members to choose a role; optional description |
+| `/roles disable` | (Admin) Stop offering a role; existing members keep it       |
+
+Notes:
+
+- Only roles configured with `/roles enable` can be chosen or removed through `/roles`.
+- Managed integration roles and `@everyone` cannot be self-assigned.
+- If assignment fails, move the OmegaBot role above the target role and confirm the bot has **Manage Roles**.
 
 ---
 
@@ -241,9 +272,9 @@ FAQ entries also act as the curated server-doc layer for `/wiki`.
 
 Search curated FAQ docs and, when configured, the Notion wiki too.
 
-| Command | Description                                                           |
-| ------- | --------------------------------------------------------------------- |
-| `/wiki` | Search FAQ entries and optional Notion pages by keyword or page title |
+| Command | Description                                                            |
+| ------- | ---------------------------------------------------------------------- |
+| `/wiki` | Search FAQ entries and optional Notion pages by keyword, tag, or title |
 
 Notes:
 
@@ -255,12 +286,17 @@ Notes:
 
 ## `/notion` - Notion Wiki Integration
 
-| Command               | Description                                                  |
-| --------------------- | ------------------------------------------------------------ |
-| `/notion search`      | Search the configured Notion wiki database                   |
-| `/notion status`      | (Admin) Validate config and show detected Notion DB schema   |
-| `/notion create-page` | (Admin) Create a page in the configured Notion wiki database |
-| `/notion add`         | (Admin) Guided modal flow with optional template prompts     |
+| Command               | Description                                                     |
+| --------------------- | --------------------------------------------------------------- |
+| `/notion search`      | Search the configured Notion wiki database                      |
+| `/notion open`        | Open a page by title (title autocomplete)                       |
+| `/notion browse`      | Browse pages by tag (tag autocomplete)                          |
+| `/notion recent`      | Show recently edited pages                                      |
+| `/notion random`      | Open a random page, optionally filtered by tag                  |
+| `/notion status`      | (Admin) Validate config and show detected Notion DB schema      |
+| `/notion templates`   | (Admin) List guided Notion add templates and mapped fields      |
+| `/notion create-page` | (Admin) Create a page in the configured Notion wiki database    |
+| `/notion add`         | (Admin) Guided modal flow with optional template-backed prompts |
 
 ---
 
@@ -327,6 +363,7 @@ Restricted to users in **`ADMIN_USER_IDS`** (in `.env`) or with a server moderat
 | Command     | Description                                                               |
 | ----------- | ------------------------------------------------------------------------- |
 | `/help`     | Command help (use `topic:changelog` for changelog)                        |
+| `/roles`    | Choose approved self-assignable server roles                              |
 | `/ping`     | Health check                                                              |
 | `/status`   | Vercel / Supabase status                                                  |
 | `/rules`    | View server rules (link to configured channel)                            |
@@ -337,15 +374,15 @@ Restricted to users in **`ADMIN_USER_IDS`** (in `.env`) or with a server moderat
 
 ---
 
-## Command Count Summary
+## Command Summary
 
-| Category          | Commands                                                  |
-| ----------------- | --------------------------------------------------------- |
-| Core              | 7 (help, ping, info, profile, achievements, admin, rules) |
-| Fun               | 1 (with 25+ subcommands)                                  |
-| Server Management | 3 (config, giveaway, suggestion)                          |
-| Content           | 4 (faq, summary, history, playback)                       |
-| Integration       | 2 (gh, status)                                            |
-| **Total**         | **17 slash commands**                                     |
+| Category          | Commands                                                         |
+| ----------------- | ---------------------------------------------------------------- |
+| Core              | 8 (help, ping, info, profile, achievements, admin, rules, roles) |
+| Fun               | 1 (with 25+ subcommands)                                         |
+| Server Management | 3 (config, giveaway, suggestion)                                 |
+| Content           | 4 (faq, summary, history, playback)                              |
+| Integration       | 2 (gh, status)                                                   |
+| More              | See the command list above and `/help topic:commands`            |
 
 ---

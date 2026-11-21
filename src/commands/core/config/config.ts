@@ -2,11 +2,12 @@
 //
 // Subcommand groups:
 // - /config view                    - View all server settings
-// - /config welcome set/clear       - Configure welcome messages
+// - /config welcome set/clear/set-message/message/reset-message/test - Configure welcome messages
 // - /config starboard set/status/clear - Configure starboard
+// - /config leveling ...            - Configure message XP leveling
 //
 // Requires Manage Server permission.
-// Handlers live in ./view, ./welcome, ./starboard, ./rules, ./moderatorRole.
+// Handlers live in ./view, ./welcome, ./starboard, ./rules, ./moderatorRole, ./leveling.
 
 import {
   SlashCommandBuilder,
@@ -21,6 +22,7 @@ import { handleWelcome } from "./welcome.js";
 import { handleStarboard } from "./starboard.js";
 import { handleRules } from "./rules.js";
 import { handleModeratorRole } from "./moderatorRole.js";
+import { handleLeveling } from "./leveling.js";
 
 export const data = new SlashCommandBuilder()
   .setName("config")
@@ -45,6 +47,42 @@ export const data = new SlashCommandBuilder()
       )
       .addSubcommand((sub) =>
         sub.setName("clear").setDescription("Clear the welcome channel"),
+      )
+      .addSubcommand((sub) =>
+        sub
+          .setName("message")
+          .setDescription("Set the welcome message text")
+          .addStringOption((opt) =>
+            opt
+              .setName("text")
+              .setDescription(
+                "Message text. Supports {user}, {name}, {username}, and {server}.",
+              )
+              .setRequired(true)
+              .setMinLength(1)
+              .setMaxLength(1800),
+          ),
+      )
+      .addSubcommand((sub) =>
+        sub
+          .setName("set-message")
+          .setDescription("Set the welcome message text")
+          .addStringOption((opt) =>
+            opt
+              .setName("text")
+              .setDescription(
+                "Message text. Supports {user}, {name}, {username}, and {server}.",
+              )
+              .setRequired(true)
+              .setMinLength(1)
+              .setMaxLength(1800),
+          ),
+      )
+      .addSubcommand((sub) =>
+        sub.setName("reset-message").setDescription("Use the default welcome message"),
+      )
+      .addSubcommand((sub) =>
+        sub.setName("test").setDescription("Send a test welcome message"),
       ),
   )
   // Starboard
@@ -124,6 +162,62 @@ export const data = new SlashCommandBuilder()
         sub.setName("list").setDescription("List moderator roles for this server"),
       ),
   )
+  // MEE6-style message XP leveling
+  .addSubcommandGroup((group) =>
+    group
+      .setName("leveling")
+      .setDescription("Configure message XP, rank announcements, and role rewards")
+      .addSubcommand((sub) =>
+        sub.setName("enable").setDescription("Enable message XP leveling"),
+      )
+      .addSubcommand((sub) =>
+        sub.setName("disable").setDescription("Disable message XP leveling"),
+      )
+      .addSubcommand((sub) =>
+        sub
+          .setName("announce-channel")
+          .setDescription("Set or clear the channel for level-up announcements")
+          .addChannelOption((opt) =>
+            opt
+              .setName("channel")
+              .setDescription("Announcement channel; omit to use the active channel")
+              .setRequired(false)
+              .addChannelTypes(ChannelType.GuildText),
+          ),
+      )
+      .addSubcommand((sub) =>
+        sub
+          .setName("role-add")
+          .setDescription("Give a role when members reach a level")
+          .addIntegerOption((opt) =>
+            opt
+              .setName("level")
+              .setDescription("Level that unlocks this role")
+              .setRequired(true)
+              .setMinValue(1)
+              .setMaxValue(500),
+          )
+          .addRoleOption((opt) =>
+            opt.setName("role").setDescription("Reward role").setRequired(true),
+          ),
+      )
+      .addSubcommand((sub) =>
+        sub
+          .setName("role-remove")
+          .setDescription("Remove a level role reward")
+          .addIntegerOption((opt) =>
+            opt
+              .setName("level")
+              .setDescription("Level reward to remove")
+              .setRequired(true)
+              .setMinValue(1)
+              .setMaxValue(500),
+          ),
+      )
+      .addSubcommand((sub) =>
+        sub.setName("status").setDescription("View leveling settings"),
+      ),
+  )
   // View all settings
   .addSubcommand((sub) =>
     sub.setName("view").setDescription("View all current settings"),
@@ -155,10 +249,12 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     await handleRules(interaction, sub);
   } else if (group === "moderator-role") {
     await handleModeratorRole(interaction, sub);
+  } else if (group === "leveling") {
+    await handleLeveling(interaction, sub);
   } else {
     await interaction.reply({
       content:
-        "That option wasn't found. Use `rules`, `moderator-role`, or other config options. Use `/help` for more.",
+        "That option wasn't found. Use `rules`, `moderator-role`, `leveling`, or other config options. Use `/help` for more.",
       flags: MessageFlags.Ephemeral,
     });
   }

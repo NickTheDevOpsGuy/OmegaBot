@@ -28,7 +28,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
     const key = await readRequiredKey(interaction, "key");
     if (!key) return;
 
-    const entry = getByKey(key);
+    const entry = await getByKey(key);
     if (!entry) {
       await interaction.editReply(`❌ FAQ not found: **${key}**`);
       return;
@@ -36,7 +36,7 @@ export async function run(interaction: ChatInputCommandInteraction): Promise<voi
 
     // Optional analytics. If it fails, we still show the FAQ.
     try {
-      incrementUsage(entry.key);
+      await incrementUsage(entry.key);
     } catch {
       // ignore
     }

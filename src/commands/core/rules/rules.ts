@@ -23,7 +23,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     return;
   }
 
-  const config = getGuildConfig(interaction.guildId);
+  const config = await getGuildConfig(interaction.guildId);
 
   if (!config.rulesChannelId) {
     await interaction.reply({

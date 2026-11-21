@@ -12,12 +12,14 @@ function createMockInteraction(overrides?: {
   stats?: boolean;
   leaderboard?: boolean;
   paytable?: boolean;
+  view?: string | null;
 }): {
   editReply: ReturnType<typeof vi.fn>;
   user: { id: string };
   options: {
     getBoolean: (name: string) => boolean | null;
     getInteger: (name: string) => number | null;
+    getString: (name: string) => string | null;
   };
   guild?: { preferredLocale?: string };
 } {
@@ -34,6 +36,10 @@ function createMockInteraction(overrides?: {
         return null;
       },
       getInteger: () => null,
+      getString: (name: string) => {
+        if (name === "view") return overrides?.view ?? null;
+        return null;
+      },
     },
     guild: { preferredLocale: "en" },
   };
@@ -88,7 +94,7 @@ describe("slots integration", () => {
   });
 
   it("shows paytable when requested", async () => {
-    const mock = createMockInteraction({ paytable: true });
+    const mock = createMockInteraction({ view: "paytable" });
     const interaction = mock as unknown as Parameters<typeof run>[0];
 
     await run(interaction);

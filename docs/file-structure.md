@@ -10,8 +10,6 @@ The tree below is a simplified overview. The repo uses **command groups** (`core
 ```plaintext
 
 .
-├── .devcontainer
-│   └── devcontainer.json
 ├── .github
 │   ├── ISSUE_TEMPLATE
 │   │   ├── bug.yml
@@ -54,7 +52,6 @@ The tree below is a simplified overview. The repo uses **command groups** (`core
 │   └── src
 │       └── …
 ├── data
-│   ├── fun-usage.json
 │   ├── omegabot.db
 │   └── test-seed.db
 ├── docs
@@ -79,8 +76,6 @@ The tree below is a simplified overview. The repo uses **command groups** (`core
 │   ├── transcripts.md
 │   ├── troubleshooting.md
 │   └── …
-├── grafana
-│   └── omegabot-dashboard.json
 ├── migrations
 │   ├── 001_rps_stats.sql
 │   ├── 002_game_usage_daily.sql

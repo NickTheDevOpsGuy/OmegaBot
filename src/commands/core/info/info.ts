@@ -13,6 +13,10 @@ import {
   type ChatInputCommandInteraction,
 } from "discord.js";
 import { getDb } from "../../../services/core/database/db.js";
+import {
+  addPrivateOption,
+  addUserOption,
+} from "../../../services/discord/discord/slashOptions.js";
 import { getTimezone } from "../profile/profileHelpers.js";
 import { handleUserInfo } from "./handlers/userInfo.js";
 import { handleServerInfo } from "./handlers/serverInfo.js";
@@ -25,14 +29,14 @@ export const data = new SlashCommandBuilder()
     s
       .setName("user")
       .setDescription("View information about a user")
-      .addUserOption((o) => o.setName("user").setDescription("User to look up"))
-      .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+      .addUserOption((o) => addUserOption(o, { description: "User to look up" }))
+      .addBooleanOption(addPrivateOption),
   )
   .addSubcommand((s) =>
     s
       .setName("server")
       .setDescription("View information about this server")
-      .addBooleanOption((o) => o.setName("private").setDescription("Only show to you"))
+      .addBooleanOption(addPrivateOption)
       .addBooleanOption((o) =>
         o
           .setName("invite")
@@ -46,15 +50,15 @@ export const data = new SlashCommandBuilder()
       .setName("time")
       .setDescription("Show current time for a user (uses their /profile timezone)")
       .addUserOption((o) =>
-        o.setName("user").setDescription("User to show time for (default: you)"),
+        addUserOption(o, { description: "User to show time for (default: you)" }),
       )
-      .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+      .addBooleanOption(addPrivateOption),
   )
   .addSubcommand((s) =>
     s
       .setName("avatar")
       .setDescription("View a user's avatar")
-      .addUserOption((o) => o.setName("user").setDescription("User to view avatar for"))
+      .addUserOption((o) => addUserOption(o, { description: "User to view avatar for" }))
       .addIntegerOption((o) =>
         o
           .setName("size")
@@ -78,7 +82,7 @@ export const data = new SlashCommandBuilder()
             { name: "GIF (animated)", value: "gif" },
           ),
       )
-      .addBooleanOption((o) => o.setName("private").setDescription("Only show to you")),
+      .addBooleanOption(addPrivateOption),
   );
 
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {

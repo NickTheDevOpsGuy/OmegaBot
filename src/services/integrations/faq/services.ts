@@ -25,17 +25,17 @@ import type { FaqEntry, CreateFaqInput, UpdateFaqPatch } from "./types.js";
 /**
  * Return all FAQ entries (unordered).
  */
-export function getAll(): FaqEntry[] {
-  const store = loadStore();
+export async function getAll(): Promise<FaqEntry[]> {
+  const store = await loadStore();
   return Object.values(store.entries);
 }
 
 /**
  * Find an entry by key. Returns null when missing.
  */
-export function getByKey(rawKey: string): FaqEntry | null {
+export async function getByKey(rawKey: string): Promise<FaqEntry | null> {
   const key = assertValidKey(rawKey);
-  const store = loadStore();
+  const store = await loadStore();
   return store.entries[key] ?? null;
 }
 
@@ -43,7 +43,7 @@ export function getByKey(rawKey: string): FaqEntry | null {
  * Create a new FAQ entry.
  * Throws if duplicate key or invalid fields.
  */
-export function create(input: CreateFaqInput): FaqEntry {
+export async function create(input: CreateFaqInput): Promise<FaqEntry> {
   const key = assertValidKey(input.key);
 
   const title = input.title.trim();
@@ -60,7 +60,7 @@ export function create(input: CreateFaqInput): FaqEntry {
 
   const tags = normalizeTags(input.tags);
 
-  const store = loadStore();
+  const store = await loadStore();
   if (store.entries[key]) {
     throw new Error("FAQ with this key already exists");
   }
@@ -80,7 +80,7 @@ export function create(input: CreateFaqInput): FaqEntry {
   };
 
   store.entries[key] = entry;
-  saveStore(store);
+  await saveStore(store);
 
   logger.info({ key, actor: input.actor }, "[faq] created");
   return entry;
@@ -90,10 +90,10 @@ export function create(input: CreateFaqInput): FaqEntry {
  * Update an existing FAQ entry (title/body/tags).
  * Throws if key not found or patch fields invalid.
  */
-export function update(rawKey: string, patch: UpdateFaqPatch): FaqEntry {
+export async function update(rawKey: string, patch: UpdateFaqPatch): Promise<FaqEntry> {
   const key = assertValidKey(rawKey);
 
-  const store = loadStore();
+  const store = await loadStore();
   const entry = store.entries[key];
   if (!entry) throw new Error(`FAQ not found: ${key}`);
 
@@ -129,7 +129,7 @@ export function update(rawKey: string, patch: UpdateFaqPatch): FaqEntry {
   entry.updatedBy = patch.actor;
 
   store.entries[key] = entry;
-  saveStore(store);
+  await saveStore(store);
 
   logger.info({ key, actor: patch.actor }, "[faq] updated");
   return entry;
@@ -139,14 +139,14 @@ export function update(rawKey: string, patch: UpdateFaqPatch): FaqEntry {
  * Remove an entry by key.
  * Returns false if missing.
  */
-export function remove(rawKey: string): boolean {
+export async function remove(rawKey: string): Promise<boolean> {
   const key = assertValidKey(rawKey);
 
-  const store = loadStore();
+  const store = await loadStore();
   if (!store.entries[key]) return false;
 
   delete store.entries[key];
-  saveStore(store);
+  await saveStore(store);
 
   logger.info({ key }, "[faq] removed");
   return true;
@@ -156,10 +156,10 @@ export function remove(rawKey: string): boolean {
  * Increment usage count for an entry (for analytics/ranking).
  * Returns false if missing.
  */
-export function incrementUsage(rawKey: string): boolean {
+export async function incrementUsage(rawKey: string): Promise<boolean> {
   const key = assertValidKey(rawKey);
 
-  const store = loadStore();
+  const store = await loadStore();
   const entry = store.entries[key];
   if (!entry) return false;
 
@@ -167,7 +167,7 @@ export function incrementUsage(rawKey: string): boolean {
   entry.updatedAt = new Date().toISOString();
 
   store.entries[key] = entry;
-  saveStore(store);
+  await saveStore(store);
 
   return true;
 }

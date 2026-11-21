@@ -11,6 +11,7 @@ import { buildFunHelp } from "./topics/fun.js";
 import { buildGamesHelp } from "./topics/games.js";
 import { buildProfileHelp } from "./topics/profile.js";
 import { buildQuotesHelp } from "./topics/quotes.js";
+import { buildNotionHelp } from "./topics/notion.js";
 import { buildGitHubHelp } from "./topics/github.js";
 import { buildStatusHelp } from "./topics/status.js";
 import { buildAdminHelp } from "./topics/admin.js";
@@ -24,6 +25,7 @@ export type HelpTopic =
   | "games"
   | "profile"
   | "quotes"
+  | "notion"
   | "github"
   | "status"
   | "admin"
@@ -52,6 +54,8 @@ export function buildHelpText(args: {
       return buildProfileHelp();
     case "quotes":
       return buildQuotesHelp();
+    case "notion":
+      return buildNotionHelp({ isAdmin });
     case "github":
       return buildGitHubHelp();
     case "status":

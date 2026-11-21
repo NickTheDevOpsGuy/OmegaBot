@@ -3,21 +3,27 @@
 
 import { EmbedBuilder, MessageFlags, type ChatInputCommandInteraction } from "discord.js";
 import { getGuildConfig } from "../../../services/core/config/guildConfigStore.js";
+import { listLevelRoleRewards } from "../../../services/stores/leveling/levelingStore.js";
 import { listModeratorRoles } from "./moderatorRole.js";
 
 export async function handleView(
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
-  const config = getGuildConfig(interaction.guildId!);
+  const config = await getGuildConfig(interaction.guildId!);
 
   const embed = new EmbedBuilder().setTitle("⚙️ Server Configuration").setColor(0x5865f2);
 
-  const welcomeStatus = config.welcomeChannelId
-    ? `✅ Enabled - <#${config.welcomeChannelId}>`
-    : "❌ Not configured";
+  const welcomeStatus = config.welcomeEnabled
+    ? config.welcomeChannelId
+      ? `✅ Enabled - <#${config.welcomeChannelId}>`
+      : "✅ Enabled - system channel fallback"
+    : "❌ Disabled";
+  const welcomeMessageStatus = config.welcomeMessage
+    ? `Custom message (${config.welcomeMessage.length} chars)`
+    : "Default message";
   embed.addFields({
     name: "👋 Welcome Messages",
-    value: welcomeStatus,
+    value: `${welcomeStatus}\nMessage: ${welcomeMessageStatus}`,
     inline: false,
   });
 
@@ -36,6 +42,26 @@ export async function handleView(
   embed.addFields({
     name: "📜 Rules",
     value: rulesStatus,
+    inline: false,
+  });
+
+  const rewards = listLevelRoleRewards(interaction.guildId!);
+  const levelingLines = [
+    config.levelingEnabled ? "✅ Enabled" : "❌ Disabled",
+    `Announcements: ${
+      config.levelingAnnounceChannelId
+        ? `<#${config.levelingAnnounceChannelId}>`
+        : "same channel"
+    }`,
+    rewards.length > 0
+      ? `Role rewards: ${rewards
+          .map((reward) => `L${reward.level} <@&${reward.roleId}>`)
+          .join(", ")}`
+      : "Role rewards: none",
+  ];
+  embed.addFields({
+    name: "✨ Leveling",
+    value: levelingLines.join("\n"),
     inline: false,
   });
 

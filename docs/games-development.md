@@ -83,7 +83,7 @@ For games that last days (e.g. Connect 4, Chess):
 
 Store board state as JSON string. Commands and a future web API can load/save sessions so players can continue later.
 
-**Connect 4** uses this: games stay active for 72 hours; each move extends the session by 24 hours. Use **`/fun connect4 continue: true`** to list active games and resume. Turn-based play works asynchronously (no 30‑minute move timeout).
+**Connect 4** uses this: games stay active for 72 hours; each move extends the session by 24 hours. Use **`/fun connect4 view:continue`** to list active games and resume. Turn-based play works asynchronously (no 30‑minute move timeout).
 
 ## Game tiers (classification)
 

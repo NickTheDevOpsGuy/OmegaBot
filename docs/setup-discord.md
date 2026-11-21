@@ -9,6 +9,7 @@ required scopes, permissions, gateway intents, and common moderation pitfalls.
 
 - [Required OAuth Scopes](#required-oauth-scopes)
 - [Required Bot Permissions](#required-bot-permissions)
+- [Notion Audit Channel Permissions](#notion-audit-channel-permissions)
 - [Gateway Intents](#gateway-intents)
 - [Why Admin Commands Might Fail](#why-admin-commands-might-fail)
 - [Moderator Roles (SQLite-backed)](#moderator-roles-sqlite-backed)
@@ -19,13 +20,14 @@ required scopes, permissions, gateway intents, and common moderation pitfalls.
 
 ## Required OAuth Scopes
 
-When inviting the bot, you **must** include:
+When generating the Discord invite URL, select these OAuth2 scopes:
 
-- bot
-- applications.commands
-- Use Slash Commands
+- `bot`
+- `applications.commands`
 
-If you change scopes later, you must re-invite the bot.
+Do not use workspace/API scopes like `guilds`, `guilds.channels.read`, `guilds.members.read`, `dm_channels.read`, or `presences.write` for the server bot invite. OmegaBot uses the Discord bot gateway and slash-command install flow, not those OAuth user/API scopes.
+
+If `applications.commands` is missing, slash commands may not install or update correctly. If you change scopes later, you must re-invite the bot.
 
 ---
 
@@ -39,6 +41,26 @@ For full functionality, especially **admin/moderation commands**, the bot role n
 - Send Messages
 - Read Message History
 - Embed Links
+- Use Slash Commands
+
+### Role Management
+
+- Manage Roles
+
+This is required for `/roles choose`, `/roles remove`, and reaction-role assignment. The bot's highest role must also be above every role it needs to grant or remove.
+
+### Notion Audit Channel Permissions
+
+Notion itself is configured in [Notion Wiki Setup](setup-notion.md), but the optional Discord audit channel still depends on Discord permissions.
+
+If `BOT_ADMIN_AUDIT_CHANNEL_ID` is set, OmegaBot sends lightweight audit messages for Notion admin actions such as `/notion status`, `/notion templates`, `/notion create-page`, and `/notion add`.
+
+The bot must have these permissions in the configured audit channel:
+
+- View Channel
+- Send Messages
+
+If the audit channel has channel-specific role overrides, check that the OmegaBot role is allowed there too. Server-level permissions are not enough when a channel override denies access. When these permissions are missing, the Notion command can still run, but the audit message will not be posted.
 
 ### Moderation (Admin commands)
 
@@ -85,6 +107,8 @@ If either flag is `true`, the same intent must also be enabled in the Discord De
   - `Guilds`
 - Starboard / reaction-based message features
   - `GuildMessageReactions`
+- Self-assignable roles with `/roles`
+  - `Guilds`; no privileged member intent is required for slash-command role choice
 - DM support
   - `DirectMessages`
 - DM / @mention chat message handling
@@ -92,6 +116,37 @@ If either flag is `true`, the same intent must also be enabled in the Discord De
   - `Message Content Intent` also required if you want the bot to read message text
 - Welcome flow / auto-role on member join
   - `GuildMembers`
+
+### Welcome Messages
+
+Welcome channel and message settings are stored in SQLite, not in `.env` or a
+text file. Configure them from Discord:
+
+```text
+/config welcome set channel:#welcome
+/config welcome set-message text:"Welcome {user} to {server}!"
+/config welcome test
+```
+
+Supported message placeholders:
+
+- `{user}` - mention the joining user
+- `{name}` - display name
+- `{username}` - username
+- `{server}` - server name
+
+If no custom message is set, OmegaBot uses a generic built-in welcome message.
+Use `/config welcome set-message` for server-specific links, rules, forms, or
+onboarding instructions.
+
+If `/config welcome test` reports missing permissions, give the bot **View
+Channel** and **Send Messages** in the resolved welcome channel.
+
+If `/config welcome test` works but real joins do not, check both sides of the
+member intent setup:
+
+- `.env`: `DISCORD_ENABLE_GUILD_MEMBERS_INTENT=true`
+- Developer Portal: **Server Members Intent** enabled
 
 If you are unsure, the safest setup is:
 
@@ -123,6 +178,32 @@ Only users with:
 - A configured moderator role
 
 can run moderation commands.
+
+## Self-assignable Roles
+
+OmegaBot supports slash-command role selection with `/roles`.
+
+Admins with **Manage Roles** can configure choices:
+
+```text
+/roles enable role:@Announcements description:"Server updates and event pings"
+/roles disable role:@Announcements
+```
+
+Members can then use:
+
+```text
+/roles list
+/roles choose role:@Announcements
+/roles remove role:@Announcements
+```
+
+Setup notes:
+
+- The bot needs **Manage Roles**.
+- The bot's highest role must be above every self-assignable role.
+- Managed integration roles and `@everyone` cannot be self-assigned.
+- Disabling a role stops future self-assignment but does not remove it from members who already have it.
 
 ---
 

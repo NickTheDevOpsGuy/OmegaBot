@@ -1,31 +1,9 @@
 // src/services/github/lastSeenStore.ts
 
-import fs from "fs";
-import path from "path";
-
 /**
- * Absolute path to the persistent store for GitHub announcement state.
- *
- * This file is intentionally:
- * - JSON (human-readable, debuggable)
- * - Stored outside src/ so it survives rebuilds
- *
- * Example contents:
- * {
- *   "owner/repo": 1713291823000
- * }
+ * SQLite-backed persistent store for GitHub announcement state.
  */
-const STORE_PATH = path.join(process.cwd(), "data", "last-seen.json");
-
-/**
- * Internal storage shape.
- *
- * Key   → "owner/repo"
- * Value → Unix timestamp in milliseconds (Number)
- *
- * We store numbers so comparisons are cheap and timezone-agnostic.
- */
-type Store = Record<string, number>;
+import { getDb } from "../../core/database/db.js";
 
 /**
  * Get the last stored timestamp for a repo.
@@ -35,9 +13,16 @@ type Store = Record<string, number>;
  * - null if the repo has never been seen
  */
 export function getLastSeen(owner: string, repo: string): number | null {
-  const store = loadStore();
   const key = makeRepoKey(owner, repo);
-  return key in store ? store[key] : null;
+  const row = getDb()
+    .prepare(
+      `SELECT last_seen_timestamp
+       FROM github_last_seen
+       WHERE repo_key = ? AND entity_type = 'pr'`,
+    )
+    .get(key) as { last_seen_timestamp: number } | undefined;
+
+  return row?.last_seen_timestamp ?? null;
 }
 
 /**
@@ -48,7 +33,6 @@ export function getLastSeen(owner: string, repo: string): number | null {
  * @param updatedAtIso ISO timestamp string from GitHub API (ex: pr.updated_at)
  */
 export function setLastSeenPr(owner: string, repo: string, updatedAtIso: string): void {
-  const store = loadStore();
   const key = makeRepoKey(owner, repo);
 
   const ms = Date.parse(updatedAtIso);
@@ -56,8 +40,15 @@ export function setLastSeenPr(owner: string, repo: string, updatedAtIso: string)
     throw new Error(`Invalid updatedAt timestamp: ${updatedAtIso}`);
   }
 
-  store[key] = ms;
-  saveStore(store);
+  getDb()
+    .prepare(
+      `INSERT INTO github_last_seen (repo_key, last_seen_timestamp, entity_type)
+       VALUES (?, ?, 'pr')
+       ON CONFLICT(repo_key) DO UPDATE SET
+        last_seen_timestamp = excluded.last_seen_timestamp,
+        entity_type = excluded.entity_type`,
+    )
+    .run(key, ms);
 }
 
 /**
@@ -67,13 +58,10 @@ export function setLastSeenPr(owner: string, repo: string, updatedAtIso: string)
  * Useful for development resets and testing.
  */
 export function clearLastSeen(owner: string, repo: string): void {
-  const store = loadStore();
   const key = makeRepoKey(owner, repo);
-
-  if (key in store) {
-    delete store[key];
-    saveStore(store);
-  }
+  getDb()
+    .prepare(`DELETE FROM github_last_seen WHERE repo_key = ? AND entity_type = 'pr'`)
+    .run(key);
 }
 
 /**
@@ -86,51 +74,4 @@ export function clearLastSeen(owner: string, repo: string): void {
  */
 function makeRepoKey(owner: string, repo: string): string {
   return `${owner}/${repo}`;
-}
-
-/**
- * Load the last-seen store from disk.
- *
- * Behavior:
- * - If the file does not exist → return empty store
- * - If the file exists → parse JSON
- *
- * This function is synchronous by design:
- * - It runs rarely (poll job / command invocation)
- * - Simpler failure modes
- * - Fewer edge cases in a single-process bot
- */
-function loadStore(): Store {
-  if (!fs.existsSync(STORE_PATH)) {
-    return {};
-  }
-
-  const raw = fs.readFileSync(STORE_PATH, "utf8");
-
-  try {
-    return JSON.parse(raw) as Store;
-  } catch {
-    // If JSON is corrupted, fail safe to empty.
-    // Worst case: PRs may be re-announced once.
-    return {};
-  }
-}
-
-/**
- * Persist the last-seen store to disk.
- *
- * Guarantees:
- * - Parent directory exists
- * - JSON is pretty-printed for easy debugging
- *
- * We overwrite the file entirely to keep writes simple.
- */
-function saveStore(store: Store): void {
-  const dir = path.dirname(STORE_PATH);
-
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-
-  fs.writeFileSync(STORE_PATH, JSON.stringify(store, null, 2), "utf8");
 }
