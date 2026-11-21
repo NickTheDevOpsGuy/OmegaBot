@@ -4,11 +4,7 @@
 // Configurable probability; events are rare by default.
 
 export type RandomEventKind =
-  | "lucky_spin"
-  | "double_xp"
-  | "bonus_coins"
-  | "jackpot_boost"
-  | "none";
+  "lucky_spin" | "double_xp" | "bonus_coins" | "jackpot_boost" | "none";
 
 export type RandomEventConfig = {
   /** Probability 0–1 that any event triggers (before kind roll). Default 0.02 (2%). */

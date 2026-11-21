@@ -51,8 +51,7 @@ describe("config integration", () => {
     });
     await execute(mock);
     const replyArg = (mock.reply as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as
-      | { content?: string }
-      | undefined;
+      { content?: string } | undefined;
     expect(replyArg?.content).toContain("Mod");
     expect(replyArg?.content).toContain("/admin");
     const rows = getDb()

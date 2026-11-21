@@ -11,8 +11,7 @@ export async function handleUserInfo(
 ): Promise<void> {
   const targetUser = interaction.options.getUser("user") ?? interaction.user;
   const member = interaction.guild?.members.cache.get(targetUser.id) as
-    | GuildMember
-    | undefined;
+    GuildMember | undefined;
 
   const embed = new EmbedBuilder()
     .setTitle(`${targetUser.username}`)

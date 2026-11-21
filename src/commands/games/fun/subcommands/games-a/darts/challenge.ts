@@ -108,9 +108,7 @@ export async function handleChallenge(
     try {
       const playerId = buttonInteraction.user.id;
       const action = buttonInteraction.customId.split(":")[2] as
-        | "throw"
-        | "decline"
-        | "extend";
+        "throw" | "decline" | "extend";
 
       if (action === "extend") {
         if (playerId !== challenger.id) {
